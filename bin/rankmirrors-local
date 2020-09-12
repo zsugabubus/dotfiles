@@ -1,0 +1,6 @@
+#!/bin/dash
+URL="https://www.archlinux.org/mirrorlist/?country=all&protocol=https&ip_version=4&ip_version=6&use_mirror_status=on"
+
+curl -s "$URL" |
+sed -e 's/^#Server/Server/' -e '/^#/d' |
+rankmirrors -t -n 20 -

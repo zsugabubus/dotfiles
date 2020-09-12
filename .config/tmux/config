@@ -1,0 +1,124 @@
+
+# Theme {{{1
+%if #{==:#{TERM},linux}
+set -g status-fg colour7
+set -g status-bg colour0
+
+set -g window-status-format "#I:#W#F"
+set -g window-status-current-style fg=colour15,bold
+set -g window-status-activity fg=colour1
+set -g window-status-separator ' '
+
+set -g message-command-style bg=colour0,fg=colour15
+set -g message-style bg=colour0,fg=colour15
+set -g mode-style bg=colour15,fg=colour0
+
+set -g pane-border-style bg=colour0,fg=colour7
+set -g pane-active-border-style bg=colour0,fg=colour15
+
+set -g display-panes-colour colour7
+set -g display-panes-active-colour colour15
+
+set -g clock-mode-colour colour7
+%else
+source-file ~/.config/tmux/theme.conf
+#  #(~/.config/tmux/scripts/loadavg.sh)  #(~/.config/tmux/scripts/bwrate.sh enp10s0)
+%endif
+
+set -g clock-mode-style 24
+# 1}}}
+
+set -g history-limit 10000
+
+# status update interval
+set -g status-interval 60
+
+# time to show status messages for
+set -g display-time 1618
+
+set -g repeat-time 418
+
+# allow commands immediately following send-prefix
+set -s escape-time 0
+
+# focus events enabled for terminals that support them
+set -g focus-events on
+
+# Prefix
+%if #{==:#{TERM},linux}
+set-option -g prefix 'C-b'
+%else
+set-option -g prefix 'C-\'
+%endif
+
+bind '\' send-prefix
+bind 'C-\' last-window
+bind C-- last-pane
+bind q display-panes -d 0
+
+# Window switching
+bind -r n select-window -n
+bind -r p select-window -p
+
+# Pane switching
+bind -r h select-pane -L
+bind -r j select-pane -D
+bind -r k select-pane -U
+bind -r l select-pane -R
+
+# Pane resizing
+bind -r C-h resize-pane -L
+bind -r C-j resize-pane -D
+bind -r C-k resize-pane -U
+bind -r C-l resize-pane -R
+
+bind -r Space nextl
+bind H swapp -U
+bind K swapp -U
+bind L swapp -D
+bind J swapp -D
+
+# better splits with | and -
+bind | split-window -h
+bind - split-window -v
+
+# switch layouts
+bind =   select-layout even-horizontal
+bind '"' select-layout even-vertical
+
+# convert window into a pane
+bind W command-prompt -p "Create pane from window #:" "join-pane -s ':%%'"
+
+# put useful info in the status bar
+set -g set-titles on
+set -g set-titles-string '#H:#S.#I.#P #W #T' # window number,program name, active(or not)
+
+# enable 256 colors mode - important if you want the solarized theme look
+# semi-decent in vim
+set -g default-terminal "$TERM"
+
+# resize windows on larger screens - if off the size is capped to the smallest
+# screen size that has ever looked at it
+setw -g aggressive-resize on
+
+# reload config
+bind C-r source-file ~/.tmux.conf \; display-message "Config reloaded"
+
+bind -r C-b set -g status
+bind -r b set -g status
+
+# show activity
+setw -g monitor-activity on
+set -g visual-activity off
+
+# move windows
+bind -r > swap-window -t +1
+bind -r < swap-window -t -1
+
+# cursor shape
+set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q'
+# set -as terminal-overrides ',*:Smulx=\E[4::%p1%dm'
+
+bind '~' setw synchronize-panes \; display "synchronize-panes: #{pane_synchronized}"
+
+# vim: ft=tmux fdm=marker

@@ -1,0 +1,47 @@
+#!/usr/bin/dash
+NEW_USER=nobody
+NEW_HOME=/home/nobody
+tmp=$(mktemp)
+echo >$tmp "$NEW_USER:x:$(id -u $NEW_USER):$(id -g $NEW_USER)::$NEW_HOME:/usr/bin/bash"
+exec 7<$tmp
+rm $tmp
+exec env -i bwrap \
+  --as-pid-1 \
+  --die-with-parent \
+  --ro-bind /usr/lib /usr/lib \
+  --ro-bind /usr/share/terminfo /usr/share/terminfo \
+  --ro-bind /usr/share/ca-certificates /usr/share/ca-certificates \
+  --ro-bind /usr/share/locale /usr/share/locale \
+  --ro-bind /usr/bin/newsboat /usr/bin/newsboat \
+  --ro-bind /usr/bin/urlview /usr/bin/urlview \
+  --ro-bind /usr/bin/sh /usr/bin/sh \
+  --ro-bind /usr/bin/bash /usr/bin/bash \
+  --symlink usr/bin /sbin \
+  --symlink usr/bin /bin \
+  --symlink usr/lib /lib64 \
+  --symlink usr/lib /lib \
+  --ro-bind /etc/ld.so.cache /etc/ld.so.cache \
+  --ro-bind /etc/ld.so.preload /etc/ld.so.preload \
+  --ro-bind /etc/ca-certificates /etc/ca-certificates \
+  --ro-bind /etc/ssl /etc/ssl \
+  --file 7 /etc/passwd \
+  --proc /proc \
+  --dev /dev \
+  --unshare-user \
+  --unshare-ipc \
+  --unshare-pid \
+  --unshare-uts \
+  --unshare-cgroup \
+  --uid $(id -u $NEW_USER) \
+  --gid $(id -g $NEW_USER) \
+  --hostname hostname \
+  --tmpfs $NEW_HOME \
+  --setenv HOME $NEW_HOME \
+  --ro-bind $HOME/.config/newsboat $NEW_HOME/.config/newsboat \
+  --ro-bind $HOME/.urlview $NEW_HOME/.urlview \
+  --bind $HOME/.local/share/newsboat $NEW_HOME/.local/share/newsboat \
+  --setenv LANG $LANG \
+  --setenv TZ $TZ \
+  --setenv TERM $TERM \
+  --chdir $NEW_HOME \
+  /usr/bin/newsboat "$@"

@@ -1,0 +1,4 @@
+#!/bin/dash
+sed -i '/max-.*load-limit\|seed-ratio\|max-concurrent.*/!d' "$2"
+touch "$2" --date -1sec
+$EDITOR "$2"

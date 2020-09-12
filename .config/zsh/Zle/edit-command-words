@@ -1,0 +1,14 @@
+#autoload
+
+BUFFER=${(FQ)${(z)BUFFER}}
+function send-break() {
+	zle -D send-break
+	unfunction send-break
+
+	read -z BUFFER
+	BUFFER=${(j: :)${(fq)BUFFER}}
+	zle redisplay
+}
+zle -N send-break
+
+zle edit-command-line

@@ -1,0 +1,17 @@
+#!/usr/bin/dash
+ip=$(upnpc -s 2>/dev/null | awk -F ' = ' '$1=="ExternalIPAddress"{print $2}')
+printf " %s\n" "$ip"
+exit
+# https://ident.me
+
+if [ -z "$BLOCK_BUTTON" ]; then
+  ip=""
+elif ! ip=$(curl -s https://api.ipify.org); then
+  ip=""
+else
+  case "$BLOCK_BUTTON" in
+  3) echo "$ip" | xclip ;;
+  esac
+fi
+
+printf "<span color='#a0d9a4'> %s</span>\n" "$ip"

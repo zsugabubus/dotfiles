@@ -1,0 +1,128 @@
+#!/bin/bash
+
+URL="https://freegeoip.app/csv/"
+shopt -s expand_aliases
+
+info()  { echo $(date +'%Y/%m/%d %T') I $@; }
+warn()  { echo $(date +'%Y/%m/%d %T') W $@; }
+error() { echo $(date +'%Y/%m/%d %T') E $@; }
+
+OPTIND=1
+
+subcommand=$1
+shift
+
+case "$subcommand" in
+  "run")
+    listen_port=6666
+    socks_proxy="socks4a://127.0.0.1:9050"
+
+    while getopts "p:Ss:" opt; do
+      case "$opt" in
+      p) listen_port=$OPTARG ;;
+      S) socks_proxy= ;;
+      s) socks_proxy=$OPTARG ;;
+      esac
+    done
+
+    shift $((OPTIND-1))
+
+    proxy_addr=$1
+
+    if [[ -n "$socks_proxy" ]]; then
+      IFS=: read socks_proto socks_host socks_port <<< "$socks_proxy"
+      socks_host=${socks_host#//}
+      warn "connecting to $proxy_addr via $socks_host:$socks_port"
+      socat -dd -v tcp-listen:$listen_port,reuseaddr,fork $socks_proto:$socks_host:$proxy_addr,socksport=$socks_port,socksuser=nobody
+    else
+      warn "using direct connection"
+      socat -dd -v tcp-listen:$listen_port,reuseaddr,fork tcp:$1
+    fi
+
+    ;;
+  "rank")
+    country_filter=
+
+    timeout=4
+    socks_proxy="socks5://127.0.0.1:9050"
+
+    while getopts "t:Ss:" opt; do
+      case "$opt" in
+      t) timeout=$OPTARG ;;
+      S) socks_proxy= ;;
+      s) socks_proxy=$OPTARG ;;
+      esac
+    done
+
+    shift $((OPTIND-1))
+
+    case "$1" in
+      'r') country_filter='UA|RU|TR|BY|EE|MD|KZ' ;;
+      'h') country_filter='HU' ;;
+      'u') country_filter='US' ;;
+      '')  country_filter='..' ;;
+      *)   country_filter="$1" ;;
+    esac
+
+    B=$'\e[1m'
+    R=$'\e[0m'
+
+    echo "country filter: $country_filter"
+
+    if [[ -n "$socks_proxy" ]]; then
+      alias curlwpp="curl --preproxy $socks_proxy"
+      warn "connecting via $socks_proxy"
+    else
+      warn "using direct connection"
+      alias curlwpp="curl"
+    fi
+
+    proxies=()
+
+    CURL_FORMAT="%{stderr}%{time_connect},%{time_total},"
+
+    print_bar() { echo ' +-----------------------+-----------------+---------------+--------------------------------+'; }
+
+    print_bar
+    printf ' | %-21s | %-15s | %-13s | %-30s |\n' "connect ip" "exit ip" "timing" "location"
+    print_bar
+    echo -ne '\e[s'
+
+    finish_table() {
+      print_bar
+      stty echo
+    }
+
+    stty -echo
+    trap finish_table EXIT
+
+    curl -sx "socks5://127.0.0.1:9050" "http://spys.me/proxy.txt" |
+    awk "match(\$2, \"^($country_filter)-H(-S)?\", m) { print \$1, m[1], m[2] }" |
+    while read address country ssl_support; do
+
+      result=$({
+        echo -n "$address,"
+        if ! out=$(curlwpp -w "$CURL_FORMAT" -sm $timeout -x $address "$URL"); then
+          echo -n "-,,$country,-" >&2
+          exit $err
+        fi
+        echo -n $(cut -d, -f1,2,3,6 <<< "$out"),
+      } 2>&1 );
+
+      echo -ne '\e[u\e[s'
+
+      proxies+=("$result")
+
+      for i in ${!proxies[*]}; do
+        IFS=, read remote_addr time_connect time_total exit_ip country_code country city <<< "${proxies[$i]}"
+        printf ' | %21s | %15s | %1.3f (%1.3f) | %-30s |\n' "$remote_addr" "$exit_ip" "$time_total" "$time_connect" "$country (${country_code:-??}), ${city:-?}"
+      done | LC_ALL=C sort -gk6
+
+    done
+
+    finish_table
+    trap - EXIT
+
+  ;;
+  *) error "unknown subcommand" ;;
+esac

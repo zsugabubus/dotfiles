@@ -1,0 +1,4 @@
+#!/usr/bin/dash
+unread=$(newsboat -x print-unread | cut -d\  -f1)
+[ "${unread:-0}" -gt 0 ] && echo "$unread"
+:

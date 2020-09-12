@@ -1,0 +1,3 @@
+#!/usr/bin/dash
+ln -nrsf theme-$1.conf theme.conf
+tmux -L default source-file ~/.tmux.conf 2>/dev/null

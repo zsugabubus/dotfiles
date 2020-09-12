@@ -1,0 +1,58 @@
+#autoload
+
+# autoload -Uz bracketed-paste-magic
+local content=
+zle .$WIDGET -N content
+zle .split-undo
+
+if [[ -z $BUFFER && $content =~ '^\s*(git clone )?(git://\S*|https://(git[^/]+/[^/ ]+/[^/ ]+|\S*\.git))/?[\n \t]*$' ]]; then
+	# Git remote.
+	[[ $PWD = ~ ]] && cd -- ~m
+	LBUFFER="git clone ${(q-)match[2]} --depth 1"
+elif [[ $content =~ '^[\t\n ]*git clone' ]]; then
+	# Git clone with custom URI.
+	[[ $PWD = ~ ]] && cd -- ~m
+	LBUFFER="$content --depth 1"
+elif [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
+	# URI.
+	content=${match[1]}
+
+	if [[ $content =~ '^https?://.*\.patch$' ]]; then
+		if [[ -z $BUFFER ]]; then
+			# Patch.
+			LBUFFER="curl -L ${(q-)content} | git apply"
+			return
+		fi
+	elif [[ -z $BUFFER && $content =~ '^https?://(((www.)?youtube.com|youtu.be)/|.*\.(mp[0-9]|gifv?|webm|m3u8|og[av])(\?.*)?$)' ]]; then
+		if [[ -z $BUFFER ]]; then
+			LBUFFER="mpv"
+		fi
+	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
+		content="https://raw.githubusercontent.com/${match[1]}/${match[2]}"
+		if [[ -z $BUFFER ]]; then
+			[[ $PWD = ~ ]] && cd -- ~m
+			LBUFFER="curl -LO "
+		fi
+	elif [[ -z $BUFFER ]]; then
+		[[ $PWD = ~ ]] && cd -- ~m
+		LBUFFER="curl -LO"
+	fi
+
+	if [[ $LBUFFER =~ '\S$' ]]; then
+		LBUFFER+=' '
+	fi
+
+	LBUFFER+=${(q-)content}
+else
+	local start=$#LBUFFER
+
+	if (( #content < 100 )); then
+		LBUFFER+=${content//$'\n'/ }
+	else
+		LBUFFER+=$content
+	fi
+
+	YANK_START=$start
+	YANK_END=$#LBUFFER
+	zle -f yank
+fi

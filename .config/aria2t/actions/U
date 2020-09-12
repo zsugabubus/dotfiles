@@ -1,0 +1,4 @@
+#!/bin/dash
+cd ~/.config/aria2 &&
+./upnp &&
+read _

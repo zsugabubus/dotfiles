@@ -1,0 +1,10 @@
+config
+
+# bins
+scripts/backlight
+scripts/battery
+scripts/cpu
+scripts/fsstat
+scripts/iface
+scripts/memory
+scripts/volume

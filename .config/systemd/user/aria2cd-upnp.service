@@ -1,0 +1,16 @@
+[Unit]
+Description=UPnP Port Opening for Aria2c Daemon
+RefuseManualStart=true
+StopWhenUnneeded=true
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=ARGV0=upnp
+ExecStart=%E/aria2/upnp start
+ExecStop=%E/aria2/upnp stop
+WorkingDirectory=%E/aria2
+TimeoutStopSec=10
+
+[Install]
+WantedBy=default.target

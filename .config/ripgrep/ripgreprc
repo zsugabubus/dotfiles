@@ -1,0 +1,12 @@
+--smart-case
+# disable BOM detection
+--encoding
+none
+-g
+!node_modules
+-g
+!*.lock
+-g
+!po
+-g
+!tags

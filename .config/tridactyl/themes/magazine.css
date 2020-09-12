@@ -1,0 +1,206 @@
+/*
+http://paletton.com/#uid=1250u0krlNjhIWSmRSPwsFevXpL
+*/
+
+:root.TridactylThemeMagazine {
+    --tridactyl-font-family: 'DejaVuSansMono Nerd Font Mono', monospace;
+    --tridactyl-small-font-size: 1rem;
+    --tridactyl-bg: #eee;
+    --tridactyl-of-bg: #ffaf00;
+    --tridactyl-hint-bg: rgb(255, 251, 37);
+    --tridactyl-hint-fg: #111; /* WTF?! */
+    --tridactyl-hint-active-bg: #36ce59;
+    --tridactyl-hint-active-fg: #111 !important; /* WTF?! */
+    --tridactyl-hint-outline: 1px solid #ff2525;
+    --tridactyl-hintspan-font-family: var(--tridactyl-font-family);
+    --tridactyl-hintspan-font-size: 13px;
+}
+
+:root.TridactylThemeMagazine .TridactylHint {
+    transform: translateX(-50%) translateY(-50%) !important;
+    color: #ff2525 !important;
+    background: none !important;
+    border: none !important;
+    text-shadow:
+    var(--tridactyl-hint-bg) -3px -3px 0px,
+    var(--tridactyl-hint-bg) -3px -2px 0px,
+    var(--tridactyl-hint-bg) -3px -1px 0px,
+    var(--tridactyl-hint-bg) -3px  0px 0px,
+    var(--tridactyl-hint-bg) -3px  1px 0px,
+    var(--tridactyl-hint-bg) -3px  2px 0px,
+    var(--tridactyl-hint-bg) -3px  3px 0px,
+    var(--tridactyl-hint-bg)  3px -3px 0px,
+    var(--tridactyl-hint-bg)  3px -2px 0px,
+    var(--tridactyl-hint-bg)  3px -1px 0px,
+    var(--tridactyl-hint-bg)  3px  0px 0px,
+    var(--tridactyl-hint-bg)  3px  1px 0px,
+    var(--tridactyl-hint-bg)  3px  2px 0px,
+    var(--tridactyl-hint-bg)  3px  3px 0px,
+    var(--tridactyl-hint-bg) -2px -2px 0px,
+    var(--tridactyl-hint-bg) -2px -1px 0px,
+    var(--tridactyl-hint-bg) -2px  0px 0px,
+    var(--tridactyl-hint-bg) -2px  1px 0px,
+    var(--tridactyl-hint-bg) -2px  2px 0px,
+    var(--tridactyl-hint-bg)  2px -2px 0px,
+    var(--tridactyl-hint-bg)  2px -1px 0px,
+    var(--tridactyl-hint-bg)  2px  0px 0px,
+    var(--tridactyl-hint-bg)  2px  1px 0px,
+    var(--tridactyl-hint-bg)  2px  2px 0px,
+    var(--tridactyl-hint-bg) -1px -1px 0px,
+    var(--tridactyl-hint-bg) -1px  0px 0px,
+    var(--tridactyl-hint-bg) -1px  1px 0px,
+    var(--tridactyl-hint-bg)  1px -1px 0px,
+    var(--tridactyl-hint-bg)  1px  0px 0px,
+    var(--tridactyl-hint-bg)  1px  1px 0px !important;
+    letter-spacing: -.13em !important;
+}
+
+:root.TridactylThemeMagazine .TridactylHintElem,
+:root.TridactylThemeMagazine .TridactylHintElem *,
+:root.TridactylThemeMagazine .TridactylHintActive,
+:root.TridactylThemeMagazine .TridactylHintActive * {
+    color: #111 !important;
+}
+
+:root.TridactylThemeMagazine #command-line-holder {
+    order: 1;
+    border-bottom: 2px solid #ddd;
+    color: var(--tridactyl-bg);
+}
+
+:root.TridactylThemeMagazine #tridactyl-input {
+    color: var(--tridactyl-fg);
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1.3rem;
+    line-height: 1em;
+    background: var(--tridactyl-bg);
+    padding: .8em .5rem;
+}
+
+:root.TridactylThemeMagazine #tridactyl-colon {
+    display: none !important;
+}
+
+:root.TridactylThemeMagazine #completions table > tr > td {
+    padding-left: .5em !important;
+}
+
+:root.TridactylThemeMagazine body {
+    top: 0 !important;
+    width: calc(100% + 1px) !important;
+}
+
+:root.TridactylThemeMagazine #completions table {
+    font-size: .8rem;
+    font-weight: normal;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+:root.TridactylThemeMagazine #completions > div {
+    max-height: calc(20 * var(--option-height));
+    min-height: calc(10 * var(--option-height));
+}
+
+/* COMPLETIONS */
+
+:root.TridactylThemeMagazine #completions {
+    --option-height: 1.4rem;
+    color: black;
+    background: var(--tridactyl-bg);
+    display: inline-block;
+    font-size: unset;
+    font-weight: normal;
+    overflow: hidden;
+    width: 100%;
+    border-top: unset;
+    order: 2;
+}
+
+/* Olie doesn't know how CSS inheritance works */
+:root.TridactylThemeMagazine #completions .HistoryCompletionSource {
+    max-height: unset;
+    min-height: unset;
+}
+
+:root.TridactylThemeMagazine #completions .HistoryCompletionSource table {
+    width: 100%;
+    font-size: 9pt;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+:root.TridactylThemeMagazine #completions .BmarkCompletionSource {
+    max-height: unset;
+    min-height: unset;
+}
+
+:root.TridactylThemeMagazine #completions table tr td.prefix,
+:root.TridactylThemeMagazine #completions table tr td.privatewindow,
+:root.TridactylThemeMagazine #completions table tr td.container,
+:root.TridactylThemeMagazine #completions table tr td.icon {
+    display: none;
+}
+
+:root.TridactylThemeMagazine #completions .BufferCompletionSource table {
+    width: unset;
+    font-size: unset;
+    border-spacing: unset;
+    table-layout: unset;
+}
+
+:root.TridactylThemeMagazine #completions table tr .title {
+    width: 50%;
+}
+
+:root.TridactylThemeMagazine #completions table tr {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+:root.TridactylThemeMagazine #completions .sectionHeader {
+    background: unset;
+    font-weight: normal;
+    border-bottom: unset;
+    padding: .5em !important;
+    line-height: 1em !important;
+    height: 1em !important;
+    text-decoration: underline;
+}
+
+:root.TridactylThemeMagazine #completions .documentation {
+    color: #2c2c2f !important;
+}
+
+:root.TridactylThemeMagazine #completions table tr td {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+:root.TridactylThemeMagazine #completions .excmd {
+    font-weight: bold;
+    width: 15ch !important;
+}
+
+:root.TridactylThemeMagazine #cmdline_iframe.hidden {
+    display: none !important;
+}
+
+/* :root.TridactylThemeMagazine #cmdline_iframe:focus {
+    border-color: #ffaf5f !important;
+} */
+
+:root.TridactylThemeMagazine #cmdline_iframe {
+    position: fixed !important;
+    bottom: unset;
+    top: 20% !important;
+    left: 50% !important;
+    transform: translate(-50%) !important;
+    z-index: 2147483647 !important;
+    width: 80% !important;
+    max-width: 800px !important;
+    border: 1px solid #ffaf5f !important;
+    box-shadow: rgba(0, 0, 0, .3) 1px 1px 3px !important;
+}

@@ -1,0 +1,2 @@
+#!/bin/dash
+printf '%s - %s' "${1:-ID}" "${2:-ID}" | xclip -l 1 -selection clipboard

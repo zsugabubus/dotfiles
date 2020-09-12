@@ -1,0 +1,27 @@
+#!/bin/dash
+# https://superuser.com/questions/1308495/how-to-create-a-socks-proxy-with-ssh
+
+SSH_PORT=8011
+FORWARD_HOST=127.0.0.1
+SOCKS_PORT=1080
+CFG=$HOME/.config/socksserver
+
+case "$1" in
+'setup')
+  if [ "$FORWARD_HOST" = "127.0.0.1" ] && ! pidof sshd; then
+    echo Starting local SSH server... &&
+    sudo proxychains -f ~/stuff/proxy.conf $(which sshd) -d -eDp $SSH_PORT
+  #     -f $HOME/.config/socksserver/etc/ssh/sshd_config 
+  else
+    echo Starting local SOCKS server... &&
+    # -g: Allow remote.
+    ssh -f -N -D 127.0.0.1:$SOCKS_PORT $FORWARD_HOST -p "$SSH_PORT"
+
+    # ssh -f -N -D 127.0.0.1:1080 root@77.111.168.28 -p 34719
+  fi
+  ;;
+'test')
+  echo Real IP: $(curl -s ifconfig.me) &&
+  echo Proxy IP: $(curl -sx socks5://127.0.0.1:$SOCKS_PORT ifconfig.me)
+  ;;
+esac

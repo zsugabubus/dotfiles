@@ -1,0 +1,3 @@
+#compdef publish
+# _files -g '(#i)(^*sample*).(avi|mkv|mp3|flac|m3u)'
+_path_files -g '(#i)**/(^*sample*).(avi|mkv|mp3|flac|m3u)'

@@ -1,0 +1,4 @@
+#!/bin/dash
+find ~/pix/w -type f |
+shuf -rn 2 |
+xargs feh --no-fehbg --bg-fill &

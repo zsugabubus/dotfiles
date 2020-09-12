@@ -1,0 +1,14 @@
+#compdef letmein
+
+_arguments -s -S -C \
+  '1:: :->command' \
+
+case $state in
+command)
+  subcommands=( "list:list available tokens" )
+  _describe -t subcommand "subcommand" subcommands
+
+  tokens=( $(letmein list 2>/dev/null | awk '{print $0 ":token"}') )
+  _describe -t token "token" tokens
+  ;;
+esac

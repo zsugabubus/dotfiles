@@ -1,0 +1,78 @@
+#!/bin/dash -e
+if test "$1" = "--"; then
+  shift
+
+  bind() {
+    mkdir -m755 -p "./$1"
+    mount --bind "$1" "./$1"
+  }
+
+  bind_ro() {
+    mkdir -m755 -p "./$1"
+    mount --bind -o ro "$1" "./$1"
+  }
+
+  P="$PWD"
+
+  cd /dev/shm || cd /tmp
+  mount --make-rshared /
+  mount --make-shared -t tmpfs tmpfs . -o size=2g,mode=755
+  cd .
+
+  bind_ro "$HOME"
+  # mount --make-private /
+
+  mkdir -m755 "./dev"
+  for dev in null zero full random urandom; do
+    touch "./dev/$dev"
+    mount --bind "/dev/$dev" "./dev/$dev"
+  done
+  for dir in usr etc lib lib64 sbin bin; do
+    bind_ro "/$dir"
+  done
+
+
+  pivot_root . .
+  cd /
+
+  exec "$SHELL"
+
+  mount --make-rshare -t tmpfs tmpfs "./$HOME/.local" -o "size=100M,mode=700"
+
+  bind    "$(readlink "$HOME/mem")"
+  UID=$(id -u)
+  mkdir -m755 -- \
+    "./rootfs/run/user/$UID/cache"
+  chown "$USER:$USER" -R --  \
+    "./rootfs/$HOME/.local" \
+    "./rootfs/run/user/$UID"
+  chmod 755 -- \
+    "./rootfs/run" \
+    "./rootfs/run/user"
+  chmod 700 -- \
+    "./rootfs/run/user/$UID" \
+    "./rootfs/run/user/$UID/cache"
+
+
+  hostname sheep
+  echo sheep >/etc/hostname
+
+  hostname bubble
+  zsh
+  exit
+
+  cd -- "$P"
+else
+  exec unshare \
+    --mount \
+    --user \
+    --uts \
+    --ipc \
+    --cgroup \
+    --pid \
+    --mount-proc \
+    --kill-child \
+    --fork \
+    --map-root-user \
+    -- $0 --
+fi

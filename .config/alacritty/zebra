@@ -1,0 +1,2 @@
+#!/usr/bin/dash
+sed -i "s/^\\([^#].*#\\s*zebra:[a-z]*\\)$/#\\1/; /zebra:$1/ s/#\\(.*\\)/\\1/;" alacritty.yml

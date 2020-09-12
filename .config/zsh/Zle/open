@@ -1,0 +1,44 @@
+#autoload
+
+local files=( $@ ) prefix mime
+
+# [[ $(stat -f . -c '%T') = 'fuseblk' ]] && prefix=/usr/bin/
+
+if [[ ${files[1]} =~ .*.mp[03] ]]; then
+	mime=audio/mp3
+else
+	mime=$(file --mime-type -Lb -- ${files[1]})
+fi
+
+case $mime in
+image/*)
+	if (( $#files == 1 )); then
+		feh --start-at $files &>/dev/null &!
+	else
+		feh -- $files &>/dev/null &!
+	fi
+	;;
+audio/*|video/*)
+	case $TERM in
+	linux) mpv --player-operation-mode=cplayer -- $files &! ;;
+	*) mpv --player-operation-mode=pseudo-gui -- $files 2>/dev/null &! ;;
+	esac
+	;;
+application/pdf|application/postscript)
+	zathura -- $files &>/dev/null &! ;;
+application/vnd.openxmlforamts-*)
+	libreoffice -- $files &>/dev/null &! ;;
+inode/directory)
+	cd -- ${files[1]}
+	autoload -Uz fuzzy-open
+	fuzzy-open
+	;;
+*)
+	if (( $#files == 1 )); then
+		cd -- ${files[1]:h} &&
+		$EDITOR -- ${files[@]:t}
+	else
+		$EDITOR -- $files
+	fi
+esac
+# print -P "%F{red}%Berror:%f%b Open failed"

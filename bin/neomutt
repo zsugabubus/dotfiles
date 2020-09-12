@@ -1,0 +1,81 @@
+#!/bin/dash
+NEW_USER=nobody
+NEW_HOME=/home/nobody
+exec env -i bwrap \
+  --as-pid-1 \
+  --die-with-parent \
+  --ro-bind /usr/lib /usr/lib \
+  --ro-bind /usr/share/terminfo /usr/share/terminfo \
+  --ro-bind /usr/share/ca-certificates /usr/share/ca-certificates \
+  --ro-bind /usr/share/locale /usr/share/locale \
+  \
+  --ro-bind /usr/bin/torsocks /usr/bin/torsocks \
+  \
+  --ro-bind /usr/bin/neomutt /usr/bin/neomutt \
+  \
+  --ro-bind /usr/bin/realpath /usr/bin/realpath \
+  --ro-bind /usr/bin/mkdir /usr/bin/mkdir \
+  --ro-bind /usr/bin/head /usr/bin/head \
+  \
+  --ro-bind /usr/bin/urlview /usr/bin/urlview \
+  \
+  --ro-bind /usr/bin/nvim /usr/bin/nvim \
+  --ro-bind /usr/share/nvim /usr/share/nvim \
+  \
+  --ro-bind /usr/bin/sh /usr/bin/sh \
+  --ro-bind /usr/bin/env /usr/bin/env \
+  --ro-bind /usr/bin/bash /usr/bin/bash \
+  --ro-bind /usr/bin/pass /usr/bin/pass \
+  --ro-bind /usr/bin/base64 /usr/bin/base64 \
+  --ro-bind /usr/bin/getopt /usr/bin/getopt \
+  --ro-bind /usr/bin/which /usr/bin/which \
+  --ro-bind /usr/bin/ps /usr/bin/ps \
+  --ro-bind /usr/bin/tr /usr/bin/tr \
+  --ro-bind /usr/bin/curl /usr/bin/curl \
+  --ro-bind /usr/bin/tty /usr/bin/tty \
+  --ro-bind /usr/bin/grep /usr/bin/grep \
+  --ro-bind /usr/bin/gpg /usr/bin/gpg \
+  --ro-bind /usr/bin/gpg-agent /usr/bin/gpg-agent \
+  --ro-bind /usr/bin/pinentry /usr/bin/pinentry \
+  --ro-bind /usr/bin/pinentry-curses /usr/bin/pinentry-curses \
+  --symlink usr/bin /sbin \
+  --symlink usr/bin /bin \
+  --symlink usr/lib /lib64 \
+  --symlink usr/lib /lib \
+  --ro-bind /etc/ld.so.cache /etc/ld.so.cache \
+  --ro-bind /etc/ld.so.preload /etc/ld.so.preload \
+  --ro-bind /etc/ca-certificates /etc/ca-certificates \
+  --ro-bind /etc/ssl /etc/ssl \
+  --dir /tmp \
+  --proc /proc \
+  --dev /dev \
+  --unshare-user \
+  --unshare-ipc \
+  --unshare-pid \
+  --unshare-uts \
+  --unshare-cgroup \
+  --uid $(id -u $NEW_USER) \
+  --gid $(id -g $NEW_USER) \
+  --hostname hostname \
+  --bind $HOME/mem $NEW_HOME/mem \
+  --ro-bind $HOME/.config/passwords/cock.li $HOME/.config/passwords/cock.li \
+  --ro-bind $HOME/.certs $NEW_HOME/.certs \
+  --ro-bind $HOME/.mailcap $NEW_HOME/.mailcap \
+  --ro-bind $HOME/.mime.types $NEW_HOME/.mime.types \
+  --ro-bind $HOME/.config/neomutt $NEW_HOME/.config/neomutt \
+  --ro-bind $HOME/.config/abook $NEW_HOME/.config/abook \
+  --bind $HOME/.config/neomutt/certs $NEW_HOME/.config/neomutt/certs \
+  --bind $XDG_RUNTIME_DIR/gnupg $XDG_RUNTIME_DIR/gnupg \
+  --bind $HOME/.config/gnupg $NEW_HOME/.gnupg \
+  --ro-bind $HOME/.urlview $NEW_HOME/.urlview \
+  --ro-bind $HOME/.config/nvim $NEW_HOME/.config/nvim \
+  --ro-bind $HOME/.local/share/nvim $NEW_HOME/.local/share/nvim \
+  --setenv XDG_RUNTIME_DIR $XDG_RUNTIME_DIR \
+  --setenv HOME $NEW_HOME \
+  --setenv LANG $LANG \
+  --setenv TZ $TZ \
+  --setenv TERM $TERM \
+  --setenv EDITOR $EDITOR \
+  --setenv USER $NEW_USER \
+  --chdir $NEW_HOME \
+  /usr/bin/torsocks -q /usr/bin/neomutt

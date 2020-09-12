@@ -1,0 +1,4 @@
+#!/usr/bin/dash
+u=$(pacman -Qu | wc -l)
+[ $u -gt 0 ] && echo " $u"
+:

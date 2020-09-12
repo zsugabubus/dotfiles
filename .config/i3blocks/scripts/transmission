@@ -1,0 +1,18 @@
+#!/usr/bin/dash
+if ! list=$(transmission-remote -l 2>/dev/null); then
+  exit
+fi
+
+echo "$list" | awk '
+BEGIN {
+  active=0
+  seeding=0
+  leeching=0
+  paused=0
+}
+/Done.*Idle/ { ++leeching }
+/Done.*Stopped/ { ++paused }
+END {
+  printf "<span color=\"#f16350\"> 契%d %d %d %d</span>\n", active, seeding, leeching, paused
+}
+'
