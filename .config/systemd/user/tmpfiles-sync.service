@@ -1,0 +1,12 @@
+[Unit]
+Description=Temporary Files Sync
+RequiresMountsFor=/home
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StandardOutput=journal
+ExecStop=/usr/bin/find "%h" -maxdepth 1 -type l -xtype f -lname "%t/*" -exec /bin/sh -c "/usr/bin/mv `/usr/bin/readlink {}` {}" \;
+
+[Install]
+WantedBy=default.target

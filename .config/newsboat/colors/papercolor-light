@@ -1,0 +1,10 @@
+# color <element>         <fg color> <bg color> [<attribute> ...]
+color   background        color236   color255
+color   info              color240   color254
+color   listfocus         color233   color214
+color   listfocus_unread  color233   color214   bold
+color   listnormal        color236   color255
+color   listnormal_unread color34    color255   bold
+
+search-highlight-colors black yellow bold
+# vim: ft=config

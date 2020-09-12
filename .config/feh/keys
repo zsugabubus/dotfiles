@@ -1,0 +1,22 @@
+scroll_left	h
+scroll_left_page	C-h
+scroll_up	k
+scroll_up_page	C-k
+scroll_right	l
+scroll_right_page	C-l
+scroll_down	j
+scroll_down_page	C-j
+
+jump_first	g
+jump_last	G
+
+toggle_filenames	w
+toggle_pause	c
+
+zoom_out	C-o minus
+zoom_in	C-i plus
+# zoom_default	equal
+# zoom_fill	asterisk
+# zoom_fit	divide
+toggle_auto_zoom	a
+# vim: ft=conf

@@ -1,0 +1,159 @@
+#autoload
+
+zmodload zsh/attr
+local query=$1 key files state=all fmt fmtcol
+if [[ ! zle ]]; then
+	local root=( $PWD $(git rev-parse --show-toplevel 2>/dev/null) )
+elif [[ $LBUFFER =~ '(\S+)$' ]]; then
+	local root=( "$(realpath -- $match[1])" )
+else
+	local root=( $PWD )
+fi
+setopt localoptions pipefail
+
+while () {
+	case $state in
+	all) fmt='%P\0'; fmtcol=1 ;;
+	mod) fmt='%T@\t%Ta, %Td %Tb %TY %TH:%TM \t%P\0'; fmtcol=2 ;;
+	esac
+
+	# TODO: zmodload zsh/{attr,stat,strftime}
+
+	# while IFS=' ' read -rA words; do print -n "${words[1]} "; shift words; print -D -- $(realpath "${words[*]}"); done) \
+	() {
+		local file=$1 xfile=$1
+		# [[ $(getfattr -n user.tags -- $(head -zn1 <$file) 2>&1 1>/dev/null) =~ ': Operation not supported$' ]] &&
+		#		xfile='/dev/null'
+
+		paste -d '' \
+			<(cut -zf-$((fmtcol - 1)) <$file 2>/dev/null | tr '\0' '\n') \
+			<(xargs -0r < <(cut -zf$fmtcol <$file) ls -UbNd --color 2>/dev/null) \
+			<(cut -zf$fmtcol <$xfile |
+				while read -rd ''; do
+					local tags=
+					zgetattr $REPLY user.tags tags
+					if [[ -n $tags ]]; then
+						print -P "\t%F{$ZSH_OPEN_TAGS_FOREGROUND}%B" '#'${^${:-${(@s.,.)tags}}} '%b%f'
+					else
+						print
+					fi
+					# if [[ ! $REPLY =~ ": (No such .*|Operation not supported)$" ]]; then
+					#		# print -P "\t%F{231}%B#${REPLY//:/ #}%b%f"
+					#		# echo "print -P '\t %F{231}%B k' '#'${^(ps:\n:)REPLY} '%b%f'"
+					# else
+					#		print
+					# fi
+				done 2>/dev/null)
+			# <(xargs -0r < <(cut -zf$fmtcol <$xfile) stdbuf -oL getfattr --absolute-names -n user.tags --only-values 2>&1 |
+			#		while read -r; do
+			#			if [[ ! $REPLY =~ ": (No such .*|Operation not supported)$" ]]; then
+			#				# print -P "\t%F{231}%B#${REPLY//:/ #}%b%f"
+			#				# echo "print -P '\t %F{231}%B k' '#'${^(ps:\n:)REPLY} '%b%f'"
+			#				print -P "\t%F{$ZSH_OPEN_TAGS_FOREGROUND}%B" '#'${^${:-${(s.:.)REPLY}}} '%b%f'
+			#			else
+			#				print
+			#			fi
+			#		done)
+		} =(find -H $root -mindepth 1 -iregex '.*\bsample\b.*' -o -name '*.nfo' -o -xtype d -name '.*' -prune -o -printf $fmt 2>/dev/null |
+
+			() {
+				case $state in
+				all) cat ;;
+				mod) sort -znr | cut -zf2- ;;
+				esac
+			}
+			) |
+			fzf >$1 -d $'\xa0' -n2.. --query=$query --ansi --multi --bind alt-enter:select-all+accept --expect=ctrl-o,alt-m,alt-t,del
+
+	# exec 3< <(...) started not working at 2019-04-18
+	exec 3<$1
+	read -u 3 key
+	files=()
+	while IFS='\t' read; do
+		files+=(${REPLY:2})
+	done <&3
+	exec 3<&-
+
+	# fzf fuckery results a blank line when cancelled.
+	if [[ -n $files[1] ]]; then
+		case $key in
+		'del')
+			zle && zle -I
+			clear
+			rm -irf -- $files
+			;;
+		'alt-t')
+			local taglist=("${(f)$(<~/.tags)}")
+			local ontags=("${(s.:.)$(getfattr --absolute-names -n user.tags --only-values ${files[1]})}")
+			local newtags args=()
+
+			for tag in $taglist; do
+				local checked=off
+				(( $ontags[(I)$tag] > 0 )) && checked=on
+				args+=("$tag" "$tag" "$checked")
+			done
+
+			sleep .01 # WTF but works.
+			if newtags=$(dialog \
+				--no-cancel \
+				--no-tags \
+				--separate-output --output-separator : \
+				--output-fd 1 \
+				--checklist 'Tag files' 20 60 5 \
+				-- ${args[@]}); then
+				if [[ -n "$newtags" ]]; then
+					args=(-n user.tags -v "$newtags"$'\n')
+				else
+					args=(-x user.tags)
+				fi
+				xargs -d '\n' <<<$files setfattr --raw "${args[@]}" -- || read -rsk1
+			fi
+			return
+			;;
+		'alt-m')
+			case $state in
+			all) state=mod ;;
+			mod) state=all ;;
+			esac
+			return
+			;;
+		# 'ctrl-e')
+		# 	# Open for edit.
+		# 	$EDITOR -p -- "${files[@]}"
+		# 	;;
+		*)
+			if [[ ! zle || -z $BUFFER ]]; then
+				# Open with sensible application.
+				autoload -Uz open
+				open $files
+			else
+				if [[ $LBUFFER =~ \\S$ ]]; then
+					LBUFFER+=' '
+				fi
+				LBUFFER+="${(q-@)files} "
+			fi
+			;;
+		esac
+	fi
+	return 1
+} =(); do :; done
+
+if [[ zle ]]; then
+	echo
+	zle reset-prompt
+	_zsh_autosuggest_clear
+fi
+
+# function fuzzy-common-dirs {
+# 	local dir
+# 	if dir=$(find -H "$OLDPWD" "$(git rev-parse --show-toplevel 2>/dev/null)" "$HOME" ~e "${XDG_CONFIG_HOME:-$HOME/.config}" -maxdepth 0 -print0 2>/dev/null |
+# 		sort -zu |
+# 		xargs -0 -P4 -I{} find -H {} -mindepth 1 -name '.*' -prune -o -xtype d -printf '%H/%P\0' 2>/dev/null |
+# 		sed -z -e "s:^${:-~m}:~m:" -e "s:^$HOME:~:" -e "s:^${:-~e}:~e:" |
+# 		xargs -0 ls -1bNd --color |
+# 		fzf --read0); then
+# 		cd -- $~dir
+# 	fi
+#
+# 	zle reset-prompt
+# }

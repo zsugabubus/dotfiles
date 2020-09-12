@@ -1,0 +1,6 @@
+video/*; mpv %s
+image/*; feh %s
+application/pdf; zathura %s
+text/html; /usr/bin/lynx -assume_charset=%{charset} -display_charset=utf-8 -dump -force_html %s; copiousoutput;
+text/*; env -u LD_PRELOAD nvim %s
+*/*; vifm --select %s

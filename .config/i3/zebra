@@ -1,0 +1,4 @@
+#!/usr/bin/dash
+sed -i "/#\\s*ZEBRA:\\s*[a-z]\\+\\s*{{{/,/}}}/ s/^\\([^#].*\\)/## \\1/; \
+        /#\\s*ZEBRA:\\s*$1\\s*{{{/,/}}}/       s/## \\(.*\\)/\\1/" config
+i3-msg restart >/dev/null

@@ -1,0 +1,9 @@
+[submodule "mpv/fastforward"]
+	path = .config/mpv/scripts/fastforward
+	url = https://github.com/zsugabubus/mpv-fastforward
+[submodule "i3blocks/fourmat"]
+	path = .config/i3blocks/src/fourmat
+	url = https://github.com/zsugabubus/fourmat
+[submodule "firefox/powerline"]
+	path = .config/firefox/chrome/powerline
+	url = https://github.com/zsugabubus/firefox-powerline

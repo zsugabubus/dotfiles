@@ -1,0 +1,15 @@
+[Unit]
+Description=Place Firefox profile %I to memory
+RequiresMountsFor=/home
+RefuseManualStart=true
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/mkdir "%t/firefox"
+ExecStart=/usr/bin/rsync -qax --delete "%h/.mozilla/firefox/%i/" "%t/firefox/%i/"
+ExecStop=/usr/bin/rsync  -qax --delete "%t/firefox/%i/" "%h/.mozilla/firefox/%i/"
+OOMScoreAdjust=-1000
+
+[Install]
+WantedBy=default.target

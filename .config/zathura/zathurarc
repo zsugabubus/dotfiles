@@ -1,0 +1,22 @@
+set window-title-basename	true
+set statusbar-home-tilde	true
+set selection-clipboard	clipboard
+
+map	<C-y>	scroll up
+map	<C-e>	scroll down
+
+map	<C-i>	zoom in
+map	<C-o>	zoom out
+
+map	u	scroll full-up
+map	d	scroll full-down
+map	<S-Space>	scroll full-up
+map	<Space>	scroll full-down
+
+map	f	toggle_fullscreen
+map [fullscreen]	f	toggle_fullscreen
+
+# WTF. full page scrolling is off by |page-padding| pixels. that is why we set it to zero
+set page-padding 0
+
+# set sandbox "strict"

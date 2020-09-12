@@ -1,0 +1,50 @@
+# General {{{1
+auto-reload yes
+reload-threads 4
+reload-time 60
+refresh-on-startup yes
+browser xdg-open
+external-url-viewer urlview
+
+# Network {{{1
+proxy-type socks5
+proxy      127.0.0.1:9050
+use-proxy  yes
+
+user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36"
+
+# Notify {{{1
+# notify-program "~/.config/dunst/scripts/new-feeds"
+# notify-format  "<b>%d new articles</b>, %n unread"
+
+# Colorscheme {{{1
+include ~/.config/newsboat/colors/papercolor
+
+# Keybindings {{{1
+unbind-key j
+unbind-key k
+unbind-key J
+unbind-key K
+
+bind-key   j next
+bind-key   k prev
+bind-key   J next-feed
+bind-key   K prev-feed
+
+unbind-key NPAGE
+unbind-key PPAGE
+
+bind-key   ^D pagedown
+bind-key   ^U pageup
+
+unbind-key g
+unbind-key G # revsort
+bind-key   S sort
+
+unbind-key C # mark-all-feeds-read
+unbind-key A
+bind-key  N mark-feed-read
+
+# 1}}}
+
+# vim: fdm=marker

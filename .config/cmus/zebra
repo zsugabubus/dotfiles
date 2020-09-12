@@ -1,0 +1,3 @@
+#!/usr/bin/dash
+ln -nrsf papercolor-$1.theme papercolor.theme
+cmus-remote -C colorscheme papercolor

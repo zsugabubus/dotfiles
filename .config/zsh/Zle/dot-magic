@@ -1,0 +1,10 @@
+#autoload
+
+if [[ -z $RBUFFER && $LBUFFER =~ '(^|\s|/)\.$' ]]; then
+	LBUFFER+=./
+elif [[ -z $RBUFFER && $LBUFFER =~ '(^|\s|/)\.\./$' ]]; then
+	LBUFFER+=../
+else
+	zle .self-insert
+fi
+zle list-choices

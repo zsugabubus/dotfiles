@@ -1,0 +1,34 @@
+[init]
+	templatedir = ~/.config/git/template
+[include]
+	path = config.user
+	path = config.credential
+[alias]
+	a3 = apply -3
+	am3 = am -3
+	amend = commit -v --amend
+	b = branch
+	br = branch
+	ca = commit --amend
+	c = commit -v
+	ce = commit --edit
+	cm = commit -m
+	cob = checkout -b
+	co = checkout
+	d = diff
+	da = apply
+	ds = diff --staged
+	dw = diff --word-diff
+	df = diff --stat
+	mt = mergetool
+	ri = rebase --interactive --autosquash
+	s = status
+	l  = log --date-order --date=relative --graph --full-history --all --pretty=format:'%C(yellow)%h%C(magenta)%G? %C(reset)%>(12)%cr %C(bold blue)%aN <%ae>%C(reset)%C(bold red)%d %C(reset)%s'
+	ls = log --date-order --date=relative --graph --full-history --all --pretty=format:'%C(yellow)%h%C(magenta)%G? %C(reset)%>(12)%cr %C(bold blue)%aN <%ae>%C(reset)%C(bold red)%d %C(reset)%s\n' --stat
+	lp = ls -p
+[merge]
+	tool = nvimdiff
+[mergetool "nvimdiff"]
+	cmd = nvim -f -c \"Gdiff\" \"$MERGED\"
+[pull]
+	rebase = false

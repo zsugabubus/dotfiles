@@ -1,0 +1,3 @@
+#!/bin/dash
+letmein pass | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --quiet --decrypt .dummy.gpg >/dev/null
+:

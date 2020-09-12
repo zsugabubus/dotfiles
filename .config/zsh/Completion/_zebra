@@ -1,0 +1,4 @@
+#compdef zebra
+
+_arguments -s -S -C \
+  '1::theme:(dark light)'

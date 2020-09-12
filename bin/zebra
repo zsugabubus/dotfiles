@@ -1,0 +1,2 @@
+#!/bin/dash
+find ${XDG_CONFIG_HOME:-~/.config} -mindepth 2 -maxdepth 2 -name zebra -type f -executable -execdir {} "${1:-light}" \;

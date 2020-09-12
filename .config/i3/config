@@ -1,0 +1,424 @@
+# i3 config file (v4)
+font pango:monospace 8
+
+# https://graf1x.com/shades-of-yellow-color-palette-chart/
+
+set $ws1		"1"
+set $ws2		"2"
+set $ws3		"3"
+set $ws4		"4"
+set $ws5		"5"
+set $ws6		"6"
+set $wscomm	"7"
+set $ws8		"8"
+set $ws9		"9"
+set $ws10	"10"
+set $wsad	":("
+
+default_border			pixel 3
+default_orientation		vertical
+floating_minimum_size		50 x 50
+floating_modifier			Mod4
+focus_follows_mouse		no
+focus_on_window_activation		urgent
+hide_edge_borders			smart
+mouse_warping			none
+show_marks			yes
+workspace_auto_back_and_forth	yes
+workspace_layout			tabbed
+
+bindsym --release	Mod4+period	workspace back_and_forth
+bindsym --release	Mod4+Shift+less	workspace prev
+bindsym --release	Mod4+Shift+greater	workspace next
+
+# bindsym --release	Mod4+q		exec --no-startup-id ~/.config/i3/scripts/mona
+
+bindsym --release	Mod4+m		exec --no-startup-id i3-input -F 'mark %s' -l 1 -P ':mark '
+bindsym --release	Mod4+Shift+M	exec --no-startup-id ~/.config/i3/scripts/auto-mark workspace
+bindsym --release	Mod4+Mod1+m	exec --no-startup-id ~/.config/i3/scripts/auto-mark window
+
+# apostrophe
+bindsym		Mod4+apostrophe	exec --no-startup-id i3-input -F '[con_mark="%s"] focus' -l 1 -P "' "
+bindsym		Mod4+space	exec --no-startup-id i3-input -F '[con_mark="%s"] focus' -l 1 -P "' "
+bindsym		Mod4+comma	exec --no-startup-id i3-input -F '[con_mark="%s"] focus' -l 1 -P "' "
+bindsym		Mod4+u		exec --no-startup-id i3-input -F '[con_mark="%s"] focus' -l 1 -P "' "
+bindsym --release	Mod4+Return	exec --no-startup-id $TERMINAL --working-directory ~/mem
+
+bindsym --release	Mod4+Ctrl+w	kill
+
+bindsym --release	Mod4+Ctrl+v	resize grow   width 50 ppt
+bindsym --release	Mod4+Ctrl+Shift+V resize shrink width 50 ppt
+
+bindsym		Mod4+h		focus left
+bindsym		Mod4+j		focus down
+bindsym		Mod4+k		focus up
+bindsym		Mod4+l		focus right
+
+bindsym		Mod4+Ctrl+h	focus output left
+bindsym		Mod4+Ctrl+j	focus output down
+bindsym		Mod4+Ctrl+k	focus output up
+bindsym		Mod4+Ctrl+l	focus output right
+
+bindsym		Mod4+Ctrl+Shift+H	resize shrink width  50 px or 7 ppt
+bindsym		Mod4+Ctrl+Shift+J	resize shrink height 50 px or 7 ppt
+bindsym		Mod4+Ctrl+Shift+K	resize grow   height 50 px or 7 ppt
+bindsym		Mod4+Ctrl+Shift+L	resize grow   width  50 px or 7 ppt
+
+bindsym --release	Mod4+Mod1+h	workspace prev
+bindsym --release	Mod4+Mod1+l	workspace next
+
+bindsym --release	Mod4+b		exec --no-startup-id pkill -SIGRTMIN+12 i3blocks; bar hidden_state toggle main
+bindsym --release	Mod4+Ctrl+b	exec --no-startup-id pkill -SIGRTMIN+12 i3blocks; bar mode toggle main
+
+bindsym		Mod4+Shift+H	move left  40 px
+bindsym		Mod4+Shift+J	move down  40 px
+bindsym		Mod4+Shift+K	move up    40 px
+bindsym		Mod4+Shift+L	move right 40 px
+
+bindsym --release	Mod4+Ctrl+2	move position   0   0; resize set 960 540
+bindsym --release	Mod4+Ctrl+4	move position 960   0; resize set 960 540
+bindsym --release	Mod4+Ctrl+6	move position   0 540; resize set 960 540
+bindsym --release	Mod4+Ctrl+8	move position 960 540; resize set 960 540
+
+bindsym --release	Mod4+Shift+1	move container to workspace $ws1
+bindsym --release	Mod4+Shift+2	move container to workspace $ws2
+bindsym --release	Mod4+Shift+3	move container to workspace $ws3
+bindsym --release	Mod4+Shift+4	move container to workspace $ws4
+bindsym --release	Mod4+Shift+5	move container to workspace $ws5
+bindsym --release	Mod4+Shift+6	move container to workspace $ws6
+bindsym --release	Mod4+Shift+7	move container to workspace $wscomm
+bindsym --release	Mod4+Shift+8	move container to workspace $ws8
+bindsym --release	Mod4+Shift+9	move container to workspace $ws9
+bindsym --release	Mod4+Shift+0	move container to workspace $ws10
+
+bindsym --release	Mod4+Shift+Mod1+h	move workspace to output left
+bindsym --release	Mod4+Shift+Mod1+j	move workspace to output down
+bindsym --release	Mod4+Shift+Mod1+k	move workspace to output up
+bindsym --release	Mod4+Shift+Mod1+l	move workspace to output right
+
+bindsym --release	Mod4+v		split horizontal
+bindsym --release	Mod4+w		split vertical
+bindsym --release	Mod4+f		fullscreen toggle
+
+bindsym --release	Mod4+t		layout tabbed
+bindsym --release	Mod4+n		layout toggle split
+bindsym --release	Mod4+s		layout stacking
+
+# Grab.
+bindsym --release	Mod4+Shift+G	floating enable
+# Drop.
+bindsym --release	Mod4+Shift+D	floating disable
+
+bindsym --release	Mod4+g		focus floating
+bindsym --release	Mod4+d		focus tiling
+
+bindsym		Mod4+p		focus parent
+bindsym		Mod4+c		focus child
+
+# Switch to workspace.
+bindsym --release	Mod4+1		workspace $ws1
+bindsym --release	Mod4+2		workspace $ws2
+bindsym --release	Mod4+3		workspace $ws3
+bindsym --release	Mod4+4		workspace $ws4
+bindsym --release	Mod4+5		workspace $ws5
+bindsym --release	Mod4+6		workspace $ws6
+bindsym --release	Mod4+7		workspace $wscomm
+bindsym --release	Mod4+8		workspace $ws8
+bindsym --release	Mod4+9		workspace $ws9
+bindsym --release	Mod4+0		workspace $ws10
+
+# Zzz...
+bindsym --release	Mod4+z		workspace $wsad; exec amixer -q set Master mute; bar hidden_state hide
+
+bindsym --release	Mod4+Shift+Ctrl+r	restart
+bindsym --release	Mod4+Shift+Ctrl+c	reload
+
+bindsym --release	XF86TouchpadToggle	exec --no-startup-id ~/.config/i3/scripts/touchpad toggle
+bindsym --release	XF86TouchpadOn		exec --no-startup-id ~/.config/i3/scripts/touchpad enable
+bindsym --release	XF86TouchpadOff		exec --no-startup-id ~/.config/i3/scripts/touchpad disable
+
+# Media keys.
+# BUG: Prior and next keys are swapped.
+bindsym		XF86AudioRaiseVolume	exec --no-startup-id amixer -q set Master 1+ unmute
+bindsym		XF86AudioLowerVolume	exec --no-startup-id amixer -q set Master 1-
+bindsym --release	Shift+XF86AudioRaiseVolume	exec --no-startup-id amixer -q set Master 4+ unmute
+bindsym		Shift+XF86AudioLowerVolume	exec --no-startup-id amixer -q set Master 4-
+bindsym --release	XF86AudioMute		exec --no-startup-id amixer -q set Master    toggle
+bindsym --release	Ctrl+XF86AudioRaiseVolume	exec --no-startup-id amixer -q set Master    unmute
+bindsym --release	Ctrl+XF86AudioLowerVolume	exec --no-startup-id amixer -q set Master    mute
+bindsym --release	Mod1+XF86AudioRaiseVolume	exec --no-startup-id playerctl volume .1%+
+bindsym --release	Mod1+XF86AudioLowerVolume	exec --no-startup-id playerctl volume .1%-
+bindsym --release	XF86AudioPlay		exec --no-startup-id playerctl play-pause
+bindsym --release	XF86AudioStop		exec --no-startup-id playerctl stop
+bindsym --release	XF86AudioNext		exec --no-startup-id playerctl next
+bindsym --release	XF86AudioPrev		exec --no-startup-id playerctl previous
+
+bindsym --release	Mod4+Shift+T		sticky toggle, border pixel 0
+
+bindsym --release	Mod4+minus		move scratchpad
+bindsym --release	Mod4+shift+minus		scratchpad show
+
+bindsym --release	Mod4+Shift+C	mode continue
+mode continue
+{
+	bindsym	f	mode default; exec /bin/kill -SIGCONT $(pidof firefox)
+	bindsym	t	mode default; exec pkill -SIGCONT telegram-desktop
+
+	bindsym Escape	mode default
+}
+
+bindsym --release	Mod4+Shift+S	mode stop
+mode stop
+{
+	bindsym	f	mode default; exec /bin/kill -SIGSTOP $(pidof firefox)
+	bindsym	t	mode default; exec pkill -SIGSTOP telegram-desktop
+
+	bindsym Escape	mode default
+}
+
+
+bindsym --release	Mod4+Shift+Z	mode zzz
+mode zzz
+{
+	bindsym --release	Mod4+Shift+Z	mode default; exec --no-startup-id systemctl suspend
+
+	bindsym Escape	mode default
+}
+
+
+bindsym --release	Mod4+o	mode output
+mode output
+{
+	# Blackout
+	bindsym --release	minus	mode default; exec --no-startup-id xset +dpms dpms force off
+	bindsym --release	b	mode default; exec --no-startup-id xset +dpms dpms force off
+
+	# Auto
+	bindsym --release	a	mode default; exec --no-startup-id xrandr --auto
+	# Mobile
+	bindsym --release	m	mode default; exec --no-startup-id magixrandr switch mobile
+	# Home
+	bindsym --release	h	mode default; exec --no-startup-id magixrandr switch home
+	# Dual
+	bindsym --release	d	mode default; exec --no-startup-id magixrandr switch dual
+	# X
+	bindsym --release	x	exec --no-startup-id magixrandr switch
+
+	# bindsym --release	space	mode default; exec --no-startup-id xset +dpms dpms 3 3 3 && i3lock -nei ~/pic/penguins.png && xset dpms 125 125 125
+
+	bindsym --release	b	exec --no-startup-id xset +dpms dpms 3 3 3
+	bindsym --release	r	mode default; exec --no-startup-id xset +dpms dpms 125 125 125
+
+	# bindsym --release	Ctrl+n mode default; exec --no-startup-id i3-input -F 'exec nightlight %s' -l 1 -P 'Nightlight: '
+	bindsym --release	z	mode output/zebra
+	# ; exec --no-startup-id i3-input -F 'exec zebra %s' -P 'zebra '
+	# Luminance
+	bindsym --release	l	mode default; exec --no-startup-id i3-input -F 'exec ddcutil setvcp 10 %s' -l 2 -P 'ddcutil setvcp 10 '
+
+	bindsym --release	t	mode default; exec --no-startup-id ~/.config/i3/scripts/touchpad enable
+	bindsym --release	Shift+T	mode default; exec --no-startup-id ~/.config/i3/scripts/touchpad disable
+
+	bindsym --release	exclam	mode default; exec --no-startup-id pkill i3-nagbar
+
+	bindsym		XF86AudioRaiseVolume	exec --no-startup-id amixer -q set Master 1+ unmute
+	bindsym		XF86AudioLowerVolume	exec --no-startup-id amixer -q set Master 1-
+	bindsym --release	XF86AudioMute		exec --no-startup-id amixer -q set Master    toggle
+
+	# maim -u -s -b 4 -c 2,0.1568,0 | slop
+	bindsym		p	mode default; exec --no-startup-id "eval $(xdotool getactivewindow getwindowgeometry --shell) && ffmpeg -f x11grab -video_size \\"$((WIDTH-3))x$((HEIGHT-3))\\" -i \\"$DISPLAY.$SCREEN+$X,$Y\\" -vframes 1 \\"$HOME/mem/screenshot-$(date +%Y%b%d-%H%M%S).png\\""
+	bindsym		Shift+P	mode default; exec --no-startup-id "ffmpeg -f x11grab -i \\"$DISPLAY\\" -vframes 1 \\"$HOME/mem/screenshot-$(date +%Y%b%d-%H%M%S).png\\""
+
+	bindsym --release	Mod4+o	nop
+
+	bindsym		Escape	mode default
+}
+
+bindsym --release	Mod4+x	mode output; exec --no-startup-id magixrandr
+
+mode output/zebra
+{
+	bindsym		l	mode default; exec zebra light
+	bindsym		z	mode default; exec zebra light
+
+	bindsym		d	mode default; exec zebra dark
+
+	bindsym		Escape	mode default
+}
+
+bindsym --release	Mod4+r	mode launch
+bindsym --release	Mod4+semicolon	mode launch
+# bindcode --release	Mod4+34 mode launch
+mode launch
+{
+	bindsym --release	BackSpace	mode default; exec --no-startup-id ~/.config/i3/scripts/screenlock
+
+	# bindsym --release	semicolon	mode default; exec --no-startup-id $TERMINAL
+	# bindsym --release	Mod4+semicolon	mode default; exec --no-startup-id $TERMINAL
+	# bindsym --release	t	mode default; exec --no-startup-id $TERMINAL
+	# bindsym --release	m	mode default; exec --no-startup-id $TERMINAL -cd $HOME/mem
+	bindsym --release	b	mode default; exec --no-startup-id $BROWSER
+	# bindsym --release	e	mode default; exec --no-startup-id $TERMINAL -t nvim -e nvim
+	bindsym --release	g	mode default; exec --no-startup-id $TERMINAL -t calcurse -e $SHELL -ci calcurse
+	bindsym --release	h	mode default; exec --no-startup-id $TERMINAL -e $SHELL -c htop
+	bindsym --release	a	mode default; exec --no-startup-id $TERMINAL -e $SHELL -ci a
+	bindsym --release	l	mode default; exec --no-startup-id lmms
+	# bindsym --release	a	mode default; exec --no-startup-id $TERMINAL -e tmux attach
+	# bindsym --release	c	mode default; exec --no-startup-id $TERMINAL -e $SHELL -c "tmux attach-session -t music || tmux new-session -s music \; new-window '$SHELL -ic cmus' \; kill-window -t 0 \;
+	# bindsym --release	s	mode default; exec --no-startup-id $TERMINAL -e $SHELL -ci bwsh
+	# bindsym --release	x	mode default; exec --no-startup-id $TERMINAL -e tmux new
+	# bindsym --release	w	mode default; exec --no-startup-id $TERMINAL -e tmux new -A -s work
+	# bindsym --release	q	mode default; exec --no-startup-id quodlibet
+
+	bindsym		Escape	mode default
+}
+
+set $green #def850
+
+set $barbg #unfocusedbg
+set $barfg #unactivefg
+
+set $barbg #111114
+set $barfg #f2f2f3
+
+set $barbg #efefef
+set $barbg #efeff2
+set $barfg #0d0d0c
+
+# ef2929 red
+# ffb456 blue
+set $focusedbg #ffaf5f
+# set $focusedbg #404080
+set $focusedfg #1b1d2f
+
+# ZEBRA: hack {{{
+## set $focusedbg #def850
+## set $border #333633
+# }}}
+
+# 131519
+#
+# ZEBRA: light {{{
+set $unfocusedbg	#1b1f2c
+# }}}
+# ZEBRA: dark {{{
+## set $unfocusedbg	#18181a
+# }}}
+
+set $unfocusedfg	#bec8cc
+set $unfocusedfg	#6e787c
+set $urgentbg	#d64e4e
+set $urgentbg	#ef2929
+set $unactivefg	#e4e4f2
+set $unactivefg	#6e787c
+
+set $unfocusedbg	#fbff2c
+
+# set $unfocusedfg	#575757
+set $unfocusedfg	#4e585c
+set $unfocusedbg	#eaeaea
+
+# set_from_resource $focusedbg i3wm.Color.focusedbg
+# set_from_resource $focusedfg i3wm.Color.focusedfg
+# set_from_resource $unfocusedbg i3wm.Color.unfocusedbg
+# set_from_resource $unfocusedfg i3wm.Color.unfocusedfg
+
+# http://colorpalettes.net/color-palette-3938/
+# red test urgent: d53325 ef2929
+# class			border		background	text		indicator	child_border
+client.focused		$focusedbg	$focusedbg	$focusedfg	#332539		$focusedbg
+client.focused_inactive	$focusedbg	$unfocusedbg	$unfocusedfg	#d5d7d9		#e5e5e5
+client.unfocused		$unfocusedbg	$unfocusedbg	$unfocusedfg	#d5d7d9		#e5e5e5
+client.urgent		$urgentbg	$urgentbg	#1a1c26		$urgentbg	$urgentbg
+client.placeholder	#000000		#000000		#000000		#000000		#000000
+client.background				#212121
+
+# do not autofocus pop-ups
+no_focus [window_role="pop-up"]
+
+bar
+{
+	id		main
+	i3bar_command	nice -19 i3bar
+	status_command	i3blocks
+	mode		hide
+	hidden_state	show
+	position		top
+	tray_padding	0
+	tray_output	primary
+	separator_symbol	"  "
+	modifier		none
+	workspace_buttons	no
+	output		primary
+
+	colors
+	{
+		background	$barbg
+		statusline	$barfg
+		separator	#8a87a0
+		separator	#aaa9ad
+		urgent_workspace	#f0e080	#ffef8f	#000000
+	}
+}
+
+bar
+{
+	id		workspaces
+	i3bar_command	nice -19 i3bar
+	status_command	~/.config/i3/scripts/workspaces-bar workspaces
+	position		bottom
+	mode		invisible
+	hidden_state	show
+	tray_padding	0
+	modifier		none
+
+	colors
+	{
+# ZEBRA: light {{{
+		background	$barbg
+		statusline	$barfg
+		# class			border		backgr.		text
+		focused_workspace		#eeeeee		#eeeeee		$focusedfg
+		focused_workspace		$focusedbg	$focusedbg	$focusedfg
+		active_workspace		#eeeeee		$unfocusedbg	$unfocusedfg
+		active_workspace		$unfocusedbg	$unfocusedbg	$unfocusedfg
+		inactive_workspace	$unfocusedbg	$unfocusedbg	$unfocusedfg
+		urgent_workspace		#ededed		$urgentbg	#ffffff
+		urgent_workspace		#d53325		#e41616		#ffffff
+# }}}
+# ZEBRA: dark {{{
+##		background	#eeeeee
+##		statusline	$unactivefg
+##		# class			border		backgr.		text
+##		focused_workspace		$unfocusedbg	$unfocusedbg	$unfocusedfg
+##		# active_workspace	#ffeeee		$unfocusedbg	$unfocusedfg
+##		inactive_workspace	#eeeeee		#eeeeee		$focusedfg
+##		urgent_workspace		#ededed		$urgentbg	#ffffff
+# }}}
+	}
+}
+
+for_window [class="^firefox$" instance="^Navigator$" title="Mozilla Firefox$"] mark b
+for_window [class="^mpv$"] mark v
+for_window [class="^arg.pwmt.zathura$"] mark z
+for_window [class="^TelegramDesktop$" instance="^telegram-desktop" title="^Telegram"] mark t
+# for_window [class="^Alacritty$" instance="^Popup$"] floating enable, sticky enable, resize set 400 100, move position center, border none
+
+exec_always --no-startup-id setxkbmap pl dvp compose:ralt
+exec_always --no-startup-id xset s 125 125; xset +dpms dpms 125 125 125
+
+exec --no-startup-id magixrandr auto home laptop
+exec --no-startup-id amixer -q set Master 50% unmute
+# Startup noise.
+exec --no-startup-id aplay ~/doc/Windows_95_Startup.wav
+exec --no-startup-id $TERMINAL
+exec --no-startup-id $BROWSER -P default
+exec --no-startup-id redshift
+#   TERM=alacritty tmux \
+#     new-session -d -s 'chat' \; \
+#     new-window '$SHELL -ic neomutt' \; \
+#     new-window '$SHELL -ic calcurse' \; \
+#     new-window '$SHELL -ic newsboat' \; \
+#     kill-window -t 0 \; &
+
+# xkbcomp -I$HOME/.config/xkb $HOME/.config/xkb/keymap/custom.xkb $DISPLAY # &&
+# nice -10 xcape -e "Hyper_L=space;Control_L=Escape;Caps_Lock=Escape"

@@ -1,0 +1,14 @@
+[Unit]
+Description=MiniDLNA Media Server Daemon
+After=network.target
+RequiresMountsFor=/home
+
+[Service]
+Type=forking
+ExecStartPre=/bin/sh -c '/usr/bin/envsubst <"%E/minidlna/config.in" >"%E/minidlna/config"'
+ExecStart=/usr/bin/env minidlnad -f "%E/minidlna/config"
+# -P "%t/minidlnad.pid"
+# ExecReload=/bin/kill -s HUP $MAINPID
+
+[Install]
+WantedBy=default.target

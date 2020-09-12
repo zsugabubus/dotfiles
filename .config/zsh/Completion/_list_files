@@ -1,0 +1,14 @@
+#autoload
+
+listfiles=("${(f@)$(
+  cd -q -- ${${(Q)${2:+$2/}}:-.} &&
+  LS_COLORS="${LS_ICONS}lc=:ec=:rc=:" \ls -1dfFb --color -- ${(PQ)1} 2>/dev/null
+)}")
+
+#if (( #listfiles )); then
+  listopts=(-d listfiles -o match)
+#else
+#  listopts=()
+#fi
+
+return 0

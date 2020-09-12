@@ -1,0 +1,61 @@
+#compdef autorandr
+
+_autorandr_profiles() {
+  declare -a profiles
+  profiles=(
+    {off,common,clone-largest,horizontal,vertical}:Builtin
+    $(autorandr 2>/dev/null | awk '
+      /current/ {
+        print $1 ":Current"
+        next
+      }
+      /detected/ {
+        print $1 ":Detected"
+        next
+      }
+      // {
+        print $1
+      }'
+    )
+  )
+  _describe -t profile "profile" profiles
+}
+
+_autorandr_xrandr_options() {
+  declare -a xrandr_options
+  xrandr_options=(
+      brightness
+      dpi
+      gamma
+      mode
+      panning
+      pos
+      primary
+      rate
+      reflect
+      rotate
+      transform
+  )
+  _values -s , "xrandr option" ${xrandr_options[@]}
+}
+
+_arguments -s -S -C \
+  - main \
+    '(-c --change)'{-c,--change}'[Automatically load the first detected profile.]' \
+    '(-d --default)'{-d,--default}'[Make profile the default.]: :_autorandr_profiles' \
+    '(-l --load)'{-l,--load}'[Load profile.]: :_autorandr_profiles' \
+    '(-s --save)'{-s,--save}'[Save current setup to profile.]:profile:()' \
+    '(-r --remove)'{-r,--remove}'[Remove profile.]: :_autorandr_profiles' \
+    '(--batch)--batch[Run autorandr for all users with active X11 sessions.]' \
+    '(--config)--config[Dump current XRandR setup.]' \
+    '(--debug)--debug[Enable verbose output.]' \
+    "(--dry-run)--dry-run[Don't change anything, only print the XRandR commands.]" \
+    '(--fingerprint)--fingerprint[Fingerprint current hardware setup.]' \
+    '(--force)--force[Force (re)loading of profile.]' \
+    '(--skip-options)--skip-options[Comma-separated list of XRandR options to not use.]: :_autorandr_xrandr_options' \
+    '(--current)--current[List current (active) configurations.]' \
+    '(--detected)--detected[List detected (available) configurations.]' \
+    '1:: :_autorandr_profiles' \
+  - help \
+    '(-)'{-h,--help}'[Show usage.]' \
+    '(-)--version[Show version information and exit.]'

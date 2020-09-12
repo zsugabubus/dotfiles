@@ -1,0 +1,78 @@
+# FUCKING YESEES
+e scr.confirmquit=true
+e scr.wheel.speed=5
+
+e asm.syntax=att
+e asm.pseudo=false
+
+e dbg.status=true
+e dbg.slow=true
+e dbg.funcarg=true
+
+e asm.describe=true
+e asm.anal=true
+e asm.calls=true
+e asm.bytes=false
+e asm.comments=true
+e asm.demangle=true
+e asm.filter=true
+
+e asm.jmpsub=true
+e asm.lines.fcn=true
+# drp~=
+#e asm.regsub=true
+e asm.relsub=true
+e asm.var=true
+e asm.var.access=true
+e asm.var.sub=true
+
+# [sr PC]>
+# e cmd.prompt=sr PC
+
+e scr.utf8=true
+
+# Display stack and register values on top of disasembly view (visual mode)
+e cmd.stack = true
+
+#add nop 0b658b
+ec comment rgb:838385
+ec usrcmt rgb:939395
+ec num rgb:fa3422
+ec func_var_type rgb:ed0085
+ec fname rgb:006de9
+# ec call rgb:1197cb
+# 006de9
+ec offset rgb:707070
+# ec help rgb:2f323f
+ec wordhl rgb:fdef39
+ec linehl rgb:fdef39
+
+ec push rgb:1c891a
+ec pop rgb:1c891a
+
+ec cmp rgb:3a96dd
+ec cmp rgb:dc429a
+
+ec math rgb:2f323f
+ec mov rgb:2f323f
+ec bin rgb:2f323f
+ec other rgb:2f323f
+
+ec cjmp rgb:9d00c5
+ec call rgb:9d00c5 . bold
+ec ucall rgb:9d00c5 . bold
+ec ujmp rgb:9d00c5 . bold
+ec ret rgb:9d00c5 . bold
+
+ec nop #bfbfbf
+
+ec swi #ff1798
+# ec reg rgb:668c21
+# ec creg rgb:3a96dd
+ec reg rgb:006dd9
+ec creg rgb:006dd9
+# ec func_var #cccccc
+# ec func_var_type #ed0085
+# ec func_var_addr #3a96dd
+
+# vim: ft=cfg

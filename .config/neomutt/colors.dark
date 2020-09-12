@@ -1,0 +1,28 @@
+set my_selfg=brightcolor233
+set my_selbg=color214
+set my_fg=color252
+set my_bg=color234
+set my_dimfg=color248
+set my_dimbg=color235
+set my_dim2fg=color248
+set my_dim2bg=color235
+set my_hifg=color134
+
+# set my_newbrightgreen="brightcolor76"
+set my_lightfg=color246
+# set my_hdrfg=color177
+# set my_hdrbg=color53
+set my_hdrfg=color244
+set my_hdrkeyfg=color37
+set my_hdrsubjectfg=color148
+set my_hdrbg=color233
+set my_quoted1fg=color179
+set my_quoted2fg=color173
+set my_quoted3fg=color154
+set my_stringfg=color179
+set my_urlfg=brightcolor74
+set my_searchfg=color16
+set my_searchbg=color29
+
+source colors
+# vim: ft=neomuttrc

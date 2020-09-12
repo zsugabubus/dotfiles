@@ -1,0 +1,7 @@
+#autoload
+
+if [[ -z $BUFFER ]]; then
+	fg
+else
+	zle -w .push-input
+fi

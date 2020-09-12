@@ -1,0 +1,28 @@
+set output_plugin=alsa
+set dsp.alsa.device=default
+set mixer.alsa.device=default
+set mixer.alsa.channel=Master
+set buffer_seconds=300
+
+set format_trackwin=%2n. %t%{?y? (%y)}%=%{?label?[%{label}] }%{?play_count?%{play_count}x ?0x }%d 
+set format_current= %2n. %a – %l%{?y? (%y)} – %t%{?label? [%{label}]}%=%{?genre? %{genre} ·}%{?bpm? %{bpm} bpm ·} %{codec}%{?bitrate?/%{bitrate}} 
+
+set skip_track_info=true
+set softvol=true
+set show_current_bitrate=true
+colorscheme papercolor
+
+bind -f common > player-next
+bind -f common z player-next
+
+bind -f common < player-prev
+bind -f common b player-prev
+
+bind -f common + vol +1%
+bind -f common - vol -1%
+
+bind -f common Z quit
+
+bind -f common F2 shell imv $XDG_RUNTIME_DIR/cmus-cover
+
+set status_display_program=~/.config/cmus/status-display

@@ -1,0 +1,4 @@
+#!/bin/dash
+openssl s_client -connect $1 -showcerts 2>&1 < /dev/null |
+  sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'|
+  sed -ne '1,/-END CERTIFICATE-/p' >~/.certs/${1%:*}.pem

@@ -1,0 +1,218 @@
+window:
+  padding:
+    x: 0
+    y: 0
+
+  dynamic_title: true
+
+scrolling:
+  # Maximum number of lines in the scrollback buffer.
+  # Specifying '0' will disable scrolling.
+  history: 1000
+
+# Font configuration (changes require restart)
+#
+# Important font attributes like antialiasing, subpixel aa, and hinting can be
+# controlled through fontconfig. Specifically, the following attributes should
+# have an effect:
+#   - hintstyle
+#   - antialias
+#   - lcdfilter
+#   - rgba
+#
+# For instance, if you wish to disable subpixel antialiasing, you might set the
+# rgba property to `none`. If you wish to completely disable antialiasing, you
+# can set antialias to `false`.
+#
+# Please see these resources for more information on how to use fontconfig:
+#   - https://wiki.archlinux.org/index.php/font_configuration#Fontconfig_configuration
+#   - file:///usr/share/doc/fontconfig/fontconfig-user.html
+font:
+  normal:
+    family: SauceCodePro Nerd Font Mono
+    style: Regular
+
+  italic:
+    family: SauceCodePro Nerd Font Mono
+    style: Italic
+
+  size: 10
+
+# If `true`, bold text is drawn using the bright color variants.
+draw_bold_text_with_bright_colors: true
+
+colors:
+  # Default colors
+  primary:
+    background: '0xeeeeee' # zebra:light
+    foreground: '0x2a2523' # zebra:light
+#     background: '0x1c1c1c' # zebra:dark
+#     foreground: '0xc4c4c4' # zebra:dark
+
+    #    other red:     '0xed5466' 
+#    light red:     '0xef6b7b'
+     # metal    black:   '0x415F6E'
+    #yellow: fbc34a
+ # lighter green: 94d95d
+  normal:
+    black:   '0x263238'
+    red:     '0xed407a'
+    green:   '0x84c94f' #zebra:light
+#    green:   '0x9ccc65' #zebra:dark
+#    yellow:  '0xffa726' #zebra:dark
+    yellow:  '0xf59335' #zebra:light
+    blue:    '0x2196f3'
+    magenta: '0xa36ac7'
+    cyan:    '0x00bcd4'
+#    white:   '0xdcdfe1' #zebra:dark
+    white:   '0x858789' #zebra:light
+  bright:
+    black:   '0x263137'
+    red:     '0xed407a'
+    green:   '0x84c94f' #zebra:light
+#    green:   '0x9ccc65' #zebra:dark
+#    yellow:  '0xffb74d' #zebra:dark
+    yellow:  '0xf59335' #zebra:light
+    blue:    '0x42a5f5'
+    magenta: '0xa36ac7'
+    cyan:    '0x26c6da'
+    white:   '0xfefeff'
+
+# Mouse bindings
+#
+# Available fields:
+#   - mouse
+#   - action
+#   - mods (optional)
+#
+# Values for `mouse`:
+#   - Middle
+#   - Left
+#   - Right
+#   - Numeric identifier such as `5`
+#
+# All available `mods` and `action` values are documented in the key binding
+# section.
+mouse_bindings:
+  - { mouse: Middle, action: PasteSelection }
+
+mouse:
+  # Click settings
+  #
+  # The `double_click` and `triple_click` settings control the time
+  # alacritty should wait for accepting multiple clicks as one double
+  # or triple click.
+  double_click: { threshold: 300 }
+  triple_click: { threshold: 300 }
+
+  # If this is `true`, the cursor is temporarily hidden when typing.
+  hide_when_typing: true
+
+selection:
+  semantic_escape_chars: ",│`|:\"' ()[]{}<>"
+
+  # When set to `true`, selected text will be copied to both the primary and
+  # the selection clipboard. Otherwise, it will only be copied to the selection
+  # clipboard.
+  save_to_clipboard: false
+
+mouse.hide_when_typing: false
+
+cursor.style: Block
+
+cursor.unfocused_hollow: true
+
+live_config_reload: true
+
+# Key bindings
+#
+# Key bindings are specified as a list of objects. Each binding will specify
+# a key and modifiers required to trigger it, terminal modes where the binding
+# is applicable, and what should be done when the key binding fires. It can
+# either send a byte sequnce to the running application (`chars`), execute
+# a predefined action (`action`) or fork and execute a specified command plus
+# arguments (`command`).
+#
+# Example:
+#   `- { key: V, mods: Command, action: Paste }`
+#
+# Available fields:
+#   - key
+#   - mods (optional)
+#   - chars | action | command (exactly one required)
+#   - mode (optional)
+#
+# Values for `key`:
+#   - `A` -> `Z`
+#   - `F1` -> `F12`
+#   - `Key1` -> `Key0`
+#
+#   A full list with available key codes can be found here:
+#   https://docs.rs/glutin/*/glutin/enum.VirtualKeyCode.html#variants
+#
+# Values for `mods`:
+#   - Command
+#   - Control
+#   - Shift
+#   - Alt
+#
+#   Multiple `mods` can be combined using `|` like this: `mods: Control|Shift`.
+#   Whitespace and capitalization is relevant and must match the example.
+#
+# Values for `chars`:
+#   The `chars` field writes the specified string to the terminal. This makes
+#   it possible to pass escape sequences.
+#   To find escape codes for bindings like `PageUp` ("\x1b[5~"), you can run
+#   the command `showkey -a` outside of tmux.
+#   Note that applications use terminfo to map escape sequences back to
+#   keys. It is therefore required to update the terminfo when
+#   changing an escape sequence.
+#
+# Values for `action`:
+#   - Paste
+#   - PasteSelection
+#   - Copy
+#   - IncreaseFontSize
+#   - DecreaseFontSize
+#   - ResetFontSize
+#   - ScrollPageUp
+#   - ScrollPageDown
+#   - ScrollToTop
+#   - ScrollToBottom
+#   - ClearHistory
+#   - Hide
+#   - Quit
+#
+# Values for `command`:
+#   The `command` field must be a map containing a `program` string and
+#   an `args` array of command line parameter strings.
+#
+#   Example:
+#       `command: { program: "alacritty", args: ["-e", "vttest"] }`
+#
+# Values for `mode`:
+#   - ~AppCursor
+#   - AppCursor
+#   - ~AppKeypad
+#   - AppKeypad
+key_bindings:
+  # <C-]>
+  # - { key: Key0,     mods: Control,   action: ReceiveChars,  mode: AppKeypad     }
+  # - { key: Key0,     mods: Control,   chars: "\x1b\x9d",  mode: AppKeypad     }
+  - { key: U,        mods: Super,     chars: "\x1c"                           }
+  - { key: Key9,        mods: Control,     action: IncreaseFontSize                           }
+  - { key: Minus,        mods: Control,     action: DecreaseFontSize                           }
+  - { key: Minus,        mods: Control,     action: DecreaseFontSize                           }
+
+  - { key: 183,          mods: Control,     chars: "\x1b[25;5~" }
+  - { key: 184,          mods: Control,     chars: "\x1b[11;6~" }
+  # http://aperiodic.net/phil/archives/Geekery/term-function-keys.html
+  - { key: 183,                             chars: "\x1b[25~" }
+  - { key: 184,                             chars: "\x1b[26~" }
+  - { key: 185,                             chars: "\x1b[28~" }
+  - { key: 186,                             chars: "\x1b[29~" }
+  - { key: 187,                             chars: "\x1b[31~" }
+  - { key: 188,                             chars: "\x1b[32~" }
+  - { key: 189,                             chars: "\x1b[33~" }
+  - { key: 190,                             chars: "\x1b[34~" }
+  # - { key: Return,        mods: None,     action: SpawnNewInstance                           }
