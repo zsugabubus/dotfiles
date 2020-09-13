@@ -8,6 +8,7 @@ function -() { cd - }
 
 alias e="$EDITOR -p"
 alias ed="$EDITOR -d"
+alias eg="$EDITOR +Gstatus"
 
 alias -s {{c,h}{,pp,++},rs,txt,vim,diff}=open
 alias -s {bmp,jpg,png}=open
