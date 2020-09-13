@@ -121,16 +121,17 @@ noremap <expr> < (!&diff ? '<' : ":diffget 3\n")
 nnoremap <silent> ]= :<C-U>call search('^=======$', 'Wz')<CR>
 nnoremap <silent> [= :<C-U>call search('^=======$', 'Wbz')<CR>
 
-" replace f/F and t/T to jump only to beginning of words
+" replace f/F and t/T to jump only to the beginning of snake_case or
+" PascalCase words if pattern is alphanumeric
 function! s:magic_char_search() abort
 	let cs = getcharsearch()
 	let escchar = escape(cs.char, '\')
-
 	let lnum = line('.')
-	call search(cs.char =~# '\m[[:alnum:]]'
-		\ ? '\v\C%('.(cs.until ? '\ze.' : '').'<|'.(cs.until ? '\ze' : '').'_)\V'.tolower(escchar)
-			\ .'\v|[a-z_]'.(cs.until ? '\ze' : '').'\V'.toupper(escchar)
-		\ : '\V'.escchar, 'eW'.(cs.forward ? 'z' : 'b'))
+	let e = (-!!cs.until + (mode(1) !=# 'n')) * (cs.forward ? 1 : -1)
+	call search((cs.char =~# '\m[[:alnum:]]'
+		\ ? '\v\C%(%('.(e ==# -1 ? '\ze\_.' : '').'<|'.(e ==# -1 ? '\ze' : '').'[_])\V'.tolower(escchar)
+			\ .'\v|'.(e ==# -1 ? '\ze' : '').'[a-z_]\V'.toupper(escchar).'\)'
+		\ : (e ==# -1 ? '\ze\_.' : '').'\V'.escchar).(e ==# 1 ? '\_.\ze' : ''), 'eW'.(cs.forward ? 'z' : 'b'))
 	if line('.') !=# lnum
 		echohl WarningMsg
 		echo printf('Pattern crossed end-of-line: %s', cs.char)
@@ -146,10 +147,12 @@ for s:letter in [';', ',']
 		\ s:letter, s:letter ==# ';')
 endfor
 for s:letter in ['f', 'F', 't', 'T']
-	execute printf("nnoremap <silent> %s :call setcharsearch({'forward': %d, 'until': %d, 'char': nr2char(getchar())})<bar>call <SID>magic_char_search()<CR>",
-		\ s:letter, s:letter =~# '\l', s:letter =~? 't')
+	for s:map in ['n', 'v', 'o']
+		execute printf("%snoremap <silent> %s <Cmd>call setcharsearch({'forward': %d, 'until': %d, 'char': nr2char(getchar())})<bar>call <SID>magic_char_search()<CR>",
+			\ s:map, s:letter, s:letter =~# '\l', s:letter =~? 't')
+	endfor
 endfor
-unlet s:letter
+unlet s:letter s:map
 
 function! s:magic_ctrlg() abort
 	let str = matchstr(getline('.')[:col('.')-2], '\m[[{}(=*)+\]!]*$')
@@ -518,10 +521,12 @@ augroup vimrc_newfilemagic
 			\ endif
 augroup END
 
-function s:normal_star(wordbounds) abort
-	let m = matchlist(getline('.'), '\v(\k*)%'.col('.').'c(\k+)|%'.col('.').'c\W+(\k+)')
+function! s:normal_star(wordbounds) abort
+	let m = matchlist(getline('.'), '\v(\w*)%'.col('.').'c(\w+)|%'.col('.').'c\W+(\w+)')
 	if empty(m)
-		echohl Error | echo 'No string under cursor.' | echohl None
+		echohl Error
+		echo 'No string under cursor.'
+		echohl None
 		return ''
 	endif
 	return '/\V\<'.escape(m[1].m[2].m[3], '\/').'\>'.
