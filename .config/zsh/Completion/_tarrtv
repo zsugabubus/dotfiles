@@ -1,0 +1,24 @@
+#compdef tarrtv
+
+function generate_channellist {
+	[[ ! -v _tarrtv_channellist ]] || return
+	_tarrtv_channellist=( "${(f)$(tarrtv | cut -f1,2)}" )
+}
+
+generate_channellist
+
+# filter values ourself
+local out=( ${(@M)_tarrtv_channellist:#(#i)*$PREFIX*$SUFFIX*} )
+local names=( ${out#*$'\t'} )
+local ids=( ${out%$'\t'*} )
+
+local expl
+_wanted channels expl 'channels' \
+	compadd -ld names -P '' -S '' -U -a ids
+
+# insert id when it is the only match
+if (( compstate[nmatches] == 1 )); then
+	compstate[insert]=menu
+else
+	compstate[insert]=
+fi
