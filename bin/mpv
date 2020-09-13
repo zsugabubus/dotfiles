@@ -16,7 +16,7 @@ exec env -i bwrap \
   --ro-bind /usr/lib /usr/lib \
   --ro-bind /usr/bin/mpv /usr/bin/mpv \
   --ro-bind /usr/bin/xclip /usr/bin/xclip \
-  --ro-bind /usr/bin/dash /usr/bin/dash \
+  --ro-bind /usr/bin/dash /usr/bin/sh \
   --ro-bind /usr/bin/python /usr/bin/python \
   --ro-bind $(readlink -f /usr/bin/python) $(readlink -f /usr/bin/python) \
   --ro-bind $(readlink -f /usr/bin/python3) $(readlink -f /usr/bin/python3) \
