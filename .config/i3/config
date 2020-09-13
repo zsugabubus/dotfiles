@@ -254,7 +254,7 @@ mode launch
 
 	# bindsym --release	semicolon	mode default; exec --no-startup-id $TERMINAL
 	# bindsym --release	Mod4+semicolon	mode default; exec --no-startup-id $TERMINAL
-	# bindsym --release	t	mode default; exec --no-startup-id $TERMINAL
+	bindsym --release	t	mode default; exec --no-startup-id telegram-desktop
 	# bindsym --release	m	mode default; exec --no-startup-id $TERMINAL -cd $HOME/mem
 	bindsym --release	b	mode default; exec --no-startup-id $BROWSER
 	# bindsym --release	e	mode default; exec --no-startup-id $TERMINAL -t nvim -e nvim
