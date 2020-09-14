@@ -1,0 +1,4 @@
+#!/bin/dash
+for f in $0.d/*; do
+	! test -x "$f" || "$f"
+done
