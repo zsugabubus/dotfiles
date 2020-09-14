@@ -335,7 +335,7 @@ augroup vimrc_skeletons
 		\ 'zsh': ['#!/bin/zsh', ''],
 		\ 'bash': ['#!/bin/bash', ''],
 		\ 'python': ['#!/usr/bin/env PYTHONDONTWRITEBYTECODE=1 python3', '']
-		\}, &filetype, []))|endif|
+		\}, &filetype, []))|set modified|endif|
 		\normal G
 augroup END
 
