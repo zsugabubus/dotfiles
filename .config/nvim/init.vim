@@ -205,6 +205,10 @@ Source swapword.vim
 " Always go to file.
 " nnoremap <silent> gf :edit <cfile><CR>
 
+" put the first line of the paragraph at the top of the window
+" <C-E> does not want to get executed without execute... but <C-O> does... WTF!?
+nnoremap <silent><expr> z{ ':set scrolloff=0<bar>:execute "normal! {zt\<lt>C-O>\<lt>C-E>"<bar>:set scrolloff='.&scrolloff.'<CR>'
+
 nnoremap gss :setlocal spell!<CR>
 nnoremap gse :setlocal spell spelllang=en<CR>
 nnoremap gsh :setlocal spell spelllang=hu<CR>
