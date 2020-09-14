@@ -1,0 +1,24 @@
+#!/bin/dash
+
+#
+# LET ME IIIIIIIIN
+#
+
+files="$HOME/.passss $(
+	lsblk -r --noheadings |
+	awk -vfile=.passss '
+$7 != "" {
+	print $7 "/" file
+}'
+)"
+
+if test "$1" = list; then
+	cut -d- -f1 $files 2>/dev/null | sort -u
+else
+	token=${1:-$USER}
+	secrects=$(grep -sh "^$token-" $files | sort -u)
+
+	printf %s "$secrects" |
+	ssss-combine -q -t $(printf '%s\n' "$secrects" | wc -l) 2>&1 |
+	tail -n1
+fi
