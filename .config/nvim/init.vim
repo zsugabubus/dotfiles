@@ -128,8 +128,8 @@ function! s:magic_char_search() abort
 	let escchar = escape(cs.char, '\')
 	let lnum = line('.')
 	let e = (-!!cs.until + (mode(1) !=# 'n')) * (cs.forward ? 1 : -1)
-	call search((cs.char =~# '\m[[:alnum:]]'
-		\ ? '\v\C%(%('.(e ==# -1 ? '\ze\_.' : '').'<|'.(e ==# -1 ? '\ze' : '').'[_])\V'.tolower(escchar)
+	call search((cs.char =~# '\m[[:alpha:]]'
+		\ ? '\v\C%(%('.(e ==# -1 ? '\ze\_.' : '').'<|'.(e ==# -1 ? '\ze' : '').'[_])\V\['.tolower(escchar).toupper(escchar).']'
 			\ .'\v|'.(e ==# -1 ? '\ze' : '').'[a-z_]\V'.toupper(escchar).'\)'
 		\ : (e ==# -1 ? '\ze\_.' : '').'\V'.escchar).(e ==# 1 ? '\_.\ze' : ''), 'eW'.(cs.forward ? 'z' : 'b'))
 	if line('.') !=# lnum
@@ -565,7 +565,7 @@ nmap <silent><expr> <C-w>go ':tabdo windo if bufnr() ==# '.bufnr().' <bar> :bnex
 " resize window to fit selection
 xmap <expr><silent> <C-w>h ':resize'.(abs(line("v") - line("."))+(2*&scrolloff + 1)).'<CR>'
 
-IfLocal command PackUpdate execute 'terminal' printf('find %s -mindepth 3 -maxdepth 3 -type d -exec printf \%%s:\\n {} \; -execdir git -C {} pull \;', shellescape(stdpath('data').'/site/pack'))
+IfLocal command! PackUpdate execute 'terminal' printf('find %s -mindepth 3 -maxdepth 3 -type d -exec printf \%%s:\\n {} \; -execdir git -C {} pull \;', shellescape(stdpath('data').'/site/pack'))
 
 set number relativenumber
 augroup vimrc_numbertoggle
@@ -776,8 +776,8 @@ augroup END
 augroup vimrc_sessionmagic
 	autocmd!
 	autocmd VimEnter * ++nested
-		\ if empty(filter(copy(v:argv), {idx,val-> idx ># 1 && val[0] !=# '-'})) &&
-		\    filereadable('Session.vim')|
+		\ if empty(filter(copy(v:argv), {idx,val-> idx ># 0 && val[0] !=# '-'})) &&
+		\     filereadable('Session.vim')|
 		\   source Session.vim|
 		\ endif
 	autocmd VimLeave *
