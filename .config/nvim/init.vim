@@ -122,16 +122,27 @@ nnoremap <silent> ]= :<C-U>call search('^=======$', 'Wz')<CR>
 nnoremap <silent> [= :<C-U>call search('^=======$', 'Wbz')<CR>
 
 " replace f/F and t/T to jump only to the beginning of snake_case or
-" PascalCase words if pattern is alphanumeric
-function! s:magic_char_search() abort
+" PascalCase words if pattern is lowercase; otherwise normal f/F and t/T that
+" does not stop at end-of-line
+function! g:Magic_char_search(mode, forward) abort
 	let cs = getcharsearch()
+	let isvisual = a:mode =~# "\\m\\C^[vV\<C-V>]$"
 	let escchar = escape(cs.char, '\')
 	let lnum = line('.')
-	let e = (-!!cs.until + (mode(1) !=# 'n')) * (cs.forward ? 1 : -1)
-	call search((cs.char =~# '\m[[:alpha:]]'
+	let e = (-!!cs.until + (a:mode ==# 'n' ? 0 : isvisual ? &selection !=# 'inclusive' : 1)) * (cs.forward ==# a:forward ? 1 : -1) " where to positionate cursor
+	let pattern = (cs.char =~# '\m\l'
 		\ ? '\v\C%(%('.(e ==# -1 ? '\ze\_.' : '').'<|'.(e ==# -1 ? '\ze' : '').'[_])\V\['.tolower(escchar).toupper(escchar).']'
 			\ .'\v|'.(e ==# -1 ? '\ze' : '').'[a-z_]\V'.toupper(escchar).'\)'
-		\ : (e ==# -1 ? '\ze\_.' : '').'\V'.escchar).(e ==# 1 ? '\_.\ze' : ''), 'eW'.(cs.forward ? 'z' : 'b'))
+		\ : (e ==# -1 ? '\ze\_.' : '').'\V'.escchar).(e ==# 1 ? '\_.\ze' : '')
+	let flags = 'eW'.(cs.forward ==# a:forward ? 'z' : 'b')
+	if isvisual
+		normal! gv
+	endif
+	" hmmm. maybe we could use normal! /search/e... simply; but it works so do
+	" not fucking touch it
+	for nth in range(1, v:count1)
+		call search(pattern, flags)
+	endfor
 	if line('.') !=# lnum
 		echohl WarningMsg
 		echo printf('Pattern crossed end-of-line: %s', cs.char)
@@ -142,13 +153,13 @@ function! s:magic_char_search() abort
 	endif
 endfunction
 
-for s:letter in [';', ',']
-	execute printf("nnoremap <silent> %s :call setcharsearch({'forward': %d})<bar>call <SID>magic_char_search()<CR>",
+for s:letter in [',', ';']
+	execute printf("nnoremap <silent> %s :call g:Magic_char_search('n', %d)<CR>",
 		\ s:letter, s:letter ==# ';')
 endfor
 for s:letter in ['f', 'F', 't', 'T']
-	for s:map in ['n', 'v', 'o']
-		execute printf("%snoremap <silent> %s <Cmd>call setcharsearch({'forward': %d, 'until': %d, 'char': nr2char(getchar())})<bar>call <SID>magic_char_search()<CR>",
+	for s:map in ['n', 'x', 'o']
+		execute printf("%snoremap <expr><silent> %s [setcharsearch({'forward': %d, 'until': %d, 'char': nr2char(getchar())}), ':<C-U>call g:Magic_char_search(\"'.mode(1).'\", 1)\<CR>'][1]",
 			\ s:map, s:letter, s:letter =~# '\l', s:letter =~? 't')
 	endfor
 endfor
@@ -411,7 +422,7 @@ augroup vimrc_filetypes
 	
 	autocmd FileType man
 		\ nnoremap <buffer> // /\v^ {7}\S@=%(.*\n {11,14}\S)@=.{-}\zs\V|
-		\ nnoremap <space> <C-D>|
+		\ nnoremap <buffer> <space> <C-D>|
 		\ nmap <buffer> /- //-
 	
 	autocmd FileType mail
