@@ -206,10 +206,21 @@ nnoremap <Up> gk
 nnoremap <Down> gj
 
 inoremap <silent> <F9> <C-R>=strftime('%Y%b%d%a %H:%M')<CR>
-nnoremap <silent> <M-m> :cclose<CR>:update<CR>:silent make<CR>
-nnoremap <silent> <M-r> :cclose<CR>:update<CR>:silent make<bar>terminal make run<CR>
+nnoremap <silent> <M-m> :cclose<bar>update<bar>silent make<CR>
+nnoremap <silent> <M-r> :cclose<bar>update<bar>silent make<bar>terminal make run<CR>
 nnoremap <silent> <M-n> :cnext<CR>zz
 nnoremap <silent> <M-N> :cprev<CR>zz
+
+augroup vimrc_errorformat
+	function! s:errorformat_make()
+		if 'make' == &makeprg|
+			set errorformat^=make:\ %*[[]%f:%l:\ %m|
+		endif
+	endfunction
+
+	autocmd VimEnter * call s:errorformat_make()
+	autocmd OptionSet makeprg call s:errorformat_make()
+augroup END
 
 Source swapword.vim
 
