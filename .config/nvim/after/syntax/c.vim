@@ -12,7 +12,7 @@ syn keyword Identifier
 	\ assert abort
 	\ malloc free calloc realloc
 	\ mmap munmap msync
-	\ strcmp strdup strlen strchr strstr strcpy strncpy strsep strspn strcspn
+	\ strcmp strdup strlen strnlen strchr strstr strcpy strncpy strsep strspn strcspn
 	\ wcslen wcsspn wcscspn
 	\ memcmp memcpy memmove memchr rawmemchr memmem memset
 	\ signal
@@ -30,3 +30,5 @@ syn keyword Identifier
 syn match Identifier "\v<v?%(f|d|s|sn)?w?printf>"
 syn match Identifier "\v<v?[fs]?w?scanf>"
 syn match Identifier "\v<pthread_\k+>"
+syn keyword cConstant
+	\ __STDC_VERSION__ clang
