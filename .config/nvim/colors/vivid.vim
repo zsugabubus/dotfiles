@@ -16,7 +16,7 @@ if &background == 'light'
 	hi StatusLineNC gui=NONE guibg=#e8e8e8 guifg=#6e6e6e
 else
 	" snazzy
-	hi Normal guibg=#282a36 guifg=#efeeea
+	hi Normal guibg=#23252d guifg=#eeede9
 
 	hi User1 guibg=#343844 guifg=#e0e0e0
 	hi User2 guibg=#343844 guifg=#686868
@@ -64,9 +64,12 @@ if &background == 'light'
 	hi SignColumn guibg=#ededed guifg=#444444
 	hi FoldColumn guibg=#ededed guifg=#b0abab
 
+	hi Visual gui=NONE guibg=#b9b9bd
 	hi Visual gui=NONE guibg=#b6d6fd guibg=#accdfe
-	" guibg=#b1d7ff
 	hi VisualNOS gui=NONE guibg=#d8d8dc
+
+	" hi Identifier guifg=#005db2 guifg=#8500ac
+	hi Identifier gui=bold guifg=#4d4d4f
 else
 	hi NonText gui=NONE guifg=#555555
 
@@ -75,7 +78,11 @@ else
 	hi SignColumn guibg=NONE guifg=#444444
 	hi FoldColumn guibg=NONE guifg=#b0abab
 
-	hi Visual gui=NONE guibg=#b9b9bd
+	" guibg=#b1d7ff
+	hi Visual gui=NONE guibg=#4949bd
+	hi Visual gui=NONE guibg=#69698d
+
+	hi Identifier gui=bold guifg=#cacacc
 endif
 
 hi String guifg=#5baa38
@@ -95,15 +102,18 @@ hi! link Statement Keyword
 hi cStorageClass gui=italic,bold guifg=#005db2
 hi! link cStorageClass Keyword
 
-hi Conditional gui=bold guifg=#8500ac
-hi Conditional gui=bold guifg=#9d00c5
+if &background == 'light'
+	hi Type gui=bold guifg=#d70087
+	hi Type gui=bold guifg=#ed0085
+
+	hi Conditional gui=bold guifg=#9d00c5
+else
+	hi Type gui=bold guifg=#fd0069
+
+	hi Conditional gui=bold guifg=#fd42d0
+endif
 hi! link Repeat Conditional
 
-hi Type gui=bold guifg=#d70087
-hi Type gui=bold guifg=#ed0085
-
-" hi Identifier guifg=#005db2 guifg=#8500ac
-hi Identifier gui=bold guifg=#4d4d4f
 hi PreProc guifg=#005faf guifg=#006dd9
 
 hi SpellBad NONE
@@ -123,16 +133,24 @@ hi! link CursorLineNr Number
 
 hi Constant guifg=#df4f00
 
-hi DiffAdd guibg=#bff2c6
-hi DiffAdd guibg=#bff3b8
-hi DiffChange guibg=#ffd787
-hi DiffChange guibg=#ffdeaf
-hi DiffDelete guibg=#fedff6 guifg=#ff7183 guifg=#ffc1d3
-hi DiffDelete guibg=#fec9df guifg=#ffa4c8
-hi DiffDelete guibg=#fed4e0 guifg=#ffb4e8
-" hi DiffText guibg=#e0e0e0 guifg=#acf2bd guifg=#262626 guifg=#acf2bd
-hi! clear DiffText
-hi DiffText guibg=#fffcda
+if &background == 'light'
+	hi DiffAdd guibg=#bff2c6
+	hi DiffAdd guibg=#bff3b8
+	hi DiffChange guibg=#ffd787
+	hi DiffChange guibg=#ffdeaf
+	hi DiffDelete guibg=#fedff6 guifg=#ff7183 guifg=#ffc1d3
+	hi DiffDelete guibg=#fec9df guifg=#ffa4c8
+	hi DiffDelete guibg=#fed4e0 guifg=#ffb4e8
+	" hi DiffText guibg=#e0e0e0 guifg=#acf2bd guifg=#262626 guifg=#acf2bd
+	hi! clear DiffText
+	hi DiffText guibg=#fffcda
+else
+	hi DiffAdd guifg=#23252d guibg=#9fd368
+	hi DiffChange guifg=#23252d guibg=#ffde6f
+	hi DiffDelete guifg=#ff84c8 guibg=#feb4b0
+	hi! clear DiffText
+	hi DiffText guifg=#23252d guibg=#fffcda
+endif
 
 hi WildMenu gui=bold guibg=#fff109
 
@@ -145,8 +163,12 @@ hi! cUserLabel gui=underline guifg=#9d00c5
 hi! link Label cUserLabel
 hi! link Structure Keyword
 hi! link cLabel Keyword
-hi cConstant gui=bold guifg=#008700
-hi cConstant gui=bold guifg=#009017
+if &background == 'light'
+	hi cConstant gui=bold guifg=#008700
+	hi cConstant gui=bold guifg=#009017
+else
+	hi cConstant gui=bold guifg=#1ca51c
+endif
 hi! link Boolean cConstant
 hi! link CfgOnOff Boolean
 hi cOctalZero gui=bold guifg=#8700af

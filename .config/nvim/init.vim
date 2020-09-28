@@ -10,7 +10,7 @@
 
 " :so $VIMRUNTIME/syntax/hitest.vim
 
-if filewritable(expand(stdpath('config').'/init.vim'))
+if filewritable(stdpath('config').'/init.vim')
 	command! -nargs=+ IfLocal <args>
 	command! -nargs=+ IfSandbox
 else
@@ -46,6 +46,7 @@ set diffopt=filler,vertical,algorithm:patience
 
 " shadon't
 IfSandbox set shada="NONE" noundofile nowritebackup
+IfLocal set undofile undodir=$HOME/.cache/nvim/undo
 
 set list
 if $TERM !=# 'linux'
@@ -86,9 +87,6 @@ function! VimFoldText() abort
 endfunction
 
 set foldtext=VimFoldText()
-
-set undofile
-set undodir=$HOME/.cache/nvim/undo
 
 set nojoinspaces " no double space
 " XXX: How autocomplete with last?
@@ -133,11 +131,12 @@ function! g:Magic_char_search(mode, forward) abort
 	let pattern = (cs.char =~# '\m\l'
 		\ ? '\v\C%(%('.(e ==# -1 ? '\ze\_.' : '').'<|'.(e ==# -1 ? '\ze' : '').'[_])\V\['.tolower(escchar).toupper(escchar).']'
 			\ .'\v|'.(e ==# -1 ? '\ze' : '').'[a-z_]\V'.toupper(escchar).'\)'
-		\ : (e ==# -1 ? '\ze\_.' : '').'\V'.escchar).(e ==# 1 ? '\_.\ze' : '')
+		\ : '\c'.(e ==# -1 ? '\ze\_.' : '').'\V'.escchar).(e ==# 1 ? '\_.\ze' : '')
 	let flags = 'eW'.(cs.forward ==# a:forward ? 'z' : 'b')
 	if isvisual
 		normal! gv
 	endif
+
 	" hmmm. maybe we could use normal! /search/e... simply; but it works so do
 	" not fucking touch it
 	for nth in range(1, v:count1)
@@ -161,6 +160,8 @@ for s:letter in ['f', 'F', 't', 'T']
 	for s:map in ['n', 'x', 'o']
 		execute printf("%snoremap <expr><silent> %s [setcharsearch({'forward': %d, 'until': %d, 'char': nr2char(getchar())}), ':<C-U>call g:Magic_char_search(\"'.mode(1).'\", 1)\<CR>'][1]",
 			\ s:map, s:letter, s:letter =~# '\l', s:letter =~? 't')
+		" execute printf(\"%snoremap <expr><silent> %s '<Cmd>keeppattern /'.nr2char(getchar()).'\<CR>'\",
+			" \ s:map, s:letter)
 	endfor
 endfor
 unlet s:letter s:map
@@ -184,6 +185,12 @@ augroup vimrc_fasttimeout
 	autocmd InsertLeave * let &timeoutlen=saved_timeoutlen
 augroup END
 
+" (de)indent inner % (everything between first and last lines)
+nmap >i% >%<<<C-O><<
+nmap <i% <%>><C-O>>>
+" delete first and last lines
+nmap dI% 0%dd<C-O>dd<C-O>
+
 cmap w!! w !sudo tee >/dev/null %
 
 inoremap <expr> <C-j> line('.') ==# line('$') ? "\<C-O>o" : "\<Down>\<End>"
@@ -206,7 +213,7 @@ nnoremap <Up> gk
 nnoremap <Down> gj
 
 inoremap <silent> <F9> <C-R>=strftime('%Y%b%d%a %H:%M')<CR>
-nnoremap <silent> <M-m> :cclose<bar>update<bar>silent make<CR>
+nnoremap <silent> <M-m> :cclose<bar>update<CR>:echo "Building..."<CR>:silent make<CR>:echo "Build finished."<CR>
 nnoremap <silent> <M-r> :cclose<bar>update<bar>silent make<bar>terminal make run<CR>
 nnoremap <silent> <M-n> :cnext<CR>zz
 nnoremap <silent> <M-N> :cprev<CR>zz
@@ -489,6 +496,21 @@ augroup END
 
 " autocmd BufLeave * if &buftype ==# 'quickfix' | echo 'leaving qf' | endif
 
+" if current directory differs across tabs cd -> tcd
+function! s:cabbr_cd() abort
+	if getcmdtype() ==# ':' && getcmdpos() ==# 3
+		let cwd = getcwd()
+		for tabnr in range(1, tabpagenr('$'))
+			if cwd !=# getcwd(-1, tabnr)
+				return 'tcd'
+			endif
+		endfor
+	endif
+	return 'cd'
+endfunction
+
+cnoreabbrev <expr> cd <SID>cabbr_cd()
+
 cnoreabbrev <expr> ccd getcmdtype() == ':' && getcmdpos() == 4 ? 'cd %:p:h' : 'ccd'
 cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'silent grep' : 'gr'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
@@ -599,6 +621,7 @@ augroup END
 set title
 
 autocmd! TermOpen * startinsert
+autocmd! TermLeave * nnoremap <buffer> <Esc> a
 tnoremap <Esc><Esc> <C-\><C-n>
 
 if $TERM !=# 'linux'
@@ -788,6 +811,24 @@ nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
 
 autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
 
+augroup vimrc_persistent_options
+	let s:options_vim = stdpath('config').'/options.vim'
+	function! s:update_options_vim()
+		try
+			execute 'source' fnameescape(s:options_vim)
+		catch
+		endtry
+	endfunction
+	call s:update_options_vim()
+
+	autocmd!
+	autocmd OptionSet background call writefile([
+		\   printf('set background=%s', &background)
+		\ ], s:options_vim)|
+		\ call system(['/usr/bin/pkill', '--signal', 'SIGUSR1', 'nvim'])
+	autocmd Signal SIGUSR1 call s:update_options_vim()|redraw!
+augroup END
+
 augroup vimrc_restorecursor
 	autocmd! BufReadPost * autocmd FileType <buffer=abuf> ++once autocmd BufEnter <buffer=abuf> ++once
 		\ if 1 <= line("'\"") && line("'\"") <= line("$") && &filetype !~? 'commit'
@@ -809,8 +850,8 @@ augroup vimrc_sessionmagic
 augroup END
 
 " local configuration
-let s:safe = '~/pro/*'
-let s:safepat = glob2regpat(s:safe)
+let s:safe = ['~/pro/*', '~/**']
+let s:safepat = join(map(s:safe, {_,path-> glob2regpat(path)}), '\|')
 
 try
 	let s:dir = system(['/usr/bin/pwd', '-L'])[:-2]
@@ -828,3 +869,6 @@ endwhile
 unlet! s:dir s:filepath s:safe s:safepat
 
 delcommand Source
+
+delcommand IfSandbox
+delcommand IfLocal
