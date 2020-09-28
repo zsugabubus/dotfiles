@@ -6,6 +6,7 @@ user_pref('browser.urlbar.autoFill', true);
 user_pref('browser.tabs.documentchannel.ppdc', false);
 user_pref('browser.sessionhistory.max_total_viewers', 0);
 
+user_pref('dom.ipc.processCount', 1);
 user_pref('media.videocontrols.picture-in-picture.video-toggle.enabled', false);
 user_pref('browser.urlbar.openViewOnFocus', false);
 user_pref('accessibility.blockautorefresh', true);
