@@ -15,7 +15,8 @@ syn keyword Identifier
 	\ strcmp strdup strlen strnlen strchr strstr strcpy strncpy strsep strspn strcspn
 	\ wcslen wcsspn wcscspn
 	\ memcmp memcpy memmove memchr rawmemchr memmem memset
-	\ signal
+	\ signal sigaction
+	\ sleep
 	\ perror strerror
 	\ setenv unsetenv getenv putenv clearenv
 	\ fork vfork
