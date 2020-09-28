@@ -23,7 +23,7 @@ function mo() {
 	{ read -q "?mount $dev /mnt? [Y/n]" } always { print } && sudo mount $dev /mnt
 }
 alias configure_make='./configure && make'
-alias make_install='sudo make PREFIX=/usr install'
+alias make_install='sudo make PREFIX=/usr prefix=/usr install'
 alias h=man
 alias ls='ls -ohtrF --group-directories-first --color=tty --quoting-style=literal'
 alias l=ls
@@ -33,6 +33,7 @@ alias la='ll -A'
 alias lc='ll -CA'
 alias pkill='pkill -x'
 alias d='dirs -v | head -10'
+alias va='nice -20 vlock -a'
 alias c-='cd -'
 function lll() { ls -l --color "$@" | less; }
 alias tt=tarrtv
@@ -321,12 +322,8 @@ function _confirm_cmd() {
 function poweroff() { _check_user_files && _confirm_cmd $0 "$@"; }
 function reboot() { _check_user_files && _confirm_cmd $0 "$@"; }
 
-function _abduco_random_session() {
-	base64 </dev/urandom | tr -dc a-z | head -c3
-}
-
 function az() {
-	exec abduco -c $(_abduco_random_session) $SHELL
+	exec ab
 }
 
 function ab() {
@@ -334,7 +331,7 @@ function ab() {
 		local session="$1"
 		shift
 	else
-		local session=$(_abduco_random_session)
+		local session=$(tr </dev/urandom -dc a-z | head -c3)
 	fi
 	abduco -e '' -c "$session" "${@:-$SHELL}"
 }
@@ -447,7 +444,7 @@ function webfs() {
 }
 
 function genm3u() {
-	print -l *.{mp3,mp4,mkv} >$PWD:t.m3u
+	print -l *.{mp3,mp4,mkv}(N) >$PWD:t.m3u
 }
 
 function spek() {
