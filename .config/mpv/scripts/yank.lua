@@ -1,5 +1,5 @@
 function shesc(s)
-	return "'" .. s:gsub("'", "\"'\"") .. "'"
+	return "'" .. s:gsub("'", "'\"'\"'") .. "'"
 end
 
 mp.add_key_binding('y', 'yank-name', function()
