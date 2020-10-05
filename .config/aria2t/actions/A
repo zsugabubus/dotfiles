@@ -1,7 +1,9 @@
 #!/bin/zsh -eu
 . $ZDOTDIR/hashes.zsh
 
-printf '%s\n dir=~V\n' ~m/*.torrent >$2
+[[ -d ~V ]] && dir='~V' || dir='~m'
+
+printf '%s\n dir='$dir'\n' ~m/*.torrent >$2
 $EDITOR $2
 while IFS= read -r line; do
 	if [[ $line =~ '^(\s+dir=)(.*)$' ]]; then
