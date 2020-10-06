@@ -33,3 +33,4 @@ syn match Identifier "\v<v?[fs]?w?scanf>"
 syn match Identifier "\v<pthread_\k+>"
 syn keyword cConstant
 	\ __STDC_VERSION__ clang
+	\ STDIN_FILENO STDOUT_FILENO STDERR_FILENO
