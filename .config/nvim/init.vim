@@ -64,26 +64,12 @@ end
 	"
 function! VimFoldText() abort
 	let right = ' ('.string(v:foldend - v:foldstart + 1).' )'
-	let text = getline(nextnonblank(v:foldstart))
+	let line = getline(nextnonblank(v:foldstart))
+	let text = substitute(line, '\v^.{-}<(\w.{-})\s*%(\{\{\{.*)?$', '\1', '')
 	let tw = min([(&tw > 0 ? &tw : 80), winwidth('%') - float2nr(ceil(log10(line('$')))) - 1])
-	if v:foldlevel ==# 1
-		let left = ' ◆ '
-	elseif v:foldlevel ==# 2
-		let left = '   ▶  '
-	else
-		let left = '     ● '
-	endif
-	let left = ' '.repeat('-', v:foldlevel - 1).'+ '
-
-	" if strdisplaywidth(left.text.right) > tw
-	" 	while strdisplaywidth(left.text.'…'.right) > tw && !empty(text)
-	" 		let text = strcharpart(text, 0, strlen(text) - 1)
-	" 	endwhile
-	" endif
-
+	let left = repeat(' ', strdisplaywidth(matchstr(line, '\m^\s*')))
 	let text = text.repeat(' ', tw - strdisplaywidth(left.text.right))
-
-	return left.text.right.repeat(' ', 300)
+	return left.text.right.repeat(' ', 999)
 endfunction
 
 set foldtext=VimFoldText()
@@ -540,6 +526,7 @@ for [s:left, s:right] in [['(', ')'], ['[', ']'], ['{', '}']]
 	execute "xnoremap <silent> <expr> s".s:right." mode() ==# 'V' ? 'c".s:left."<CR><C-r><C-o>\"".s:right."<Esc>' : 'c".s:left."<C-r><C-o>\"".s:right."<Esc>'"
 	execute "xnoremap <silent> <expr> s".s:left."  mode() ==# 'V' ? 'c".s:left."<CR><C-r><C-o>\"".s:right."<Esc>' : line('.') ==# line('v') ? 'c".s:left." <C-r><C-o>\" ".s:right."<Esc>' : 'c".s:left."<C-r><C-o>\"".s:right."<Esc>'"
 endfor
+xnoremap <silent> <expr> s substitute('c%<C-r><C-o>"%<Esc>', '%', nr2char(getchar()), 'g')
 unlet s:left s:right
 xnoremap <silent> s<bar> c<bar><C-r><C-o>"<bar><Esc>
 xnoremap <silent> s‘ c‘<C-r><C-o>"’<Esc>
