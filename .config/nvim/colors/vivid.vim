@@ -14,18 +14,53 @@ if &background == 'light'
 
 	hi StatusLine gui=bold guibg=#e8e8e8 guifg=#313140
 	hi StatusLineNC gui=NONE guibg=#e8e8e8 guifg=#6e6e6e
+
+	hi TabLine gui=NONE guibg=#e8e8e8 guifg=#444444
+	hi TabLineSel gui=bold guibg=#eeeeee guifg=#414140
+
+	hi NonText gui=NONE guifg=#cdcccf
+
+	hi LineNr guibg=#ededed guifg=#b0abab
+	hi SignColumn guibg=#ededed guifg=#444444
+	hi FoldColumn guibg=#ededed guifg=#b0abab
+
+	hi Visual gui=NONE guibg=#b9b9bd
+	hi Visual gui=NONE guibg=#b6d6fd guibg=#accdfe
+	hi VisualNOS gui=NONE guibg=#d8d8dc
+
+	" hi Identifier guifg=#005db2 guifg=#8500ac
+	hi Identifier gui=bold guifg=#4d4d4f
 else
 	" snazzy
-	hi Normal guibg=#23252d guifg=#eeede9
+	hi Normal guibg=#23252d guibg=#25272f guifg=#eeede9
 
-	hi User1 guibg=#343844 guifg=#e0e0e0
-	hi User2 guibg=#343844 guifg=#686868
-	hi User3 guibg=#343844 gui=bold guifg=#444444
-	hi User4 guibg=#343844 guifg=#777777
-	hi User9 guibg=#343844 guifg=#888888
+	" #30d440
+	hi User1 guibg=#363a46 guifg=#ffaf5f
+	hi User2 guibg=#ffaf5f guifg=#383838
+	hi User3 guibg=#ffaf5f gui=bold guifg=#444444
+	hi User4 guibg=#ffaf5f guifg=#777777
+	hi User9 guibg=#363a46 guifg=#a4a4a4
 
-	hi StatusLine gui=bold guibg=#343844 guifg=#313140
-	hi StatusLineNC gui=NONE guibg=#343844 guifg=#6e6e6e
+	" red #f868d8 #5858d8
+	"
+	hi StatusLine gui=bold guibg=#363a46 guifg=#f80ce8 guifg=#f8ece8
+	hi StatusLineNC gui=NONE guibg=#363a46 guifg=#d8ccc8
+
+	hi TabLine gui=NONE guibg=#363a46 guifg=#f8fcf8
+	hi TabLineSel gui=bold guibg=#ffaf5f guifg=#414140
+
+	hi NonText gui=NONE guifg=#555555
+
+	" snazzy
+	hi LineNr guibg=NONE guifg=#8085a0
+	hi SignColumn guibg=NONE guifg=#444444
+	hi FoldColumn guibg=NONE guifg=#b0abab
+
+	" guibg=#b1d7ff
+	hi Visual gui=NONE guibg=#4949bd
+	hi Visual gui=NONE guibg=#999ea5
+
+	hi Identifier gui=bold guifg=#cacacc
 endif
 
 hi Pmenu guibg=#e0e0e0 guifg=#333333
@@ -42,8 +77,6 @@ hi! link Directory Normal
 hi! clear SpecialKey
 hi SpecialKey guifg=#818192
 
-hi TabLine gui=NONE guibg=#e8e8e8 guifg=#444444
-hi TabLineSel gui=bold guibg=#eeeeee guifg=#414140
 hi! link TabLineFill TabLine
 
 hi Underlined guifg=#008df9
@@ -56,34 +89,6 @@ hi! link EndOfBuffer NonText
 hi Search guifg=#040404 guibg=#fdef39
 hi Search guifg=#040404 guibg=#fdef39
 hi MatchParen gui=bold guibg=#fde639 guifg=#111111
-
-if &background == 'light'
-	hi NonText gui=NONE guifg=#cdcccf
-
-	hi LineNr guibg=#ededed guifg=#b0abab
-	hi SignColumn guibg=#ededed guifg=#444444
-	hi FoldColumn guibg=#ededed guifg=#b0abab
-
-	hi Visual gui=NONE guibg=#b9b9bd
-	hi Visual gui=NONE guibg=#b6d6fd guibg=#accdfe
-	hi VisualNOS gui=NONE guibg=#d8d8dc
-
-	" hi Identifier guifg=#005db2 guifg=#8500ac
-	hi Identifier gui=bold guifg=#4d4d4f
-else
-	hi NonText gui=NONE guifg=#555555
-
-	" snazzy
-	hi LineNr guibg=NONE guifg=#8085a0
-	hi SignColumn guibg=NONE guifg=#444444
-	hi FoldColumn guibg=NONE guifg=#b0abab
-
-	" guibg=#b1d7ff
-	hi Visual gui=NONE guibg=#4949bd
-	hi Visual gui=NONE guibg=#69698d
-
-	hi Identifier gui=bold guifg=#cacacc
-endif
 
 hi String guifg=#5baa38
 hi! link String Constant
