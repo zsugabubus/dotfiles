@@ -192,7 +192,29 @@ nnoremap <silent> <expr> <C-q> '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#
 
 command -nargs=1 Source execute 'source' fnameescape(stdpath('config').'/'.<q-args>)
 
-Source textobject.vim
+" Text Objects {{{1
+" Parameter.
+onoremap <silent> i, :<C-U>execute "keeppattern normal! v?\\m[(,]?;/\\S/\<lt>CR>o/\\m[,)]/s-1\<lt>CR>"<CR>
+" onoremap <silent> a, :<C-U>execute \"keeppattern normal! v/\\v,\\s*\\zs|\\zs)\<lt>CR>\"<CR>
+
+" Inner line.
+xnoremap il <Esc>_vg_
+xnoremap al <Esc>0v$h
+omap <silent> il :<C-U>normal vil<CR>
+omap <silent> al :<C-U>normal val<CR>
+
+" Statement.
+onoremap <silent> i; :<C-U>execute "keeppattern normal! 0v/;/$\<lt>CR>"<CR>
+onoremap <silent> a; :<C-U>execute "keeppattern normal! 0v/;/;/\\m^\s*/$\<lt>CR>"<CR>
+
+" Backticks.
+onoremap <silent> i` :<C-U>execute "keeppattern normal! v?\\v`\\_.{-}%#<bar>%#`?s+1\<lt>CR>o/`/e-1\<lt>CR>"<CR>
+onoremap <silent> a` :<C-U>execute "keeppattern normal! v?\\v`\\_.{-}%#<bar>%#`\<lt>CR>o/\\m`\\s*/e\<lt>CR>"<CR>
+
+" Indentation.
+vnoremap ii :<C-U>execute "keeppattern normal! 0/\\v\\s\\S\<lt>CR>V/\\v^(\\s+)\\S.*%(\\n<bar>\\1.*)*/e\<lt>CR>"<CR>
+omap <silent> ii :<C-U>normal vii<CR>
+" 1}}}
 
 " visual lines
 nnoremap <Up> gk
@@ -207,7 +229,9 @@ nnoremap <silent> <M-N> :cprev<CR>zz
 augroup vimrc_errorformat
 	function! s:errorformat_make()
 		if 'make' == &makeprg|
-			set errorformat^=make:\ %*[[]%f:%l:\ %m|
+			set errorformat^=make:\ %*[[]%f:%l:\ %m
+			set errorformat^=make:\ ***\ %*[[]%f:%l:\ %m
+			set errorformat^=/usr/bin/ld:\ %f:%l:\ %m
 		endif
 	endfunction
 
@@ -215,7 +239,16 @@ augroup vimrc_errorformat
 	autocmd OptionSet makeprg call s:errorformat_make()
 augroup END
 
-Source swapword.vim
+" Swap word {{{1
+" Swap word word.
+nnoremap <silent> Sw ciw<Esc>wviwp`^Pb
+
+" Swap WORD WORD.
+nnoremap <silent> SW  = ciW<Esc>wviWp`^PB
+
+" Swap xxx = yyy.
+nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P\", 'nt')\<CR>"
+" }}}1
 
 " Always go to file.
 " nnoremap <silent> gf :edit <cfile><CR>
@@ -224,9 +257,9 @@ Source swapword.vim
 " <C-E> does not want to get executed without execute... but <C-O> does... WTF!?
 nnoremap <silent><expr> z{ ':set scrolloff=0<bar>:execute "normal! {zt\<lt>C-O>\<lt>C-E>"<bar>:set scrolloff='.&scrolloff.'<CR>'
 
-nnoremap gss :setlocal spell!<CR>
-nnoremap gse :setlocal spell spelllang=en<CR>
-nnoremap gsh :setlocal spell spelllang=hu<CR>
+nnoremap <silent> gss :setlocal spell!<CR>
+nnoremap <silent> gse :setlocal spell spelllang=en<CR>
+nnoremap <silent> gsh :setlocal spell spelllang=hu<CR>
 
 " nomacs
 nnoremap <expr> <M-!> ':edit '.expand('%:h').'/<C-z>'
@@ -238,9 +271,8 @@ nnoremap <expr> <M-s> ':split '.expand('%:h').'/<C-z>'
 nnoremap <silent> <M-d> :Explore<CR>
 nnoremap <silent> <M-x> :Explore<CR>
 
-nnoremap <silent> <M-w> :write<CR>
+nnoremap <silent> <M-w> :bufdo update<CR>
 nnoremap <silent> <M-W> :wall<CR>
-nnoremap <silent> <M-u> :bufdo update<CR>
 nnoremap <silent> <M-q> :quit<CR>
 nnoremap <silent> <M-f> :next<CR>
 nnoremap <silent> <M-F> :prev<CR>
@@ -257,7 +289,15 @@ xnoremap <expr><silent> @ printf(':normal! @%s<CR>', nr2char(getchar()))
 
 command! SynShow echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
 
-Source japan.vim
+" Highlight trailing whitespaces.
+command! StripTrailingWhite keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e
+augroup vimrc_japan
+	autocmd!
+	autocmd ColorScheme * highlight ExtraWhitespace ctermbg=197 ctermfg=231 guibg=#ff005f guifg=#ffffff
+	autocmd BufReadPost * if !&readonly && &modifiable && index(['', 'text', 'git', 'markdown', 'mail', 'diff'], &filetype) ==# -1 |
+		\		call matchadd('ExtraWhitespace', '\v +\t+|\s+%#@!$', 10)|
+		\	endif
+augroup END
 
 cnoreabbrev <expr> man getcmdtype() == ':' && getcmdpos() == 4 ? 'Man' : 'man'
 command! -bar -bang -nargs=+ ManKeyword
@@ -444,7 +484,7 @@ augroup vimrc_autoplug
 	IfLocal autocmd BufReadPre *.styl ++once packadd vim-stylus
 	IfLocal autocmd BufReadPre *.pug  ++once packadd vim-pug
 	IfLocal autocmd BufReadPre *.toml ++once packadd vim-toml
-	IfLocal autocmd BufReadPre *.md   ++once packadd vim-markdown
+	IfLocal autocmd BufReadPre *.md		++once packadd vim-markdown
 	IfLocal autocmd BufReadPre *.glsl ++once packadd vim-glsl
 
 	IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
@@ -499,10 +539,11 @@ cnoreabbrev <expr> cd <SID>cabbr_cd()
 
 cnoreabbrev <expr> ccd getcmdtype() == ':' && getcmdpos() == 4 ? 'cd %:p:h' : 'ccd'
 cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'silent grep' : 'gr'
+cnoreabbrev <expr> g getcmdtype() == ':' && getcmdpos() == 2 ? 'GREP' : 'g'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
-command! -nargs=* Gr silent grep <args>
-command! -nargs=* GR Gr -g !check -g !docs -g !test -g !build -g !tests <args>
-xnoremap // y<Esc>:GR <C-r>="'".escape(fnameescape(@"), '\/.*$^~[](){}')."'"<CR><CR>
+command! -nargs=* GREP execute 'silent grep -g !check -g !docs -g !test -g !build -g !tests' escape((<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>)), '%#')
+xnoremap // y<Esc>:GREP <C-r>="'".escape(@", '\/.*$^~[](){}')."'"<CR><CR>
+nnoremap /. /\V.
 
 let pets_joker = ''
 " tab or complete
@@ -672,10 +713,11 @@ augroup vimrc_statusline
 	endfunction
 
 	function! StatusLineBuffers() abort
-		let s = ""
-		for bufnr in range(1, bufnr('$'))
+		let s = ' '
+		let altbufnr = bufnr('#')
+		for bufnr in sort(range(1, bufnr('$')), {x,y-> getbufvar(y, 'last_access') - getbufvar(x, 'last_access')})
 			if bufnr != bufnr() && getbufvar(bufnr, '&buflisted')
-				let s .= ' '.bufnr.':'.ShortenPath(bufname(bufnr))
+				let s .= (bufnr ==# altbufnr ? '#' : bufnr).':'.ShortenPath(bufname(bufnr)).' '
 			endif
 		endfor
 		return s
@@ -699,7 +741,7 @@ augroup vimrc_statusline
 	" endfunction
 
 	function! StatusLineFiletypeIcon() abort
-		return get({'unix': '', 'dos': '', 'mac':''}, &fileformat, '')
+		return get({'unix': '', 'dos': '', 'mac': ''}, &fileformat, '')
 	endfunction
 
 	autocmd CursorMoved * call s:StatusLineCursorChanged()
@@ -716,9 +758,13 @@ augroup vimrc_statusline
 		\ setlocal statusline+=%1*%2*|
 		\ setlocal statusline+=%(\ %{&paste?'ρ':''}\ %)|
 		\ setlocal statusline+=%(\ %{&spell?&spelllang:''}\ \ %)|
-		\ setlocal statusline+=\ %{!&binary?((!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').'\ '.StatusLineFiletypeIcon()):\"bin\ \\uf471\"}|
+		\ setlocal statusline+=\ %{!&binary?(substitute((!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').'\ ','\\m^utf-8\ $','','').StatusLineFiletypeIcon()):\"bin\ \\uf471\"}|
 		\ setlocal statusline+=%(\ \ %{!&binary?!empty(&ft)?&ft:'no\ ft':''}%)|
 		\ setlocal statusline+=\ %3*\ %2p%%\ %4l/%-4L%{diff_lnum}:%-3v
+augroup END
+
+augroup vimrc_tablastaccess
+	autocmd BufEnter * let b:last_access = localtime()
 augroup END
 
 let s:matchcolors = ['DiffAdd', 'DiffDelete', 'DiffChange']
