@@ -2,8 +2,6 @@
 
 " https://github.com/vim-syntastic/syntastic
 " tmux integration: https://gist.github.com/mislav/5189704(
-" https://github.com/RRethy/vim-hexokinase
-" https://github.com/osyo-manga/vim-hopping
 " https://github.com/liuchengxu/vim-clap
 
 " packadd nvim-lsp
@@ -28,18 +26,32 @@ set spelllang=en
 set ignorecase smartcase
 set scrolloff=5 sidescrolloff=23
 set splitright
+set cinoptions=(0
 set lazyredraw
 set matchpairs+=‘:’,“:”
 set timeoutlen=600
 set noswapfile
+set autowrite
 set hidden
 set pastetoggle=<F2>
 set switchbuf=useopen
-" https://gist.github.com/romainl/7e2b425a1706cd85f04a0bd8b3898805
 set path+=src/**,include/**
+augroup vimrc_autopath
+	autocmd! VimEnter,DirChanged *
+		\ if isdirectory('node_modules')|
+		\   set path-=**|
+		\ else|
+		\   set path+=**|
+		\ endif
+augroup END
 set wildmode=list:longest,full
 set wildcharm=<C-Z>
-set wildignore+=*.o,*.obj,.git,*.lock,*~
+" compiler generated
+set wildignore+=*.o,*.d
+" version control
+set wildignore+=.git
+" miscalleous
+set wildignore+=*.lock,*~,tests/**,t/**,check/**
 set grepprg=noglob\ rg\ --vimgrep\ --smart-case
 set grepformat=%f:%l:%c:%m
 set diffopt=filler,vertical,algorithm:patience
@@ -220,9 +232,49 @@ omap <silent> ii :<C-U>normal vii<CR>
 nnoremap <Up> gk
 nnoremap <Down> gj
 
+function s:make() abort
+	let start = strftime('%s')
+	echon "\U1f6a7  Building...  \U1f6a7"
+	silent make
+	let errors = 0
+	let warnings = 0
+	for item in getqflist()
+		if item.text =~ ' error: '
+			let errors += 1
+		elseif item.text =~ ' warning: '
+			let warnings += 1
+		endif
+	endfor
+
+	let elapsed = strftime('%s') - start
+	echon printf("[%2d:%02ds] ", elapsed / 60, elapsed % 60)
+	if 0 <# errors
+		echon "\u274c Build failed: "
+		echohl Error
+		echon printf("%d errors", errors)
+		echohl None
+		if 0 <# warnings
+			echon ", "
+			echohl WarningMsg
+			echon printf("%d warnings", warnings)
+			echohl None
+		endif
+	elseif 0 <# warnings
+		echon "\U1f64c Build finished: "
+		echohl WarningMsg
+		echon printf("%d warnings", warnings)
+		echohl None
+	else
+		echon "\U1f64f Build finished"
+	endif
+	echon "."
+endfunction
 inoremap <silent> <F9> <C-R>=strftime('%Y%b%d%a %H:%M')<CR>
-nnoremap <silent> <M-m> :cclose<bar>update<CR>:echo "Building..."<CR>:silent make<CR>:echo "Build finished."<CR>
-nnoremap <silent> <M-r> :cclose<bar>update<bar>silent make<bar>terminal make run<CR>
+nnoremap <silent> <M-m> :call <SID>make()<CR>
+nnoremap <silent> <M-r> :update<bar>silent make<bar>terminal make run<CR>
+nnoremap <silent> <C-j> :cnext<CR>zz
+nnoremap <silent> <C-k> :cprev<CR>zz
+nnoremap <silent> <M-l> :silent! cwindow<CR>
 nnoremap <silent> <M-n> :cnext<CR>zz
 nnoremap <silent> <M-N> :cprev<CR>zz
 
@@ -283,6 +335,17 @@ map gY "+yy
 
 " repeat last action over visual block
 xnoremap . :normal .<CR>
+
+" glob each line
+command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
+
+" sweep out untouched buffers
+function s:sweep() abort
+	let curbuf = bufnr('%')
+	bufdo if (!&modifiable || 0 ==# changenr()) && -1 ==# bufwinnr('%')|bdelete|endif
+	execute curbuf 'buffer'
+endfunction
+command! Sweep call <SID>sweep()
 
 " execute macro over visual range
 xnoremap <expr><silent> @ printf(':normal! @%s<CR>', nr2char(getchar()))
@@ -387,7 +450,7 @@ augroup END
 
 augroup vimrc_skeletons
 	autocmd! BufNewFile * autocmd FileType * ++once if 0 == changenr()|call setline(1, get({
-		\ 'c':   ['#include <stdio.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
+		\ 'c':   ['#include <stdio.h>', '#include <stdlib.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
 		\ 'cpp': ['#include <stdio.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
 		\ 'html': ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset=UTF-8>', '<title>Page Title</title>', '</head>', '<body>', "\t<h1>This is a Heading</h1>", '</body>', '</html>'],
 		\ 'sh': ['#!/bin/sh', ''],
@@ -504,7 +567,18 @@ nnoremap Q :normal n.<CR>
 " Automatically open quickfix and location window and make it modifiable.
 augroup vimrc_quickfixfix
 	autocmd!
-	autocmd QuickFixCmdPost [^l]* silent! botright cwindow
+	" autocmd QuickFixCmdPost [^l]* if index(map(range(1, winnr('$')), 'getbufvar(v:val, \"&buftype\")'), 'quickfix') ==# -1|silent! botright cwindow|echo \"opening\"|endif
+	autocmd QuickFixCmdPost [^l]* ++nested
+		\ if !empty(getqflist())|
+		\   botright copen|
+		\   silent! cfirst
+		\   copen|
+		\   call search('error:')|
+		\   execute 'normal!' "\<CR>"|
+		\   cc|
+		\ else|
+		\   silent! cclose|
+		\ endif
 	autocmd FileType qf setlocal modifiable nolist|
 		\ highlight qfWarning gui=bold guifg=#a36ac7|highlight qfError gui=bold guifg=#ed407a|highlight qfCode gui=bold|match qfWarning /warning:/|2match qfError /error:/|3match qfCode /‘[^’]*’/|
 		\ noremap <expr><silent><buffer> dd ":<C-u>call setqflist(filter(getqflist(), 'v:key!=".(line('.') - 1)."'))<CR>:.".(line('.') - 1)."<CR>"|
@@ -623,10 +697,8 @@ xnoremap <expr> g* 'y/<C-r>='."'\\V'.escape(@\", '\\/')\<CR>".'/e<CR>'
 xnoremap <expr> g# 'y?<C-r>='."'\\V'.escape(@\", '\\?')\<CR>".'?e<CR>'
 
 nnoremap ! :ls<CR>:b<Space>
-nnoremap <M-b> :ls<CR>:b<Space>
-nmap <M-g> <M-b>
+nnoremap g/ :!ls --group-directories-first<CR>:find<Space>
 nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
-nmap <M-O> goo
 
 nnoremap <C-w>T <C-w>s<C-w>T
 nnoremap <C-w>S <C-w>s<C-w>w
@@ -663,6 +735,7 @@ endif
 " IfSandbox execute \":function! g:WebDevIconsGetFileTypeSymbol(...)\nreturn ''\nendfunction\"
 " IfSandbox execute \":function! g:WebDevIconsGetFileFormatSymbol(...)\nreturn ''\nendfunction\"
 IfLocal packadd vim-fugitive
+IfLocal packadd debugger.nvim
 IfSandbox execute ":function! g:FugitiveHead(...)\nreturn ''\nendfunction"
 
 augroup vimrc_statusline
@@ -713,19 +786,20 @@ augroup vimrc_statusline
 	endfunction
 
 	function! StatusLineBuffers() abort
-		let s = ' '
+		let s = ''
 		let altbufnr = bufnr('#')
-		for bufnr in sort(range(1, bufnr('$')), {x,y-> getbufvar(y, 'last_access') - getbufvar(x, 'last_access')})
-			if bufnr != bufnr() && getbufvar(bufnr, '&buflisted')
+		for bufnr in sort(range(1, bufnr('$')), {x,y-> getbufvar(x, 'last_access') - getbufvar(y, 'last_access')})
+			if bufnr != bufnr() && getbufvar(bufnr, '&buflisted') && index(['quickfix', 'prompt'], getbufvar(bufnr, '&buftype')) ==# -1
 				let s .= (bufnr ==# altbufnr ? '#' : bufnr).':'.ShortenPath(bufname(bufnr)).' '
 			endif
 		endfor
 		return s
 	endfunction
 
-	IfLocal packadd vim-signify
-	IfLocal execute "function! StatusLineStat() abort\nreturn sy#repo#get_stats_decorated()\nendfunction"
-	IfSandbox execute "function! StatusLineStat() abort\nreturn ''\nendfunction"
+	" IfLocal packadd vim-signify
+	" IfLocal execute \"function! StatusLineStat() abort\nreturn sy#repo#get_stats_decorated()\nendfunction\"
+	" IfSandbox
+	execute "function! StatusLineStat() abort\nreturn ''\nendfunction"
 
 	let g:diff_lnum = '      '
 	function! s:StatusLineCursorChanged() abort
@@ -751,9 +825,10 @@ augroup vimrc_statusline
 		\ setlocal statusline+=%=|
 		\ setlocal statusline+=%2p%%\ %4l/%-4L:%-3v
 	autocmd BufEnter,WinEnter,BufWinEnter *
-		\ setlocal statusline=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{FugitiveHead()}\ %)\ %)|
-		\ setlocal statusline+=%n:%f%(%h%w%q%{exists('b:gzflag')?'[GZ]':''}%r%)%(\ %m%)%k%(\ %{StatusLineStat()}%)|
-		\ setlocal statusline+=%9*%<%{StatusLineBuffers()}%#StatusLine#|
+		\ setlocal statusline=%(\ %{DebuggerDebugging()?'🦋🐛🐝🐞🐧🦠':''}\ %)|
+		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{FugitiveHead()}\ %)\ %)|
+		\ setlocal statusline+=%n:%f%(%h%w%{exists('b:gzflag')?'[GZ]':''}%r%)%(\ %m%)%k%(\ %{StatusLineStat()}%)|
+		\ setlocal statusline+=%9*%<%(\ %{StatusLineBuffers()}%)%#StatusLine#|
 		\ setlocal statusline+=%=|
 		\ setlocal statusline+=%1*%2*|
 		\ setlocal statusline+=%(\ %{&paste?'ρ':''}\ %)|
