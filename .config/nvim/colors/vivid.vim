@@ -198,9 +198,9 @@ hi! link helpHeadline Type
 " }}}
 
 " Makefile {{{
-hi! link makeStatement Normal
+hi! link makeStatement Function
 hi! link makeCommands Normal
-hi! link makeIdent Normal
+hi! link makeIdent PreProc
 hi! link makeTarget Identifier
 hi! link makeSpecTarget cConstant
 " }}}
