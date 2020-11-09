@@ -271,10 +271,9 @@ function s:make() abort
 endfunction
 inoremap <silent> <F9> <C-R>=strftime('%Y%b%d%a %H:%M')<CR>
 nnoremap <silent> <M-m> :call <SID>make()<CR>
-nnoremap <silent> <M-r> :update<bar>silent make<bar>terminal make run<CR>
-nnoremap <silent> <C-j> :cnext<CR>zz
-nnoremap <silent> <C-k> :cprev<CR>zz
-nnoremap <silent> <M-l> :silent! cwindow<CR>
+nnoremap <silent> <M-r> :call <SID>make()<CR>:terminal make run<CR>
+nnoremap <silent> <M-l> :cnext<CR>zz
+nnoremap <silent> <M-L> :cprev<CR>zz
 nnoremap <silent> <M-n> :cnext<CR>zz
 nnoremap <silent> <M-N> :cprev<CR>zz
 
@@ -299,7 +298,7 @@ nnoremap <silent> Sw ciw<Esc>wviwp`^Pb
 nnoremap <silent> SW  = ciW<Esc>wviWp`^PB
 
 " Swap xxx = yyy.
-nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P\", 'nt')\<CR>"
+nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P_\", 'nt')\<CR>"
 " }}}1
 
 " Always go to file.
@@ -323,7 +322,7 @@ nnoremap <expr> <M-s> ':split '.expand('%:h').'/<C-z>'
 nnoremap <silent> <M-d> :Explore<CR>
 nnoremap <silent> <M-x> :Explore<CR>
 
-nnoremap <silent> <M-w> :bufdo update<CR>
+nnoremap <silent> <M-w> :Bufdo update<CR>
 nnoremap <silent> <M-W> :wall<CR>
 nnoremap <silent> <M-q> :quit<CR>
 nnoremap <silent> <M-f> :next<CR>
@@ -339,13 +338,10 @@ xnoremap . :normal .<CR>
 " glob each line
 command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
 
+command! -bang -nargs=+ Bufdo let g:bufdo_bufnr = bufnr()|execute 'bufdo<bang>' <q-args>|execute 'buffer' g:bufdo_bufnr|unlet g:bufdo_bufnr
+
 " sweep out untouched buffers
-function s:sweep() abort
-	let curbuf = bufnr('%')
-	bufdo if (!&modifiable || 0 ==# changenr()) && -1 ==# bufwinnr('%')|bdelete|endif
-	execute curbuf 'buffer'
-endfunction
-command! Sweep call <SID>sweep()
+command! Sweep windo let b:no_sweep = 1|Bufdo if (!&modifiable || 0 ==# changenr()) && !exists('b:no_sweep')|bdelete|endif|unlet! b:no_sweep
 
 " execute macro over visual range
 xnoremap <expr><silent> @ printf(':normal! @%s<CR>', nr2char(getchar()))
@@ -457,7 +453,7 @@ augroup vimrc_skeletons
 		\ 'zsh': ['#!/bin/zsh', ''],
 		\ 'bash': ['#!/bin/bash', ''],
 		\ 'python': ['#!/usr/bin/env PYTHONDONTWRITEBYTECODE=1 python3', '']
-		\}, &filetype, []))|set modified|endif|
+		\}, &filetype, []))|endif|
 		\normal G
 augroup END
 
@@ -467,39 +463,39 @@ augroup vimrc_filetypes
 		\ set mouse=n|
 		\ nnoremap <silent><buffer> gr gg/\v^RETURN<bar>EXIT<CR>:noh<CR>zt|
 		\ nnoremap <silent><buffer> ge gg/\m^ERRORS<CR>:noh<CR>zt
-	
+
 	autocmd FileType vim
 		\ command! -range Execute execute substitute(join(getline(<line1>, <line2>), "\n"), '\m\n\s*\', '', 'g')
-	
+
 	autocmd FileType mbsyncrc
 		\ setlocal keywordprg=:ManKeyword\ 1\ mbsync
-	
+
 	autocmd FileType tmux
 		\ setlocal keywordprg=:ManKeyword\ 1\ tmux
-	
+
 	autocmd FileType muttrc,neomuttrc
 		\ setlocal ts=4 et keywordprg=:ManKeyword\ 5\ neomuttrc
-	
+
 	autocmd FileType zsh
 		\ setlocal keywordprg=:ManKeyword\ 1\ zshall
-	
+
 	autocmd BufRead zathurarc
 		\ setlocal ft=cfg keywordprg=:ManKeyword\ 5\ zathurarc
-	
+
 	autocmd FileType html
 		\ xnoremap <expr> s<<Space> mode() ==# 'V' ? 'c< <CR><C-r>"><Esc>' : 'c< <C-r>" ><Esc>'|
 		\ xnoremap <expr> s<b mode() ==# 'V' ? 'c<lt>b><CR><C-r>"</b><Esc>' : 'c<lt>b><C-r>"</b><Esc>'|
 		\ xnoremap <expr> s<i mode() ==# 'V' ? 'c<lt>i><CR><C-r>"</i><Esc>' : 'c<lt>i><C-r>"</i><Esc>'|
 		\ xnoremap <expr> s<d mode() ==# 'V' ? 'c<lt>div><CR><C-r>"</div><Esc>' : 'c<lt>div><C-r>"</div><Esc>'
-	
+
 	autocmd FileType sh,zsh,dash
 		\ setlocal ts=2|
 		\ xnoremap <buffer> s< c<<EOF<CR><C-r><C-o>"EOF<CR><Esc><<gvo$B<Esc>i
-	
+
 	autocmd FileType plaintex,tex
 		\ xnoremap <buffer> sli c\lstinline{<C-r><C-o>"}<Esc>|
 		\ xnoremap <buffer> sq c\textquote{<C-r><C-o>"}<Esc>
-	
+
 	autocmd FileType vim,lua,javascript,yaml,css,stylus,xml,html,pug,gdb
 		\ setlocal ts=2
 
@@ -507,38 +503,41 @@ augroup vimrc_filetypes
 	let c_no_curly_error = 1 " (struct s){ } <-- avoid red
 	autocmd FileType c,cpp
 		\ setlocal ts=8 fdm=manual
-	
+
 	autocmd FileType json,javascript
 		\ setlocal ts=2 suffixesadd+=.js
-	
+
 	autocmd FileType lua
 		\ setlocal ts=2 suffixesadd+=.lua
-	
+
 	autocmd FileType gitcommit
 		\ command! WTC call setline(1, systemlist(['curl', '-s', 'http://whatthecommit.com/index.txt'])[0])|
 		\ syntax match Normal ":bug:" conceal cchar=🐛
-	
+
+	autocmd FileType json
+		\ setlocal equalprg=jq
+
 	autocmd FileType xml
 		\ setlocal equalprg=xmllint\ --encode\ UTF-8\ --format\ -
-	
+
 	autocmd FileType c,cpp
 		\ setlocal equalprg=clang-format
-	
+
 	autocmd FileType gitcommit,markdown
 		\ setlocal spell expandtab ts=2
-	
+
 	autocmd FileType man
 		\ nnoremap <buffer> // /\v^ {7}\S@=%(.*\n {11,14}\S)@=.{-}\zs\V|
 		\ nnoremap <buffer> <space> <C-D>|
 		\ nmap <buffer> /- //-
-	
+
 	autocmd FileType mail
 		\ setlocal wrap ts=4 et spell|
 		\ execute 'normal' '}'|
 		\ nnoremap <buffer> Q :x<CR>|
 		\ nnoremap <buffer> <silent> gs gg/\C^Subject: \?\zs<CR>:noh<CR>vg_<C-G>|
 		\ nnoremap <buffer> <silent> gb gg}
-	
+
 	autocmd FileType c,cpp
 		\ ia <buffer> sturct struct
 augroup END
@@ -584,9 +583,9 @@ augroup vimrc_quickfixfix
 		\ noremap <expr><silent><buffer> dd ":<C-u>call setqflist(filter(getqflist(), 'v:key!=".(line('.') - 1)."'))<CR>:.".(line('.') - 1)."<CR>"|
 		\ noremap <silent><buffer> df :<C-u>call setqflist(filter(getqflist(), 'v:val.bufnr!='.getqflist()[line('.') - 1].bufnr))<CR>|
 		\ noremap <expr><silent><buffer> J ":pedit +".(getqflist()[line('.') - 1].lnum)." ".fnameescape(bufname(getqflist()[line('.') - 1].bufnr)).'<CR>j'
-	autocmd QuickFixCmdPost l* silent! botright lwindow | setlocal modifiable
+	autocmd QuickFixCmdPost l* ++nested silent! botright lwindow | setlocal modifiable
 	" close non-essential windows on quit
-	autocmd QuitPre          * silent! lclose | silent! cclose
+	autocmd QuitPre          * ++nested silent! lclose | silent! cclose
 augroup END
 
 augroup vimrc_diffquit
@@ -612,8 +611,7 @@ endfunction
 cnoreabbrev <expr> cd <SID>cabbr_cd()
 
 cnoreabbrev <expr> ccd getcmdtype() == ':' && getcmdpos() == 4 ? 'cd %:p:h' : 'ccd'
-cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'silent grep' : 'gr'
-cnoreabbrev <expr> g getcmdtype() == ':' && getcmdpos() == 2 ? 'GREP' : 'g'
+cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'GREP' : 'gr'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
 command! -nargs=* GREP execute 'silent grep -g !check -g !docs -g !test -g !build -g !tests' escape((<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>)), '%#')
 xnoremap // y<Esc>:GREP <C-r>="'".escape(@", '\/.*$^~[](){}')."'"<CR><CR>
@@ -625,8 +623,11 @@ inoremap <expr> <Tab> col('.') > 1 && strpart(getline('.'), col('.') - 2, 3) =~ 
 cnoremap <expr> <C-z> getcmdtype() == ':' ? '<C-f>A<C-x><C-v>' : '<C-f>A<C-n>'
 inoremap <S-Tab> \<C-P>
 
+xnoremap <expr> O (line('v') !=# line('.') ? line('v') < line('.') : col('v') <  col('.')) ? '' : 'o'
+
 " wrap text
-nmap <silent><expr> cs ':set ve=all<CR>%%v%<Esc>xgvo<Esc>xgvo<Left><Left>s'.nr2char(getchar()).':set ve='.&ve.'<CR>'
+nmap <silent> ds %%v%O<Esc>xgv<Left>o<Esc>xgvo<Esc>
+nmap <silent><expr> cs 'dsgvs'.nr2char(getchar())
 nmap <silent><expr> css 'csa'.getline('.')[col('.')-1]
 nmap <silent><expr> csa ':set ve=all<CR>v2i'.nr2char(getchar()).'<Esc>xgvo<Esc>xgvo<Left><Left>s'.nr2char(getchar()).'<Esc>:set ve='.&ve.'<CR>'
 
@@ -714,8 +715,14 @@ IfLocal command! PackUpdate execute 'terminal' printf('find %s -mindepth 3 -maxd
 set number relativenumber
 augroup vimrc_numbertoggle
 	autocmd!
-	autocmd BufEnter,FocusGained,InsertLeave,WinEnter * if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|set relativenumber	|doautocmd OptionSet relativenumber|endif
-	autocmd BufLeave,FocusLost,InsertEnter,WinLeave   * if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|set norelativenumber|doautocmd OptionSet relativenumber|endif
+	autocmd FocusGained,InsertLeave,WinEnter * ++nested
+		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
+		\   set relativenumber|
+		\ endif
+	autocmd FocusLost,InsertEnter,WinLeave * ++nested
+		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
+		\   set norelativenumber|
+		\ endif
 augroup END
 
 set title
@@ -735,8 +742,9 @@ endif
 " IfSandbox execute \":function! g:WebDevIconsGetFileTypeSymbol(...)\nreturn ''\nendfunction\"
 " IfSandbox execute \":function! g:WebDevIconsGetFileFormatSymbol(...)\nreturn ''\nendfunction\"
 IfLocal packadd vim-fugitive
-IfLocal packadd debugger.nvim
 IfSandbox execute ":function! g:FugitiveHead(...)\nreturn ''\nendfunction"
+IfLocal packadd debugger.nvim
+IfSandbox execute ":function! g:DebuggerDebugging(...)\nreturn 0\nendfunction"
 
 augroup vimrc_statusline
 	autocmd!
@@ -798,7 +806,6 @@ augroup vimrc_statusline
 
 	" IfLocal packadd vim-signify
 	" IfLocal execute \"function! StatusLineStat() abort\nreturn sy#repo#get_stats_decorated()\nendfunction\"
-	" IfSandbox
 	execute "function! StatusLineStat() abort\nreturn ''\nendfunction"
 
 	let g:diff_lnum = '      '
@@ -815,16 +822,16 @@ augroup vimrc_statusline
 	" endfunction
 
 	function! StatusLineFiletypeIcon() abort
-		return get({'unix': '', 'dos': '', 'mac': ''}, &fileformat, '')
+		return get({ 'unix': '', 'dos': '', 'mac': '' }, &fileformat, '')
 	endfunction
 
 	autocmd CursorMoved * call s:StatusLineCursorChanged()
 
-	autocmd BufLeave,WinLeave,BufWinLeave *
+	autocmd WinLeave,BufWinLeave *
 		\ setlocal statusline=%n:%f%(\ %m%)|
 		\ setlocal statusline+=%=|
 		\ setlocal statusline+=%2p%%\ %4l/%-4L:%-3v
-	autocmd BufEnter,WinEnter,BufWinEnter *
+	autocmd WinEnter,BufWinEnter *
 		\ setlocal statusline=%(\ %{DebuggerDebugging()?'🦋🐛🐝🐞🐧🦠':''}\ %)|
 		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{FugitiveHead()}\ %)\ %)|
 		\ setlocal statusline+=%n:%f%(%h%w%{exists('b:gzflag')?'[GZ]':''}%r%)%(\ %m%)%k%(\ %{StatusLineStat()}%)|
@@ -935,6 +942,10 @@ augroup vimrc_persistent_options
 		\ ], s:options_vim)|
 		\ call system(['/usr/bin/pkill', '--signal', 'SIGUSR1', 'nvim'])
 	autocmd Signal SIGUSR1 call s:update_options_vim()|redraw!
+augroup END
+
+augroup vimrc_autosave
+	autocmd! Signal SIGUSR1 Bufdo update
 augroup END
 
 augroup vimrc_restorecursor
