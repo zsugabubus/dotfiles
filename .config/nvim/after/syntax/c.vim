@@ -12,7 +12,7 @@ syn keyword Identifier
 	\ assert abort
 	\ malloc free calloc realloc
 	\ mmap munmap msync
-	\ strcmp strdup strlen strnlen strchr strstr strcpy strncpy strsep strspn strcspn
+	\ strcmp strdup strlen strnlen strchr strstr strcpy strncpy strsep strspn strcspn strcat strncat
 	\ wcslen wcsspn wcscspn
 	\ memcmp memcpy memmove memchr rawmemchr memmem memset
 	\ signal sigaction
@@ -24,6 +24,7 @@ syn keyword Identifier
 	\ open creat close dup dup2
 	\ read write readv writev
 	\ openpty forkpty
+	\ fopen fclose fputc fputs putc putchar puts
 	\ fcntl ioctl
 syn keyword Identifier
 	\ containerof container_of
