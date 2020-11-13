@@ -1,14 +1,15 @@
-function state_changed()
+function update()
 	mp.set_property_bool('stop-screensaver',
-		(
-			not mp.get_property_bool('pause')
-		and
-			(mp.get_property_number('estimated-frame-count') or 0) > 1
-		)
-		or
-			mp.get_property_bool('fullscreen'))
+		not mp.get_property_bool('pause') and (function()
+			local tracks = mp.get_property_native('track-list')
+			for _, track in ipairs(tracks) do
+				if 0 < (track['demux-fps'] or 0) then
+					return true
+				end
+			end
+			return false
+		end)())
 end
 
-mp.observe_property('pause', nil, state_changed);
-mp.observe_property('estimated-frame-count', nil, state_changed);
-mp.observe_property('fullscreen', nil, state_changed);
+mp.observe_property('pause', nil, update);
+mp.observe_property('file-loaded', nil, update);
