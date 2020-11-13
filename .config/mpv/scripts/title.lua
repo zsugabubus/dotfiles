@@ -13,8 +13,9 @@ function shesc(s)
 end
 
 mp.add_key_binding('y', 'yank-title', function()
-	os.execute(('printf %%s %s | xclip -l 1 -selection clipboard'):format(shesc(title())))
-	mp.osd_message('Yanked: ' .. name)
+	local title = title()
+	os.execute(('printf %%s %s | xclip -l 1 -selection clipboard'):format(shesc(title)))
+	mp.osd_message('Yanked: ' .. title)
 end, {repeatable=false})
 
 -- Show
@@ -26,8 +27,7 @@ function asscape(s)
 end
 
 function update_overlay()
-
-	osd.data = ('{\\an7\\bord2\\fscx70\\fscy70}[%d/%d] %s'):format(
+	osd.data = ('{\\an2\\c&H00ffFF\\bord2\\fscx70\\fscy70}[%d/%d] %s'):format(
 			mp.get_property('playlist-pos'),
 			mp.get_property('playlist-count'),
 			asscape(title())
