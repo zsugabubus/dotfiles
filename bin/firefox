@@ -17,9 +17,8 @@ unlink "$tmp"
   # --ro-bind /usr/share/defaults/ /usr/share/defaults/ \
 
   # --ro-bind /usr/share/graphite2/ /usr/share/graphite2/ \
-exec env -i "TERMINAL=$TERMINAL" MOZ_FORCE_DISABLE_E10S=1 bwrap \
+exec env -i "TERMINAL=$TERMINAL" MOZ_FORCE_DISABLE_E10S=1 MOZ_USE_XINPUT2=1 bwrap \
   --as-pid-1 \
-  --die-with-parent \
   \
   --ro-bind /usr/bin/python3 /usr/bin/python3 \
   --ro-bind /usr/bin/env /usr/bin/env \
@@ -74,8 +73,8 @@ exec env -i "TERMINAL=$TERMINAL" MOZ_FORCE_DISABLE_E10S=1 bwrap \
   --ro-bind-try $HOME/.drirc $NEW_HOME/.drirc \
   --setenv HOME $NEW_HOME \
   --ro-bind /tmp/.X11-unix /tmp/.X11-unix \
-  --ro-bind $XAUTHORITY $NEW_HOME/.Xauthority \
-  --setenv DISPLAY $DISPLAY \
+  --ro-bind-try "$XAUTHORITY" $NEW_HOME/.Xauthority \
+  --setenv DISPLAY "$DISPLAY" \
   --setenv XDG_RUNTIME_DIR $XDG_RUNTIME_DIR \
   --ro-bind $HOME/.local/share/nvim/site $NEW_HOME/.local/share/nvim/site \
   --ro-bind $HOME/.local/share/tridactyl $NEW_HOME/.local/share/tridactyl \
