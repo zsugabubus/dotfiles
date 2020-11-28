@@ -1,0 +1,9 @@
+[Unit]
+Description=Filesystem synchronization
+
+[Service]
+Type=simple
+ExecStart=sync
+
+[Install]
+WantedBy=default.target
