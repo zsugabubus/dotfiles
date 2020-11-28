@@ -1,0 +1,13 @@
+[Unit]
+Description=Synchronization of Firefox profile %I
+Requisite=firefox-tmpfs-profile@%i.service
+After=firefox-tmpfs-profile@%i.service
+AssertPathExists=%t/firefox/%i
+
+[Service]
+Type=simple
+# ExecStop from the other service
+ExecStart=/usr/bin/rsync -qax --delete "%t/firefox/%i/" "%h/.mozilla/firefox/%i/"
+
+[Install]
+WantedBy=default.target

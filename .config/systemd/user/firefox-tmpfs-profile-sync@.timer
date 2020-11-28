@@ -1,0 +1,9 @@
+[Unit]
+Description=Hourly synchronization of Firefox profile %I
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=3min
+
+[Install]
+WantedBy=default.target
