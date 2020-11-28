@@ -1,5 +1,6 @@
 [Unit]
-Description=Place Firefox profile %I to memory
+Description=Temporal place for Firefox profile %I
+Wants=firefox-tmpfs-profile-sync@%i.timer
 RequiresMountsFor=/home
 RefuseManualStart=true
 
