@@ -1,0 +1,4 @@
+#compdef mpv_hack
+# mpv's completion works correctly only when base command is "mpv"
+words[1]=mpv
+_normal

@@ -22,8 +22,11 @@ function mo() {
 	local dev=$(lsblk -rpno TYPE,HOTPLUG,NAME,SIZE,LABEL,MOUNTPOINT | grep 'part 1' | fzf -1 | awk -F ' ' '{print $3}') &&
 	{ read -q "?mount $dev /mnt? [Y/n]" } always { print } && sudo mount $dev /mnt
 }
+alias da='date'
 alias configure_make='./configure && make'
-alias make_install='sudo make PREFIX=/usr prefix=/usr install'
+alias make_install='() { for prefix in "" sudo; do $prefix make PREFIX=/usr prefix=/usr install && break; done }'
+alias make='make -j$(($(nproc) + 1))'
+alias make='make -j2'
 alias h=man
 alias ls='ls -ohtrF --group-directories-first --color=tty --quoting-style=literal'
 alias l=ls
@@ -35,6 +38,16 @@ alias pkill='pkill -x'
 alias d='dirs -v | head -10'
 alias va='nice -20 vlock -a'
 alias c-='cd -'
+function catf() {
+	local pre=''
+	for f in ${@:-*}; do
+		if [[ -f $f ]]; then
+			printf $pre'%s:\n' $f
+			pre='\n'
+			cat -- $f
+		fi
+	done
+}
 function lll() { ls -l --color "$@" | less; }
 alias tt=tarrtv
 compdef tt=tarrtv
@@ -98,6 +111,7 @@ alias -g G='| grep -i'
 alias -g F='| fzf | { while read f; do print -z $(q-@)f; done }'
 alias -g _='| less'
 alias diff='diff --color=auto'
+alias gccc='gcc -O0 -g -ldl main.c && ./a.out'
 alias df='df -h'
 alias grep='grep --color=auto'
 alias dmesg='dmesg -H --color=always | less'
@@ -151,14 +165,21 @@ alias g='git'
 alias j='jobs'
 alias gs='git status'
 alias gd='git diff'
+alias am='alsamixer'
 alias gds='git diff --staged'
 alias GS='nvim +:Gstatus'
 alias mpv_test='mpv --input-test --force-window --idle'
-alias mpc='mpv --player-operation-mode=cplayer'
 alias mp='() { mpv 2>&- --player-operation-mode=pseudo-gui ${*:-.} &! }'
-function mpvs() { mpv --player-operation-mode=pseudo-gui "$1" --sub-file "${2:-/dev/null}" }
+compdef mp=mpv_hack
+alias mpc='mpv --player-operation-mode=cplayer --no-video'
+compdef mpc=mpv_hack
+alias mpf='mp *(.)'
+compdef mpf=mpv_hack
+# function mpvs() { mpv --player-operation-mode=pseudo-gui "$1" --sub-file "${2:-/dev/null}" }
+# compdef mpvs=mpv_hack
 alias service='systemctl --user'
 
+alias gdbrun='() { local file=$1; shift; gdb -quiet $file -ex "run ${(q)*}"; }'
 autoload -U zmv
 alias cpp='noglob _zmv -C'
 alias lnn='noglob _zmv -L'
@@ -205,6 +226,8 @@ function rmm() {
 	print -l "rm $options${options:+ }-- "$^@ && { read -q "?Execute? " } always { print } && rm $options $@
 }
 alias mv='mv -i'
+alias mv~='() { mv $1 $1~ }'
+alias backup='() { cp $1 $1~ }'
 alias asm='gcc -fno-stack-protector -fno-asynchronous-unwind-tables -S'
 alias md='noglob md'
 function md() { mkdir -p -- "$*" && cd -- "$*" }
@@ -250,14 +273,11 @@ alias cpd='() { rsync -aihPv -- $^*/ }'
 # alias p='pass letmein &>/dev/null'
 alias iotop='sudo iotop'
 alias fcf='() { print -z $(fc -nl 0 | fzf); }'
-alias itl='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
+alias it='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
 alias pl='pass login'
 compdef '_files -W ~/.config/passwords' pl
 alias bc='bc -lq'
-alias a='() { env PYTHONDONTWRITEBYTECODE=1 ESCDELAY=1 '"$(awk -F= '
-$1=="rpc-secret" { printf " ARIA_RPC_SECRET=" $2 }
-$1=="rpc-listen-port" { printf " ARIA_RPC_PORT=" $2 }
-' ~/.config/aria2/aria2cd.conf)"' aria2t ${1+--select} $1:a }'
+alias a=aria2t
 alias ffprobe='ffprobe -hide_banner'
 alias ffmpeg='ffmpeg -hide_banner'
 alias ffplay='ffplay -hide_banner'
@@ -266,10 +286,10 @@ function pdfmerge() {
 	local out=a.pdf
 	command gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -sOutputFile="$out" ${@:-*.pdf}
 }
-alias neomutt='torsocks -q /usr/bin/neomutt'
 alias calcurse='calcurse -q'
 # alias abook='abook --config ~/.config/abook/abookrc --datafile ~/.config/abook/addressbook'
-alias co='curl -LO'
+alias curl='curl --remote-name-all'
+alias co='curl -L'
 alias oz='() { od -A x -t x1z -v $@ | sed '"'"'s/  >\(.*\)<$/  |\1|/'"'"' }'
 alias du.='du --apparent-size -csh .'
 alias du..='du --apparent-size -chd 1 .'
@@ -309,12 +329,6 @@ function _check_user_files() {
 	fi
 }
 
-alias 2='noglob 2'
-function 2() {
-	dc -e "${${${${2/%bin#/2}/%oct#/8}/%dec#/10}/%hex#/16} o ${${${${1/%bin#/2}/%oct#/8}/%dec#/10}/%hex#/16} i $(tr a-z A-Z <<<$3) p"
-}
-compdef '_arguments "1:from:(hex dec bin)" "2:to:(hex dec bin)" "3:what:"' 2
-
 function _confirm_cmd() {
 	print -rnP "%B%F{blue}::%f Confirm? [y/N]%b " &&
 	read -sqr && command "${@}"
@@ -333,7 +347,7 @@ function ab() {
 	else
 		local session=$(tr </dev/urandom -dc a-z | head -c3)
 	fi
-	abduco -e '' -c "$session" "${@:-$SHELL}"
+	abduco -c "$session" "${@:-$SHELL}"
 }
 
 function bwsh() {
@@ -405,6 +419,7 @@ function checksum() {
 	done | $PAGER
 }
 
+alias pub=publish
 function publish() {
 	case $# in
 	(0)
