@@ -1,0 +1,5 @@
+#!/bin/dash
+xset s 125 125
+xset +dpms dpms 125 125 125
+magixrandr auto home laptop
+aplay ~/doc/Windows_95_Startup.wav
