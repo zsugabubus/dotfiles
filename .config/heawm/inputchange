@@ -1,0 +1,2 @@
+#!/bin/dash
+setxkbmap pl dvp compose:ralt
