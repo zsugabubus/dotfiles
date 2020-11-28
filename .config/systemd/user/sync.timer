@@ -1,0 +1,8 @@
+[Unit]
+Description=Hourly filesystem synchronization
+
+[Timer]
+OnCalendar=hourly
+
+[Install]
+WantedBy=default.target
