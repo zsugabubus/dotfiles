@@ -63,8 +63,7 @@ unbind zR
 unbind zr
 unbind zM
 
-" go to reddit.com/u/user -> reddit.com/u/user/posts
-bind gp jsb browser.tabs.query({currentWindow: true, active: true}).then(t => browser.tabs.update({url: t[0].url.replace(/^(https:\/\/www.reddit.com\/u(ser)\/([^/]+))\/?.*/, '$1/posts')}))
+bind gs jsb browser.tabs.query({currentWindow: true, active: true}).then(t => browser.tabs.update({url: t[0].url.replace(/^(https:\/\/www.reddit.com\/u(ser)\/([^/]+))\/?.*/, '$1/submitted')}))
 
 bind g1 tab 1
 bind g2 tab 2
