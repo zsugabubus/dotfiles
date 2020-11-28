@@ -75,17 +75,17 @@ exec env -i bwrap \
   --tmpfs "$HOME" \
   --bind $HOME/mem $HOME/mem \
   --ro-bind /tmp/.X11-unix /tmp/.X11-unix \
-  --ro-bind $XAUTHORITY $HOME/.Xauthority \
+  --ro-bind-try "$XAUTHORITY" $HOME/.Xauthority \
   $( (eval realpath $(getopt -s sh '' "$@" 2>/dev/null) 2>/dev/null) | awk '{print "--bind-try";print;print}') \
   --setenv HOME $HOME \
   --setenv XDG_RUNTIME_DIR $HOME \
-  --setenv DISPLAY $DISPLAY \
+  --setenv DISPLAY "$DISPLAY" \
   --ro-bind-try $HOME/.asoundrc $HOME/.asoundrc \
   --ro-bind $HOME/.config/fontconfig $HOME/.config/fontconfig \
   --ro-bind $HOME/.config/mpv $HOME/.config/mpv \
   --ro-bind $HOME/.config/youtube-dl $HOME/.config/youtube-dl \
-  --setenv LANG $LANG \
-  --setenv TZ $TZ \
+  --setenv LANG "$LANG" \
+  --setenv TZ "$TZ" \
   /usr/bin/mpv "$@"
 
   $( (eval dirname $(eval realpath $(getopt -s sh '' "$@" 2>/dev/null) 2>/dev/null) 2>/dev/null ) | awk '{print "--ro-bind-try";print;print}') \
