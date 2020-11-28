@@ -27,10 +27,13 @@ function asscape(s)
 end
 
 function update_overlay()
-	osd.data = ('{\\an2\\c&H00ffFF\\bord2\\fscx70\\fscy70}[%d/%d] %s'):format(
+	local duration = mp.get_property('duration')
+	osd.data = ('{\\an2\\c&H00ffFF\\bord2\\fscx70\\fscy70}[%d/%d] %s (%02d:%02d)'):format(
 			mp.get_property('playlist-pos'),
 			mp.get_property('playlist-count'),
-			asscape(title())
+			asscape(title()),
+			duration / 60,
+			duration % 60
 	)
 	osd:update()
 end
