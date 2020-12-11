@@ -1,4 +1,3 @@
-syn match cType "\v<\k+_t>"
 if exists("c_gnu")
 	syn match Identifier "\v<__builtin_\k+>"
 
@@ -33,7 +32,12 @@ syn keyword Identifier
 syn match Identifier "\v<v?%(f|d|s|sn)?w?printf>"
 syn match Identifier "\v<v?[fs]?w?scanf>"
 syn match Identifier "\v<pthread_\k+>"
+syn match Identifier "\v<U?INT%(8|16|32|64|MAX)_C>"
+syn match cConstant "\v<%(PRI|SCN)[diouxX]%(%(LEAST|FAST)?%(8|16|32|64)|MAX|PTR)>"
+syn match cConstant "\v<%(%([US]?CHAR)|U?%(SHRT|INT%(%(_LEAST|_FAST)?%(8|16|32|64)?|PTR|MAX)|L?LONG)|SIZE|W%(CHAR|INT)|PTRDIFF|SIG_ATOMIC)_WIDTH>"
+syn match cConstant "\v<%(PRI|SCN)(%(|LEAST|FAST)%(8|16|32|64)|MAX|PTR)>"
 syn keyword cConstant
 	\ __STDC_VERSION__ clang
+	\ SIGRTMIN SIGRTMAX
 	\ STDIN_FILENO STDOUT_FILENO STDERR_FILENO
 	\ __cplusplus
