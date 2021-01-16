@@ -7,18 +7,17 @@ mp.observe_property('playlist', nil, function()
 
 	local playlist = mp.get_property_native('playlist')
 	for i=1,#playlist do
-		playlist[i].pos = i
+		local entry = playlist[i]
+		entry.pos = i
+		entry.string = entry.filename
+			:gsub('[.,;&_ ()[\135{}/-]', '')
+			:gsub('^[0-9]+', '')
+			:lower()
 	end
 
 	table.sort(playlist, function(x, y)
-		local xs = x.filename
-		local ys = y.filename
-		local xss = xs:gsub('[0-9._ ()/-]', ''):lower()
-		local yss = ys:gsub('[0-9._ ()/-]', ''):lower()
-		if xss ~= yss then
-			return xss < yss
-		elseif xs ~= ys then
-			return xs < ys
+		if x.string ~= y.string then
+			return x.string < y.string
 		else
 			return x.pos < y.pos
 		end
