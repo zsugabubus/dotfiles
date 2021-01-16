@@ -3,8 +3,8 @@ function title()
 	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
 	local title = mp.get_property_native('metadata/by-key/Title', nil) or
 	              mp.get_property_native('media-title', nil)
-
-	return (artist and title) and (artist .. ' - ' .. title) or title or mp.get_property_native('path', '')
+	local version = mp.get_property_native('metadata/by-key/Version', nil)
+	return (artist and title) and (artist .. ' - ' .. title .. (version and ' (' .. version .. ')' or '')) or title or mp.get_property_native('path', '')
 end
 
 -- Yank
@@ -27,7 +27,7 @@ function asscape(s)
 end
 
 function update_overlay()
-	local duration = mp.get_property('duration')
+	local duration = mp.get_property('duration') or 0
 	osd.data = ('{\\an2\\c&H00ffFF\\bord2\\fscx70\\fscy70}[%d/%d] %s (%02d:%02d)'):format(
 			mp.get_property('playlist-pos'),
 			mp.get_property('playlist-count'),

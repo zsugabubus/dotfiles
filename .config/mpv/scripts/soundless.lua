@@ -1,5 +1,4 @@
 -- For dumpass people who do not get why they cannot hear anything.
-
 local osd = mp.create_osd_overlay("ass-events")
 
 function update(_, _)
