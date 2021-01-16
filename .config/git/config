@@ -1,20 +1,19 @@
+[am]
+	threeWay = true
 [init]
 	templatedir = ~/.config/git/template
+	defaultBranch = master
 [include]
 	path = config.user
 	path = config.credential
 [alias]
-	a3 = apply -3
-	am3 = am -3
-	amend = commit -v --amend
+	fp = format-patch -o patches
 	b = branch
-	br = branch
-	ca = commit --amend
-	c = commit -v
-	ce = commit --edit
-	cm = commit -m
-	cob = checkout -b
+	ca = commit --amend --reset-author
+	c = commit --signoff --verbose
+	ce = commit -s --edit
 	co = checkout
+	cob = co --branch
 	d = diff
 	da = apply
 	ds = diff --staged
@@ -24,7 +23,9 @@
 	ri = rebase --interactive --autosquash
 	s = status
 	l  = log --date-order --date=relative --graph --full-history --all --pretty=format:'%C(yellow)%h%C(magenta)%G? %C(reset)%>(12)%cr %C(bold blue)%aN <%ae>%C(reset)%C(bold red)%d %C(reset)%s'
-	ls = log --date-order --date=relative --graph --full-history --all --pretty=format:'%C(yellow)%h%C(magenta)%G? %C(reset)%>(12)%cr %C(bold blue)%aN <%ae>%C(reset)%C(bold red)%d %C(reset)%s\n' --stat
+	ls = l --stat
+	lo = log --oneline --graph
+	los = lo --stat
 	lp = ls -p
 [merge]
 	tool = nvimdiff
