@@ -1,7 +1,13 @@
 #!/bin/zsh -eu
 . $ZDOTDIR/hashes.zsh
 
-[[ -d ~V ]] && dir='~V' || dir='~m'
+if [[ -d ~N/var ]]; then
+	dir='~N/var'
+elif [[ -d ~V ]]; then
+	dir='~V'
+else
+	dir='~m'
+fi
 
 printf '%s\n dir='$dir'\n' ~m/*.torrent >$2
 $EDITOR $2
