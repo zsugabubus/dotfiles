@@ -1,4 +1,9 @@
-#!/bin/dash
-sed -i '/max-.*load-limit\|seed-ratio\|max-concurrent.*/!d' "$2"
-touch "$2" --date -1sec
+#!/bin/dash -eu
+cp "$2" "$2.orig"
+sed -i '/max-.*load-limit\|seed-ratio\|max-concurrent.*\|index-out/!d' "$2"
 $EDITOR "$2"
+
+sort <"$2" | sponge "$2"
+sort <"$2.orig" | sponge "$2.orig"
+
+comm -2 -3 "$2" "$2.orig" | sponge "$2"
