@@ -6,7 +6,7 @@ AssertPathExists=%t/firefox/%i
 
 [Service]
 Type=simple
-# ExecStop from the other service
+# ExecStop from the other service.
 ExecStart=/usr/bin/rsync -qax --delete "%t/firefox/%i/" "%h/.mozilla/firefox/%i/"
 
 [Install]

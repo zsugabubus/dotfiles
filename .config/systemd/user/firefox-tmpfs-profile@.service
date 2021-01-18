@@ -2,7 +2,7 @@
 Description=Temporal place for Firefox profile %I
 Wants=firefox-tmpfs-profile-sync@%i.timer
 RequiresMountsFor=/home
-RefuseManualStart=true
+RefuseManualStart=yes
 
 [Service]
 Type=oneshot
