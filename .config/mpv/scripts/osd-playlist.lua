@@ -47,30 +47,33 @@ function _update()
 	for i=from,to do
 		local item = playlist[i]
 
-		local display = item.filename:gsub('^./', '')
+		local display = item.title
+		if not display then
+			display = item.filename:gsub('^./', '')
 
-		-- Find potential space replacement.
-		local space, space_count = ' ', 0
-		if not display:find(space) then
-			for _, fake_space in pairs({'%.', '-', '%_'}) do
-				local count = select(2, display:gsub(fake_space, ''))
-				if space_count < count then
-					space, space_count = fake_space, count
+			-- Find potential space replacement.
+			local space, space_count = ' ', 0
+			if not display:find(space) then
+				for _, fake_space in pairs({'%.', '-', '%_'}) do
+					local count = select(2, display:gsub(fake_space, ''))
+					if space_count < count then
+						space, space_count = fake_space, count
+					end
 				end
 			end
-		end
 
-		if 80 < #display then
-			local HORIZONTAL_ELLIPSIS = '\226\128\166'
-			display = display:gsub('/.*/', '/' .. HORIZONTAL_ELLIPSIS .. '/')
-		end
+			if 80 < #display then
+				local HORIZONTAL_ELLIPSIS = '\226\128\166'
+				display = display:gsub('/.*/', '/' .. HORIZONTAL_ELLIPSIS .. '/')
+			end
 
-		display = display
-			:gsub(space, NBSP)
-			-- Hehh.
-			:gsub(' [0-9]+p[^/]*$', '')
-			-- Trim extension.
-			:gsub('%.[0-9A-Za-z]+$', '')
+			display = display
+				:gsub(space, NBSP)
+				-- Hehh.
+				:gsub(NBSP .. '[0-9]+p[^/]*', '')
+				-- Trim extension.
+				:gsub('%.[0-9A-Za-z]+$', '')
+		end
 
 		osd.data = osd.data ..
 			('\\N{\\r\\b0\\fscx%f\\fscy%f}'):format(font_scale * 100, font_scale * 100) ..
