@@ -6,7 +6,7 @@ echoti clear
 echoti rmam # no line wrap
 echoti civis # hide cursor
 
-echo # status line
+for i in {1..8}; echo # status line
 lsblk -o NAME,LABEL,FSAVAIL,FSUSE%
 echo
 cal -mw
@@ -15,21 +15,24 @@ echoti home
 ~/pro/seabar/seabar &
 pid=$!
 
-read -rk1
+while read -rk1; do
+	kill "$pid"
 
-kill $pid
+	echoti clear
 
-echoti clear
+	case $REPLY in
+	b) exec setsid -f firefox ;;
+	t) exec setsid -f telegram-desktop ;;
+	p) exec top ;;
+	m) exec neomutt ;;
+	a) exec aria2t ;;
+	s) exec /bin/kill -SIGSTOP $(pidof firefox) ;;
+	c) exec /bin/kill -SIGCONT $(pidof firefox) ;;
 
-case $REPLY in
-b) exec setsid -f firefox ;;
-t) exec setsid -f telegram-desktop ;;
-m) exec neomutt ;;
-a) exec aria2t ;;
-s) exec /bin/kill -SIGSTOP $(pidof firefox) ;;
-c) exec /bin/kill -SIGCONT $(pidof firefox) ;;
-
-d) exec magixrandr switch dual ;;
-h) exec magixrandr switch home ;;
-l) exec magixrandr switch laptop ;;
-esac
+	d) exec magixrandr switch dual ;;
+	h) exec magixrandr switch home ;;
+	l) exec magixrandr switch laptop ;;
+	x) magixrandr switch off ;;
+	*) exit
+	esac
+done
