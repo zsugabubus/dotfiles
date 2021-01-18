@@ -1,7 +1,7 @@
 [Unit]
 Description=UPnP Port Opening for Aria2c Daemon
-RefuseManualStart=true
-StopWhenUnneeded=true
+RefuseManualStart=yes
+StopWhenUnneeded=yes
 
 [Service]
 Type=oneshot

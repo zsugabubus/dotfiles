@@ -1,9 +1,11 @@
 [Unit]
 Description=Hourly synchronization of Firefox profile %I
+StopWhenUnneeded=yes
+RefuseManualStart=yes
 
 [Timer]
 OnCalendar=hourly
-RandomizedDelaySec=3min
+RandomizedDelaySec=5min
 
 [Install]
 WantedBy=default.target
