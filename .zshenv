@@ -1,8 +1,8 @@
 path=($HOME/.local/bin $path $HOME/.cargo/bin)
 export ZDOTDIR=$HOME/.config/zsh
 
-case $XDG_VTNR in
-1) # X11 session
+case $TTY in
+/dev/tty1) # X11 session
 	export BROWSER=firefox
 	export TERMINAL=alacritty
 	;;
