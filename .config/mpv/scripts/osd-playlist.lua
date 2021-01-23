@@ -20,23 +20,24 @@ function _update()
 	local playlist = mp.get_property_native('playlist')
 
 	local rtl = false
-	local font_scale = 0.75
+	local font_scale = 0.7
 	local font_size = mp.get_property_number('osd-font-size')
+	local scaled_font_size = font_size * font_scale
 	-- Trim a half-half line from top and bottom to make visually a bit more pleasant.
-	local margin_v = mp.get_property_number('osd-margin-y') + font_size / 4
-	local y = font_size + font_size / 4
+	local margin_v = mp.get_property_number('osd-margin-y') + scaled_font_size / 4
+	local y = font_size + scaled_font_size / 4
 	osd.data = ('{\\r\\bord2\\pos(0, %d)\\fnmpv-osd-symbols}'):format(y)
 
-	local max = math.floor((900 - margin_v - y) / font_size)
+	local n = math.floor((osd.res_y - margin_v - y) / scaled_font_size) - 1
 
-	local from = pos - math.floor(max * 0.2)
+	local from = pos - math.floor(n * 0.2)
 	if from < 1 then
 		from = 1
 	end
-	local to = from + max
+	local to = from + n
 	if #playlist < to then
 		to = #playlist
-		from = to - max
+		from = to - n
 		if from < 1 then
 			from = 1
 		end
