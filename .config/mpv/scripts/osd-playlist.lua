@@ -5,6 +5,24 @@ local timeout = mp.add_timeout(mp.get_property_number('osd-duration') / 1000, fu
 end)
 timeout:kill()
 
+local options = require 'mp.options'
+
+local opts = {
+	rtl = false,
+	font_scale = 0.65,
+}
+
+options.read_options(opts)
+
+local prev_pos = 0
+local forward = true
+mp.observe_property('playlist-pos', 'number', function(_, pos)
+	if prev_pos ~= pos then
+		forward = prev_pos <= pos
+		prev_pos = pos
+	end
+end)
+
 function update()
 	mp.register_idle(_update)
 end
@@ -19,18 +37,15 @@ function _update()
 	local pos = mp.get_property_number('playlist-pos-1')
 	local playlist = mp.get_property_native('playlist')
 
-	local rtl = false
-	local font_scale = 0.7
 	local font_size = mp.get_property_number('osd-font-size')
-	local scaled_font_size = font_size * font_scale
+	local scaled_font_size = font_size * opts.font_scale
 	-- Trim a half-half line from top and bottom to make visually a bit more pleasant.
 	local margin_v = mp.get_property_number('osd-margin-y') + scaled_font_size / 4
 	local y = font_size + scaled_font_size / 4
-	osd.data = ('{\\r\\bord2\\pos(0, %d)\\fnmpv-osd-symbols}'):format(y)
 
 	local n = math.floor((osd.res_y - margin_v - y) / scaled_font_size) - 1
 
-	local from = pos - math.floor(n * 0.2)
+	local from = pos - math.floor(n * (forward and 0.2 or 0.8))
 	if from < 1 then
 		from = 1
 	end
@@ -42,6 +57,8 @@ function _update()
 			from = 1
 		end
 	end
+
+	osd.data = ('{\\r\\bord2\\pos(0, %d)\\fnmpv-osd-symbols}'):format(y)
 
 	local NBSP = '\194\160'
 	local RIGHT_ARROW = '\226\158\156'
@@ -77,9 +94,9 @@ function _update()
 		end
 
 		osd.data = osd.data ..
-			('\\N{\\r\\b0\\fscx%f\\fscy%f}'):format(font_scale * 100, font_scale * 100) ..
+			('\\N{\\r\\b0\\fscx%f\\fscy%f}'):format(opts.font_scale * 100, opts.font_scale * 100) ..
 			'{\\alpha&H00}' ..
-			(rtl
+			(opts.rtl
 				and (
 					item.current and '{\\b1}' or ''
 				)
@@ -92,7 +109,7 @@ function _update()
 				)
 			) ..
 			display ..
-			(rtl
+			(opts.rtl
 				and (
 					(item.current and '' or '{\\alpha&HFF}') ..
 					'<'
