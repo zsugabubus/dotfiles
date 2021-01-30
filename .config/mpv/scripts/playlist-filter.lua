@@ -12,6 +12,7 @@ mp.observe_property('playlist', nil, function()
 		   s:match('[/!.-]sample') or
 		   s:match('%.aria2$') or
 		   s:match('%.exe$') or
+		   s:match('%.srt$') or
 		   s:match('%.nfo$') or
 		   s:match('%.txt$') then
 			mp.msg.info('removing playlist entry', s)

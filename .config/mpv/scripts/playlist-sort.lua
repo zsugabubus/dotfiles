@@ -28,12 +28,12 @@ mp.observe_property('playlist', nil, function()
 		indexes[playlist[i].pos] = i
 	end
 
-	mp.msg.info('Sorting...')
+	mp.msg.verbose('Sorting...')
 	for pos=1,#indexes do
 		local self = indexes[pos]
 		local up = 0
 		for i=1,pos-1 do
-			 up = up + ((self < indexes[i]) and 1 or 0)
+			 up = up + (self < indexes[i] and 1 or 0)
 		end
 
 		if 0 ~= up then
@@ -41,5 +41,5 @@ mp.observe_property('playlist', nil, function()
 			mp.commandv('playlist-move', pos - 1, pos - up - 1)
 		end
 	end
-	mp.msg.info('Fininshed')
+	mp.msg.verbose('Fininshed')
 end)
