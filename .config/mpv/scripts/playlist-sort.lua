@@ -33,7 +33,7 @@ mp.observe_property('playlist', nil, function()
 		local self = indexes[pos]
 		local up = 0
 		for i=1,pos-1 do
-			 up = up + (self < indexes[i] and 1 or 0)
+			 up = up + (self <= indexes[i] and 1 or 0)
 		end
 
 		if 0 ~= up then
