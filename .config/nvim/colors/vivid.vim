@@ -1,83 +1,54 @@
 syntax reset
 
+" #ecbd1a
+
 let g:colors_name = 'vivid'
 
 " indigo: #2b033b
-if &background == 'light'
-	hi Normal guibg=#eeeeee guifg=#424241 guifg=#2f323f
+" hi Identifier guifg=#005db2 guifg=#8500ac
+" #30d440
+" red #f868d8 #5858d8
+" guibg=#b1d7ff
 
-	hi User1 guibg=#e8e8e8 guifg=#e0e0e0
-	hi User2 guibg=#e0e0e0 guifg=#686868
-	hi User3 guibg=#e0e0e0 gui=bold guifg=#444444
-	hi User4 guibg=#e0e0e0 guifg=#777777
-	hi User9 guibg=#e8e8e8 guifg=#888888
-
-	hi StatusLine gui=bold guibg=#e8e8e8 guifg=#313140
-	hi StatusLineNC gui=NONE guibg=#e8e8e8 guifg=#6e6e6e
-
-	hi TabLine gui=NONE guibg=#e8e8e8 guifg=#444444
-	hi TabLineSel gui=bold guibg=#eeeeee guifg=#414140
-
-	hi NonText gui=NONE guifg=#cdcccf
-
-	hi LineNr guibg=#ededed guifg=#b0abab
-	hi SignColumn guibg=#ededed guifg=#444444
-	hi FoldColumn guibg=#ededed guifg=#b0abab
-
-	hi Visual gui=NONE guibg=#b9b9bd
-	hi Visual gui=NONE guibg=#b6d6fd guibg=#accdfe
-	hi VisualNOS gui=NONE guibg=#d8d8dc
-
-	" hi Identifier guifg=#005db2 guifg=#8500ac
-	hi Identifier gui=bold guifg=#4d4d4f
-else
-	" snazzy
-	hi Normal guibg=#23252d guibg=#25272f guifg=#eeede9
-
-	" #30d440
-	hi User1 guibg=#363a46 guifg=#ffaf5f
-	hi User2 guibg=#ffaf5f guifg=#383838
-	hi User3 guibg=#ffaf5f gui=bold guifg=#444444
-	hi User4 guibg=#ffaf5f guifg=#777777
-	hi User9 guibg=#363a46 guifg=#a4a4a4
-
-	" red #f868d8 #5858d8
-	"
-	hi StatusLine gui=bold guibg=#363a46 guifg=#f80ce8 guifg=#f8ece8
-	hi StatusLineNC gui=NONE guibg=#363a46 guifg=#d8ccc8
-
-	hi TabLine gui=NONE guibg=#363a46 guifg=#f8fcf8
-	hi TabLineSel gui=bold guibg=#ffaf5f guifg=#414140
-
-	hi NonText gui=NONE guifg=#555555
-
-	" snazzy
-	hi LineNr guibg=NONE guifg=#8085a0
-	hi SignColumn guibg=NONE guifg=#444444
-	hi FoldColumn guibg=NONE guifg=#b0abab
-
-	" guibg=#b1d7ff
-	hi Visual gui=NONE guibg=#4949bd
-	hi Visual gui=NONE guibg=#999ea5
-
-	hi Identifier gui=bold guifg=#cacacc
-endif
+let s:highlights = [
+\ ['Normal', '#2f323f|#eeede9', '#eeeeee|#23252d'],
+\ ['Visual', '', '#accdfe|#5c4dbd', 'NONE'],
+\ ['VisualNOS', '#d8d8dc'],
+\ ['StatusLine', '#313140|#f8ece8', '#e8e8e8|#363a46', 'bold'],
+\ ['StatusLineNC', '#6e6e6e|#d8ccc8', 'StatusLine', 'NONE'],
+\ ['TabLine', '#444444|#f8fcf8', 'StatusLine', 'NONE'],
+\ ['TabLineSel', '#414140', '#eeeeee|#ffaf5f', 'bold'],
+\ ['LineNr', '#b0abab|#8085a0', '#ededed|NONE'],
+\ ['SignColumn', '#444444', 'LineNr'],
+\ ['FoldColumn', '#b0abab', 'LineNr'],
+\ ['User1', '#e0e0e0|#ffaf5f', '#e8e8e8|#363a46'],
+\ ['User2', '#686868|#383838', 'User1.guifg'],
+\ ['User3', '#444444', 'User1.guifg', 'bold'],
+\ ['User4', '#777777', 'User1.guifg'],
+\ ['User9', '#888888|#a4a4a4', '#e8e8e8|#363a46'],
+\ ['NonText', '#cdcccf|#555555', '', 'NONE'],
+\ ['StatusLineModeTerm', '#ffffff', '#9D3695', 'bold'],
+\ ['StatusLineModeTermEnd', 'StatusLineModeTerm.guibg', 'StatusLine.guibg'],
+\ ['!diffText', '|#23252d', '#fffcda'],
+\ ['DiffAdd', '|diffText', '#bff3b8|#9fd368'],
+\ ['DiffChange', '|diffText', '#ffdeaf|#ffde6f'],
+\ ['DiffDelete', '#ffb4e8|#ff84c8', '#fed4e0|#feb4b0'],
+\ ['diffRemoved', '|diffText', 'DiffDelete'],
+\ ['diffAdded', '|diffText', 'DiffAdd', 'bold'],
+\ ['!Special', '->Normal'],
+\ ['!Directory', '->Normal'],
+\ ['!SpecialKey', '#818192'],
+\ ['Conceal', '->Normal'],
+\ ['TabLineFill', '->TabLine'],
+\ ['Type', '#ed0085|#fd0069', '', 'bold'],
+\ ['Conditional', '#9d00c5|#fd42d0', '', 'bold'],
+\ ['Identifier', '#4d4d4f|#cacacc', '', 'bold'],
+\]
 
 hi Pmenu guibg=#e0e0e0 guifg=#333333
 hi PmenuSel guibg=#ffaf5f guifg=#222222 gui=bold
 hi PmenuSbar guibg=#dcdcdc
 hi PmenuThumb guibg=#adadad
-
-hi! link Conceal Normal
-
-hi! clear Special
-hi! link Special Normal
-hi! clear Directory
-hi! link Directory Normal
-hi! clear SpecialKey
-hi SpecialKey guifg=#818192
-
-hi! link TabLineFill TabLine
 
 hi Underlined guifg=#008df9
 hi! link Normal VertSplit
@@ -107,16 +78,6 @@ hi! link Statement Keyword
 hi cStorageClass gui=italic,bold guifg=#005db2
 hi! link cStorageClass Keyword
 
-if &background == 'light'
-	hi Type gui=bold guifg=#d70087
-	hi Type gui=bold guifg=#ed0085
-
-	hi Conditional gui=bold guifg=#9d00c5
-else
-	hi Type gui=bold guifg=#fd0069
-
-	hi Conditional gui=bold guifg=#fd42d0
-endif
 hi! link Repeat Conditional
 
 hi PreProc guifg=#005faf guifg=#006dd9
@@ -138,45 +99,23 @@ hi! link CursorLineNr Number
 
 hi Constant guifg=#df4f00
 
-if &background == 'light'
-	hi DiffAdd guibg=#bff2c6
-	hi DiffAdd guibg=#bff3b8
-	hi DiffChange guibg=#ffd787
-	hi DiffChange guibg=#ffdeaf
-	hi DiffDelete guibg=#fedff6 guifg=#ff7183 guifg=#ffc1d3
-	hi DiffDelete guibg=#fec9df guifg=#ffa4c8
-	hi DiffDelete guibg=#fed4e0 guifg=#ffb4e8
-	" hi DiffText guibg=#e0e0e0 guifg=#acf2bd guifg=#262626 guifg=#acf2bd
-	hi! clear DiffText
-	hi DiffText guibg=#fffcda
-else
-	hi DiffAdd guifg=#23252d guibg=#9fd368
-	hi DiffChange guifg=#23252d guibg=#ffde6f
-	hi DiffDelete guifg=#ff84c8 guibg=#feb4b0
-	hi! clear DiffText
-	hi DiffText guifg=#23252d guibg=#fffcda
-endif
-
 hi WildMenu gui=bold guibg=#fff109
 
 hi Title guibg=NONE guifg=#858585
 hi Tag guifg=NONE
 
-" C/C++ {{{
-hi cUserLabel gui=bold guifg=#f41645
-hi! cUserLabel gui=underline guifg=#9d00c5
-hi! link Label cUserLabel
-hi! link Structure Keyword
-hi! link cLabel Keyword
-if &background == 'light'
-	hi cConstant gui=bold guifg=#008700
-	hi cConstant gui=bold guifg=#009017
-else
-	hi cConstant gui=bold guifg=#1ca51c
-endif
-hi! link Boolean cConstant
 hi! link CfgOnOff Boolean
-hi cOctalZero gui=bold guifg=#8700af
+
+" C/C++ {{{
+let s:highlights += [
+\ ['cUserLabel', '#9d00c5', '', 'underline'],
+\ ['Label', '->cUserLabel'],
+\ ['Structure', '->Keyword'],
+\ ['cLabel', '->Keyword'],
+\ ['cConstant', '#009017|#1ca51c', '', 'bold'],
+\ ['Boolean', '->cConstant'],
+\ ['cOctalZero', '#8700af', '', 'bold']
+\]
 " }}}
 
 " CSS {{{
@@ -267,8 +206,54 @@ hi! link jsonKeyword String
 hi! link asmIdentifier Normal
 " }}}
 
+" SQL {{{
+hi! link sqlKeyword Keyword
+" }}}
+
+" PHP {{{
+hi! link phpConstant cConstant
+" }}}
+
 " TermDebug {{{
 hi debugPC guibg=#fff500
 hi debugBreakpoint gui=bold guibg=#f51030 guifg=#ffffff
 " }}}
 
+function s:compute_attr(name, value)
+	" Choose value according to &background.
+	let value = split(a:value, '\V|', 1)
+	let value = get(value, len(value) ==# 2 && &background ==# 'dark', '')
+
+	" Resolve highlight["." { attribute | name }].
+	if value =~# '\m\C^[A-Z][a-z]'
+		let [name, arg; _] = split(value, '\V.') + [a:name]
+		redir => output
+		silent! execute 'hi' name
+		redir END
+		let value = matchstr(output, ' '.arg.'=\zs[^ ]*')
+	endif
+
+	if empty(value)
+		return ''
+	endif
+
+	return a:name.'='.value
+endfunction
+
+for [name; attrs] in s:highlights
+	if name[0] ==# '!'
+		let name = name[1:]
+		execute 'hi! clear' name
+	elseif name[0] ==# '.'
+		let name = name[1:]
+		execute 'hi ' name 'NONE'
+	endif
+	if attrs[0][:1] ==# '->'
+		execute 'hi! link ' name attrs[0][2:]
+	else
+		execute 'hi ' name
+			\ s:compute_attr('guifg', get(attrs, 0, ''))
+			\ s:compute_attr('guibg', get(attrs, 1, ''))
+			\ s:compute_attr('gui',   get(attrs, 2, ''))
+	endif
+endfor
