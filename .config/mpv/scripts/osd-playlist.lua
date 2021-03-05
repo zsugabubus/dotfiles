@@ -27,6 +27,18 @@ function update()
 	mp.register_idle(_update)
 end
 
+function compute()
+	local font_size = mp.get_property_number('osd-font-size')
+	local scaled_font_size = font_size * opts.font_scale
+	-- Trim a half-half line from top and bottom to make visually a bit more pleasant.
+	local margin_v = mp.get_property_number('osd-margin-y') + scaled_font_size / 4
+
+	local y = font_size + scaled_font_size / 4
+	local nlines = math.floor((osd.res_y - margin_v - y) / scaled_font_size) - 1
+
+	return nlines, y
+end
+
 function _update()
 	mp.unregister_idle(_update)
 
@@ -36,23 +48,16 @@ function _update()
 	end
 	local pos = mp.get_property_number('playlist-pos-1')
 	local playlist = mp.get_property_native('playlist')
+	local nlines, y = compute()
 
-	local font_size = mp.get_property_number('osd-font-size')
-	local scaled_font_size = font_size * opts.font_scale
-	-- Trim a half-half line from top and bottom to make visually a bit more pleasant.
-	local margin_v = mp.get_property_number('osd-margin-y') + scaled_font_size / 4
-	local y = font_size + scaled_font_size / 4
-
-	local n = math.floor((osd.res_y - margin_v - y) / scaled_font_size) - 1
-
-	local from = pos - math.floor(n * (forward and 0.2 or 0.8))
+	local from = pos - math.floor(nlines * (forward and 0.2 or 0.8))
 	if from < 1 then
 		from = 1
 	end
-	local to = from + n
+	local to = from + nlines
 	if #playlist < to then
 		to = #playlist
-		from = to - n
+		from = to - nlines
 		if from < 1 then
 			from = 1
 		end
@@ -89,6 +94,7 @@ function _update()
 				:gsub(space, NBSP)
 				-- Hehh.
 				:gsub(NBSP .. '[0-9]+p[^/]*', '')
+				:gsub(NBSP .. '[1-9][0-9][0-9][0-9]' .. NBSP .. '[A-Za-z0-9][^/]', '')
 				-- Trim extension.
 				:gsub('%.[0-9A-Za-z]+$', '')
 		end
@@ -150,3 +156,17 @@ end
 for _, action in pairs({'show', 'hide', 'blink', 'toggle'}) do
 	mp.register_script_message(action, function() handle_message(action) end)
 end
+
+function half_scroll(dir)
+	local nlines = compute()
+	local pos = dir * math.floor((nlines + 1) / 2) + mp.get_property_number('playlist-pos')
+	mp.msg.error(pos, nlines, dir)
+	pos = math.max(0, pos)
+	mp.msg.error(pos, nlines, dir)
+	pos = math.min(mp.get_property_number('playlist-count') - 1, pos)
+	mp.msg.error(pos, nlines, dir)
+	mp.set_property_number('playlist-pos', pos)
+end
+
+mp.add_key_binding('Ctrl+d', 'half-down', function() half_scroll(1) end)
+mp.add_key_binding('Ctrl+u', 'half-up', function() half_scroll(-1) end)
