@@ -3,33 +3,33 @@ include "%S/en_US.UTF-8/Compose"
 
 # https://github.com/kragen/xcompose/blob/master/dotXCompose
 
-<Multi_key> <greater> <grave>              : "′"   U2032 # PRIME
-<Multi_key> <greater> <apostrophe> <grave> : "″"   U2033 # DOUBLE PRIME
-<Multi_key> <greater> <quotedbl> <grave>   : "‴"   U2034 # TRIPLE PRIME
-<Multi_key> <less> <grave>                 : "‵"   U2035 # REVERSED PRIME
-<Multi_key> <less> <apostrophe> <grave>    : "‶"   U2036 # REVERSED DOUBLE PRIME
-<Multi_key> <less> <quotedbl> <grave>      : "‷"   U2037 # REVERSED TRIPLE PRIME
+<Multi_key> <greater> <grave>              : "′"    U2032    # PRIME
+<Multi_key> <greater> <apostrophe> <grave> : "″"    U2033    # DOUBLE PRIME
+<Multi_key> <greater> <quotedbl> <grave>   : "‴"    U2034    # TRIPLE PRIME
+<Multi_key> <less> <grave>                 : "‵"    U2035    # REVERSED PRIME
+<Multi_key> <less> <apostrophe> <grave>    : "‶"    U2036    # REVERSED DOUBLE PRIME
+<Multi_key> <less> <quotedbl> <grave>      : "‷"    U2037    # REVERSED TRIPLE PRIME
 
-<Multi_key> <backslash> <asciicircum>      : "‸"   U2038 # CARET
-<Multi_key> <backslash> <space>            : "␣"   U2423 # OPEN BOX
+<Multi_key> <backslash> <asciicircum>      : "‸"    U2038    # CARET
+<Multi_key> <backslash> <space>            : "␣"    U2423    # OPEN BOX
 
 # Sets
-<Multi_key> <bar> <C>            : "ℂ" U2102 # DOUBLE-STRUCK CAPITAL C (set of complex numbers)
-<Multi_key> <bar> <N>            : "ℕ" U2115 # DOUBLE-STRUCK CAPITAL N (natural number)
-<Multi_key> <bar> <P>            : "ℙ" U2119 # DOUBLE-STRUCK CAPITAL P 
-<Multi_key> <bar> <Q>            : "ℚ" U211A # DOUBLE-STRUCK CAPITAL Q (set of rational numbers)
-<Multi_key> <bar> <R>            : "ℝ" U211D # DOUBLE-STRUCK CAPITAL R (set of real numbers)
-<Multi_key> <bar> <Z>            : "ℤ" U2124 # DOUBLE-STRUCK CAPITAL Z (set of integers)
-<Multi_key> <bar> <H>            : "ℍ" U210d # DOUBLE-STRUCK CAPITAL H
-<Multi_key> <bar> <e>            : "ⅇ" U2147 # DOUBLE-STRUCK ITALIC SMALL E
-<Multi_key> <bar> <i>            : "ⅈ" U2148 # DOUBLE-STRUCK ITALIC SMALL I
-<Multi_key> <bar> <j>            : "ⅉ" U2149 # DOUBLE-STRUCK ITALIC SMALL J
-<Multi_key> <bar> <asterisk> <p> : "ℼ" U213C # DOUBLE-STRUCK SMALL PI
-<Multi_key> <bar> <Greek_pi>     : "ℼ" U213C # DOUBLE-STRUCK SMALL PI
-<Multi_key> <bar> <asterisk> <P> : "ℿ" U213F # DOUBLE-STRUCK CAPITAL PI
-<Multi_key> <bar> <Greek_PI>     : "ℿ" U213F # DOUBLE-STRUCK CAPITAL PI
-<Multi_key> <bar> <asterisk> <S> : "⅀" U2140 # DOUBLE-STRUCK N-ARY SUMMATION
-<Multi_key> <bar> <Greek_SIGMA>  : "⅀" U2140 # DOUBLE-STRUCK N-ARY SUMMATION
+<Multi_key> <bar> <C>            : "ℂ"    U2102    # DOUBLE-STRUCK CAPITAL C (set of complex numbers)
+<Multi_key> <bar> <N>            : "ℕ"    U2115    # DOUBLE-STRUCK CAPITAL N (natural number)
+<Multi_key> <bar> <P>            : "ℙ"    U2119    # DOUBLE-STRUCK CAPITAL P
+<Multi_key> <bar> <Q>            : "ℚ"    U211A    # DOUBLE-STRUCK CAPITAL Q (set of rational numbers)
+<Multi_key> <bar> <R>            : "ℝ"    U211D    # DOUBLE-STRUCK CAPITAL R (set of real numbers)
+<Multi_key> <bar> <Z>            : "ℤ"    U2124    # DOUBLE-STRUCK CAPITAL Z (set of integers)
+<Multi_key> <bar> <H>            : "ℍ"    U210d    # DOUBLE-STRUCK CAPITAL H
+<Multi_key> <bar> <e>            : "ⅇ"    U2147    # DOUBLE-STRUCK ITALIC SMALL E
+<Multi_key> <bar> <i>            : "ⅈ"    U2148    # DOUBLE-STRUCK ITALIC SMALL I
+<Multi_key> <bar> <j>            : "ⅉ"    U2149    # DOUBLE-STRUCK ITALIC SMALL J
+<Multi_key> <bar> <asterisk> <p> : "ℼ"    U213C    # DOUBLE-STRUCK SMALL PI
+<Multi_key> <bar> <Greek_pi>     : "ℼ"    U213C    # DOUBLE-STRUCK SMALL PI
+<Multi_key> <bar> <asterisk> <P> : "ℿ"    U213F    # DOUBLE-STRUCK CAPITAL PI
+<Multi_key> <bar> <Greek_PI>     : "ℿ"    U213F    # DOUBLE-STRUCK CAPITAL PI
+<Multi_key> <bar> <asterisk> <S> : "⅀"    U2140    # DOUBLE-STRUCK N-ARY SUMMATION
+<Multi_key> <bar> <Greek_SIGMA>  : "⅀"    U2140    # DOUBLE-STRUCK N-ARY SUMMATION
 
 # Greek alphabet {{{1
 # Capital letters {{{2
