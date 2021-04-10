@@ -1,0 +1,9 @@
+[Unit]
+Description=Poke %I
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sh -c "/usr/bin/date >/media/%I/.heartbeat"
+
+[Install]
+WantedBy=default.target

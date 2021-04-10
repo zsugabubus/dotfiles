@@ -1,0 +1,8 @@
+[Unit]
+Description=Keep %I spinning
+
+[Timer]
+OnCalendar=*:0/15
+
+[Install]
+WantedBy=default.target
