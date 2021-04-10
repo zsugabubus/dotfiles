@@ -26,7 +26,7 @@ let s:highlights = [
 \ ['User3', '#444444', 'User1.guifg', 'bold'],
 \ ['User4', '#777777', 'User1.guifg'],
 \ ['User9', '#888888|#a4a4a4', '#e8e8e8|#363a46'],
-\ ['NonText', '#cdcccf|#555555', '', 'NONE'],
+\ ['NonText', '#cdcccf|#484848', '', 'NONE'],
 \ ['StatusLineModeTerm', '#ffffff', '#9D3695', 'bold'],
 \ ['StatusLineModeTermEnd', 'StatusLineModeTerm.guibg', 'StatusLine.guibg'],
 \ ['!diffText', '|#23252d', '#fffcda'],
@@ -84,7 +84,7 @@ hi PreProc guifg=#005faf guifg=#006dd9
 
 hi SpellBad NONE
 hi SpellBad guibg=#f9f2f4 guifg=#c72750 gui=undercurl guisp=#d73750
-hi Error guifg=#e70000 guibg=#ffd2d2
+hi Error gui=bold guifg=#d80000 guibg=#ffd4d4
 hi Question guifg=#1ca53c
 hi MoreMsg guifg=#1c891a
 hi! clear ErrorMsg
@@ -195,6 +195,10 @@ hi! link javaScriptNumber Number
 hi! link javaScriptBraces Normal
 hi! link javaScriptParens Normal
 hi! link javaScriptFunction Keyword
+" }}}
+
+" Rust {{{
+hi! link rustCommentLineDoc rustCommentLine
 " }}}
 
 " JSON {{{

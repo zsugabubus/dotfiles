@@ -2,6 +2,8 @@
 " tmux integration: https://gist.github.com/mislav/5189704(
 " https://github.com/liuchengxu/vim-clap
 
+" DB https://github.com/tpope/vim-dadbod
+" https://github.com/kristijanhusak/vim-dadbod-ui
 " packadd nvim-lsp
 
 " :so $VIMRUNTIME/syntax/hitest.vim
@@ -17,6 +19,9 @@ endif
 " get rid of shit
 let g:loaded_tutor_mode_plugin = 1
 let g:loaded_fzf = 1
+
+" Fuck your mother.
+nnoremap U <Nop>
 
 " set cpo+=;
 set nowrap
@@ -117,14 +122,14 @@ nnoremap <silent> [= :<C-U>call search('^=======$', 'Wbz')<CR>
 " replace f/F and t/T to jump only to the beginning of snake_case or
 " PascalCase words if pattern is lowercase; otherwise normal f/F and t/T that
 " does not stop at end-of-line
-function! g:Magic_char_search(mode, forward) abort
+function! s:magic_char_search(mode, forward) abort
 	let cs = getcharsearch()
 	let isvisual = a:mode =~# "\\m\\C^[vV\<C-V>]$"
 	let escchar = escape(cs.char, '\')
 	let lnum = line('.')
 	let e = (-!!cs.until + (a:mode ==# 'n' ? 0 : isvisual ? &selection !=# 'inclusive' : 1)) * (cs.forward ==# a:forward ? 1 : -1) " where to positionate cursor
 	let pattern = (cs.char =~# '\m\l'
-		\ ? '\v\C%(%('.(e ==# -1 ? '\ze\_.' : '').'<|'.(e ==# -1 ? '\ze' : '').'[_])\V\['.tolower(escchar).toupper(escchar).']'
+		\ ? '\v\C%(%('.(e ==# -1 ? '\ze\_.' : '').'<|'.(e ==# -1 ? '\ze' : '').'[_0-9])\V\['.tolower(escchar).toupper(escchar).']'
 			\ .'\v|'.(e ==# -1 ? '\ze' : '').'[a-z_]\V'.toupper(escchar)
 			\ .'\v|\V'.toupper(escchar).'\v[a-z]@=)'
 		\ : '\c'.(e ==# -1 ? '\ze\_.' : '').'\V'.escchar).(e ==# 1 ? '\_.\ze' : '')
@@ -143,18 +148,18 @@ function! g:Magic_char_search(mode, forward) abort
 		echo printf('Pattern crossed end-of-line: %s', cs.char)
 		echohl Normal
 	else
-		" to clear above warning
+		" To clear the warning above.
 		echo
 	endif
 endfunction
 
 for s:letter in [',', ';']
-	execute printf("nnoremap <silent> %s :call g:Magic_char_search('n', %d)<CR>",
+	execute printf("nnoremap <silent> %s :call <SID>magic_char_search('n', %d)<CR>",
 		\ s:letter, s:letter ==# ';')
 endfor
 for s:letter in ['f', 'F', 't', 'T']
 	for s:map in ['n', 'x', 'o']
-		execute printf("%snoremap <expr><silent> %s [setcharsearch({'forward': %d, 'until': %d, 'char': nr2char(getchar())}), ':<C-U>call g:Magic_char_search(\"'.mode(1).'\", 1)\<CR>'][1]",
+		execute printf("%snoremap <expr><silent> %s [setcharsearch({'forward': %d, 'until': %d, 'char': nr2char(getchar())}), ':<C-U>call <SID>magic_char_search(\"'.mode(1).'\", 1)\<CR>'][1]",
 			\ s:map, s:letter, s:letter =~# '\l', s:letter =~? 't')
 		" execute printf(\"%snoremap <expr><silent> %s '<Cmd>keeppattern /'.nr2char(getchar()).'\<CR>'\",
 			" \ s:map, s:letter)
@@ -181,15 +186,18 @@ augroup vimrc_fasttimeout
 	autocmd InsertLeave * let &timeoutlen=saved_timeoutlen
 augroup END
 
-" (de)indent inner % (everything between first and last lines)
-nmap >i% >%<<<C-O><<
-nmap <i% <%>><C-O>>>
-" delete first and last lines
-nmap dI% 0%dd<C-O>dd
+" Reindent inner % lines.
+nmap >i >%<<$%<<$%
+nmap <i <%>>$%>>$%
+" Delete surrounding lines.
+nmap d< $<%%dd<C-O>dd
 
 command -nargs=* -bang Publish execute '!'.(<q-args> =~# '\v^\@|^$' ? '{ git diff --name-only '.<q-args>.' && git diff --name-only --cached '.<q-args>.'; }' : 'printf \%s '.shellescape(expand(<q-args>))).' | xargs -I{} '.(<bang>0 ? 'echo ' : '').'cp -vur {} '.g:publish_path.'{}'
+nnoremap <silent> <M-p> :update<bar>Publish %<CR>
 
 cmap w!! w !sudo tee >/dev/null %
+
+inoremap <expr> <C-s> strftime("%F")
 
 inoremap <expr> <C-j> line('.') ==# line('$') ? "\<C-O>o" : "\<Down>\<End>"
 
@@ -229,7 +237,11 @@ vnoremap <silent> ii :<C-U>execute "keeppattern normal! ". '?\v^\s+\zs%<'.indent
 omap <silent> ii :<C-U>normal vii<CR>
 " 1}}}
 
-" visual lines
+" Make {, } linewise.
+onoremap <silent> { V{
+onoremap <silent> } V}
+
+" Visual lines.
 nnoremap <Up> gk
 nnoremap <Down> gj
 
@@ -240,9 +252,9 @@ function s:make() abort
 	let errors = 0
 	let warnings = 0
 	for item in getqflist()
-		if item.text =~ ' error: '
+		if item.text =~? ' error: '
 			let errors += 1
-		elseif item.text =~ ' warning: '
+		elseif item.text =~? ' warning: '
 			let warnings += 1
 		endif
 	endfor
@@ -252,23 +264,23 @@ function s:make() abort
 	if 0 <# errors
 		echon "\u274c Build failed: "
 		echohl Error
-		echon printf("%d errors", errors)
+		echon errors " errors"
 		echohl None
 		if 0 <# warnings
 			echon ", "
 			echohl WarningMsg
-			echon printf("%d warnings", warnings)
+			echon warnings " warnings"
 			echohl None
 		endif
 	elseif 0 <# warnings
 		echon "\U1f64c Build finished: "
 		echohl WarningMsg
-		echon printf("%d warnings", warnings)
+		echon warnings " warnings"
 		echohl None
 	else
 		echon "\U1f64f Build finished"
+		cclose
 	endif
-	echon "."
 endfunction
 inoremap <silent> <F9> <C-R>=strftime('%Y%b%d%a %H:%M')<CR>
 nnoremap <silent> <M-m> :call <SID>make()<CR>
@@ -487,7 +499,8 @@ augroup vimrc_filetypes
 	autocmd BufRead zathurarc
 		\ setlocal ft=cfg keywordprg=:ManKeyword\ 5\ zathurarc
 
-	autocmd FileType html
+	autocmd FileType html,php
+		\ setlocal equalprg=xmllint\ --encode\ UTF-8\ --html\ --nowrap\ --dropdtd\ --format\ -|
 		\ xnoremap <expr> s<<Space> mode() ==# 'V' ? 'c< <CR><C-r>"><Esc>' : 'c< <C-r>" ><Esc>'|
 		\ xnoremap <expr> sb mode() ==# 'V' ? 'c<lt>b><CR><C-r>"</b><Esc>' : 'c<lt>b><C-r>"</b><Esc>'|
 		\ xnoremap <expr> sp mode() ==# 'V' ? 'c<lt>p><CR><C-r>"</p><Esc>' : 'c<lt>p><C-r>"</i><Esc>'|
@@ -497,6 +510,10 @@ augroup vimrc_filetypes
 	autocmd FileType sh,zsh,dash
 		\ setlocal ts=2|
 		\ xnoremap <buffer> s< c<<EOF<CR><C-r><C-o>"EOF<CR><Esc><<gvo$B<Esc>i
+
+	autocmd FileType php
+		\ set makeprg=php\ -l\ %|
+		\ set errorformat=%m\ in\ %f\ on\ line\ %l,%-GErrors\ parsing\ %f,%-G
 
 	autocmd FileType plaintex,tex
 		\ xnoremap <buffer> sli c\lstinline{<C-r><C-o>"}<Esc>|
@@ -715,7 +732,7 @@ function! s:goto_function() abort
 		return
 	endif
 	let pattern = get({
-	\ 'php': 'function\s+\0'
+	\ 'php': 'function\s+\b\0\b'
 	\}, &filetype, '\0')
 	execute 'GREP' shellescape(substitute(pattern, '\\0', what, '')) '-m1'
 endfunction
@@ -915,6 +932,7 @@ nnoremap sw :set wrap!<CR>
 nnoremap sp vip:sort /\a/<CR>
 nnoremap ss vip:sort /['"]/<CR>
 nnoremap si vip:sort i /['"]/<CR>
+nnoremap sb :set scrollbind!<bar>echo 'set scb='.&scrollbind<CR>
 
 " noremap <Plug>(JumpMotion); <Cmd>call JumpMotion(':call JumpMotionColon()\<lt>CR>\")<CR>
 noremap <Plug>(JumpMotion)v <Cmd>call JumpMotion(':'.line('.'), '/\v%'.line('.')."l\\zs[^[:blank:][:cntrl:][:punct:]]+\<lt>CR>", '')<CR>
@@ -963,6 +981,24 @@ nmap gcD gcdO
 nmap gcM gcmO
 
 nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
+
+function! s:paste_reindent(p)
+	if getregtype(v:register) !=# 'V' || &paste
+		return a:p
+	endif
+
+	let reg = getreg(v:register)
+	let indent = (max([
+	\  cindent(line('.') - (a:p !~# '\l')),
+	\  cindent(line('.') + (a:p =~# '\l'))
+	\]) - strdisplaywidth(matchstr(reg, '\m^[ \t]*'))) / shiftwidth()
+	let nlines = len(split(reg, "\n"))
+
+	return a:p.(indent ? ":undojoin | normal! ".repeat(nlines.(indent < 0 ? '<<' : '>>'), abs(indent))."\<CR>" : '').'$'
+endfunction
+
+nnoremap <silent><expr> p <SID>paste_reindent('p')
+nnoremap <silent><expr> P <SID>paste_reindent('P')
 
 autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
 
