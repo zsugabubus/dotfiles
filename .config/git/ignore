@@ -1,2 +1,5 @@
 .gdb_history
 Session.vim
+*.o
+*.d
+*.out
