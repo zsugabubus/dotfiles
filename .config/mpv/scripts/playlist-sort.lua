@@ -1,5 +1,5 @@
 ignore = 0
-mp.observe_property('playlist', nil, function()
+function on_change()
 	if 0 < ignore then
 		ignore = ignore - 1
 		return
@@ -9,6 +9,13 @@ mp.observe_property('playlist', nil, function()
 	for i=1,#playlist do
 		local entry = playlist[i]
 		entry.pos = i
+
+		if entry.filename == 'no-sort:' then
+			mp.commandv('playlist-remove', entry.pos)
+			mp.unobserve_property(on_change)
+			return
+		end
+
 		entry.string = entry.filename
 			:gsub('[.,;&_ ()[\135{}/-]', '')
 			:gsub('^[0-9]+', '')
@@ -42,4 +49,5 @@ mp.observe_property('playlist', nil, function()
 		end
 	end
 	mp.msg.verbose('Fininshed')
-end)
+end
+mp.observe_property('playlist', nil, on_change)
