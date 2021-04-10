@@ -2,6 +2,9 @@ local utils = require 'mp.utils'
 
 mp.register_event('file-loaded', function()
 	local filename = mp.get_property('path')
+	if filename == nil then
+		return
+	end
 	local dirname, basename = utils.split_path(filename)
 
 	local patterns = {}
