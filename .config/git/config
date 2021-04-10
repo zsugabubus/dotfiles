@@ -9,11 +9,15 @@
 [alias]
 	fp = format-patch -o patches
 	b = branch
+	ba = branch --all
 	ca = commit --amend --reset-author
 	c = commit --signoff --verbose
-	ce = commit -s --edit
+	ce = commit --signoff --edit
+	ceo = commit -c ORIG_HEAD
 	co = checkout
-	cob = co --branch
+	cob = co -b
+	ap = add --patch
+	ai = add --interactive
 	d = diff
 	da = apply
 	ds = diff --staged
@@ -26,7 +30,7 @@
 	ls = l --stat
 	lo = log --oneline --graph
 	los = lo --stat
-	lp = ls -p
+	lp = ls --patch
 [merge]
 	tool = nvimdiff
 [mergetool "nvimdiff"]
