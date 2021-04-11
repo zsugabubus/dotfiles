@@ -986,16 +986,16 @@ nmap gcM gcmO
 nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
 
 function! s:magic_paste_reindent(nlines)
+	let v:lnum = nextnonblank('.')
 	if !empty(&indentexpr)
-		let v:lnum = line('.')
 		let indent = eval(&indentexpr)
 	elseif &cindent
-		let indent = cindent('.')
+		let indent = cindent(v:lnum)
 	else
 		return
 	endif
 
-	let indent = (indent - indent(nextnonblank('.'))) / shiftwidth()
+	let indent = (indent - indent(v:lnum)) / shiftwidth()
 
 	execute 'silent! normal!' repeat(a:nlines.(indent < 0 ? '<<' : '>>'), abs(indent))
 	normal! _
