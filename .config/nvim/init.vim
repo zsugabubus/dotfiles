@@ -23,14 +23,13 @@ let g:loaded_fzf = 1
 " Fuck your mother.
 nnoremap U <Nop>
 
-" set cpo+=;
 set nowrap
 set ts=8 sw=0 sts=0 noet
 set spelllang=en
 set ignorecase smartcase
 set scrolloff=5 sidescrolloff=23
 set splitright
-" set cinoptions=(0
+set cinoptions+=t0,:0,l1
 set lazyredraw
 set matchpairs+=‘:’,“:”
 set timeoutlen=600
@@ -53,14 +52,18 @@ set wildmode=list:longest,full
 set wildignore+=*.a,*.d,*.o,*.out
 set wildignore+=.git
 set wildignore+=*.lock,*~,tests/**,t/**,check/**,node_modules
-" lower priority of files with no suffix
+" Rank files lower with no suffix.
 set suffixes+=,
 set grepprg=noglob\ rg\ --vimgrep\ --smart-case
 set grepformat=%f:%l:%c:%m
 set diffopt=filler,vertical,algorithm:patience
 set nomore
+set foldtext=VimFoldText()
+set nojoinspaces " no double space
+" XXX: How autocomplete with last?
+set completeopt=menu,longest,noselect,preview
 
-" shadon't
+" Shadon't
 IfSandbox set shada="NONE" noundofile nowritebackup
 IfLocal set undofile undodir=$HOME/.cache/nvim/undo
 
@@ -86,11 +89,6 @@ function! VimFoldText() abort
 	return left.text.right.repeat(' ', 999)
 endfunction
 
-set foldtext=VimFoldText()
-
-set nojoinspaces " no double space
-" XXX: How autocomplete with last?
-set completeopt=menu,longest,noselect,preview
 
 " history scroller
 cnoremap <C-p> <Up>
@@ -116,8 +114,8 @@ noremap <expr> > (!&diff ? '>' : ":diffget 2\n")
 noremap <expr> < (!&diff ? '<' : ":diffget 3\n")
 
 " jump to merge conflicts
-nnoremap <silent> ]= :<C-U>call search('^=======$', 'Wz')<CR>
-nnoremap <silent> [= :<C-U>call search('^=======$', 'Wbz')<CR>
+nnoremap <silent> ]= :call search('^=======$', 'Wz')<CR>
+nnoremap <silent> [= :call search('^=======$', 'Wbz')<CR>
 
 " replace f/F and t/T to jump only to the beginning of snake_case or
 " PascalCase words if pattern is lowercase; otherwise normal f/F and t/T that
@@ -186,6 +184,11 @@ augroup vimrc_fasttimeout
 	autocmd InsertLeave * let &timeoutlen=saved_timeoutlen
 augroup END
 
+augroup vimrc_insertempty
+	autocmd!
+	autocmd InsertLeave * if empty(trim(getline('.')))|undojoin | call setline('.', '')|endif
+augroup END
+
 " Reindent inner % lines.
 nmap >i >%<<$%<<$%
 nmap <i <%>>$%>>$%
@@ -194,8 +197,6 @@ nmap d< $<%%dd<C-O>dd
 
 command -nargs=* -bang Publish execute '!'.(<q-args> =~# '\v^\@|^$' ? '{ git diff --name-only '.<q-args>.' && git diff --name-only --cached '.<q-args>.'; }' : 'printf \%s '.shellescape(expand(<q-args>))).' | xargs -I{} '.(<bang>0 ? 'echo ' : '').'cp -vur {} '.g:publish_path.'{}'
 nnoremap <silent> <M-p> :update<bar>Publish %<CR>
-
-cmap w!! w !sudo tee >/dev/null %
 
 inoremap <expr> <C-s> strftime("%F")
 
@@ -212,30 +213,32 @@ nnoremap <silent> <expr> <C-q> '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#
 
 command -nargs=1 Source execute 'source' fnameescape(stdpath('config').'/'.<q-args>)
 
-" Text Objects {{{1
-" Parameter.
+" Parameter text object.
 onoremap <silent> i, :<C-U>execute "keeppattern normal! v?\\m[(,]?;/\\S/\<lt>CR>o/\\m[,)]/s-1\<lt>CR>"<CR>
 " onoremap <silent> a, :<C-U>execute \"keeppattern normal! v/\\v,\\s*\\zs|\\zs)\<lt>CR>\"<CR>
 
-" Inner line.
+" Inner line text object.
 xnoremap il <Esc>_vg_
 xnoremap al <Esc>0v$h
 omap <silent> il :<C-U>normal vil<CR>
 omap <silent> al :<C-U>normal val<CR>
 
-" Statement.
+" Statement text object.
 onoremap <silent> i; :<C-U>execute "keeppattern normal! 0v/;/$\<lt>CR>"<CR>
 onoremap <silent> a; :<C-U>execute "keeppattern normal! 0v/;/;/\\m^\s*/$\<lt>CR>"<CR>
 
-" Backticks.
+" Backticks text object.
 onoremap <silent> i` :<C-U>execute "keeppattern normal! v?\\v`\\_.{-}%#<bar>%#`?s+1\<lt>CR>o/`/e-1\<lt>CR>"<CR>
 onoremap <silent> a` :<C-U>execute "keeppattern normal! v?\\v`\\_.{-}%#<bar>%#`\<lt>CR>o/\\m`\\s*/e\<lt>CR>"<CR>
 
-" Indentation.
+" Indentation text object.
 " Ok. Do not fucking touch it.
 vnoremap <silent> ii :<C-U>execute "keeppattern normal! ". '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S?+1;' ."/\\v\\s\\S\<lt>CR>V/\\v^(\\s+)\\S.*%(\\n<bar>\\1.*)*/e\<lt>CR>"<CR>
 omap <silent> ii :<C-U>normal vii<CR>
-" 1}}}
+
+" Function text object.
+vnoremap <silent> af :<C-U>execute "keeppattern normal! }[[{jV]]%}"<CR>
+omap <silent> af :<C-U>normal vaf<CR>
 
 " Make {, } linewise.
 onoremap <silent> { V{
@@ -982,23 +985,34 @@ nmap gcM gcmO
 
 nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
 
-function! s:paste_reindent(p)
-	if getregtype(v:register) !=# 'V' || &paste
+function! s:magic_paste_reindent(nlines)
+	if !empty(&indentexpr)
+		let v:lnum = line('.')
+		let indent = eval(&indentexpr)
+	elseif &cindent
+		let indent = cindent('.')
+	else
+		return
+	endif
+
+	let indent = (indent - indent(nextnonblank('.'))) / shiftwidth()
+
+	execute 'silent! normal!' repeat(a:nlines.(indent < 0 ? '<<' : '>>'), abs(indent))
+	normal! _
+endfunction
+
+function! s:magic_paste(p)
+	if !(!&paste && ( getregtype(v:register) ==# 'V' ||
+	\                (getregtype(v:register) ==# 'v' && empty(getline('.')))))
 		return a:p
 	endif
 
 	let reg = getreg(v:register)
-	let indent = (max([
-	\  cindent(line('.') - (a:p !~# '\l')),
-	\  cindent(line('.') + (a:p =~# '\l'))
-	\]) - strdisplaywidth(matchstr(reg, '\m^[ \t]*'))) / shiftwidth()
-	let nlines = len(split(reg, "\n"))
-
-	return a:p.(indent ? ":undojoin | normal! ".repeat(nlines.(indent < 0 ? '<<' : '>>'), abs(indent))."\<CR>" : '').'$'
+	return a:p.':call '.matchstr(expand('<sfile>'), '<SNR>.*').'_reindent('.(len(split(reg, "\n", 1)) - (getregtype(v:register) ==# 'V')).")\<CR>"
 endfunction
 
-nnoremap <silent><expr> p <SID>paste_reindent('p')
-nnoremap <silent><expr> P <SID>paste_reindent('P')
+nnoremap <silent><expr> p <SID>magic_paste('p')
+nnoremap <silent><expr> P <SID>magic_paste('P')
 
 autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
 
