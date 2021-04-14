@@ -1,6 +1,9 @@
 # Allow comments
 setopt interactive_comments
-setopt kshoptionprint
+setopt ksh_option_print
+
+# Glob
+setopt csh_null_glob
 
 # Directory
 setopt auto_cd # $ dir -> $ cd dir
