@@ -1,39 +1,53 @@
+[alias]
+	a = add
+	ap = a --patch
+	ai = a --interactive
+
+	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:40)%(refname:short)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)'
+
+	c = commit --verbose
+	cs = c --sign-off
+	cN = c --no-verify
+	cE = c --allow-empty
+	ca = c --amend --reset-author
+	cc = commit --verbose --edit -F .git/COMMIT_EDITMSG
+
+	co = checkout
+	cob = co -b
+
+	# Hehe.
+	cp = cherry-pick
+
+	d = diff
+	ds = diff --staged
+	di = d .
+
+	s = status
+	ss = status -s
+
+	p = push
+
+	l = log --date-order --date=relative --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s%C(dim white) (%cr) %C(reset)%C(bold blue)%aN%C(reset)'
+	rl = l --reverse
+	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %cr %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%s%n%n%-b'
+	lp = ll --patch
+
 [am]
 	threeWay = true
+
 [init]
 	templatedir = ~/.config/git/template
 	defaultBranch = master
+
 [include]
 	path = config.user
 	path = config.credential
-[alias]
-	fp = format-patch -o patches
-	b = branch
-	ba = branch --all
-	ca = commit --amend --reset-author
-	c = commit --signoff --verbose
-	ce = commit --signoff --edit
-	ceo = commit -c ORIG_HEAD
-	co = checkout
-	cob = co -b
-	ap = add --patch
-	ai = add --interactive
-	d = diff
-	da = apply
-	ds = diff --staged
-	dw = diff --word-diff
-	df = diff --stat
-	mt = mergetool
-	ri = rebase --interactive --autosquash
-	s = status
-	l  = log --date-order --date=relative --graph --full-history --all --pretty=format:'%C(yellow)%h%C(magenta)%G? %C(reset)%>(12)%cr %C(bold blue)%aN <%ae>%C(reset)%C(bold red)%d %C(reset)%s'
-	ls = l --stat
-	lo = log --oneline --graph
-	los = lo --stat
-	lp = ls --patch
+
 [merge]
 	tool = nvimdiff
+
 [mergetool "nvimdiff"]
 	cmd = nvim -f -c \"Gdiff\" \"$MERGED\"
+
 [pull]
-	rebase = false
+	rebase = true
