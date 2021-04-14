@@ -8,8 +8,8 @@ map	<C-e>	scroll down
 map	<C-i>	zoom in
 map	<C-o>	zoom out
 
-map	u	scroll full-up
-map	d	scroll full-down
+map	u	scroll half-up
+map	d	scroll half-down
 map	<S-Space>	scroll full-up
 map	<Space>	scroll full-down
 
