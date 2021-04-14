@@ -14,19 +14,35 @@ alias -s {{c,h}{,pp,++},rs,txt,vim,diff}=open
 alias -s {bmp,jpg,png}=open
 alias -s {avi,mp{0,3,4},mkv}=open
 alias -s {pdf,ps}=open
-alias -s zip=un
-alias -s tgz=un
 alias o=open
+
+function bin.country() {
+	curl --silent -H 'Accept-Version: 3' "https://lookup.binlist.net/$1" | jq -r '.country.name'
+}
+
+function noidle() {
+	sudo hdparm -S 0 $1
+	sudo hdparm -B 255 $1
+}
+
+function clean() {
+	for cmd in '' '-delete'; do
+		find \( -empty -o -name '.deleted' -o -name '*.part' \) $cmd &&
+		[[ -z $cmd ]] && read -q '?Delete? ' && continue
+		return
+	done
+}
 
 function mo() {
 	local dev=$(lsblk -rpno TYPE,HOTPLUG,NAME,SIZE,LABEL,MOUNTPOINT | grep 'part 1' | fzf -1 | awk -F ' ' '{print $3}') &&
 	{ read -q "?mount $dev /mnt? [Y/n]" } always { print } && sudo mount $dev /mnt
 }
-alias da='date'
+alias hh='HOME=$PWD'
+alias cdgit='cd -- "$(git rev-parse --show-toplevel)"'
+alias vv='vlock -a'
 alias configure_make='./configure && make'
 alias make_install='() { for prefix in "" sudo; do $prefix make PREFIX=/usr prefix=/usr install && break; done }'
-alias make='make -j$(($(nproc) + 1))'
-alias make='make -j2'
+alias make='nice -n15 make -j2'
 alias h=man
 alias ls='ls -ohtrF --group-directories-first --color=tty --quoting-style=literal'
 alias l=ls
@@ -49,8 +65,6 @@ function catf() {
 	done
 }
 function lll() { ls -l --color "$@" | less; }
-alias tt=tarrtv
-compdef tt=tarrtv
 alias bo='bonsai | less -e'
 function usbrebind() {
 	sudo tee /sys/bus/usb/drivers/usb/unbind <<<$1
@@ -92,7 +106,9 @@ compdef '_files -g "*.(zip|rar|tar|tar.*)"' un
 
 function mkar.xz() { tar cavf $1.tar.xz $@ }
 function mkar.gz() { tar cavf $1.tar.gz $@ }
+alias mkar=mkar.gz
 function mkar.zip() { zip -r $1.zip $@ }
+alias yt=youtube-dl
 
 function speedtest() {
 	setopt localtraps
@@ -111,7 +127,8 @@ alias -g G='| grep -i'
 alias -g F='| fzf | { while read f; do print -z $(q-@)f; done }'
 alias -g _='| less'
 alias diff='diff --color=auto'
-alias gccc='gcc -O0 -g -ldl main.c && ./a.out'
+alias gccc='gcc -O2 -march=native -std=c11 -g -ldl main.c && time ./a.out'
+alias gccd='() { gcc -O0 -march=native -std=c11 -g -ldl main.c $* && gdb ./a.out -ex run; }'
 alias df='df -h'
 alias grep='grep --color=auto'
 alias dmesg='dmesg -H --color=always | less'
@@ -163,13 +180,12 @@ alias iftop='sudo -E iftop'
 alias mdp='mdp -fi'
 alias g='git'
 alias j='jobs'
-alias gs='git status'
-alias gd='git diff'
 alias am='alsamixer'
-alias gds='git diff --staged'
-alias GS='nvim +:Gstatus'
+alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
 alias mp='() { mpv 2>&- --player-operation-mode=pseudo-gui ${*:-.} &! }'
+alias mp.='mp *(.)'
+alias mpm='() { eval mp "*(m-${1:-1}/)" }'
 compdef mp=mpv_hack
 alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
@@ -178,8 +194,9 @@ compdef mpf=mpv_hack
 # function mpvs() { mpv --player-operation-mode=pseudo-gui "$1" --sub-file "${2:-/dev/null}" }
 # compdef mpvs=mpv_hack
 alias service='systemctl --user'
-
-alias gdbrun='() { local file=$1; shift; gdb -quiet $file -ex "run ${(q)*}"; }'
+alias www='() { if [[ 1 == $# ]]; then www $1; else www - : -- tar -cf - $*; fi } '
+alias timer='() { ( sleep ${1:-5m} && ~/doc/cuckoo-clock.mp3 ) &! }'
+alias gdbrun='() { local file=$1; shift; gdb -quiet $file -ex "run "${(jj j)${(qq)*}}; }'
 autoload -U zmv
 alias cpp='noglob _zmv -C'
 alias lnn='noglob _zmv -L'
@@ -187,7 +204,7 @@ alias lnv='() { () { $EDITOR +"inoremap <C-n> <C-x><C-f>" +startinsert! -- $1 &&
 compdef '_files -g "*(@)"' lnv
 alias lne=lnv
 compdef lne=lnv
-alias flat='() { [[ -d $1 ]] && mv $1/.*(N) $1/*(N) . && rmdir $1 }'
+alias flat='() { [[ -d $1 ]] && mv -- $1/.*(N) $1/*(N) . && rmdir -p -- $1 }'
 alias mvv='noglob _zmv -M'
 function _zmv() {
 	zmv -nvW $@ && { read -q "?Execute? " } always { print } && zmv -vW $@
@@ -229,8 +246,9 @@ alias mv='mv -i'
 alias mv~='() { mv $1 $1~ }'
 alias backup='() { cp $1 $1~ }'
 alias asm='gcc -fno-stack-protector -fno-asynchronous-unwind-tables -S'
-alias md='noglob md'
-function md() { mkdir -p -- "$*" && cd -- "$*" }
+alias mkcd='noglob mkcd'
+alias md='mkcd'
+function mkcd() { mkdir -p -- "$*" && cd -- "$*" }
 alias mkln='() { mkdir -p -- "$(readlink $1)"; }'
 alias cdln='() { cd "${$(readlink $1):h}"; }'
 compdef '_files -g "*(@)"' cdln
@@ -255,7 +273,6 @@ zcalc -f }'
 alias cal='cal -m'
 alias oct='od -tu1'
 alias rm='rm -d -I --one-file-system'
-alias rd='rmdir -pv'
 alias rmdir='() {
 	if (($# > 0)); then
 		rmdir $@
@@ -273,7 +290,7 @@ alias cpd='() { rsync -aihPv -- $^*/ }'
 # alias p='pass letmein &>/dev/null'
 alias iotop='sudo iotop'
 alias fcf='() { print -z $(fc -nl 0 | fzf); }'
-alias it='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
+alias iptables='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
 alias pl='pass login'
 compdef '_files -W ~/.config/passwords' pl
 alias bc='bc -lq'
@@ -288,11 +305,13 @@ function pdfmerge() {
 }
 alias calcurse='calcurse -q'
 # alias abook='abook --config ~/.config/abook/abookrc --datafile ~/.config/abook/addressbook'
-alias curl='curl --remote-name-all'
-alias co='curl -L'
+alias curl='curl --compressed'
+alias co='curl --remote-name-all -L'
 alias oz='() { od -A x -t x1z -v $@ | sed '"'"'s/  >\(.*\)<$/  |\1|/'"'"' }'
-alias du.='du --apparent-size -csh .'
-alias du..='du --apparent-size -chd 1 .'
+alias du.='du --apparent-size -csh . | sort -rh'
+alias du..='du --apparent-size -chd 1 . | sort -rh'
+alias ti='tikal'
+alias tt='ti'
 function sheep_pacman() {
 	sheep pacman -Sy --noconfirm $* '&&' su $USER
 }
