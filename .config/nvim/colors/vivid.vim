@@ -26,7 +26,7 @@ let s:highlights = [
 \ ['User3', '#444444', 'User1.guifg', 'bold'],
 \ ['User4', '#777777', 'User1.guifg'],
 \ ['User9', '#888888|#a4a4a4', '#e8e8e8|#363a46'],
-\ ['NonText', '#cdcccf|#484848', '', 'NONE'],
+\ ['NonText', '#d1d0d3|#484848', '', 'NONE'],
 \ ['StatusLineModeTerm', '#ffffff', '#9D3695', 'bold'],
 \ ['StatusLineModeTermEnd', 'StatusLineModeTerm.guibg', 'StatusLine.guibg'],
 \ ['!diffText', '|#23252d', '#fffcda'],
@@ -41,8 +41,11 @@ let s:highlights = [
 \ ['Conceal', '->Normal'],
 \ ['TabLineFill', '->TabLine'],
 \ ['Type', '#ed0085|#fd0069', '', 'bold'],
-\ ['Conditional', '#9d00c5|#fd42d0', '', 'bold'],
+\ ['Conditional', '#9d00c5|#ff6de9', '', 'bold'],
 \ ['Identifier', '#4d4d4f|#cacacc', '', 'bold'],
+\ ['PreProc', '#006dd9|#f4cd09'],
+\ ['Number', '#fa3422|#fa7452', '', 'bold'],
+\ ['Keyword', '#006de9|#009df9', '', 'bold'],
 \]
 
 hi Pmenu guibg=#e0e0e0 guifg=#333333
@@ -68,19 +71,13 @@ hi! link Character String
 
 hi Folded guibg=#e1e1e1 guifg=#666666
 
-hi Number gui=bold guifg=#fa3422
-
 hi Comment guifg=#838385
-hi Keyword gui=bold guifg=#005db2
-hi Keyword gui=bold guifg=#006de9
 hi! clear Statement
 hi! link Statement Keyword
 hi cStorageClass gui=italic,bold guifg=#005db2
 hi! link cStorageClass Keyword
 
 hi! link Repeat Conditional
-
-hi PreProc guifg=#005faf guifg=#006dd9
 
 hi SpellBad NONE
 hi SpellBad guibg=#f9f2f4 guifg=#c72750 gui=undercurl guisp=#d73750
