@@ -113,6 +113,8 @@ xnoremap <expr> - (!&diff ? '' : ":diffget\n")
 noremap <expr> > (!&diff ? '>' : ":diffget 2\n")
 noremap <expr> < (!&diff ? '<' : ":diffget 3\n")
 
+vnoremap <C-S> y:!hu <C-R>"<CR>
+
 " jump to merge conflicts
 nnoremap <silent> ]= :call search('^=======$', 'Wz')<CR>
 nnoremap <silent> [= :call search('^=======$', 'Wbz')<CR>
@@ -195,17 +197,33 @@ nmap <i <%>>$%>>$%
 " Delete surrounding lines.
 nmap d< $<%%dd<C-O>dd
 
-command -nargs=* -bang Publish execute '!'.(<q-args> =~# '\v^\@|^$' ? '{ git diff --name-only '.<q-args>.' && git diff --name-only --cached '.<q-args>.'; }' : 'printf \%s '.shellescape(expand(<q-args>))).' | xargs -I{} '.(<bang>0 ? 'echo ' : '').'cp -vur {} '.g:publish_path.'{}'
+command -nargs=* -bang
+	\ Publish execute '!'.(<q-args> =~# '\v^\@|^$|\-\-'
+	\   ? '{ noglob git diff --name-only '.<q-args>.' && noglob git diff --name-only --cached '.<q-args>.'; }'
+	\   : 'printf \%s '.shellescape(expand(<q-args>))
+	\ ).' | xargs -r -P2 -I{} '.(<bang>0 ? 'echo ' : '').'install -Dvm 640 {} '.g:publish_path.'{}'|
+	\ if !v:shell_error|
+	\   call feedkeys("\<CR>", "nt")|
+	\   redraw|
+	\   echomsg 'Upload succeed'|
+	\ else|
+	\   echohl Error|
+	\   echomsg 'Upload failed'|
+	\   echohl None|
+	\ endif
 nnoremap <silent> <M-p> :update<bar>Publish %<CR>
 
+inoremap <C-r> <C-r><C-o>
+
 inoremap <expr> <C-s> strftime("%F")
+inoremap <expr> <C-f> expand("%:t:r")
 
 inoremap <expr> <C-j> line('.') ==# line('$') ? "\<C-O>o" : "\<Down>\<End>"
 
 command! -nargs=1 RegEdit let @<args>=input('"'.<q-args>.'=', @<args>)
 nnoremap d_ "_dd
 
-nnoremap <expr> m ':echom "'.join(map(map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), {_,nr-> nr2char(nr)}), {_,mark-> (getpos("'".mark)[1] ==# 0 ? mark : ' ')}), '').'"<CR>m'
+nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), {_,nr-> nr2char(nr)}), {_,mark-> (getpos("'".mark)[1] ==# 0 ? mark : ' ')}), '').'"<CR>m'
 
 " jump to parent indention
 nnoremap <silent> <expr> <C-q> '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S?s-1<CR>
@@ -251,7 +269,9 @@ nnoremap <Down> gj
 function s:make() abort
 	let start = strftime('%s')
 	echon "\U1f6a7  Building...  \U1f6a7"
-	silent make
+	call feedkeys("\<CR>", "nt")
+	make
+	redraw
 	let errors = 0
 	let warnings = 0
 	for item in getqflist()
@@ -352,7 +372,7 @@ map gY "+yy
 " repeat last action over visual block
 xnoremap . :normal .<CR>
 
-command! Bg let &bg = 'light' == &bg ? 'dark' : 'light'
+command! Bg let &background = 'light' == &background ? 'dark' : 'light'
 
 " glob each line
 command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
@@ -372,7 +392,7 @@ command! StripTrailingWhite keepjumps keeppatterns lockmarks silent %s/\m\s\+$//
 augroup vimrc_japan
 	autocmd!
 	autocmd ColorScheme * highlight ExtraWhitespace ctermbg=197 ctermfg=231 guibg=#ff005f guifg=#ffffff
-	autocmd BufReadPost * if !&readonly && &modifiable && index(['', 'text', 'git', 'markdown', 'mail', 'diff'], &filetype) ==# -1 |
+	autocmd FileType,BufReadPost * if &buftype ==# '' && !&readonly && &modifiable && index(['', 'text', 'git', 'gitcommit', 'markdown', 'mail', 'diff'], &filetype) ==# -1 |
 		\		call matchadd('ExtraWhitespace', '\v +\t+|\s+%#@!$', 10)|
 		\	endif
 augroup END
@@ -515,7 +535,7 @@ augroup vimrc_filetypes
 		\ xnoremap <buffer> s< c<<EOF<CR><C-r><C-o>"EOF<CR><Esc><<gvo$B<Esc>i
 
 	autocmd FileType php
-		\ set makeprg=php\ -l\ %|
+		\ set makeprg=php\ -lq\ %|
 		\ set errorformat=%m\ in\ %f\ on\ line\ %l,%-GErrors\ parsing\ %f,%-G
 
 	autocmd FileType plaintex,tex
@@ -572,18 +592,20 @@ augroup vimrc_filetypes
 		\ ia <buffer> sturct struct
 augroup END
 
-augroup vimrc_autoplug
-	IfLocal autocmd BufReadPre *.styl ++once packadd vim-stylus
-	IfLocal autocmd BufReadPre *.pug  ++once packadd vim-pug
-	IfLocal autocmd BufReadPre *.toml ++once packadd vim-toml
-	IfLocal autocmd BufReadPre *.md		++once packadd vim-markdown
-	IfLocal autocmd BufReadPre *.glsl ++once packadd vim-glsl
-
-	IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
-
-	" IfLocal packadd debugger.nvim
-	IfLocal packadd vim-gnupg
+augroup vimrc_colorsreload
+	autocmd! BufWritePost colors/*.vim ++nested let &background=&background
 augroup END
+
+IfLocal packadd vim-glsl
+IfLocal packadd vim-pug
+IfLocal packadd vim-stylus
+IfLocal packadd vim-toml
+IfLocal packadd zig.vim
+
+IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
+
+" IfLocal packadd debugger.nvim
+IfLocal packadd vim-gnupg
 
 " autocmd BufReadPost *rc autocmd BufWinEnter <buffer=abuf> ++once setfiletype cfg
 
@@ -626,26 +648,13 @@ augroup END
 
 " autocmd BufLeave * if &buftype ==# 'quickfix' | echo 'leaving qf' | endif
 
-" if current directory differs across tabs cd -> tcd
-function! s:cabbr_cd() abort
-	if getcmdtype() ==# ':' && getcmdpos() ==# 3
-		let cwd = getcwd()
-		for tabnr in range(1, tabpagenr('$'))
-			if cwd !=# getcwd(-1, tabnr)
-				return 'tcd'
-			endif
-		endfor
-	endif
-	return 'cd'
-endfunction
-
-cnoreabbrev <expr> cd <SID>cabbr_cd()
+cnoreabbrev <expr> cd (haslocaldir() ? 'lcd' : haslocaldir(-1) ? 'tcd' : 'cd')
 
 cnoreabbrev <expr> ccd getcmdtype() == ':' && getcmdpos() == 4 ? 'cd %:p:h' : 'ccd'
 cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'GREP' : 'gr'
 cnoreabbrev <expr> grh getcmdtype() == ':' && getcmdpos() == 4 ? "GREP -g '*.h'" : 'grh'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
-command! -nargs=* GREP execute 'silent grep -g !check -g !docs -g !test -g !build -g !tests' substitute(escape((<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>)), '%#;'), '<bar>', '<lt>bar>', 'g')
+command! -nargs=* GREP call feedkeys("\<CR>", "nt")|execute 'grep -g !check -g !docs -g !test -g !build -g !tests' substitute(escape((<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>)), '%#'), '<bar>', '\\<bar>', 'g')
 xnoremap // y<Esc>:GREP <C-r>="'".escape(@", '\/.*$^~[](){}')."'"<CR><CR>
 nnoremap /. /\V.
 
@@ -931,6 +940,7 @@ endif
 nnoremap s; A;<Esc>
 nnoremap s, A,<Esc>
 
+nnoremap s<C-g> :! stat %<CR>
 nnoremap sw :set wrap!<CR>
 nnoremap sp vip:sort /\a/<CR>
 nnoremap ss vip:sort /['"]/<CR>
@@ -985,14 +995,20 @@ nmap gcM gcmO
 
 nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
 
-function! s:magic_paste_reindent(nlines)
+function! s:magic_paste_reindent(nlines, def_indent)
 	let v:lnum = nextnonblank('.')
 	if !empty(&indentexpr)
-		let indent = eval(&indentexpr)
+		let save_cursor = getcurpos()
+		sandbox let indent = eval(&indentexpr)
+		call setpos('.', save_cursor)
 	elseif &cindent
 		let indent = cindent(v:lnum)
 	else
 		return
+	endif
+
+	if indent <=# 0
+		let indent = a:def_indent
 	endif
 
 	let indent = (indent - indent(v:lnum)) / shiftwidth()
@@ -1008,7 +1024,7 @@ function! s:magic_paste(p)
 	endif
 
 	let reg = getreg(v:register)
-	return a:p.':call '.matchstr(expand('<sfile>'), '<SNR>.*').'_reindent('.(len(split(reg, "\n", 1)) - (getregtype(v:register) ==# 'V')).")\<CR>"
+	return a:p.':call '.matchstr(expand('<sfile>'), '<SNR>.*').'_reindent('.(len(split(reg, "\n", 1)) - (getregtype(v:register) ==# 'V')).','.indent('.').")\<CR>"
 endfunction
 
 nnoremap <silent><expr> p <SID>magic_paste('p')
@@ -1096,6 +1112,9 @@ endfunction
 cnoremap <silent><expr> / <SID>cmagic_tilde()
 
 let @p = "i\<C-R>+\<CR>\<Esc>"
+" Make typedef and struct from typedef struct.
+let @s = "0ldt;h%hPpa;\<Esc>v0y{O\<Esc>jpjdwf ;dEO\<Esc>"
+let @n = "dd*\<C-w>\<C-w>nzz\<C-w>\<C-w>"
 
 " local configuration
 let s:safe = ['~/pro/*', '~/**']
