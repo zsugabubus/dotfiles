@@ -36,6 +36,7 @@ syn keyword Identifier
 	\ strtod strtol strtoll strtoull strtoul
 	\ setlocale newlocale uselocale
 	\ fcntl ioctl
+	\ regcomp regexec regerror regfree
 syn keyword Identifier
 	\ containerof container_of
 	\ offsetof offset_of
@@ -54,9 +55,8 @@ syn match cConstant "\v<F_[GS]ETF[DL]>"
 syn match cConstant "\v<O_%(RDONLY|WRONLY|RDWR|CREAT|EXCL|CLOEXEC|TRUNC|APPEND|NONBLOCK|PATH|DIRECTORY|EXCL|NOFOLLOW)>"
 syn match cConstant "\v<FD_%(CLOEXEC)>"
 syn match cConstant "\v<LOCK_%(EX|NB)>"
-syn keyword cType locale_t
-syn keyword cType __m128i
-syn keyword cType sigset_t
+syn match cConstant "\v<REG_%(EXTENDED|ICASE|NOSUB|NEWLINE|NOTBOL|NOTEOL|STARTEND)>"
+syn keyword cType __m128i locale_t sigset_t regex_t
 syn match Identifier "\v<sigfillset>"
 syn match cConstant "\v<SA_%(NOCLDSTOP|NOCLDWAIT|NODEFER|ONSTACK|RESETHAND|RESTART|RESTORER|SIGINFO)>"
 syn match cConstant "\v<LC_%(GLOBAL_LOCALE|%(ADDRESS|CTYPE|COLLATE|IDENTIFICATION|MEASUREMENT|MESSAGES|MONETARY|NUMERIC|NAME|PAPER|TELEPHONE|TIME|ALL)_MASK)>"
