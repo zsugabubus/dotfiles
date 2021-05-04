@@ -14,19 +14,19 @@ if [[ -z $DISPLAY ]] && [[ $XDG_VTNR = 1 ]]; then
 	xauth add :0 . `mcookie`
 	#exec startx -- -ardelay 200 -arinterval 34
 	export DISPLAY=:0
-	(
+	0 && (
 		inotifywait -rmqe CREATE -t 1 /tmp 2>/dev/null | awk '/\/tmp\/.X11-unix\/X0/{exit}'
-		exec env -u SHLVL i3 # -c /home/$USER/mem/i3con -Vd all 2>/tmp/i3err >/tmp/i3log
+		exec env -u SHLVL ~/pro/heawm/heawm
 	) &!
 
-	trap 'exec env -u SHLVL i3' USR1
+	# trap 'exec env -u SHLVL i3' USR1
 	# Ignore signal, so Xserver will notify us when ready to accept connections.
 	# See Xserver(1).
 	# trap '' USR1
 
 	# (
 		trap '' USR1
-		X $DISPLAY vt$XDG_VTNR -ac -background none -keeptty -novtswitch -ardelay 200 -arinterval 34
+		X $DISPLAY vt$XDG_VTNR -ac -background none -keeptty -novtswitch -noreset -ardelay 200 -arinterval 34
 	# ) &
 	# wait
 

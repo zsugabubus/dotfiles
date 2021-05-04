@@ -39,7 +39,7 @@ local function prompt_powerline_setup() {
 		case $KEYMAP in
 		vicmd)      _powerline_keymap=' %B%F{148}%{%G%}%F{22}%K{148} N' ;;
 		main|viins) _powerline_keymap=' %B%F{33}%{%G%}%F{255}%K{33} I' ;;
-		*) _powerline_keymap='' ;;
+		*)          _powerline_keymap='' ;;
 		esac
 		zle .reset-prompt
 		zle -R
@@ -87,11 +87,7 @@ local function prompt_powerline_setup() {
 		_powerline_where_info
 		_powerline_writeable_info
 
-		# local vcs_begin=$EPOCHREALTIME
 		vcs_info 2>&-
-		# if (( $EPOCHREALTIME - vcs_begin > 0.05 )); then
-		#   zstyle ':vcs_info:*' check-for-changes false
-		# fi
 	}
 
 	function _powerline_reset_cursor() {
@@ -99,7 +95,7 @@ local function prompt_powerline_setup() {
 	}
 
 	function _powerline_path_info() {
-		# Directory changed during zle widget active.
+		# Directory changed while zle widget was active.
 		zle && zle .reset-prompt
 
 		local pathdev=$(findmnt --real -fnrM . -o SOURCE)
@@ -133,9 +129,9 @@ local function prompt_powerline_setup() {
 	zstyle ':vcs_info:*' enable git
 	zstyle ':vcs_info:*' use-prompt-escapes true
 	zstyle ':vcs_info:*' check-for-changes false
-	zstyle ':vcs_info:*' check-for-staged-changes true
+	zstyle ':vcs_info:*' check-for-staged-changes false
 	zstyle ':vcs_info:*' use-simple true
-	zstyle ':vcs_info:*' disable-patterns "${(b)HOME}"
+	zstyle ':vcs_info:*' disable-patterns "${(b)HOME}" ~m
 	zstyle ':vcs_info:git*+set-message:*' hooks git-st
 	case $TERM in
 	('linux')

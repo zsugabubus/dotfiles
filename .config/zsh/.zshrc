@@ -1,6 +1,4 @@
 #!/usr/bin/zsh
-# zmodload zsh/zprof
-# zprof
 fpath=($HOME/.config/zsh/ $HOME/.config/zsh/Completion $HOME/.config/zsh/Zle $fpath)
 
 # interesting: dynamic directory names

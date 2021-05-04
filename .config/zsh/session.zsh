@@ -12,7 +12,7 @@ if [[ ! -o login ]] || [[ $TTY != /dev/tty1 ]]; then
 	fi
 
 	# limit maximum number of processes
-	ulimit -u 800
+	ulimit -u 600
 
 	export LESS='-X -F -i -R -s -S'
 	export LESSHISTFILE=-
