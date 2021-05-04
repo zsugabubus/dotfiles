@@ -6,7 +6,12 @@
 " https://github.com/kristijanhusak/vim-dadbod-ui
 " packadd nvim-lsp
 
+" https://vimways.org/2018/vim-and-git/
+" vim-ninja-feet
 " :so $VIMRUNTIME/syntax/hitest.vim
+
+" NVim bug statusline with \n \e \0 (zero width probably) messes up character
+" count. Followed by multi-width character crashes attrs[i] > 0.
 
 if filewritable(stdpath('config').'/init.vim')
 	command! -nargs=+ IfLocal <args>
@@ -26,7 +31,7 @@ nnoremap U <Nop>
 set nowrap
 set ts=8 sw=0 sts=0 noet
 set spelllang=en
-set ignorecase smartcase
+set ignorecase fileignorecase wildignorecase smartcase
 set scrolloff=5 sidescrolloff=23
 set splitright
 set cinoptions+=t0,:0,l1
@@ -106,12 +111,16 @@ cnoremap <C-a> <Home>
 cnoremap <C-e> <End>
 
 nnoremap U <nop>
-nnoremap <expr> + (!&diff ? 'g+' : ":diffput\n")
-nnoremap <expr> - (!&diff ? 'g-' : ":diffget\n")
-xnoremap <expr> + (!&diff ? '' : ":diffput\n")
-xnoremap <expr> - (!&diff ? '' : ":diffget\n")
-noremap <expr> > (!&diff ? '>' : ":diffget 2\n")
-noremap <expr> < (!&diff ? '<' : ":diffget 3\n")
+nnoremap <expr> + (!&diff ? 'g+' : ":diffput\<CR>")
+nnoremap <expr> - (!&diff ? 'g-' : ":diffget\<CR>")
+xnoremap <expr> + (!&diff ? '' : ":diffput\<CR>")
+xnoremap <expr> - (!&diff ? '' : ":diffget\<CR>")
+noremap <expr> > (!&diff ? '>' : ":diffget 2\<CR>")
+noremap <expr> < (!&diff ? '<' : ":diffget 3\<CR>")
+
+nnoremap <expr> dL (!&diff ? 'dL' : ":diffget LOCAL\<CR>")
+nnoremap <expr> dB (!&diff ? 'dB' : ":diffget BASE\<CR>")
+nnoremap <expr> dR (!&diff ? 'dR' : ":diffget REMOTE\<CR>")
 
 vnoremap <C-S> y:!hu <C-R>"<CR>
 
@@ -138,19 +147,11 @@ function! s:magic_char_search(mode, forward) abort
 		normal! gv
 	endif
 
-	" hmmm. maybe we could use normal! /search/e... simply; but it works so do
-	" not fucking touch it
+	" Hmmm. Maybe we could use normal! /search/e... simply; but it works so do
+	" not fucking touch it.
 	for nth in range(1, v:count1)
 		call search(pattern, flags)
 	endfor
-	if line('.') !=# lnum
-		echohl WarningMsg
-		echo printf('Pattern crossed end-of-line: %s', cs.char)
-		echohl Normal
-	else
-		" To clear the warning above.
-		echo
-	endif
 endfunction
 
 for s:letter in [',', ';']
@@ -188,7 +189,7 @@ augroup END
 
 augroup vimrc_insertempty
 	autocmd!
-	autocmd InsertLeave * if empty(trim(getline('.')))|undojoin | call setline('.', '')|endif
+	autocmd InsertLeave * try|if empty(trim(getline('.')))|undojoin|call setline('.', '')|endif|catch /undojoin/|endtry
 augroup END
 
 " Reindent inner % lines.
@@ -199,13 +200,15 @@ nmap d< $<%%dd<C-O>dd
 
 command -nargs=* -bang
 	\ Publish execute '!'.(<q-args> =~# '\v^\@|^$|\-\-'
-	\   ? '{ noglob git diff --name-only '.<q-args>.' && noglob git diff --name-only --cached '.<q-args>.'; }'
+	\   ? '{ noglob git diff --name-only '.<q-args>.' && noglob git diff --name-only --cached '.<q-args>.'; } | sort -u'
 	\   : 'printf \%s '.shellescape(expand(<q-args>))
-	\ ).' | xargs -r -P2 -I{} '.(<bang>0 ? 'echo ' : '').'install -Dvm 640 {} '.g:publish_path.'{}'|
+	\ ).' | xargs -r -P2 -I{} '.(<bang>0 ? 'printf "\%s\n" {}' : 'install -Dvm 666 {} '.g:publish_path.'{}')|
 	\ if !v:shell_error|
-	\   call feedkeys("\<CR>", "nt")|
-	\   redraw|
-	\   echomsg 'Upload succeed'|
+	\   if <bang>1|
+	\     call feedkeys("\<CR>", "nt")|
+	\     redraw|
+	\     echomsg 'Upload succeed'|
+	\   endif|
 	\ else|
 	\   echohl Error|
 	\   echomsg 'Upload failed'|
@@ -214,6 +217,10 @@ command -nargs=* -bang
 nnoremap <silent> <M-p> :update<bar>Publish %<CR>
 
 inoremap <C-r> <C-r><C-o>
+
+" kO -- Only useful if you have reached the line with a motion.
+nnoremap <expr> a "aO"[prevnonblank(line('.')) ==# line('.') - 1 && prevnonblank(line('.') + 1) ==# line('.') + 1]
+nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
 
 inoremap <expr> <C-s> strftime("%F")
 inoremap <expr> <C-f> expand("%:t:r")
@@ -266,10 +273,9 @@ onoremap <silent> } V}
 nnoremap <Up> gk
 nnoremap <Down> gj
 
-function s:make() abort
+function! s:make() abort
 	let start = strftime('%s')
 	echon "\U1f6a7  Building...  \U1f6a7"
-	call feedkeys("\<CR>", "nt")
 	make
 	redraw
 	let errors = 0
@@ -302,6 +308,7 @@ function s:make() abort
 		echohl None
 	else
 		echon "\U1f64f Build finished"
+		call feedkeys("\<CR>", "nt")
 		cclose
 	endif
 endfunction
@@ -337,9 +344,6 @@ nnoremap <silent> SW  = ciW<Esc>wviWp`^PB
 " Swap xxx = yyy.
 nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P_\", 'nt')\<CR>"
 " }}}1
-
-" Always go to file.
-" nnoremap <silent> gf :edit <cfile><CR>
 
 " put the first line of the paragraph at the top of the window
 " <C-E> does not want to get executed without execute... but <C-O> does... WTF!?
@@ -477,11 +481,14 @@ ia Youl'  You’ll
 ia wel'   we’ll
 ia Wel'   We’ll
 
-" augroup vimrc_magicq
-" 	autocmd! BufEnter * nnoremap <buffer> q :quit<CR>|
-" 		\ autocmd TextChanged,TextChangedI,TextChangedI,TextChangedP,InsertEnter <buffer=abuf> ++once
-" 			\ silent! nunmap <buffer> q
-" augroup END
+function! s:unmap_all(map, prefix)
+	redir => l:mappings
+		silent execute a:map.'map' a:prefix
+	redir END
+	for l:mapping in split(mappings, "\n")
+		execute 'silent!' a:map.'unmap' matchstr(l:mapping, '\v^. *\zs[^ ]+')
+	endfor
+endfunction
 
 augroup vimrc_skeletons
 	autocmd! BufNewFile * autocmd FileType * ++once if 0 == changenr()|call setline(1, get({
@@ -522,13 +529,26 @@ augroup vimrc_filetypes
 	autocmd BufRead zathurarc
 		\ setlocal ft=cfg keywordprg=:ManKeyword\ 5\ zathurarc
 
+	autocmd FileType gitrebase
+		\ for s:cmd in split('pick reword edit squash fixup break drop merge', ' ')|
+		\   call s:unmap_all('n', 'c'.s:cmd[0])|
+		\   execute printf('nnoremap <buffer> c%s 0cw%s<Esc>0', s:cmd[0], s:cmd)|
+		\ endfor|
+		\ for s:cmd in split('llabel treset mmerge', ' ')|
+		\   call s:unmap_all('n', 'c'.s:cmd[0])|
+		\   execute printf('nnoremap <buffer> c%s cc%s ', s:cmd[0], s:cmd[1:])|
+		\ endfor
+
+	autocmd FileType diff
+		\ nnoremap <expr> dd '-' == getline('.')[0] ? '0r ' : 'dd'
+
 	autocmd FileType html,php
 		\ setlocal equalprg=xmllint\ --encode\ UTF-8\ --html\ --nowrap\ --dropdtd\ --format\ -|
-		\ xnoremap <expr> s<<Space> mode() ==# 'V' ? 'c< <CR><C-r>"><Esc>' : 'c< <C-r>" ><Esc>'|
-		\ xnoremap <expr> sb mode() ==# 'V' ? 'c<lt>b><CR><C-r>"</b><Esc>' : 'c<lt>b><C-r>"</b><Esc>'|
-		\ xnoremap <expr> sp mode() ==# 'V' ? 'c<lt>p><CR><C-r>"</p><Esc>' : 'c<lt>p><C-r>"</i><Esc>'|
-		\ xnoremap <expr> si mode() ==# 'V' ? 'c<lt>i><CR><C-r>"</i><Esc>' : 'c<lt>i><C-r>"</i><Esc>'|
-		\ xnoremap <expr> sd mode() ==# 'V' ? 'c<lt>div><CR><C-r>"</div><Esc>' : 'c<lt>div><C-r>"</div><Esc>'
+		\ xnoremap <expr><buffer> s<<Space> mode() ==# 'V' ? 'c< <CR><C-r>"><Esc>' : 'c< <C-r>" ><Esc>'|
+		\ xnoremap <expr><buffer> sb mode() ==# 'V' ? 'c<lt>b><CR><C-r>"</b><Esc>' : 'c<lt>b><C-r>"</b><Esc>'|
+		\ xnoremap <expr><buffer> sp mode() ==# 'V' ? 'c<lt>p><CR><C-r>"</p><Esc>' : 'c<lt>p><C-r>"</i><Esc>'|
+		\ xnoremap <expr><buffer> si mode() ==# 'V' ? 'c<lt>i><CR><C-r>"</i><Esc>' : 'c<lt>i><C-r>"</i><Esc>'|
+		\ xnoremap <expr><buffer> sd mode() ==# 'V' ? 'c<lt>div><CR><C-r>"</div><Esc>' : 'c<lt>div><C-r>"</div><Esc>'
 
 	autocmd FileType sh,zsh,dash
 		\ setlocal ts=2|
@@ -545,7 +565,6 @@ augroup vimrc_filetypes
 	let php_sql_query = 1
 	let php_htmlInStrings = 1
 	let php_parent_error_close = 1
-
 	autocmd FileType vim,lua,javascript,yaml,css,stylus,xml,php,html,pug,gdb
 		\ setlocal ts=2
 
@@ -596,11 +615,12 @@ augroup vimrc_colorsreload
 	autocmd! BufWritePost colors/*.vim ++nested let &background=&background
 augroup END
 
+" IfLocal packadd gitv
 IfLocal packadd vim-glsl
 IfLocal packadd vim-pug
 IfLocal packadd vim-stylus
 IfLocal packadd vim-toml
-IfLocal packadd zig.vim
+" IfLocal packadd zig.vim
 
 IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 
@@ -610,7 +630,7 @@ IfLocal packadd vim-gnupg
 " autocmd BufReadPost *rc autocmd BufWinEnter <buffer=abuf> ++once setfiletype cfg
 
 augroup vimrc_autodiffupdate
-	autocmd! TextChanged,TextChangedI,TextChangedP * diffupdate
+	autocmd! TextChanged,TextChangedI,TextChangedP * if empty(&buftype)|diffupdate|endif
 augroup END
 
 nnoremap Q :normal n.<CR>zz
@@ -647,16 +667,19 @@ augroup vimrc_diffquit
 augroup END
 
 " autocmd BufLeave * if &buftype ==# 'quickfix' | echo 'leaving qf' | endif
+cnoreabbrev <expr> f getcmdtype() == ':' && getcmdpos() == 2 ? 'find'.(' ' !=# v:char ? ' ' : '') : 'f'
 
-cnoreabbrev <expr> cd (haslocaldir() ? 'lcd' : haslocaldir(-1) ? 'tcd' : 'cd')
-
+cnoreabbrev <expr> cd getcmdtype() == ':' && getcmdpos() == 3 ? (haslocaldir() ? 'lcd' : haslocaldir(-1) ? 'tcd' : 'cd') : 'cd'
 cnoreabbrev <expr> ccd getcmdtype() == ':' && getcmdpos() == 4 ? 'cd %:p:h' : 'ccd'
+
 cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'GREP' : 'gr'
 cnoreabbrev <expr> grh getcmdtype() == ':' && getcmdpos() == 4 ? "GREP -g '*.h'" : 'grh'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
 command! -nargs=* GREP call feedkeys("\<CR>", "nt")|execute 'grep -g !check -g !docs -g !test -g !build -g !tests' substitute(escape((<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>)), '%#'), '<bar>', '\\<bar>', 'g')
-xnoremap // y<Esc>:GREP <C-r>="'".escape(@", '\/.*$^~[](){}')."'"<CR><CR>
+xnoremap // y:GREP -F <C-r>=shellescape(@")<CR><CR>
 nnoremap /. /\V.
+
+nnoremap g<C-f> :find <C-r><C-w><C-z><CR>
 
 let pets_joker = ''
 " tab or complete
@@ -751,7 +774,7 @@ endfunction
 nnoremap <silent> g?f :call <SID>goto_function()<CR>
 
 nnoremap ! :ls<CR>:b<Space>
-nnoremap g/ :!ls --group-directories-first<CR>:find<Space>
+nnoremap g/ :!ls --group-directories-first<CR>:find *
 nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
 
 nnoremap <C-w>T <C-w>s<C-w>T
@@ -780,10 +803,9 @@ augroup END
 
 set title
 
-autocmd! TermOpen * nnoremap <buffer> <C-c> a<C-c>|startinsert
-tnoremap <M-i> <C-\><C-n>
-tnoremap <M-a> <C-\><C-n>
-tmap <M-o> <C-\><C-n><M-o>
+autocmd! TermOpen * startinsert
+tnoremap <C-v> <C-\><C-n>
+tnoremap <Return> gf
 
 if $TERM !=# 'linux'
 	Source theme.vim
@@ -792,25 +814,132 @@ if $TERM !=# 'linux'
 	let colors_name = 'vivid'
 endif
 
-" IfLocal packadd vim-devicons
-" IfSandbox execute \":function! g:WebDevIconsGetFileTypeSymbol(...)\nreturn ''\nendfunction\"
-" IfSandbox execute \":function! g:WebDevIconsGetFileFormatSymbol(...)\nreturn ''\nendfunction\"
-IfLocal packadd vim-fugitive
-IfSandbox execute ":function! g:FugitiveHead(...)\nreturn ''\nendfunction"
 IfLocal packadd debugger.nvim
 IfSandbox execute ":function! g:DebuggerDebugging(...)\nreturn 0\nendfunction"
+
+function! s:git_pager_update(bufnr, cmdline)
+	let blob = systemlist(['git'] + a:cmdline, [], 1)
+
+	setlocal modifiable
+	let new = !empty(getbufline(a:bufnr, 2))
+	call setbufline(a:bufnr, 1, blob)
+	call deletebufline(a:bufnr, line('$'), '$')
+	setlocal readonly nomodifiable
+	if new
+		call setpos('.', [a:bufnr, 1, 1])
+	endif
+
+	filetype detect
+endfunction
+
+nnoremap <silent><expr> gf (0 <=# match(expand('<cfile>'), '\v^\x{4,}$') ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>" : 0 <=# match(expand('<cfile>'), '^[ab]/') ? 'viWof/lgf' : 'gf')
+
+function! s:git_pager(cmdline)
+	nnoremap <buffer> q <C-w>c
+
+	setlocal nobuflisted bufhidden=hide buftype=nofile noswapfile undolevels=-1
+
+	autocmd ShellCmdPost <buffer> call s:git_pager_update(<abuf>, a:cmdline)
+	call s:git_pager_update(bufnr(), a:cmdline)
+endfunction
+
+command! -nargs=* -range Glog vertical new|call s:git_pager(['log', '-L<line1>,<line2>:'.expand('#')])
+
+function! s:git_status(...) range
+	let status = systemlist(['git', 'status', '-sb'])
+	if v:shell_error
+		let status = []
+	endif
+	let list = []
+	for path in status
+		let [_, status, pathname; _] = matchlist(path, '\v(..) (.*)')
+		if status ==# '##'
+			continue
+		endif
+		" See git-status.
+		if status ==# ' m'
+			let status = 'submodule modified'
+		elseif status ==# ' M'
+			let status = 'modified'
+		elseif status ==# '??'
+			let status = 'untracked'
+		endif
+		call add(list, { 'filename': pathname, 'text': status, 'lnum': 1, })
+	endfor
+	call setqflist(list)
+	copen
+endfunction
+
+function! s:git_diff(...) range
+	let rev = get(a:000, 0, 'HEAD')
+	if rev[0] ==# '~'
+		let rev = '@'.rev
+	endif
+
+	diffthis
+	execute 'vsplit git://'.fnameescape(rev).':./'.fnameescape(expand('%'))
+	setlocal bufhidden=wipe
+	autocmd BufUnload <buffer> diffoff
+	diffthis
+	wincmd p
+	wincmd L
+endfunction
+
+command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
+command! -nargs=* -range Glog terminal git log-vim
+command! -nargs=* -range Gstatus call s:git_status(<f-args>)
+
+function! s:git_read()
+	call s:git_pager(['show', matchstr(expand("<amatch>"), '\m://\zs.*')])
+endfunction
+
+function! GitHead()
+	let dir = getcwd()
+	if !has_key(g:git_heads, dir)
+		let status = system(['git', '--no-optional-locks', 'status', '-sb'])
+		if v:shell_error
+			let status = []
+		endif
+
+		let staged = 0 <=# match(status, '\m\n[MARC]') ? 'S' : ''
+		let unstaged = 0 <=# match(status, '\m\n.[MARC]') ? 'M' : ''
+		let untracked = 0 <=# match(status, '\V\n??') ? 'U' : ''
+
+		let branch_pat = '[^[:cntrl:]:?[\\^~]+'
+		let [_, branch, ahead, behind; _] = matchlist(status, '\v^## ('.branch_pat.')%(\.\.\.'.branch_pat.' ?)%(\[%(ahead (\d+))? *%(behind (\d+))?\])?')
+		let g:git_heads[dir] = branch.staged.unstaged.untracked.(ahead || behind ? '['.(ahead ? '+'.ahead : '').(behind ? '-'.ahead : '').']' : '')
+	endif
+	return g:git_heads[dir]
+endfunction
+
+augroup vimrc_git
+	autocmd!
+
+	autocmd ShellCmdPost * let g:git_heads = {}
+	doautocmd ShellCmdPost
+
+	autocmd BufReadCmd git://* ++nested call s:git_read()
+
+	" Highlight conflict markers.
+	autocmd Colorscheme * match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
+augroup END
 
 augroup vimrc_statusline
 	autocmd!
 	" no extra noise
 	set noshowmode
 
-	set tabline=%!TabLine()
+	set tabline=%!Tabline()
 	function! ShortenPath(path)
 		return pathshorten(fnamemodify(matchstr(!empty(a:path) ? a:path : '[No Name]', '\v(^[^:]+://)?\zs.*'), ':~:.'))
 	endfunction
 
-	function! TabLine()
+	" function! s:get_file_icon()
+	" 	let b:icon = get(b:, 'icon', matchstr(substitute(system(['ls', '--color=always', '-d1', '--', bufname()]), \"\e[^m]*m\", '', 'g'), '..'))
+	" 	return b:icon
+	" endfunction
+
+	function! Tabline()
 		let s = ''
 		let curr = tabpagenr()
 		for n in range(1, tabpagenr('$'))
@@ -833,7 +962,6 @@ augroup vimrc_statusline
 
 			let bufnr = buflist[winnr - 1]
 			let path = bufname(bufnr)
-				" \ FileIcon(path).' '
 			let s .=
 				\ ShortenPath(path)
 				\ .(getbufvar(bufnr, '&modified') ? ' [+]' : anymodified ? ' +' : '')
@@ -873,12 +1001,6 @@ augroup vimrc_statusline
 		let s:prev_lnum = lnum
 	endfunction
 
-	" let g:ls_icons = map(split($LS_ICONS, ':'), {_,m-> split(m, '=')})
-	" function! FileIcon(path) abort
-	" endfunction
-	" function! StatusLineFileIcon(path) abort
-	" endfunction
-
 	function! StatusLineFiletypeIcon() abort
 		return get({ 'unix': '', 'dos': '', 'mac': '' }, &fileformat, '')
 	endfunction
@@ -893,7 +1015,7 @@ augroup vimrc_statusline
 	autocmd WinEnter,BufWinEnter *
 		\ setlocal statusline=%(%#StatusLineModeTerm#%{'t'==mode()?'\ \ T\ ':''}%#StatusLineModeTermEnd#%{'t'==mode()?'\ ':''}%#StatusLine#%)|
 		\ setlocal statusline+=%(\ %{DebuggerDebugging()?'🦋🐛🐝🐞🐧🦠':''}\ %)|
-		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{FugitiveHead()}\ %)\ %)|
+		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{GitHead()}\ %)\ %)|
 		\ setlocal statusline+=%n:%f%(%h%w%{exists('b:gzflag')?'[GZ]':''}%r%)%(\ %m%)%k%(\ %{StatusLineStat()}%)|
 		\ setlocal statusline+=%9*%<%(\ %{StatusLineRecentBuffers()}%)%#StatusLine#|
 		\ setlocal statusline+=%=|
@@ -953,27 +1075,23 @@ noremap <Plug>(JumpMotion)f <Cmd>call JumpMotion('/\V'.escape(nr2char(getchar())
 noremap <Plug>(JumpMotion)F <Cmd>call JumpMotion('?\V'.escape(nr2char(getchar()), '/\')."\<lt>CR>")<CR>
 noremap <Plug>(JumpMotion), <Cmd>call JumpMotion(':'.line('w0'), "/,\<lt>CR>", '')<CR>
 
-function! s:capture(...)
-	let cmd = join(a:000, ' ')
-	let saved = @"
-	redir @"
-	silent! execute cmd
+function! s:capture(cmd)
+	redir => l:output
+	silent! execute a:cmd
 	redir END
-	let output = copy(@")
-	let @" = saved
-	if empty(output)
-		echoerr "no output"
+	if empty(l:output)
+		echohl WarningMsg
+		echomsg "no output"
+		echohl None
 	else
 		new
+		nnoremap <buffer> q <C-w>c
 		setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
-		put! =output
+		let l:output = trim(l:output)
+		put! =l:output
 	endif
 endfunction
-command! -nargs=+ -complete=command Capture call s:capture(<f-args>)
-
-nmap ghp <Plug>GitGutterPreviewHunk
-nmap ghs <Plug>GitGutterStageHunk
-nmap ghu <Plug>GitGutterUndoHunk
+command! -nargs=+ -complete=command Capture call s:capture(<q-args>)
 
 let netrw_banner = 0
 let netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
@@ -992,8 +1110,6 @@ let commentr_leader = 'g'
 let commentr_uncomment_map = ''
 nmap gcD gcdO
 nmap gcM gcmO
-
-nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
 
 function! s:magic_paste_reindent(nlines, def_indent)
 	let v:lnum = nextnonblank('.')
@@ -1031,13 +1147,6 @@ nnoremap <silent><expr> p <SID>magic_paste('p')
 nnoremap <silent><expr> P <SID>magic_paste('P')
 
 autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
-
-" augroup vimrc_gcbug
-" 	autocmd!
-" 	autocmd CmdlineEnter * let s:inside_cmdline = 1
-" 	autocmd CmdlineLeave * let s:inside_cmdline = 0
-" 	autocmd FocusLost * if get(s:, 'inside_cmdline', 0)|call feedkeys(\"\<Esc>\", 'nti')|endif
-" augroup END
 
 augroup vimrc_persistent_options
 	let s:options_vim = stdpath('config').'/options.vim'
@@ -1088,12 +1197,18 @@ function! s:cmagic_tilde() abort
 
 	let cmdpos = getcmdpos()
 	let cmdline = getcmdline()
+
+	" Only for file related operations.
+	if cmdline !~# '\v^%(e%[dit]|w%[rite]|[lt]?cd)>'
+		return '/'
+	endif
+
 	let word_start = match(strpart(cmdline, -1, cmdpos), '\v.* \zs\~.*')
 	if word_start < 0
 		return '/'
 	endif
 
-	if &shell =~ 'zsh'
+	if &shell =~# 'zsh'
 		let cmd = join([
 		\ '. $ZDOTDIR/hashes.zsh',
 		\ 'eval text=$1',
@@ -1105,11 +1220,10 @@ function! s:cmagic_tilde() abort
 	let word = cmdline[word_start:cmdpos]
 	let word = trim(system([&shell, '-c', cmd, '', word]))
 
-	return "\<C-\>e\"".escape(strpart(cmdline, 0, word_start).word.'/'.strpart(cmdline, cmdpos), '\"')."\"\<CR>".
-	\ "\<C-R>=''[feedkeys(\"x\\<BS>\", 'tinx')]\<CR>"
+	return "\<C-\>e\"".escape(strpart(cmdline, 0, word_start).word.'/'.strpart(cmdline, cmdpos), '\"')."\"\<CR>"
 endfunction
 
-cnoremap <silent><expr> / <SID>cmagic_tilde()
+cnoremap <expr> / <SID>cmagic_tilde()
 
 let @p = "i\<C-R>+\<CR>\<Esc>"
 " Make typedef and struct from typedef struct.
