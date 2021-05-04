@@ -10,6 +10,11 @@ let g:colors_name = 'vivid'
 " red #f868d8 #5858d8
 " guibg=#b1d7ff
 
+" f3f3a3
+
+" redish background color: #f3eff0
+" #fff3a0
+
 let s:highlights = [
 \ ['Normal', '#2f323f|#eeede9', '#eeeeee|#23252d'],
 \ ['Visual', '', '#accdfe|#5c4dbd', 'NONE'],
@@ -30,11 +35,11 @@ let s:highlights = [
 \ ['StatusLineModeTerm', '#ffffff', '#9D3695', 'bold'],
 \ ['StatusLineModeTermEnd', 'StatusLineModeTerm.guibg', 'StatusLine.guibg'],
 \ ['!diffText', '|#23252d', '#fffcda'],
-\ ['DiffAdd', '|diffText', '#bff3b8|#9fd368'],
-\ ['DiffChange', '|diffText', '#ffdeaf|#ffde6f'],
-\ ['DiffDelete', '#ffb4e8|#ff84c8', '#fed4e0|#feb4b0'],
-\ ['diffRemoved', '|diffText', 'DiffDelete'],
-\ ['diffAdded', '|diffText', 'DiffAdd', 'bold'],
+\ ['DiffAdd', 'Normal|#c6f6a0', '#a4f6a0|Normal', 'bold'],
+\ ['DiffChange', '|diffText', '#ffe3a0|#ffde6f'],
+\ ['DiffDelete', '#ed407a', '#fdf0fa|Normal'],
+\ ['diffRemoved', 'DiffDelete', 'DiffDelete'],
+\ ['diffAdded', 'DiffAdd', 'DiffAdd', 'DiffAdd'],
 \ ['!Special', '->Normal'],
 \ ['!Directory', '->Normal'],
 \ ['!SpecialKey', '#818192'],
@@ -43,7 +48,7 @@ let s:highlights = [
 \ ['Type', '#ed0085|#fd0069', '', 'bold'],
 \ ['Conditional', '#9d00c5|#ff6de9', '', 'bold'],
 \ ['Identifier', '#4d4d4f|#cacacc', '', 'bold'],
-\ ['PreProc', '#006dd9|#f4cd09'],
+\ ['PreProc', '#006dd9|#ffcd09'],
 \ ['Number', '#fa3422|#fa7452', '', 'bold'],
 \ ['Keyword', '#006de9|#009df9', '', 'bold'],
 \]
