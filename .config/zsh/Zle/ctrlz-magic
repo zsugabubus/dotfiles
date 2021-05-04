@@ -1,6 +1,7 @@
 #autoload
 
 if [[ -z $BUFFER ]]; then
+	zle-line-finish
 	fg
 else
 	zle -w .push-input

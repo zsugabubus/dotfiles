@@ -28,17 +28,17 @@ function noidle() {
 function clean() {
 	for cmd in '' '-delete'; do
 		find \( -empty -o -name '.deleted' -o -name '*.part' \) $cmd &&
-		[[ -z $cmd ]] && read -q '?Delete? ' && continue
+		[[ -z $cmd ]] && read -srq '?Delete? ' && continue
 		return
 	done
 }
 
 function mo() {
 	local dev=$(lsblk -rpno TYPE,HOTPLUG,NAME,SIZE,LABEL,MOUNTPOINT | grep 'part 1' | fzf -1 | awk -F ' ' '{print $3}') &&
-	{ read -q "?mount $dev /mnt? [Y/n]" } always { print } && sudo mount $dev /mnt
+	{ read -srq "?mount $dev /mnt? [Y/n]" } always { print } && sudo mount $dev /mnt
 }
 alias hh='HOME=$PWD'
-alias cdgit='cd -- "$(git rev-parse --show-toplevel)"'
+alias gcd='cd -- "$(git rev-parse --show-toplevel)"'
 alias vv='vlock -a'
 alias configure_make='./configure && make'
 alias make_install='() { for prefix in "" sudo; do $prefix make PREFIX=/usr prefix=/usr install && break; done }'
@@ -124,9 +124,10 @@ function speedtest() {
 }
 compdef '_files -g "*.(png|jpg)"' feh
 alias -g G='| grep -i'
-alias -g F='| fzf | { while read f; do print -z $(q-@)f; done }'
-alias -g _='| less'
+# alias -g F='| fzf | { while read f; do print -z $(q-@)f; done }'
+alias -g L='| less'
 alias diff='diff --color=auto'
+alias sf='() { local f=/tmp/strace; strace -fo $f $@ && $EDITOR $f; }'
 alias gccc='gcc -O2 -march=native -std=c11 -g -ldl main.c && time ./a.out'
 alias gccd='() { gcc -O0 -march=native -std=c11 -g -ldl main.c $* && gdb ./a.out -ex run; }'
 alias df='df -h'
@@ -178,6 +179,7 @@ alias difforig='() { diff ${1%%.orig}.orig ${1%%.orig} }'
 compdef '_files -g "*.orig"' difforig
 alias iftop='sudo -E iftop'
 alias mdp='mdp -fi'
+alias git='noglob git'
 alias g='git'
 alias j='jobs'
 alias am='alsamixer'
@@ -207,7 +209,7 @@ compdef lne=lnv
 alias flat='() { [[ -d $1 ]] && mv -- $1/.*(N) $1/*(N) . && rmdir -p -- $1 }'
 alias mvv='noglob _zmv -M'
 function _zmv() {
-	zmv -nvW $@ && { read -q "?Execute? " } always { print } && zmv -vW $@
+	zmv -nvW $@ && { read -srq "?Execute? " } always { print } && zmv -vW $@
 }
 function mve() {
 	local files=( ${@:-*} )
@@ -226,7 +228,7 @@ function mve() {
 					any=1
 				fi
 			done
-			if (( ! any )) || { [[ -n $precmd ]] && ! { read -q '?Proceed? [y/N] ' } always { print } }; then
+			if (( ! any )) || { [[ -n $precmd ]] && ! { read -srq '?Proceed? [y/N] ' } always { print } }; then
 				break
 			fi
 		done
@@ -240,7 +242,7 @@ function rmm() {
 	else
 		local options=
 	fi
-	print -l "rm $options${options:+ }-- "$^@ && { read -q "?Execute? " } always { print } && rm $options $@
+	print -l "rm $options${options:+ }-- "$^@ && { read -srq "?Execute? " } always { print } && rm $options $@
 }
 alias mv='mv -i'
 alias mv~='() { mv $1 $1~ }'
@@ -308,8 +310,8 @@ alias calcurse='calcurse -q'
 alias curl='curl --compressed'
 alias co='curl --remote-name-all -L'
 alias oz='() { od -A x -t x1z -v $@ | sed '"'"'s/  >\(.*\)<$/  |\1|/'"'"' }'
-alias du.='du --apparent-size -csh . | sort -rh'
-alias du..='du --apparent-size -chd 1 . | sort -rh'
+alias du.='du --apparent-size -csh . | sort -h'
+alias du..='du --apparent-size -chd 1 . | sort -h'
 alias ti='tikal'
 alias tt='ti'
 function sheep_pacman() {
@@ -350,7 +352,7 @@ function _check_user_files() {
 
 function _confirm_cmd() {
 	print -rnP "%B%F{blue}::%f Confirm? [y/N]%b " &&
-	read -sqr && command "${@}"
+	read -srq && command "${@}"
 }
 function poweroff() { _check_user_files && _confirm_cmd $0 "$@"; }
 function reboot() { _check_user_files && _confirm_cmd $0 "$@"; }
@@ -390,6 +392,12 @@ function bwsh() {
 
 function print_composekeys() {
 	less "/usr/share/X11/locale/$(grep --max-count=1 "${LANG%.*}.UTF-8\$" /usr/share/X11/locale/locale.dir | cut -d/ -f1)/Compose"
+}
+
+function rs() {
+	pkill redshift
+	redshift -x
+	redshift -b 0.$1 -o
 }
 
 function M() { [[ ! $PWD/ =~ ^${:-~m}/ ]] && cd -q -- ~m; bwsh; }

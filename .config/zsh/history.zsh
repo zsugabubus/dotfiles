@@ -25,10 +25,10 @@ function zshaddhistory() {
 	e)
 		# Explicit save history.
 		return 0 ;;
-	zathura|man|kill|pkill|chmod|chattr|rm|rmdir|rd|mkdir|fd|mv[ve]|rmm|cpp|lnn|md)
+	zathura|man|kill|pkill|chmod|chattr|rm|rmdir|rd|mkdir|fd|mv[ve]|rmm|cpp|lnn|md|ls|lt)
 		# Saved on the internal history only.
 		return 2 ;;
-	ab|abduco|tmux|?|ls|lt|where|publish|poweroff|reboot|exit|spek)
+	ab|abduco|tmux|?|where|publish|poweroff|reboot|exit|spek)
 		# Do not save at all.
 		return 1 ;;
 	esac

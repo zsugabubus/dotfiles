@@ -1,3 +1,4 @@
+# https://stackoverflow.com/questions/24836684/file-completion-priorities-in-zsh
 zmodload zsh/complist &&
 autoload -Uz compinit 2>/dev/null &&
 # regenerate completion file at every startup
@@ -54,7 +55,9 @@ zstyle ':completion::complete:*' single-ignored show
 # Always perform completion on <Tab>.
 zstyle ':completion::*' insert-tab false
 
+# zstyle ':completion::complete:e:*' menu select
 zstyle ':completion::complete:(mp|mpv):*' ignored-patterns '*.aria2' '(#i)**/*sample*' '*.(txt|nfo)'
+zstyle ':completion::complete:e:*' ignored-patterns '*.(o|d|out)'
 
 unset dircolors
 

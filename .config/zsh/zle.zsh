@@ -55,7 +55,7 @@ bindkey '^X^V' edit-command-words
 bindkey -M vicmd '^X^V' edit-command-words
 
 autoload_zle ctrlz-magic
-bindkey '^Z' ctrlz-magic
+bindkey -M viins '^Z' ctrlz-magic
 
 # bindkey -M viins $terminfo[kcuu1] history-substring-search-up
 # bindkey -M viins $terminfo[kcud1] history-substring-search-down
@@ -219,3 +219,19 @@ source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 # add-zsh-hook chpwd chpwd_recent_dirs
 
 unfunction autoload_zle
+
+if [[ -o login ]]; then
+	set -o ignore_eof
+	function zle_exit() {
+		local prompt=
+		print -nv prompt "?\rzsh: Surely exit? "
+		read -esrq $prompt && exit
+		zle redisplay
+	}
+else
+	function zle_exit() {
+		exit
+	}
+fi
+zle -N zle_exit
+bindkey '^D' zle_exit
