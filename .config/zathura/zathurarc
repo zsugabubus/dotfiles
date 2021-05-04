@@ -2,11 +2,18 @@ set window-title-basename	true
 set statusbar-home-tilde	true
 set selection-clipboard	clipboard
 
+set	scroll-step	100
+
 map	<C-y>	scroll up
 map	<C-e>	scroll down
 
 map	<C-i>	zoom in
 map	<C-o>	zoom out
+
+map	1	set "pages-per-row 1"
+map	2	set "pages-per-row 2"
+map	3	set "pages-per-row 3"
+map	4	set "pages-per-row 4"
 
 map	u	scroll half-up
 map	d	scroll half-down
@@ -18,5 +25,13 @@ map [fullscreen]	f	toggle_fullscreen
 
 # WTF. full page scrolling is off by |page-padding| pixels. that is why we set it to zero
 set page-padding 0
+
+
+
+# set recolor "true"
+set recolor-lightcolor "#000000" #00
+set recolor-darkcolor "#E0E0E0" #06
+set recolor-reverse-video "true"
+set recolor-keephue "true"
 
 # set sandbox "strict"
