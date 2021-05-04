@@ -1,9 +1,14 @@
+; git rebase --show-current-patch, or its equivalent git show REBASE_HEAD
 [alias]
 	a = add
-	ap = a --patch
+	ae = a --edit
 	ai = a --interactive
+	ap = a --patch
 
-	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:40)%(refname:short)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)'
+	branch = branch -v
+	b = branch
+	br = b -r
+	#b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:40)%(refname:short)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)'
 
 	c = commit --verbose
 	cs = c --sign-off
@@ -13,6 +18,7 @@
 	cc = commit --verbose --edit -F .git/COMMIT_EDITMSG
 
 	co = checkout
+	cop = co -p
 	cob = co -b
 
 	# Hehe.
@@ -22,18 +28,43 @@
 	ds = diff --staged
 	di = d .
 
+	sh = show
+
+	l = log --date-order --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s%C(dim white) (%cr, %cs) %C(reset)%C(bold blue)%aN%C(reset)'
+	log-vim = l
+	la = l --all --full-history
+	rl = l --reverse
+	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %cr %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%s%n%n%-b'
+	lp = ll --patch
+	lm = l --no-merges
+	lt = l --stat
+	lmp = lm --patch
+
+	m = merge
+	mc = m --continue
+
+	mt = mergetool
+
+	r = rebase
+	ri = r -i
+	rc = r --continue
+
+	rp = reset -p
+
 	s = status
 	ss = status -s
 
 	p = push
+	pu = push -u origin HEAD
 
-	l = log --date-order --date=relative --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s%C(dim white) (%cr) %C(reset)%C(bold blue)%aN%C(reset)'
-	rl = l --reverse
-	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %cr %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%s%n%n%-b'
-	lp = ll --patch
+	rs = remote show
+	rso = rs origin
 
 [am]
 	threeWay = true
+
+[grep]
+	lineNumber = true
 
 [init]
 	templatedir = ~/.config/git/template
@@ -45,9 +76,17 @@
 
 [merge]
 	tool = nvimdiff
+	conflictstyle = "diff3"
 
-[mergetool "nvimdiff"]
-	cmd = nvim -f -c \"Gdiff\" \"$MERGED\"
+[mergetool "nvimdiffx"]
+	keepBackup = false
+	trustExitCode = true
+	cmd = nvim -d "$MERGED" "$BASE" "$LOCAL" "$REMOTE" +"wincmd J"
+
+[rebase]
+	missingCommitsCheck = warn
+	instructionFormat = "%s (%an)"
+	autosquash = true
 
 [pull]
 	rebase = true
