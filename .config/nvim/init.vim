@@ -369,16 +369,16 @@ nnoremap <silent> <M-q> :quit<CR>
 nnoremap <silent> <M-f> :next<CR>
 nnoremap <silent> <M-F> :prev<CR>
 
-" handy yanking to system-clipboard
+" Handy yanking to system-clipboard.
 map gy "+yil
 map gY "+yy
 
-" repeat last action over visual block
-xnoremap . :normal .<CR>
+" Repeat last action over visual block.
+xnoremap . :normal! .<CR>
 
 command! Bg let &background = 'light' == &background ? 'dark' : 'light'
 
-" glob each line
+" Perform glob on all lines.
 command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
 
 command! -bang -nargs=+ Bufdo let g:bufdo_bufnr = bufnr()|execute 'bufdo<bang>' <q-args>|execute 'buffer' g:bufdo_bufnr|unlet g:bufdo_bufnr
@@ -404,12 +404,12 @@ augroup END
 cnoreabbrev <expr> man getcmdtype() == ':' && getcmdpos() == 4 ? 'Man' : 'man'
 command! -bar -bang -nargs=+ ManKeyword
 	\ try|
-	\  silent execute 'Man '.join([<f-args>][:-2], ' ')|
-	\  silent keepp execute 'normal /^\v {7}\zs<\V'.escape([<f-args>][-1], '\')."\\>\<CR>"|
+	\   silent execute 'Man '.join([<f-args>][:-2], ' ')|
+	\   silent keeppattern execute 'normal! /^\v {7}\zs<\V'.escape([<f-args>][-1], '\')."\\>\<CR>"|
 	\ catch|
-	\  execute 'Man<bang> '.[<f-args>][-1]|
+	\   execute 'Man<bang> '.[<f-args>][-1]|
 	\ finally|
-	\  noh|
+	\   noh|
 	\ endtry
 
 function! Diff(spec) abort
@@ -482,26 +482,29 @@ ia wel'   we’ll
 ia Wel'   We’ll
 
 function! s:unmap_all(map, prefix)
-	redir => l:mappings
+	redir => mappings
 		silent execute a:map.'map' a:prefix
 	redir END
-	for l:mapping in split(mappings, "\n")
+	for mapping in split(mappings, "\n")
 		execute 'silent!' a:map.'unmap' matchstr(l:mapping, '\v^. *\zs[^ ]+')
 	endfor
 endfunction
 
 augroup vimrc_skeletons
-	autocmd! BufNewFile * autocmd FileType * ++once if 0 == changenr()|call setline(1, get({
-		\ 'c':   ['#include <stdio.h>', '#include <stdlib.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
-		\ 'cpp': ['#include <stdio.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
-		\ 'html': ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset=UTF-8>', '<title>Page Title</title>', '</head>', '<body>', "\t<h1>This is a Heading</h1>", '</body>', '</html>'],
-		\ 'php': ['<?php'],
-		\ 'sh': ['#!/bin/sh', ''],
-		\ 'zsh': ['#!/bin/zsh', ''],
-		\ 'bash': ['#!/bin/bash', ''],
-		\ 'python': ['#!/usr/bin/env PYTHONDONTWRITEBYTECODE=1 python3', '']
-		\}, &filetype, []))|endif|
-		\normal G
+	autocmd! BufNewFile * autocmd FileType <buffer> ++once
+		\ if 0 == changenr()|
+		\   call setline(1, get({
+		\     'c':   ['#include <stdio.h>', '#include <stdlib.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
+		\     'cpp': ['#include <stdio.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
+		\     'html': ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset=UTF-8>', '<title>Page Title</title>', '</head>', '<body>', "\t<h1>This is a Heading</h1>", '</body>', '</html>'],
+		\     'php': ['<?php'],
+		\     'sh': ['#!/bin/sh', ''],
+		\     'zsh': ['#!/bin/zsh', ''],
+		\     'bash': ['#!/bin/bash', ''],
+		\     'python': ['#!/usr/bin/env PYTHONDONTWRITEBYTECODE=1 python3', '']
+		\   }, &filetype, []))|
+		\ endif|
+		\ normal! G
 augroup END
 
 augroup vimrc_filetypes
@@ -609,25 +612,31 @@ augroup vimrc_filetypes
 
 	autocmd FileType c,cpp
 		\ ia <buffer> sturct struct
+
+	let netrw_banner = 0
+	let netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
+	let netrw_keepdir = 0
+	autocmd FileType netrw
+		\ nmap <buffer> . -|
+		\ nmap <buffer> e :e<Space>
 augroup END
 
 augroup vimrc_colorsreload
 	autocmd! BufWritePost colors/*.vim ++nested let &background=&background
 augroup END
 
-" IfLocal packadd gitv
-IfLocal packadd vim-glsl
-IfLocal packadd vim-pug
-IfLocal packadd vim-stylus
-IfLocal packadd vim-toml
-" IfLocal packadd zig.vim
+augroup vimrc_autoplug
+	autocmd!
+	IfLocal autocmd BufReadPre *.styl ++once packadd vim-stylus
+	IfLocal autocmd BufReadPre *.pug  ++once packadd vim-pug
+	IfLocal autocmd BufReadPre *.toml ++once packadd vim-toml
+	IfLocal autocmd BufReadPre *.glsl ++once packadd vim-glsl
+augroup END
 
 IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 
 " IfLocal packadd debugger.nvim
 IfLocal packadd vim-gnupg
-
-" autocmd BufReadPost *rc autocmd BufWinEnter <buffer=abuf> ++once setfiletype cfg
 
 augroup vimrc_autodiffupdate
 	autocmd! TextChanged,TextChangedI,TextChangedP * if empty(&buftype)|diffupdate|endif
@@ -724,14 +733,13 @@ IfLocal packadd crazy8.nvim
 augroup vimrc_newfilemagic
 	autocmd!
 
-	" auto mkdir
-	autocmd BufNewFile * autocmd BufWritePre  <buffer=abuf> ++once
+	" Auto mkdir.
+	autocmd BufNewFile * autocmd BufWritePre <buffer> ++once
 			\ call mkdir(expand("<afile>:p:h"), 'p')
 
-	" auto chmod +x
-	autocmd BufNewFile * autocmd BufWritePost <buffer=abuf> ++once
-			\ filetype detect|
-			\ if getline(1)[:1] ==# '#!' || index(['sh', 'bash', 'zsh', 'python'], &filetype) >=# 0|
+	" Auto chmod +x.
+	autocmd BufNewFile * autocmd BufWritePost <buffer> ++once
+			\ if getline(1)[:1] ==# '#!' || '#' ==# &commenstring[0]|
 			\   silent! call system(['chmod', '+x', '--', expand('%')])|
 			\ endif
 augroup END
@@ -767,7 +775,7 @@ function! s:goto_function() abort
 		return
 	endif
 	let pattern = get({
-	\ 'php': 'function\s+\b\0\b'
+	\  'php': 'function\s+\b\0\b'
 	\}, &filetype, '\0')
 	execute 'GREP' shellescape(substitute(pattern, '\\0', what, '')) '-m1'
 endfunction
@@ -803,19 +811,24 @@ augroup END
 
 set title
 
-autocmd! TermOpen * startinsert
-tnoremap <C-v> <C-\><C-n>
-tnoremap <Return> gf
+augroup vimrc_term
+	autocmd!
+	autocmd TermOpen * startinsert|nmap <buffer> <Return> gf
+	autocmd TermClose * stopinsert|nnoremap <buffer> q <C-w>c
+	tnoremap <C-v> <C-\><C-n>
+augroup END
 
 if $TERM !=# 'linux'
 	Source theme.vim
-	" colors will be called from syn* “system” file. avoid loading heavy theme
-	" twice or more
 	let colors_name = 'vivid'
 endif
 
 IfLocal packadd debugger.nvim
 IfSandbox execute ":function! g:DebuggerDebugging(...)\nreturn 0\nendfunction"
+
+augroup vimrc_autoresize
+	autocmd! VimResized * wincmd =
+augroup END
 
 function! s:git_pager_update(bufnr, cmdline)
 	let blob = systemlist(['git'] + a:cmdline, [], 1)
@@ -839,11 +852,9 @@ function! s:git_pager(cmdline)
 
 	setlocal nobuflisted bufhidden=hide buftype=nofile noswapfile undolevels=-1
 
-	autocmd ShellCmdPost <buffer> call s:git_pager_update(<abuf>, a:cmdline)
+	autocmd ShellCmdPost,VimResume <buffer> call s:git_pager_update(<abuf>, a:cmdline)
 	call s:git_pager_update(bufnr(), a:cmdline)
 endfunction
-
-command! -nargs=* -range Glog vertical new|call s:git_pager(['log', '-L<line1>,<line2>:'.expand('#')])
 
 function! s:git_status(...) range
 	let status = systemlist(['git', 'status', '-sb'])
@@ -886,28 +897,49 @@ function! s:git_diff(...) range
 endfunction
 
 command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
-command! -nargs=* -range Glog terminal git log-vim
+command! -nargs=* -range=% Glog
+	\ if <line1> ==# 1 && <line2> ==# line('$')|
+	\   execute "terminal git log-vim"|
+	\ else|
+	\   vertical new|
+	\   call s:git_pager(['log', '-L<line1>,<line2>:'.expand('#')])|
+	\ endif
 command! -nargs=* -range Gstatus call s:git_status(<f-args>)
 
 function! s:git_read()
 	call s:git_pager(['show', matchstr(expand("<amatch>"), '\m://\zs.*')])
 endfunction
 
+function! s:git_head_on_stderr(chan_id, data, name) dict
+	if len(a:data) <=# 1
+		return
+	endif
+	let g:git_heads[self.dir] = ''
+endfunction
+
+function! s:git_head_on_stdout(chan_id, data, name) dict
+	let staged = 0 <=# match(a:data, '\m\n[MARC]') ? 'S' : ''
+	let unstaged = 0 <=# match(a:data, '\m\n.[MARC]') ? 'M' : ''
+	let untracked = 0 <=# match(a:data, '\V\n??') ? 'U' : ''
+
+	let branch_pat = '[^[:cntrl:]:?[\\^~]+'
+	let m = matchlist(a:data, '\v^## ('.branch_pat.')%(\.\.\.'.branch_pat.' ?)%(\[%(ahead (\d+))? *%(behind (\d+))?\])?')
+	let [_, branch, ahead, behind; _] = !empty(m) ? m : ['', '(no branch)', '', '']
+	let g:git_heads[self.dir] = branch.staged.unstaged.untracked.(ahead || behind ? '['.(ahead ? '+'.ahead : '').(behind ? '-'.ahead : '').']' : '')
+endfunction
+
 function! GitHead()
 	let dir = getcwd()
 	if !has_key(g:git_heads, dir)
-		let status = system(['git', '--no-optional-locks', 'status', '-sb'])
-		if v:shell_error
-			let status = []
-		endif
-
-		let staged = 0 <=# match(status, '\m\n[MARC]') ? 'S' : ''
-		let unstaged = 0 <=# match(status, '\m\n.[MARC]') ? 'M' : ''
-		let untracked = 0 <=# match(status, '\V\n??') ? 'U' : ''
-
-		let branch_pat = '[^[:cntrl:]:?[\\^~]+'
-		let [_, branch, ahead, behind; _] = matchlist(status, '\v^## ('.branch_pat.')%(\.\.\.'.branch_pat.' ?)%(\[%(ahead (\d+))? *%(behind (\d+))?\])?')
-		let g:git_heads[dir] = branch.staged.unstaged.untracked.(ahead || behind ? '['.(ahead ? '+'.ahead : '').(behind ? '-'.ahead : '').']' : '')
+		let g:git_heads[dir] = '...'
+		call jobstart(['git', '--no-optional-locks', 'status', '-sb'], {
+		\  'pty': 0,
+		\  'stdout_buffered': 1,
+		\  'stderr_buffered': 1,
+		\  'on_stdout': function('s:git_head_on_stdout'),
+		\  'on_stderr': function('s:git_head_on_stderr'),
+		\  'dir': dir
+		\})
 	endif
 	return g:git_heads[dir]
 endfunction
@@ -915,7 +947,7 @@ endfunction
 augroup vimrc_git
 	autocmd!
 
-	autocmd ShellCmdPost * let g:git_heads = {}
+	autocmd ShellCmdPost,VimResume * let g:git_heads = {}
 	doautocmd ShellCmdPost
 
 	autocmd BufReadCmd git://* ++nested call s:git_read()
@@ -926,7 +958,7 @@ augroup END
 
 augroup vimrc_statusline
 	autocmd!
-	" no extra noise
+	" No extra noise.
 	set noshowmode
 
 	set tabline=%!Tabline()
@@ -1047,8 +1079,8 @@ IfLocal packadd vim-vnicode
 
 IfLocal packadd vim-fuzzysearch
 
-IfLocal packadd showempty.nvim
-" packadd showindent.nvim
+" IfLocal packadd showempty.nvim
+" IfLocal packadd showindent.nvim
 
 command! -nargs=* Termdebug delcommand Termdebug<bar>packadd termdebug<bar>Termdebug <args>
 
@@ -1076,7 +1108,7 @@ noremap <Plug>(JumpMotion)F <Cmd>call JumpMotion('?\V'.escape(nr2char(getchar())
 noremap <Plug>(JumpMotion), <Cmd>call JumpMotion(':'.line('w0'), "/,\<lt>CR>", '')<CR>
 
 function! s:capture(cmd)
-	redir => l:output
+	redir => output
 	silent! execute a:cmd
 	redir END
 	if empty(l:output)
@@ -1087,18 +1119,11 @@ function! s:capture(cmd)
 		new
 		nnoremap <buffer> q <C-w>c
 		setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
-		let l:output = trim(l:output)
+		let output = trim(l:output)
 		put! =l:output
 	endif
 endfunction
 command! -nargs=+ -complete=command Capture call s:capture(<q-args>)
-
-let netrw_banner = 0
-let netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
-let netrw_keepdir = 0
-autocmd! FileType netrw
-	\ nmap <buffer> . -|
-	\ nmap <buffer> e :e<Space>
 
 let completecontacts_hide_nicks=1
 let completecontacts_query_cmd=
@@ -1146,9 +1171,11 @@ endfunction
 nnoremap <silent><expr> p <SID>magic_paste('p')
 nnoremap <silent><expr> P <SID>magic_paste('P')
 
-autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
+augroup vimrc_stdin
+	autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
+augroup END
 
-augroup vimrc_persistent_options
+augroup vimrc_persistentoptions
 	let s:options_vim = stdpath('config').'/options.vim'
 	function! s:update_options_vim()
 		try
@@ -1159,9 +1186,8 @@ augroup vimrc_persistent_options
 	call s:update_options_vim()
 
 	autocmd!
-	autocmd OptionSet background call writefile([
-		\   printf('set background=%s', &background)
-		\ ], s:options_vim)|
+	autocmd OptionSet background
+		\ call writefile([printf('set background=%s', &background)], s:options_vim)|
 		\ call system(['/usr/bin/pkill', '--signal', 'SIGUSR1', 'nvim'])
 	autocmd Signal SIGUSR1 call s:update_options_vim()|redraw!
 augroup END
@@ -1171,17 +1197,17 @@ augroup vimrc_autosave
 augroup END
 
 augroup vimrc_restorecursor
-	autocmd! BufReadPost * autocmd FileType <buffer=abuf> ++once autocmd BufEnter <buffer=abuf> ++once
-		\ if 1 <= line("'\"") && line("'\"") <= line("$") && &filetype !~? 'commit'
-		\ |   execute 'normal! g`"zvzz'
-		\ | endif
+	autocmd! BufReadPost * autocmd FileType <buffer> ++once autocmd BufEnter <buffer> ++once
+		\ if 1 <= line("'\"") && line("'\"") <= line("$") && &filetype !~? 'commit'|
+		\   execute 'normal! g`"zvzz'|
+		\ endif
 augroup END
 
 augroup vimrc_sessionmagic
 	autocmd!
 	autocmd VimEnter * ++nested
 		\ if empty(filter(copy(v:argv), {idx,val-> idx ># 0 && val[0] !=# '-'})) &&
-		\     filereadable('Session.vim')|
+		\    filereadable('Session.vim')|
 		\   source Session.vim|
 		\ endif
 	autocmd VimLeave *
@@ -1210,10 +1236,10 @@ function! s:cmagic_tilde() abort
 
 	if &shell =~# 'zsh'
 		let cmd = join([
-		\ '. $ZDOTDIR/hashes.zsh',
-		\ 'eval text=$1',
-		\ 'unhash -dm \*',
-		\ 'print -D -- $text'
+		\  '. $ZDOTDIR/hashes.zsh',
+		\  'eval text=$1',
+		\  'unhash -dm \*',
+		\  'print -D -- $text'
 		\], "\n")
 	endif
 
