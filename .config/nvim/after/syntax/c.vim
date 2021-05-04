@@ -29,8 +29,9 @@ syn keyword Identifier
 	\ read write readv writev
 	\ openpty forkpty
 	\ setsid
-	\ fopen fdopen freopen setbuf setbuffer setlinebuf setvbuf ferror fclose flock fputc fputs putc ftruncate fseek ftell rewind putchar puts fflush fileno fsync fgetc fgets getc getchar ungetc getline getdelim fwrite fread
+	\ fopen fdopen freopen opendir fdopendir closedir rewinddir readdir setbuf setbuffer setlinebuf setvbuf ferror fclose flock flockfile funlockfile fputc fputs putc ftruncate fseek ftell rewind putchar puts fflush fileno fsync fgetc fgets getc getchar ungetc getline getdelim fwrite fread
 	\ gettid getpid
+	\ pipe
 	\ atexit
 	\ va_arg
 	\ strtod strtol strtoll strtoull strtoul
@@ -44,7 +45,7 @@ syn keyword Identifier
 syn match Identifier "\v<v?%(f|d|s|sn)?w?printf>"
 syn match Identifier "\v<v?[fs]?w?scanf>"
 syn match Identifier "\v<U?INT%(8|16|32|64|MAX)_C>"
-syn match Identifier "\v<pthread_%(%(mutex_%(%(un)?lock|init|destroy)|rwlock_%(%(rd|wr|un)lock|try%(rd|wr)lock|init)|cond_%(init|destroy|wait|signal|broadcast))|create|detach|sigmask|exit|attr_%(init|setdetachstate))>"
+syn match Identifier "\v<pthread_%(self|%(mutex_%(%(un)?lock|init|destroy)|rwlock_%(%(rd|wr|un)lock|try%(rd|wr)lock|init)|cond_%(init|destroy|wait|signal|broadcast))|create|detach|sigmask|exit|attr_%(init|setdetachstate))>"
 syn match cConstant "\v<%(PRI|SCN)[diouxX]%(%(LEAST|FAST)?%(8|16|32|64)|MAX|PTR)>"
 syn match cConstant "\v<%(%([US]?CHAR)|U?%(SHRT|INT%(%(_LEAST|_FAST)?%(8|16|32|64)?|PTR|MAX)|L?LONG)|SIZE|W%(CHAR|INT)|PTRDIFF|SIG_ATOMIC)_WIDTH>"
 syn match cConstant "\v<%(PRI|SCN)(%(|LEAST|FAST)%(8|16|32|64)|MAX|PTR)>"
@@ -56,7 +57,7 @@ syn match cConstant "\v<O_%(RDONLY|WRONLY|RDWR|CREAT|EXCL|CLOEXEC|TRUNC|APPEND|N
 syn match cConstant "\v<FD_%(CLOEXEC)>"
 syn match cConstant "\v<LOCK_%(EX|NB)>"
 syn match cConstant "\v<REG_%(EXTENDED|ICASE|NOSUB|NEWLINE|NOTBOL|NOTEOL|STARTEND)>"
-syn keyword cType __m128i locale_t sigset_t regex_t
+syn keyword cType __m128i locale_t sigset_t regex_t pid_t dev_t ino_t
 syn match Identifier "\v<sigfillset>"
 syn match cConstant "\v<SA_%(NOCLDSTOP|NOCLDWAIT|NODEFER|ONSTACK|RESETHAND|RESTART|RESTORER|SIGINFO)>"
 syn match cConstant "\v<LC_%(GLOBAL_LOCALE|%(ADDRESS|CTYPE|COLLATE|IDENTIFICATION|MEASUREMENT|MESSAGES|MONETARY|NUMERIC|NAME|PAPER|TELEPHONE|TIME|ALL)_MASK)>"
