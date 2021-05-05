@@ -17,7 +17,7 @@ readonly FILE=$(date +snapshot-%Y%b%d%a.tar.xz)
   task 'Collecting files...'
   umask 077
   tar cavPf $FILE \
-    --exclude='**/.git/'{objects,refs,logs}'/**' .
+    --exclude='**/.git/'{objects,refs,logs}'/**' \
     --exclude='**/gnupg/S.*' \
     -T - <<FILES
 /home/${SUDO_USER:-$USER}/pix
