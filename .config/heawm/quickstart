@@ -24,6 +24,7 @@ while read -rk1; do
 	b) exec setsid -f firefox ;;
 	t) exec setsid -f telegram-desktop ;;
 	p) exec top ;;
+	o) exec progress -M ;;
 	m) exec neomutt ;;
 	a) exec aria2t ;;
 	s) exec /bin/kill -SIGSTOP $(pidof firefox) ;;
@@ -33,6 +34,8 @@ while read -rk1; do
 	h) exec magixrandr switch home ;;
 	l) exec magixrandr switch laptop ;;
 	x) magixrandr switch off ;;
+
+	S) exec setsid -f ${0%/*}/screenshit ;;
 	*) exit
 	esac
 done
