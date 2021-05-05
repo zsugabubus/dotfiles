@@ -534,8 +534,8 @@ augroup vimrc_filetypes
 
 	autocmd FileType gitrebase
 		\ for s:cmd in split('pick reword edit squash fixup break drop merge', ' ')|
-		\   call s:unmap_all('n', 'c'.s:cmd[0])|
-		\   execute printf('nnoremap <buffer> c%s 0cw%s<Esc>0', s:cmd[0], s:cmd)|
+		\   call s:unmap_all('', 'c'.s:cmd[0])|
+		\   execute printf('noremap <silent><buffer> c%s :normal! 0ce%s<Esc>w', s:cmd[0], s:cmd)|
 		\ endfor|
 		\ for s:cmd in split('llabel treset mmerge', ' ')|
 		\   call s:unmap_all('n', 'c'.s:cmd[0])|
@@ -896,58 +896,189 @@ function! s:git_diff(...) range
 	wincmd L
 endfunction
 
+" command! -nargs=* -range Gjump call s:git_diff(<f-args>)
 command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
 command! -nargs=* -range=% Glog
 	\ if <line1> ==# 1 && <line2> ==# line('$')|
-	\   execute "terminal git log-vim"|
+	\   execute "terminal noglob git log-vim ".<q-args>|
 	\ else|
 	\   vertical new|
 	\   call s:git_pager(['log', '-L<line1>,<line2>:'.expand('#')])|
 	\ endif
 command! -nargs=* -range Gstatus call s:git_status(<f-args>)
 
+function! s:is_slow_fs(path)
+	return 0 <=# index(['fuseblk'], get(systemlist(['stat', '-f', fnamemodify(a:path, ':p'), '-c', '%T']), 0, ''))
+endfunction
+
 function! s:git_read()
 	call s:git_pager(['show', matchstr(expand("<amatch>"), '\m://\zs.*')])
 endfunction
 
-function! s:git_head_on_stderr(chan_id, data, name) dict
+function! s:git_ignore_stderr(chan_id, data, name) dict
+endfunction
+
+function! s:git_statusline_update() dict
+	if !empty(self.dir)
+		let self.status =
+		\ (self.bare ? 'BARE:' : self.inside ? 'GIT_DIR:' : '').
+		\ self.head.
+		\ ("S"[!self.staged]).("M"[!self.modified]).("U"[!self.untracked]).
+		\ (self.ahead || self.behind
+		\    ? '{'.
+		\      (self.ahead ? '+'.self.ahead : '').
+		\      (self.behind ? (self.ahead ? '/' : '').'-'.self.behind : '')
+		\    .'}'
+		\    : '').
+		\ (!empty(self.operation)
+		\   ? ' ['.self.operation.(self.step ? ' '.self.step.'/'.self.total : '').']'
+		\   : '')
+	else
+		let self.status = ''
+	endif
+	redrawstatus!
+endfunction
+
+function! s:git_status_on_behind_ahead(chan_id, data, name) dict
 	if len(a:data) <=# 1
 		return
 	endif
-	let g:git_heads[self.dir] = ''
+	let [_, self.git.behind, self.git.ahead; _] = matchlist(a:data[0], '\v^(\d+)\t(\d+)$')
+	call call('s:git_statusline_update', [], self.git)
 endfunction
 
-function! s:git_head_on_stdout(chan_id, data, name) dict
-	let staged = 0 <=# match(a:data, '\m\n[MARC]') ? 'S' : ''
-	let unstaged = 0 <=# match(a:data, '\m\n.[MARC]') ? 'M' : ''
-	let untracked = 0 <=# match(a:data, '\V\n??') ? 'U' : ''
-
-	let branch_pat = '[^[:cntrl:]:?[\\^~]+'
-	let m = matchlist(a:data, '\v^## ('.branch_pat.')%(\.\.\.'.branch_pat.' ?)%(\[%(ahead (\d+))? *%(behind (\d+))?\])?')
-	let [_, branch, ahead, behind; _] = !empty(m) ? m : ['', '(no branch)', '', '']
-	let g:git_heads[self.dir] = branch.staged.unstaged.untracked.(ahead || behind ? '['.(ahead ? '+'.ahead : '').(behind ? '-'.ahead : '').']' : '')
+function! s:git_status_on_head(chan_id, data, name) dict
+	if len(a:data) <=# 1
+		return
+	endif
+	let self.git.head = a:data[0]
+	call call('s:git_statusline_update', [], self.git)
 endfunction
 
-function! GitHead()
-	let dir = getcwd()
-	if !has_key(g:git_heads, dir)
-		let g:git_heads[dir] = '...'
-		call jobstart(['git', '--no-optional-locks', 'status', '-sb'], {
+function! s:git_status_on_status(chan_id, data, name) dict
+	if len(a:data) <=# 1
+		return
+	endif
+	let self.git.staged = 0 <=# match(a:data, '^\m[MARC]')
+	let self.git.modified = 0 <=# match(a:data, '^\m.[MARC]')
+	let self.git.untracked = 0 <=# match(a:data, '^\m\n??')
+	call call('s:git_statusline_update', [], self.git)
+endfunction
+
+function! s:git_status_on_bootstrap(chan_id, data, name) dict
+	if 1 <# len(a:data)
+		let [self.git.dir, self.git.bare, self.git.inside, self.git.head; _] = a:data
+		let self.git.bare = self.git.bare ==# 'true'
+		let self.git.inside = self.git.inside ==# 'true'
+
+		if !self.git.inside
+			call jobstart(['git', '--no-optional-locks', '-C', self.git.wd, 'status', '--porcelain'], {
+			\  'pty': 0,
+			\  'stdout_buffered': 1,
+			\  'stderr_buffered': 1,
+			\  'on_stdout': function('s:git_status_on_status'),
+			\  'on_stderr': function('s:git_ignore_stderr'),
+			\  'git': self.git
+			\})
+		endif
+
+		call jobstart(['git', '--no-optional-locks', '-C', self.git.dir, 'rev-list', '--count', '--left-right', '--count', '@{upstream}...@'], {
 		\  'pty': 0,
 		\  'stdout_buffered': 1,
 		\  'stderr_buffered': 1,
-		\  'on_stdout': function('s:git_head_on_stdout'),
-		\  'on_stderr': function('s:git_head_on_stderr'),
-		\  'dir': dir
+		\  'on_stdout': function('s:git_status_on_behind_ahead'),
+		\  'on_stderr': function('s:git_ignore_stderr'),
+		\  'git': self.git
+		\})
+
+		" sequencer/todo
+		if isdirectory(self.git.dir.'/rebase-merge')
+			let self.git.operation = 'rebase'
+			let self.git.head = readfile(self.git.dir.'/rebase-merge/head-name')[0]
+			try
+				let self.git.step = +readfile(self.git.dir.'/rebase-merge/msgnum')[0]
+				let self.git.total = +readfile(self.git.dir.'/rebase-merge/end')[0]
+			catch
+				" Editing message.
+			endtry
+		elseif isdirectory(self.git.dir.'/rebase-apply')
+			if file_readable(self.git.dir.'/rebase-apply/rebasing')
+				let self.git.head = readfile(self.git.dir.'/rebase-merge/head-name')[0]
+				let self.git.operation = 'rebase'
+			elseif file_readable(self.git.dir.'/rebase-apply/applying')
+				let self.git.operation = 'am'
+			else
+				let self.git.operation = 'am/rebase'
+			endif
+			try
+				let self.git.step = +readfile(self.git.dir.'/rebase-apply/next')[0]
+				let self.git.total = +readfile(self.git.dir.'/rebase-apply/last')[0]
+			catch
+				" Editing message.
+			endtry
+		elseif file_readable(self.git.dir.'/MERGE_HEAD')
+			let self.git.operation = 'merge'
+		elseif file_readable(self.git.dir.'/CHERRY_PICK_HEAD')
+			let self.git.operation = 'cherry-pick'
+		elseif file_readable(self.git.dir.'/REVERT_HEAD')
+			let self.git.operation = 'revert'
+		elseif file_readable(self.git.dir.'/BISECT_LOG')
+			let self.git.operation = 'bisect'
+		endif
+
+		if self.git.head ==# 'HEAD'
+			" Detached.
+			call jobstart(['git', '--no-optional-locks', '-C', self.git.dir, 'name-rev', '--name-only', self.git.head], {
+			\  'pty': 0,
+			\  'stdout_buffered': 1,
+			\  'stderr_buffered': 1,
+			\  'on_stdout': function('s:git_status_on_head'),
+			\  'on_stderr': function('s:git_ignore_stderr'),
+			\  'git': self.git
+			\})
+		endif
+
+		let self.git.head = substitute(self.git.head, '^refs/heads/', '', '')
+	endif
+
+	call call('s:git_statusline_update', [], self.git)
+endfunction
+
+" git --no-optional-locks rev-list --walk-reflogs --count refs/stash
+" /usr/share/git/git-prompt.sh
+function! GitStatus()
+	let dir = getcwd()
+	if !has_key(g:git, dir)
+		let g:git[dir] = {
+		\  'dir': '',
+		\  'wd': dir,
+		\  'inside': 0,
+		\  'staged': 0,
+		\  'modified': 0,
+		\  'untracked': 0,
+		\  'behind': 0,
+		\  'ahead': 0,
+		\  'operation': '',
+		\  'step': 0,
+		\  'total': 0,
+		\  'status': '...'
+		\}
+		call jobstart(['git', '--no-optional-locks', '-C', dir, 'rev-parse', '--abbrev-ref', '--absolute-git-dir', '--is-bare-repository', '--is-inside-git-dir', '@'], {
+		\  'pty': 0,
+		\  'stdout_buffered': 1,
+		\  'stderr_buffered': 1,
+		\  'on_stdout': function('s:git_status_on_bootstrap'),
+		\  'on_stderr': function('s:git_ignore_stderr'),
+		\  'git': g:git[dir]
 		\})
 	endif
-	return g:git_heads[dir]
+	return g:git[dir]['status']
 endfunction
 
 augroup vimrc_git
 	autocmd!
 
-	autocmd ShellCmdPost,VimResume * let g:git_heads = {}
+	autocmd ShellCmdPost,TermLeave,VimResume * let g:git = {}
 	doautocmd ShellCmdPost
 
 	autocmd BufReadCmd git://* ++nested call s:git_read()
@@ -1047,7 +1178,7 @@ augroup vimrc_statusline
 	autocmd WinEnter,BufWinEnter *
 		\ setlocal statusline=%(%#StatusLineModeTerm#%{'t'==mode()?'\ \ T\ ':''}%#StatusLineModeTermEnd#%{'t'==mode()?'\ ':''}%#StatusLine#%)|
 		\ setlocal statusline+=%(\ %{DebuggerDebugging()?'🦋🐛🐝🐞🐧🦠':''}\ %)|
-		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{GitHead()}\ %)\ %)|
+		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{GitStatus()}\ %)\ %)|
 		\ setlocal statusline+=%n:%f%(%h%w%{exists('b:gzflag')?'[GZ]':''}%r%)%(\ %m%)%k%(\ %{StatusLineStat()}%)|
 		\ setlocal statusline+=%9*%<%(\ %{StatusLineRecentBuffers()}%)%#StatusLine#|
 		\ setlocal statusline+=%=|
