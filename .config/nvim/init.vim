@@ -1,10 +1,8 @@
-" https://github.com/vim-syntastic/syntastic
-" tmux integration: https://gist.github.com/mislav/5189704(
+" nvim -u NONE --cmd 'profile start profile|profile file *|source ~/.config/nvim/init.vim|profile stop'
 " https://github.com/liuchengxu/vim-clap
 
 " DB https://github.com/tpope/vim-dadbod
 " https://github.com/kristijanhusak/vim-dadbod-ui
-" packadd nvim-lsp
 
 " https://vimways.org/2018/vim-and-git/
 " vim-ninja-feet
@@ -12,6 +10,9 @@
 
 " NVim bug statusline with \n \e \0 (zero width probably) messes up character
 " count. Followed by multi-width character crashes attrs[i] > 0.
+
+" Fucking one hour to chop off 100ms at startup.
+" -> Will save time after 1h / 100ms = 36000 startups.
 
 if filewritable(stdpath('config').'/init.vim')
 	command! -nargs=+ IfLocal <args>
@@ -22,14 +23,15 @@ else
 endif
 
 " get rid of shit
-let g:loaded_tutor_mode_plugin = 1
-let g:loaded_fzf = 1
+let loaded_tutor_mode_plugin = 1
+let loaded_fzf = 1
 
 " Fuck your mother.
 nnoremap U <Nop>
 
 set nowrap
 set ts=8 sw=0 sts=0 noet
+set foldopen=
 set spelllang=en
 set ignorecase fileignorecase wildignorecase smartcase
 set scrolloff=5 sidescrolloff=23
@@ -94,8 +96,7 @@ function! VimFoldText() abort
 	return left.text.right.repeat(' ', 999)
 endfunction
 
-
-" history scroller
+" History scroller.
 cnoremap <C-p> <Up>
 cnoremap <C-n> <Down>
 
@@ -121,8 +122,6 @@ noremap <expr> < (!&diff ? '<' : ":diffget 3\<CR>")
 nnoremap <expr> dL (!&diff ? 'dL' : ":diffget LOCAL\<CR>")
 nnoremap <expr> dB (!&diff ? 'dB' : ":diffget BASE\<CR>")
 nnoremap <expr> dR (!&diff ? 'dR' : ":diffget REMOTE\<CR>")
-
-vnoremap <C-S> y:!hu <C-R>"<CR>
 
 " jump to merge conflicts
 nnoremap <silent> ]= :call search('^=======$', 'Wz')<CR>
@@ -192,17 +191,11 @@ augroup vimrc_insertempty
 	autocmd InsertLeave * try|if empty(trim(getline('.')))|undojoin|call setline('.', '')|endif|catch /undojoin/|endtry
 augroup END
 
-" Reindent inner % lines.
-nmap >i >%<<$%<<$%
-nmap <i <%>>$%>>$%
-" Delete surrounding lines.
-nmap d< $<%%dd<C-O>dd
-
 command -nargs=* -bang
 	\ Publish execute '!'.(<q-args> =~# '\v^\@|^$|\-\-'
 	\   ? '{ noglob git diff --name-only '.<q-args>.' && noglob git diff --name-only --cached '.<q-args>.'; } | sort -u'
 	\   : 'printf \%s '.shellescape(expand(<q-args>))
-	\ ).' | xargs -r -P2 -I{} '.(<bang>0 ? 'printf "\%s\n" {}' : 'install -Dvm 666 {} '.g:publish_path.'{}')|
+	\ ).' | xargs -r -P2 -I{} '.(<bang>0 ? 'printf "\%s\n" {}' : 'install -Dvm 666 {} ./.public_site/{}')|
 	\ if !v:shell_error|
 	\   if <bang>1|
 	\     call feedkeys("\<CR>", "nt")|
@@ -215,6 +208,12 @@ command -nargs=* -bang
 	\   echohl None|
 	\ endif
 nnoremap <silent> <M-p> :update<bar>Publish %<CR>
+
+" Reindent inner % lines.
+nmap >i >%<<$%<<$%
+nmap <i <%>>$%>>$%
+" Delete surrounding lines.
+nmap d< $<%%dd<C-O>dd
 
 inoremap <C-r> <C-r><C-o>
 
@@ -232,7 +231,7 @@ nnoremap d_ "_dd
 
 nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), {_,nr-> nr2char(nr)}), {_,mark-> (getpos("'".mark)[1] ==# 0 ? mark : ' ')}), '').'"<CR>m'
 
-" jump to parent indention
+" Jump to parent indention.
 nnoremap <silent> <expr> <C-q> '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S?s-1<CR>
 	\ :noh\|call histdel("search", -1)\|let @/ = histget("search", -1)<CR>'
 
@@ -273,6 +272,22 @@ onoremap <silent> } V}
 nnoremap <Up> gk
 nnoremap <Down> gj
 
+augroup vimrc_errorformat
+	autocmd!
+
+	function! s:errorformat_make()
+		if 'make' == &makeprg|
+			set errorformat^=make:\ %*[[]%f:%l:\ %m
+			set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %.%#]\ Error\ %n
+			set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %m
+			set errorformat^=/usr/bin/ld:\ %f:%l:\ %m
+		endif
+	endfunction
+
+	autocmd VimEnter * call s:errorformat_make()
+	autocmd OptionSet makeprg call s:errorformat_make()
+augroup END
+
 function! s:make() abort
 	let start = strftime('%s')
 	echon "\U1f6a7  Building...  \U1f6a7"
@@ -312,27 +327,6 @@ function! s:make() abort
 		cclose
 	endif
 endfunction
-inoremap <silent> <F9> <C-R>=strftime('%Y%b%d%a %H:%M')<CR>
-nnoremap <silent> <M-m> :call <SID>make()<CR>
-nnoremap <silent> <M-r> :call <SID>make()<CR>:terminal make run<CR>
-nnoremap <silent> <M-l> :cnext<CR>zOzz
-nnoremap <silent> <M-L> :cprev<CR>zOzz
-nnoremap <silent> <M-n> :cnext<CR>zOzz
-nnoremap <silent> <M-N> :cprev<CR>zOzz
-
-augroup vimrc_errorformat
-	function! s:errorformat_make()
-		if 'make' == &makeprg|
-			set errorformat^=make:\ %*[[]%f:%l:\ %m
-			set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %.%#]\ Error\ %n
-			set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %m
-			set errorformat^=/usr/bin/ld:\ %f:%l:\ %m
-		endif
-	endfunction
-
-	autocmd VimEnter * call s:errorformat_make()
-	autocmd OptionSet makeprg call s:errorformat_make()
-augroup END
 
 " Swap word {{{1
 " Swap word word.
@@ -345,29 +339,33 @@ nnoremap <silent> SW  = ciW<Esc>wviWp`^PB
 nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P_\", 'nt')\<CR>"
 " }}}1
 
+nnoremap <silent> <M-m> :call <SID>make()<CR>
+nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>terminal make run<bar>endif<CR>
+nnoremap <silent> <M-l> :cnext<CR>:silent! normal! zOzz<CR>
+nnoremap <silent> <M-L> :cprev<CR>:silent! normal! zOzz<CR>
+nnoremap <silent> <M-n> :cnext<CR>:silent! normal! zOzz<CR>
+nnoremap <silent> <M-N> :cprev<CR>:silent! normal! zOzz<CR>
+nnoremap <silent> <M-f> :next<CR>
+nnoremap <silent> <M-F> :prev<CR>
+nnoremap <silent> <M-w> :Bufdo update<CR>
+nnoremap <silent> <M-q> :quit<CR>
+
 " put the first line of the paragraph at the top of the window
 " <C-E> does not want to get executed without execute... but <C-O> does... WTF!?
-nnoremap <silent><expr> z{ ':set scrolloff=0<bar>:execute "normal! {zt\<lt>C-O>\<lt>C-E>"<bar>:set scrolloff='.&scrolloff.'<CR>'
+nnoremap <silent><expr> z{ ':set scrolloff=0<bar>:execute "keepjumps normal! {zt\<lt>C-O>\<lt>C-E>"<bar>:set scrolloff='.&scrolloff.'<CR>'
 
+vnoremap <C-S> y:!hu <C-R>"<CR>
 nnoremap <silent> gss :setlocal spell!<CR>
 nnoremap <silent> gse :setlocal spell spelllang=en<CR>
 nnoremap <silent> gsh :setlocal spell spelllang=hu<CR>
 
 " nomacs
 nnoremap <expr> <M-!> ':edit '.expand('%:h').'/<C-z>'
+nmap <M-e> <M-!>
 nnoremap <expr> <M-t> ':tabedit '.expand('%:h').'/<C-z>'
 " nnoremap <expr> <M-o> ':edit '.expand('%:h').'/<C-z>'
 nnoremap <silent> <M-o> :buffer #<CR>
-nnoremap <expr> <M-e> ':edit '.expand('%:h').'/<C-z>'
-nnoremap <expr> <M-s> ':split '.expand('%:h').'/<C-z>'
-nnoremap <silent> <M-d> :Explore<CR>
 nnoremap <silent> <M-x> :Explore<CR>
-
-nnoremap <silent> <M-w> :Bufdo update<CR>
-nnoremap <silent> <M-W> :wall<CR>
-nnoremap <silent> <M-q> :quit<CR>
-nnoremap <silent> <M-f> :next<CR>
-nnoremap <silent> <M-F> :prev<CR>
 
 " Handy yanking to system-clipboard.
 map gy "+yil
@@ -391,14 +389,19 @@ xnoremap <expr><silent> @ printf(':normal! @%s<CR>', nr2char(getchar()))
 
 command! SynShow echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
 
-" Highlight trailing whitespaces.
 command! StripTrailingWhite keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e
+" Highlight illegal whitespace.
 augroup vimrc_japan
 	autocmd!
 	autocmd ColorScheme * highlight ExtraWhitespace ctermbg=197 ctermfg=231 guibg=#ff005f guifg=#ffffff
-	autocmd FileType,BufReadPost * if &buftype ==# '' && !&readonly && &modifiable && index(['', 'text', 'git', 'gitcommit', 'markdown', 'mail', 'diff'], &filetype) ==# -1 |
-		\		call matchadd('ExtraWhitespace', '\v +\t+|\s+%#@!$', 10)|
-		\	endif
+	autocmd FileType,BufWinEnter,WinNew *
+		\ if has_key(w:, 'japan')|
+		\   call matchdelete(w:japan)|
+		\   unlet w:japan|
+		\ endif|
+		\ if &buftype ==# '' && !&readonly && &modifiable && index(['', 'text', 'git', 'gitcommit', 'markdown', 'mail', 'diff'], &filetype) ==# -1 |
+		\   let w:japan = matchadd('ExtraWhitespace', '\v +\t+|\s+%#@!$', 10)|
+		\ endif
 augroup END
 
 cnoreabbrev <expr> man getcmdtype() == ':' && getcmdpos() == 4 ? 'Man' : 'man'
@@ -419,7 +422,7 @@ function! Diff(spec) abort
 
 	setlocal bufhidden=wipe buftype=nofile nobuflisted noswapfile
 	let l:filetype = ft
-	if len(a:spec) ==# 0
+	if !len(a:spec)
 		let cmd = '++edit #'
 		let name = fnameescape(expand('#').'.orig')
 	elseif len(a:spec) ==# 1 && filereadable(a:spec[0])
@@ -481,14 +484,14 @@ ia Youl'  You’ll
 ia wel'   we’ll
 ia Wel'   We’ll
 
-function! s:unmap_all(map, prefix)
-	redir => mappings
-		silent execute a:map.'map' a:prefix
-	redir END
-	for mapping in split(mappings, "\n")
-		execute 'silent!' a:map.'unmap' matchstr(l:mapping, '\v^. *\zs[^ ]+')
-	endfor
-endfunction
+" function! s:unmap_all(map, prefix)
+" 	redir => mappings
+" 		silent execute a:map.'map' a:prefix
+" 	redir END
+" 	for mapping in split(mappings, \"\n\")
+" 		execute 'silent!' a:map.'unmap' matchstr(l:mapping, '\v^. *\zs[^ ]+')
+" 	endfor
+" endfunction
 
 augroup vimrc_skeletons
 	autocmd! BufNewFile * autocmd FileType <buffer> ++once
@@ -510,9 +513,9 @@ augroup END
 augroup vimrc_filetypes
 	autocmd!
 	autocmd FileType man
-		\ set mouse=n|
-		\ nnoremap <silent><buffer> gr gg/\v^RETURN<bar>EXIT<CR>:noh<CR>zt|
-		\ nnoremap <silent><buffer> ge gg/\m^ERRORS<CR>:noh<CR>zt
+		\ for s:bookmark in split('sSYNOPSIS dDESCRIPTION r^RETURN<bar>^EXIT eERRORS xEXAMPLES eSEE', ' ')|
+		\   execute "nnoremap <silent><buffer><nowait> g".s:bookmark[0]." :call search('\\v".s:bookmark[1:]."', 'w')<bar>normal! zt<CR>"|
+		\ endfor
 
 	autocmd FileType vim
 		\ command! -range Execute execute substitute(join(getline(<line1>, <line2>), "\n"), '\m\n\s*\', '', 'g')
@@ -534,12 +537,10 @@ augroup vimrc_filetypes
 
 	autocmd FileType gitrebase
 		\ for s:cmd in split('pick reword edit squash fixup break drop merge', ' ')|
-		\   call s:unmap_all('', 'c'.s:cmd[0])|
-		\   execute printf('noremap <silent><buffer> c%s :normal! 0ce%s<Esc>w', s:cmd[0], s:cmd)|
+		\   execute printf('noremap <silent><buffer><nowait> c%s :normal! 0ce%s<Esc>w', s:cmd[0], s:cmd)|
 		\ endfor|
 		\ for s:cmd in split('llabel treset mmerge', ' ')|
-		\   call s:unmap_all('n', 'c'.s:cmd[0])|
-		\   execute printf('nnoremap <buffer> c%s cc%s ', s:cmd[0], s:cmd[1:])|
+		\   execute printf('nnoremap <buffer><nowait> c%s cc%s ', s:cmd[0], s:cmd[1:])|
 		\ endfor
 
 	autocmd FileType diff
@@ -739,7 +740,7 @@ augroup vimrc_newfilemagic
 
 	" Auto chmod +x.
 	autocmd BufNewFile * autocmd BufWritePost <buffer> ++once
-			\ if getline(1)[:1] ==# '#!' || '#' ==# &commenstring[0]|
+			\ if getline(1)[:1] ==# '#!' || '#' ==# &commentstring[0]|
 			\   silent! call system(['chmod', '+x', '--', expand('%')])|
 			\ endif
 augroup END
@@ -775,8 +776,8 @@ function! s:goto_function() abort
 		return
 	endif
 	let pattern = get({
-	\  'php': 'function\s+\b\0\b'
-	\}, &filetype, '\0')
+		\  'php': 'function\s+\b\0\b'
+		\}, &filetype, '\0')
 	execute 'GREP' shellescape(substitute(pattern, '\\0', what, '')) '-m1'
 endfunction
 nnoremap <silent> g?f :call <SID>goto_function()<CR>
@@ -818,11 +819,6 @@ augroup vimrc_term
 	tnoremap <C-v> <C-\><C-n>
 augroup END
 
-if $TERM !=# 'linux'
-	Source theme.vim
-	let colors_name = 'vivid'
-endif
-
 IfLocal packadd debugger.nvim
 IfSandbox execute ":function! g:DebuggerDebugging(...)\nreturn 0\nendfunction"
 
@@ -830,371 +826,11 @@ augroup vimrc_autoresize
 	autocmd! VimResized * wincmd =
 augroup END
 
-function! s:git_pager_update(bufnr, cmdline)
-	let blob = systemlist(['git'] + a:cmdline, [], 1)
-
-	setlocal modifiable
-	let new = !empty(getbufline(a:bufnr, 2))
-	call setbufline(a:bufnr, 1, blob)
-	call deletebufline(a:bufnr, line('$'), '$')
-	setlocal readonly nomodifiable
-	if new
-		call setpos('.', [a:bufnr, 1, 1])
-	endif
-
-	filetype detect
-endfunction
-
-nnoremap <silent><expr> gf (0 <=# match(expand('<cfile>'), '\v^\x{4,}$') ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>" : 0 <=# match(expand('<cfile>'), '^[ab]/') ? 'viWof/lgf' : 'gf')
-
-function! s:git_pager(cmdline)
-	nnoremap <buffer> q <C-w>c
-
-	setlocal nobuflisted bufhidden=hide buftype=nofile noswapfile undolevels=-1
-
-	autocmd ShellCmdPost,VimResume <buffer> call s:git_pager_update(<abuf>, a:cmdline)
-	call s:git_pager_update(bufnr(), a:cmdline)
-endfunction
-
-function! s:git_status(...) range
-	let status = systemlist(['git', 'status', '-sb'])
-	if v:shell_error
-		let status = []
-	endif
-	let list = []
-	for path in status
-		let [_, status, pathname; _] = matchlist(path, '\v(..) (.*)')
-		if status ==# '##'
-			continue
-		endif
-		" See git-status.
-		if status ==# ' m'
-			let status = 'submodule modified'
-		elseif status ==# ' M'
-			let status = 'modified'
-		elseif status ==# '??'
-			let status = 'untracked'
-		endif
-		call add(list, { 'filename': pathname, 'text': status, 'lnum': 1, })
-	endfor
-	call setqflist(list)
-	copen
-endfunction
-
-function! s:git_diff(...) range
-	let rev = get(a:000, 0, 'HEAD')
-	if rev[0] ==# '~'
-		let rev = '@'.rev
-	endif
-
-	diffthis
-	execute 'vsplit git://'.fnameescape(rev).':./'.fnameescape(expand('%'))
-	setlocal bufhidden=wipe
-	autocmd BufUnload <buffer> diffoff
-	diffthis
-	wincmd p
-	wincmd L
-endfunction
-
-" command! -nargs=* -range Gjump call s:git_diff(<f-args>)
-command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
-command! -nargs=* -range=% Glog
-	\ if <line1> ==# 1 && <line2> ==# line('$')|
-	\   execute "terminal noglob git log-vim ".<q-args>|
-	\ else|
-	\   vertical new|
-	\   call s:git_pager(['log', '-L<line1>,<line2>:'.expand('#')])|
-	\ endif
-command! -nargs=* -range Gstatus call s:git_status(<f-args>)
-
 function! s:is_slow_fs(path)
 	return 0 <=# index(['fuseblk'], get(systemlist(['stat', '-f', fnamemodify(a:path, ':p'), '-c', '%T']), 0, ''))
 endfunction
 
-function! s:git_read()
-	call s:git_pager(['show', matchstr(expand("<amatch>"), '\m://\zs.*')])
-endfunction
-
-function! s:git_ignore_stderr(chan_id, data, name) dict
-endfunction
-
-function! s:git_statusline_update() dict
-	if !empty(self.dir)
-		let self.status =
-		\ (self.bare ? 'BARE:' : self.inside ? 'GIT_DIR:' : '').
-		\ self.head.
-		\ ("S"[!self.staged]).("M"[!self.modified]).("U"[!self.untracked]).
-		\ (self.ahead || self.behind
-		\    ? '{'.
-		\      (self.ahead ? '+'.self.ahead : '').
-		\      (self.behind ? (self.ahead ? '/' : '').'-'.self.behind : '')
-		\    .'}'
-		\    : '').
-		\ (!empty(self.operation)
-		\   ? ' ['.self.operation.(self.step ? ' '.self.step.'/'.self.total : '').']'
-		\   : '')
-	else
-		let self.status = ''
-	endif
-	redrawstatus!
-endfunction
-
-function! s:git_status_on_behind_ahead(chan_id, data, name) dict
-	if len(a:data) <=# 1
-		return
-	endif
-	let [_, self.git.behind, self.git.ahead; _] = matchlist(a:data[0], '\v^(\d+)\t(\d+)$')
-	call call('s:git_statusline_update', [], self.git)
-endfunction
-
-function! s:git_status_on_head(chan_id, data, name) dict
-	if len(a:data) <=# 1
-		return
-	endif
-	let self.git.head = a:data[0]
-	call call('s:git_statusline_update', [], self.git)
-endfunction
-
-function! s:git_status_on_status(chan_id, data, name) dict
-	if len(a:data) <=# 1
-		return
-	endif
-	let self.git.staged = 0 <=# match(a:data, '^\m[MARC]')
-	let self.git.modified = 0 <=# match(a:data, '^\m.[MARC]')
-	let self.git.untracked = 0 <=# match(a:data, '^\m\n??')
-	call call('s:git_statusline_update', [], self.git)
-endfunction
-
-function! s:git_status_on_bootstrap(chan_id, data, name) dict
-	if 1 <# len(a:data)
-		let [self.git.dir, self.git.bare, self.git.inside, self.git.head; _] = a:data
-		let self.git.bare = self.git.bare ==# 'true'
-		let self.git.inside = self.git.inside ==# 'true'
-
-		if !self.git.inside
-			call jobstart(['git', '--no-optional-locks', '-C', self.git.wd, 'status', '--porcelain'], {
-			\  'pty': 0,
-			\  'stdout_buffered': 1,
-			\  'stderr_buffered': 1,
-			\  'on_stdout': function('s:git_status_on_status'),
-			\  'on_stderr': function('s:git_ignore_stderr'),
-			\  'git': self.git
-			\})
-		endif
-
-		call jobstart(['git', '--no-optional-locks', '-C', self.git.dir, 'rev-list', '--count', '--left-right', '--count', '@{upstream}...@'], {
-		\  'pty': 0,
-		\  'stdout_buffered': 1,
-		\  'stderr_buffered': 1,
-		\  'on_stdout': function('s:git_status_on_behind_ahead'),
-		\  'on_stderr': function('s:git_ignore_stderr'),
-		\  'git': self.git
-		\})
-
-		" sequencer/todo
-		if isdirectory(self.git.dir.'/rebase-merge')
-			let self.git.operation = 'rebase'
-			let self.git.head = readfile(self.git.dir.'/rebase-merge/head-name')[0]
-			try
-				let self.git.step = +readfile(self.git.dir.'/rebase-merge/msgnum')[0]
-				let self.git.total = +readfile(self.git.dir.'/rebase-merge/end')[0]
-			catch
-				" Editing message.
-			endtry
-		elseif isdirectory(self.git.dir.'/rebase-apply')
-			if file_readable(self.git.dir.'/rebase-apply/rebasing')
-				let self.git.head = readfile(self.git.dir.'/rebase-merge/head-name')[0]
-				let self.git.operation = 'rebase'
-			elseif file_readable(self.git.dir.'/rebase-apply/applying')
-				let self.git.operation = 'am'
-			else
-				let self.git.operation = 'am/rebase'
-			endif
-			try
-				let self.git.step = +readfile(self.git.dir.'/rebase-apply/next')[0]
-				let self.git.total = +readfile(self.git.dir.'/rebase-apply/last')[0]
-			catch
-				" Editing message.
-			endtry
-		elseif file_readable(self.git.dir.'/MERGE_HEAD')
-			let self.git.operation = 'merge'
-		elseif file_readable(self.git.dir.'/CHERRY_PICK_HEAD')
-			let self.git.operation = 'cherry-pick'
-		elseif file_readable(self.git.dir.'/REVERT_HEAD')
-			let self.git.operation = 'revert'
-		elseif file_readable(self.git.dir.'/BISECT_LOG')
-			let self.git.operation = 'bisect'
-		endif
-
-		if self.git.head ==# 'HEAD'
-			" Detached.
-			call jobstart(['git', '--no-optional-locks', '-C', self.git.dir, 'name-rev', '--name-only', self.git.head], {
-			\  'pty': 0,
-			\  'stdout_buffered': 1,
-			\  'stderr_buffered': 1,
-			\  'on_stdout': function('s:git_status_on_head'),
-			\  'on_stderr': function('s:git_ignore_stderr'),
-			\  'git': self.git
-			\})
-		endif
-
-		let self.git.head = substitute(self.git.head, '^refs/heads/', '', '')
-	endif
-
-	call call('s:git_statusline_update', [], self.git)
-endfunction
-
-" git --no-optional-locks rev-list --walk-reflogs --count refs/stash
-" /usr/share/git/git-prompt.sh
-function! GitStatus()
-	let dir = getcwd()
-	if !has_key(g:git, dir)
-		let g:git[dir] = {
-		\  'dir': '',
-		\  'wd': dir,
-		\  'inside': 0,
-		\  'staged': 0,
-		\  'modified': 0,
-		\  'untracked': 0,
-		\  'behind': 0,
-		\  'ahead': 0,
-		\  'operation': '',
-		\  'step': 0,
-		\  'total': 0,
-		\  'status': '...'
-		\}
-		call jobstart(['git', '--no-optional-locks', '-C', dir, 'rev-parse', '--abbrev-ref', '--absolute-git-dir', '--is-bare-repository', '--is-inside-git-dir', '@'], {
-		\  'pty': 0,
-		\  'stdout_buffered': 1,
-		\  'stderr_buffered': 1,
-		\  'on_stdout': function('s:git_status_on_bootstrap'),
-		\  'on_stderr': function('s:git_ignore_stderr'),
-		\  'git': g:git[dir]
-		\})
-	endif
-	return g:git[dir]['status']
-endfunction
-
-augroup vimrc_git
-	autocmd!
-
-	autocmd ShellCmdPost,TermLeave,VimResume * let g:git = {}
-	doautocmd ShellCmdPost
-
-	autocmd BufReadCmd git://* ++nested call s:git_read()
-
-	" Highlight conflict markers.
-	autocmd Colorscheme * match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
-augroup END
-
-augroup vimrc_statusline
-	autocmd!
-	" No extra noise.
-	set noshowmode
-
-	set tabline=%!Tabline()
-	function! ShortenPath(path)
-		return pathshorten(fnamemodify(matchstr(!empty(a:path) ? a:path : '[No Name]', '\v(^[^:]+://)?\zs.*'), ':~:.'))
-	endfunction
-
-	" function! s:get_file_icon()
-	" 	let b:icon = get(b:, 'icon', matchstr(substitute(system(['ls', '--color=always', '-d1', '--', bufname()]), \"\e[^m]*m\", '', 'g'), '..'))
-	" 	return b:icon
-	" endfunction
-
-	function! Tabline()
-		let s = ''
-		let curr = tabpagenr()
-		for n in range(1, tabpagenr('$'))
-			" Select the highlighting.
-			let s .= n == curr ? '%#TabLineSel#' : '%#TabLine#'
-
-			" Set the tab page number (for mouse clicks).
-			let s .= '%'.n.'T '
-
-			" Prefix number.
-			let s .= n.':'
-
-			let buflist = tabpagebuflist(n)
-			let winnr = tabpagewinnr(n)
-
-			let anymodified = 0
-			for bufnr in buflist
-				let anymodified += getbufvar(bufnr, '&modified')
-			endfor
-
-			let bufnr = buflist[winnr - 1]
-			let path = bufname(bufnr)
-			let s .=
-				\ ShortenPath(path)
-				\ .(getbufvar(bufnr, '&modified') ? ' [+]' : anymodified ? ' +' : '')
-			let s .= ' '
-
-		endfor
-
-		" Fill remaining space.
-		let s .= '%#TabLineFill#%T'
-
-		return s
-	endfunction
-
-	let g:recent_buffers = []
-	function! StatusLineRecentBuffers() abort
-		let s = ''
-		let altbufnr = bufnr('#')
-		for bufnr in g:recent_buffers
-			if bufnr != bufnr() && getbufvar(bufnr, '&buflisted') && index(['quickfix', 'prompt'], getbufvar(bufnr, '&buftype')) ==# -1
-				let s .= (bufnr ==# altbufnr ? '#' : bufnr).':'.ShortenPath(bufname(bufnr)).' '
-				if &columns <= strlen(s)
-					break
-				endif
-			endif
-		endfor
-		return s
-	endfunction
-
-	" IfLocal packadd vim-signify
-	" IfLocal execute \"function! StatusLineStat() abort\nreturn sy#repo#get_stats_decorated()\nendfunction\"
-	execute "function! StatusLineStat() abort\nreturn ''\nendfunction"
-
-	let g:diff_lnum = '    '
-	function! s:StatusLineCursorChanged() abort
-		let lnum = line('.')
-		let g:diff_lnum = printf('%4s', get(s:, 'prev_lnum', lnum) != lnum ? (lnum > s:prev_lnum ? '+' : '').(lnum - s:prev_lnum) : '')
-		let s:prev_lnum = lnum
-	endfunction
-
-	function! StatusLineFiletypeIcon() abort
-		return get({ 'unix': '', 'dos': '', 'mac': '' }, &fileformat, '')
-	endfunction
-
-	autocmd CursorMoved * call s:StatusLineCursorChanged()
-
-		" \ setlocal statusline+=%2p%%\ %4l/%-4L:%-3v
-	autocmd WinLeave,BufWinLeave *
-		\ setlocal statusline=%n:%f%(\ %m%)|
-		\ setlocal statusline+=%=|
-		\ setlocal statusline+=%2p%%\ %4l/%-4L\ L:%-3v\ C
-	autocmd WinEnter,BufWinEnter *
-		\ setlocal statusline=%(%#StatusLineModeTerm#%{'t'==mode()?'\ \ T\ ':''}%#StatusLineModeTermEnd#%{'t'==mode()?'\ ':''}%#StatusLine#%)|
-		\ setlocal statusline+=%(\ %{DebuggerDebugging()?'🦋🐛🐝🐞🐧🦠':''}\ %)|
-		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{GitStatus()}\ %)\ %)|
-		\ setlocal statusline+=%n:%f%(%h%w%{exists('b:gzflag')?'[GZ]':''}%r%)%(\ %m%)%k%(\ %{StatusLineStat()}%)|
-		\ setlocal statusline+=%9*%<%(\ %{StatusLineRecentBuffers()}%)%#StatusLine#|
-		\ setlocal statusline+=%=|
-		\ setlocal statusline+=%1*%2*|
-		\ setlocal statusline+=%(\ %{&paste?'ρ':''}\ %)|
-		\ setlocal statusline+=%(\ %{&spell?&spelllang:''}\ \ %)|
-		\ setlocal statusline+=\ %{!&binary?(substitute((!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').'\ ','\\m^utf-8\ $','','').StatusLineFiletypeIcon()):\"bin\ \\uf471\"}|
-		\ setlocal statusline+=%(\ \ %{!&binary?!empty(&ft)?&ft:'no\ ft':''}%)|
-		\ setlocal statusline+=\ %3*\ %2p%%\ %4l/%-4L\ %{diff_lnum}\ L:%3v\ C
-augroup END
-
-augroup vimrc_recentbuffers
-	autocmd!
-	autocmd InsertEnter,BufWipeout * let s:index = index(g:recent_buffers, bufnr())|if s:index >= 0|silent! unlet! g:recent_buffers[s:index]|endif
-	autocmd InsertEnter * call insert(g:recent_buffers, bufnr())
-augroup END
+Source statusline.vim
 
 let s:matchcolors = ['DiffAdd', 'DiffDelete', 'DiffChange']
 let s:nmatchcolors = 0
@@ -1306,22 +942,27 @@ augroup vimrc_stdin
 	autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
 augroup END
 
-augroup vimrc_persistentoptions
-	let s:options_vim = stdpath('config').'/options.vim'
-	function! s:update_options_vim()
-		try
-			execute 'source' fnameescape(s:options_vim)
-		catch
-		endtry
-	endfunction
-	call s:update_options_vim()
+if $TERM !=# 'linux'
+	augroup vimrc_persistentoptions
+		let s:options_vim = stdpath('config').'/options.vim'
+		function! s:update_options_vim()
+			try
+				execute 'source' fnameescape(s:options_vim)
+				let background = &background
+			catch
+			endtry
+		endfunction
+		call s:update_options_vim()
 
-	autocmd!
-	autocmd OptionSet background
-		\ call writefile([printf('set background=%s', &background)], s:options_vim)|
-		\ call system(['/usr/bin/pkill', '--signal', 'SIGUSR1', 'nvim'])
-	autocmd Signal SIGUSR1 call s:update_options_vim()|redraw!
-augroup END
+		autocmd!
+		autocmd OptionSet background
+			\ call writefile([printf('set background=%s', &background)], s:options_vim)|
+			\ call system(['/usr/bin/pkill', '--signal', 'SIGUSR1', 'nvim'])
+		autocmd Signal SIGUSR1 call s:update_options_vim()|redraw!
+	augroup END
+	" Must be after background
+	let colors_name = 'vivid'
+endif
 
 augroup vimrc_autosave
 	autocmd! Signal SIGUSR1 silent! Bufdo update
@@ -1367,15 +1008,18 @@ function! s:cmagic_tilde() abort
 
 	if &shell =~# 'zsh'
 		let cmd = join([
-		\  '. $ZDOTDIR/hashes.zsh',
-		\  'eval text=$1',
-		\  'unhash -dm \*',
-		\  'print -D -- $text'
-		\], "\n")
+			\  '. $ZDOTDIR/hashes.zsh',
+			\  'eval text=$1',
+			\  'unhash -dm \*',
+			\  'print -D -- $text'
+			\], "\n")
 	endif
 
 	let word = cmdline[word_start:cmdpos]
-	let word = trim(system([&shell, '-c', cmd, '', word]))
+	let word = trim(system([&shell, '-ce', cmd, '', word]))
+	if v:shell_error
+		retur '/'
+	endif
 
 	return "\<C-\>e\"".escape(strpart(cmdline, 0, word_start).word.'/'.strpart(cmdline, cmdpos), '\"')."\"\<CR>"
 endfunction
@@ -1387,24 +1031,27 @@ let @p = "i\<C-R>+\<CR>\<Esc>"
 let @s = "0ldt;h%hPpa;\<Esc>v0y{O\<Esc>jpjdwf ;dEO\<Esc>"
 let @n = "dd*\<C-w>\<C-w>nzz\<C-w>\<C-w>"
 
-" local configuration
-let s:safe = ['~/pro/*', '~/**']
-let s:safepat = join(map(s:safe, {_,path-> glob2regpat(path)}), '\|')
+" Local configuration.
+function! s:on_cwd(chan_id, data, name)
+	let cwd = a:data[0]
 
-try
-	let s:dir = system(['/usr/bin/pwd', '-L'])[:-2]
-catch
-	let s:dir = getcwd()
-endtry
+	let TRUSTED = ['~/pro/*']
+	let safepat = join(map(TRUSTED, {_,path-> glob2regpat(path)}), '\|')
 
-while s:dir !=# '/'
-	let s:filepath = s:dir.'/.vimrc'
-	if fnamemodify(s:dir, ':~') =~ s:safepat && filereadable(s:filepath)
-		execute 'source' fnameescape(s:filepath)
-	endif
-	let s:dir = fnamemodify(s:dir, ':h')
-endwhile
-unlet! s:dir s:filepath s:safe s:safepat
+	while cwd !=# '/'
+		let filepath = cwd.'/.vimrc'
+		if fnamemodify(cwd, ':~') =~ safepat && filereadable(filepath)
+			execute 'source' fnameescape(filepath)
+		endif
+		let cwd = fnamemodify(cwd, ':h')
+	endwhile
+endfunction
+call jobstart(['/usr/bin/pwd', '-L'], {
+	\  'pty': 0,
+	\  'stdout_buffered': 1,
+	\  'on_stdout': function('s:on_cwd'),
+	\  'on_stderr': {c,d,n-> 0}
+	\})
 
 delcommand Source
 
