@@ -3,3 +3,4 @@ Session.vim
 *.o
 *.d
 *.out
+.public_site
