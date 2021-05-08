@@ -1,0 +1,1 @@
+syn match gitReference /.*/ contained
