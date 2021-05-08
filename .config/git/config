@@ -1,4 +1,7 @@
 ; git rebase --show-current-patch, or its equivalent git show REBASE_HEAD
+[add.interactive]
+	useBuiltin = yes
+
 [alias]
 	a = add
 	ae = a --edit
@@ -30,11 +33,11 @@
 
 	sh = show
 
-	l = log --date-order --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s%C(dim white) (%cr, %cs) %C(reset)%C(bold blue)%aN%C(reset)'
+	l = log --date-order --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	log-vim = l
 	la = l --all --full-history
 	rl = l --reverse
-	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %cr %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%s%n%n%-b'
+	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
 	lp = ll --patch
 	lm = l --no-merges
 	lt = l --stat
@@ -45,13 +48,13 @@
 
 	mt = mergetool
 
-	r = rebase
+	rb = rebase
 	ri = r -i
 	rc = r --continue
 
 	rp = reset -p
 
-	s = status
+	s = status --ahead-behind --show-stash
 	ss = status -s
 
 	p = push
@@ -60,11 +63,17 @@
 	rs = remote show
 	rso = rs origin
 
+	wt = worktree
+
 [am]
-	threeWay = true
+	threeWay = yes
+
+[difftool]
+	prompt = no
+	trustExitCode = yes
 
 [grep]
-	lineNumber = true
+	lineNumber = yes
 
 [init]
 	templatedir = ~/.config/git/template
@@ -74,13 +83,16 @@
 	path = config.user
 	path = config.credential
 
+[interactive]
+	singleKey = yes
+
 [merge]
 	tool = nvimdiff
 	conflictstyle = "diff3"
 
 [mergetool "nvimdiffx"]
-	keepBackup = false
-	trustExitCode = true
+	keepBackup = no
+	trustExitCode = yes
 	cmd = nvim -d "$MERGED" "$BASE" "$LOCAL" "$REMOTE" +"wincmd J"
 
 [rebase]
