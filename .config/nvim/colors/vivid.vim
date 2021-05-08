@@ -1,8 +1,11 @@
-syntax reset
+let s:colors_name = fnamemodify(expand('<sfile>'), ':t:r')
+let s:cache = stdpath('cache').'/'.s:colors_name.'-'.&background.'.vim'
+if getftime(expand('<sfile>')) <=# getftime(s:cache)
+	execute 'source' fnameescape(s:cache)
+	finish
+endif
 
 " #ecbd1a
-
-let g:colors_name = 'vivid'
 
 " indigo: #2b033b
 " hi Identifier guifg=#005db2 guifg=#8500ac
@@ -53,60 +56,71 @@ let s:highlights = [
 \ ['Keyword', '#006de9|#009df9', '', 'bold'],
 \]
 
-hi Pmenu guibg=#e0e0e0 guifg=#333333
-hi PmenuSel guibg=#ffaf5f guifg=#222222 gui=bold
-hi PmenuSbar guibg=#dcdcdc
-hi PmenuThumb guibg=#adadad
+let s:cached_cmds = []
 
-hi Underlined guifg=#008df9
-hi! link Normal VertSplit
-hi VertSplit gui=NONE guifg=#ababab
-hi! link Normal Separator
+" Cache Input... And... Output it.
+command! -nargs=* Ciao call add(s:cached_cmds, <q-args>)|<args>
+command! -bang -nargs=* Hi Ciao hi<bang> <args>
 
-hi! link EndOfBuffer NonText
+" Say hi! to the cache.
+Hi clear
+execute "Ciao let colors_name = '".s:colors_name."'"
+Ciao if exists("syntax_on")|syntax reset|endif
 
-hi Search guifg=#040404 guibg=#fdef39
-hi Search guifg=#040404 guibg=#fdef39
-hi MatchParen gui=bold guibg=#fde639 guifg=#111111
+Hi Pmenu guibg=#e0e0e0 guifg=#333333
+Hi PmenuSel guibg=#ffaf5f guifg=#222222 gui=bold
+Hi PmenuSbar guibg=#dcdcdc
+Hi PmenuThumb guibg=#adadad
 
-hi String guifg=#5baa38
-hi! link String Constant
-hi SpecialChar gui=bold guifg=#df4f00
-hi! link Character String
+Hi Underlined guifg=#008df9
+Hi! link Normal VertSplit
+Hi VertSplit gui=NONE guifg=#ababab
+Hi! link Normal Separator
 
-hi Folded guibg=#e1e1e1 guifg=#666666
+Hi! link EndOfBuffer NonText
 
-hi Comment guifg=#838385
-hi! clear Statement
-hi! link Statement Keyword
-hi cStorageClass gui=italic,bold guifg=#005db2
-hi! link cStorageClass Keyword
+Hi Search guifg=#040404 guibg=#fdef39
+Hi Search guifg=#040404 guibg=#fdef39
+Hi MatchParen gui=bold guibg=#fde639 guifg=#111111
 
-hi! link Repeat Conditional
+Hi String guifg=#5baa38
+Hi! link String Constant
+Hi SpecialChar gui=bold guifg=#df4f00
+Hi! link Character String
 
-hi SpellBad NONE
-hi SpellBad guibg=#f9f2f4 guifg=#c72750 gui=undercurl guisp=#d73750
-hi Error gui=bold guifg=#d80000 guibg=#ffd4d4
-hi Question guifg=#1ca53c
-hi MoreMsg guifg=#1c891a
-hi! clear ErrorMsg
-hi ErrorMsg gui=bold guifg=#fd1d54 guibg=#fdcdd4
-hi! clear WarningMsg
-hi WarningMsg gui=bold guifg=#933ab7 guibg=#e0d7f7
+Hi Folded guibg=#e1e1e1 guifg=#666666
 
-hi Todo gui=bold,italic guifg=#1ca53c guibg=NONE
+Hi Comment guifg=#838385
+Hi! clear Statement
+Hi! link Statement Keyword
+Hi cStorageClass gui=italic,bold guifg=#005db2
+Hi! link cStorageClass Keyword
 
-hi CursorLineNr gui=NONE guibg=#eaeaeb guifg=#b7636c guifg=#434343 guifg=#0067a4 guifg=#ea5522 gui=bold guifg=#f65532 guibg=NONE
-hi! link CursorLineNr Number
+Hi! link Repeat Conditional
 
-hi Constant guifg=#df4f00
+Hi SpellBad NONE
+Hi SpellBad guibg=#f9f2f4 guifg=#c72750 gui=undercurl guisp=#d73750
+Hi Error gui=bold guifg=#d80000 guibg=#ffd4d4
+Hi Question guifg=#1ca53c
+Hi MoreMsg guifg=#1c891a
+Hi! clear ErrorMsg
+Hi ErrorMsg gui=bold guifg=#fd1d54 guibg=#fdcdd4
+Hi! clear WarningMsg
+Hi WarningMsg gui=bold guifg=#933ab7 guibg=#e0d7f7
 
-hi WildMenu gui=bold guibg=#fff109
+Hi Todo gui=bold,italic guifg=#1ca53c guibg=NONE
 
-hi Title guibg=NONE guifg=#858585
-hi Tag guifg=NONE
+Hi CursorLineNr gui=NONE guibg=#eaeaeb guifg=#b7636c guifg=#434343 guifg=#0067a4 guifg=#ea5522 gui=bold guifg=#f65532 guibg=NONE
+Hi! link CursorLineNr Number
 
-hi! link CfgOnOff Boolean
+Hi Constant guifg=#df4f00
+
+Hi WildMenu gui=bold guibg=#fff109
+
+Hi Title guibg=NONE guifg=#858585
+Hi Tag guifg=NONE
+
+Hi! link CfgOnOff Boolean
 
 " C/C++ {{{
 let s:highlights += [
@@ -121,108 +135,112 @@ let s:highlights += [
 " }}}
 
 " CSS {{{
-hi! link cssIdentifier Normal
-hi cssImportant guifg=#f40000
+Hi! link cssIdentifier Normal
+Hi cssImportant guifg=#f40000
 " }}}
 
 " Stylus {{{
-hi! link cssIdentifier Normal
-hi! link stylusImportant cssImportant
-hi! link stylusSelectorClass cssIdentifier
-hi! link stylusSelectorId cssIdentifier
-hi! link stylusSelectorPseudo Identifier
+Hi! link cssIdentifier Normal
+Hi! link stylusImportant cssImportant
+Hi! link stylusSelectorClass cssIdentifier
+Hi! link stylusSelectorId cssIdentifier
+Hi! link stylusSelectorPseudo Identifier
 " }}}
 
 " Vim Help {{{
-hi! link helpHyperTextEntry Tag
-hi! link helpHeadline Type
+Hi! link helpHyperTextEntry Tag
+Hi! link helpHeadline Type
 " }}}
 
 " Makefile {{{
-hi! link makeStatement Function
-hi! link makeCommands Normal
-hi! link makeIdent PreProc
-hi! link makeTarget Identifier
-hi! link makeSpecTarget cConstant
+Hi! link makeStatement Function
+Hi! link makeCommands Normal
+Hi! link makeIdent PreProc
+Hi! link makeTarget Identifier
+Hi! link makeSpecTarget cConstant
 " }}}
 
 " Man {{{
-hi manOptionDesc gui=bold
-hi! link manSectionHeading Type
-hi! link manSubHeading manSectionHeading
+Hi manOptionDesc gui=bold
+Hi! link manSectionHeading Type
+Hi! link manSubHeading manSectionHeading
 " }}}
 
 " Markdown {{{
-hi mkdListItem gui=bold
-hi mkdHeading gui=bold
-hi mkdHeadingDelimiter gui=bold
-hi htmlH1 gui=bold
-hi mkdCode guibg=#e8e8e8
-hi mkdCodeDelimiter gui=bold guibg=#e8e8e8
-hi! link mkdURL Underlined
-hi! link mkdLink Normal
-hi! link mkdLinkDef Identifier
+Hi mkdListItem gui=bold
+Hi mkdHeading gui=bold
+Hi mkdHeadingDelimiter gui=bold
+Hi htmlH1 gui=bold
+Hi mkdCode guibg=#e8e8e8
+Hi mkdCodeDelimiter gui=bold guibg=#e8e8e8
+Hi! link mkdURL Underlined
+Hi! link mkdLink Normal
+Hi! link mkdLinkDef Identifier
 " }}}
 
 " Lua {{{
 " hi luaFunction gui=bold guifg=#005f87
-hi! link luaFunction Keyword
-hi! link luaOperator Conditional
-hi! link luaRepeat Repeat
-hi! link luaTable Normal
-hi! link luaConstant cConstant
+Hi! link luaFunction Keyword
+Hi! link luaOperator Conditional
+Hi! link luaRepeat Repeat
+Hi! link luaTable Normal
+Hi! link luaConstant cConstant
 " }}}
 
 " Vim {{{
-hi vimStatement guifg=#005db2
+Hi vimStatement guifg=#005db2
 " hi livimFuncName guifg=#005db2
-hi! link vimOper Normal
-hi! link vimOperParen Normal
-hi! link vimCommentTitle Title
-hi! link vimVar Normal
-hi! link vimFuncVar Normal
-hi! link vimFuncName Keyword
-hi! link vimHiGuiAttrib Identifier
-hi! link vimHiGuiFgBg Normal
-hi! link vimHiCtermFgBg Normal
-hi! link vimHiGui Normal
-hi! link vimHiCTerm Normal
-hi! link vimHiTerm Normal
-hi! link vimHiCtermColor Normal
-hi! link vimOption Identifier
+Hi! link vimOper Normal
+Hi! link vimOperParen Normal
+Hi! link vimCommentTitle Title
+Hi! link vimVar Normal
+Hi! link vimFuncVar Normal
+Hi! link vimFuncName Keyword
+Hi! link vimHiGuiAttrib Identifier
+Hi! link vimHiGuiFgBg Normal
+Hi! link vimHiCtermFgBg Normal
+Hi! link vimHiGui Normal
+Hi! link vimHiCTerm Normal
+Hi! link vimHiTerm Normal
+Hi! link vimHiCtermColor Normal
+Hi! link vimOption Identifier
 " }}}
 
 " JavaScript {{{
-hi! link javaScriptNumber Number
-hi! link javaScriptBraces Normal
-hi! link javaScriptParens Normal
-hi! link javaScriptFunction Keyword
+Hi! link javaScriptNumber Number
+Hi! link javaScriptBraces Normal
+Hi! link javaScriptParens Normal
+Hi! link javaScriptFunction Keyword
 " }}}
 
 " Rust {{{
-hi! link rustCommentLineDoc rustCommentLine
+Hi! link rustCommentLineDoc rustCommentLine
 " }}}
 
 " JSON {{{
-hi! link jsonTest String
-hi! link jsonKeyword String
+Hi! link jsonTest String
+Hi! link jsonKeyword String
 " }}}
 
 " Assembly {{{
-hi! link asmIdentifier Normal
+Hi! link asmIdentifier Normal
 " }}}
 
 " SQL {{{
-hi! link sqlKeyword Keyword
+Hi! link sqlKeyword Keyword
 " }}}
 
 " PHP {{{
-hi! link phpConstant cConstant
+Hi! link phpConstant cConstant
+" }}}
+
+" Git {{{
+Hi! link gitReference diffFile
 " }}}
 
 " TermDebug {{{
-hi debugPC guibg=#fff500
-hi debugBreakpoint gui=bold guibg=#f51030 guifg=#ffffff
+Hi debugPC guibg=#fff500
+Hi debugBreakpoint gui=bold guibg=#f51030 guifg=#ffffff
 " }}}
 
 function s:compute_attr(name, value)
@@ -249,17 +267,25 @@ endfunction
 for [name; attrs] in s:highlights
 	if name[0] ==# '!'
 		let name = name[1:]
-		execute 'hi! clear' name
+		execute 'Hi! clear' name
 	elseif name[0] ==# '.'
 		let name = name[1:]
-		execute 'hi ' name 'NONE'
+		execute 'Hi ' name 'NONE'
 	endif
 	if attrs[0][:1] ==# '->'
-		execute 'hi! link ' name attrs[0][2:]
+		execute 'Hi! link ' name attrs[0][2:]
 	else
-		execute 'hi ' name
+		execute 'Hi ' name
 			\ s:compute_attr('guifg', get(attrs, 0, ''))
 			\ s:compute_attr('guibg', get(attrs, 1, ''))
 			\ s:compute_attr('gui',   get(attrs, 2, ''))
 	endif
 endfor
+
+try
+	call writefile(s:cached_cmds, s:cache)
+catch
+endtry
+
+delcommand Hi
+delcommand Ciao
