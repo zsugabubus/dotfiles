@@ -191,23 +191,43 @@ augroup vimrc_insertempty
 	autocmd InsertLeave * try|if empty(trim(getline('.')))|undojoin|call setline('.', '')|endif|catch /undojoin/|endtry
 augroup END
 
-command -nargs=* -bang
-	\ Publish execute '!'.(<q-args> =~# '\v^\@|^$|\-\-'
-	\   ? '{ noglob git diff --name-only '.<q-args>.' && noglob git diff --name-only --cached '.<q-args>.'; } | sort -u'
-	\   : 'printf \%s '.shellescape(expand(<q-args>))
-	\ ).' | xargs -r -P2 -I{} '.(<bang>0 ? 'printf "\%s\n" {}' : 'install -Dvm 666 {} ./.public_site/{}')|
-	\ if !v:shell_error|
-	\   if <bang>1|
-	\     call feedkeys("\<CR>", "nt")|
-	\     redraw|
-	\     echomsg 'Upload succeed'|
-	\   endif|
-	\ else|
-	\   echohl Error|
-	\   echomsg 'Upload failed'|
-	\   echohl None|
-	\ endif
-nnoremap <silent> <M-p> :update<bar>Publish %<CR>
+function! s:publish(bang, mods, args) abort
+	let prog =<< AWK
+function cp(file) { print file | "xargs -r -P2 -I{} install -Dvpm 664 {} " public_site "{}" }
+function rm(file) { print public_site file | "xargs -r rm -v" }
+"D" == $1 { rm($2) }
+$1 ~ /^R/ { rm($2); cp($3) }
+$1 ~ /^[AM]/ { cp($2) }
+AWK
+
+	let public_site = fnamemodify(Git().wd, ':.').'.public_site'
+	if getftype(public_site) !=# 'link'
+		echohl Error
+		echomsg printf('Missing or invalid %s', public_site)
+		echohl None
+		return
+	endif
+	let public_site .= '/'
+
+	execute '!'.
+	\ (a:bang
+	\    ? 'printf "M\t\%s\\n" '.join(map(flatten(map(a:args, {_,arg-> glob(arg, 1, 1)})), {_,file-> shellescape(file)}), ' ')
+	\    : 'git diff --name-status '.(empty(a:args) ? '@' : join(a:args, ' ')))
+	\ .(a:mods =~# 'verbose' ? '' : ' | awk -vFS="\t" -vpublic_site='.shellescape(public_site).' '.shellescape(join(prog, "\n"), 1))
+	if !v:shell_error
+		if a:mods !~# 'verbose'
+			call feedkeys("\<CR>", "nt")
+			redraw
+			echomsg 'Upload succeed'
+		endif
+	else
+		echohl Error
+		echomsg 'Upload failed'
+		echohl None
+	endif
+endfunction
+command! -nargs=* -bang Publish call s:publish(<bang>0, <q-mods>, [<f-args>])
+nnoremap <silent> <M-p> :update<bar>Publish! %<CR>
 
 " Reindent inner % lines.
 nmap >i >%<<$%<<$%
@@ -275,7 +295,7 @@ nnoremap <Down> gj
 augroup vimrc_errorformat
 	autocmd!
 
-	function! s:errorformat_make()
+	function! s:errorformat_make() abort
 		if 'make' == &makeprg|
 			set errorformat^=make:\ %*[[]%f:%l:\ %m
 			set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %.%#]\ Error\ %n
@@ -360,9 +380,9 @@ nnoremap <silent> gse :setlocal spell spelllang=en<CR>
 nnoremap <silent> gsh :setlocal spell spelllang=hu<CR>
 
 " nomacs
-nnoremap <expr> <M-!> ':edit '.expand('%:h').'/<C-z>'
+nnoremap <expr> <M-!> ':edit '.fnameescape(expand('%:h')).'/<C-z>'
 nmap <M-e> <M-!>
-nnoremap <expr> <M-t> ':tabedit '.expand('%:h').'/<C-z>'
+nnoremap <expr> <M-t> ':tabedit '.fnameescape(expand('%:h')).'/<C-z>'
 " nnoremap <expr> <M-o> ':edit '.expand('%:h').'/<C-z>'
 nnoremap <silent> <M-o> :buffer #<CR>
 nnoremap <silent> <M-x> :Explore<CR>
@@ -429,7 +449,7 @@ function! Diff(spec) abort
 		let name = a:spec[0]
 		let cmd = '++edit '.name
 	else
-		let cmd = '!git show '.shellescape(a:spec).':#'
+		let cmd = '!git show '.shellescape(a:spec, 1).':#'
 		let name = fnameescape(a:spec).':'.fnameescape(expand('#'))
 	endif
 
@@ -513,7 +533,7 @@ augroup END
 augroup vimrc_filetypes
 	autocmd!
 	autocmd FileType man
-		\ for s:bookmark in split('sSYNOPSIS dDESCRIPTION r^RETURN<bar>^EXIT eERRORS xEXAMPLES eSEE', ' ')|
+		\ for s:bookmark in split('sSYNOPSIS i#include dDESCRIPTION r^RETURN<bar>^EXIT eERRORS xEXAMPLES eSEE', ' ')|
 		\   execute "nnoremap <silent><buffer><nowait> g".s:bookmark[0]." :call search('\\v".s:bookmark[1:]."', 'w')<bar>normal! zt<CR>"|
 		\ endfor
 
@@ -685,7 +705,7 @@ cnoreabbrev <expr> ccd getcmdtype() == ':' && getcmdpos() == 4 ? 'cd %:p:h' : 'c
 cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'GREP' : 'gr'
 cnoreabbrev <expr> grh getcmdtype() == ':' && getcmdpos() == 4 ? "GREP -g '*.h'" : 'grh'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
-command! -nargs=* GREP call feedkeys("\<CR>", "nt")|execute 'grep -g !check -g !docs -g !test -g !build -g !tests' substitute(escape((<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>)), '%#'), '<bar>', '\\<bar>', 'g')
+command! -nargs=* GREP call feedkeys("\<CR>", "nt")|execute 'grep -g !check -g !docs -g !test -g !build -g !tests' substitute(<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>, 1), '<bar>', '\\<bar>', 'g')
 xnoremap // y:GREP -F <C-r>=shellescape(@")<CR><CR>
 nnoremap /. /\V.
 
@@ -826,9 +846,21 @@ augroup vimrc_autoresize
 	autocmd! VimResized * wincmd =
 augroup END
 
-function! s:is_slow_fs(path)
+function! s:is_slow_fs(path) abort
 	return 0 <=# index(['fuseblk'], get(systemlist(['stat', '-f', fnamemodify(a:path, ':p'), '-c', '%T']), 0, ''))
 endfunction
+
+augroup vimrc_autodiffoff
+	autocmd!
+	autocmd BufHidden *
+		\ if !&buflisted|
+		\   diffoff!|
+		\ endif
+	autocmd BufUnload *
+		\ if &diff|
+		\   diffoff!|
+		\ endif
+augroup END
 
 Source statusline.vim
 
@@ -874,7 +906,7 @@ noremap <Plug>(JumpMotion)f <Cmd>call JumpMotion('/\V'.escape(nr2char(getchar())
 noremap <Plug>(JumpMotion)F <Cmd>call JumpMotion('?\V'.escape(nr2char(getchar()), '/\')."\<lt>CR>")<CR>
 noremap <Plug>(JumpMotion), <Cmd>call JumpMotion(':'.line('w0'), "/,\<lt>CR>", '')<CR>
 
-function! s:capture(cmd)
+function! s:capture(cmd) abort
 	redir => output
 	silent! execute a:cmd
 	redir END
@@ -903,7 +935,7 @@ let commentr_uncomment_map = ''
 nmap gcD gcdO
 nmap gcM gcmO
 
-function! s:magic_paste_reindent(nlines, def_indent)
+function! s:magic_paste_reindent(nlines, def_indent) abort
 	let v:lnum = nextnonblank('.')
 	if !empty(&indentexpr)
 		let save_cursor = getcurpos()
@@ -925,7 +957,7 @@ function! s:magic_paste_reindent(nlines, def_indent)
 	normal! _
 endfunction
 
-function! s:magic_paste(p)
+function! s:magic_paste(p) abort
 	if !(!&paste && ( getregtype(v:register) ==# 'V' ||
 	\                (getregtype(v:register) ==# 'v' && empty(getline('.')))))
 		return a:p
@@ -945,7 +977,7 @@ augroup END
 if $TERM !=# 'linux'
 	augroup vimrc_persistentoptions
 		let s:options_vim = stdpath('config').'/options.vim'
-		function! s:update_options_vim()
+		function! s:update_options_vim() abort
 			try
 				execute 'source' fnameescape(s:options_vim)
 				let background = &background
@@ -1032,7 +1064,7 @@ let @s = "0ldt;h%hPpa;\<Esc>v0y{O\<Esc>jpjdwf ;dEO\<Esc>"
 let @n = "dd*\<C-w>\<C-w>nzz\<C-w>\<C-w>"
 
 " Local configuration.
-function! s:on_cwd(chan_id, data, name)
+function! s:on_cwd(chan_id, data, name) abort
 	let cwd = a:data[0]
 
 	let TRUSTED = ['~/pro/*']

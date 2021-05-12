@@ -14,7 +14,7 @@ command! -nargs=* -range=% Glog
 	\   call s:git_pager(['log', '--follow', '-L<line1>,<line2>:'.expand('#')])|
 	\ endif
 
-function! s:git_pager_update(bufnr, cmdline, new)
+function! s:git_pager_update(bufnr, cmdline, new) abort
 	let blob = systemlist(['git'] + a:cmdline, [], 1)
 
 	setlocal modifiable
@@ -28,7 +28,7 @@ function! s:git_pager_update(bufnr, cmdline, new)
 	filetype detect
 endfunction
 
-function! s:print_error(output)
+function! s:print_error(output) abort
 	echohl Error
 	for line in a:output
 		echomsg line
@@ -36,7 +36,7 @@ function! s:print_error(output)
 	echohl None
 endfunction
 
-function! s:git_edit_rev(edit, mod)
+function! s:git_edit_rev(edit, mod) abort
 	let [_, rev, path; _] = matchlist(expand('%'), '\v^git://([^:]*)(.*)$')
 
 	let output = systemlist(['git', '--no-optional-locks', 'rev-parse', rev.a:mod])
@@ -48,7 +48,7 @@ function! s:git_edit_rev(edit, mod)
 	execute a:edit fnameescape('git://'.output[0].path)
 endfunction
 
-function! s:git_pager(cmdline)
+function! s:git_pager(cmdline) abort
 	nnoremap <buffer><nowait> q <C-w>c
 	nnoremap <silent><buffer><nowait><expr> gu ':edit '.fnameescape(matchstr(expand('%'), '\v^git://[^:]*:([012]:)?.{-}\ze([^/]+/?)?$'))."\<CR>"
 	nmap <silent><buffer><nowait> u gu
@@ -65,7 +65,7 @@ function! s:git_pager(cmdline)
 	call s:git_pager_update(bufnr(), a:cmdline, 1)
 endfunction
 
-function! s:git_tree(diff, ...) range
+function! s:git_tree(diff, ...) abort range
 	let list = []
 	let common_diff_options = ['--root', '-r']
 	let W = '\v^[W/]$'
@@ -102,10 +102,10 @@ function! s:git_tree(diff, ...) range
 			call add(list, {
 				\  'filename': path,
 				\  'type': status,
-				\  'text': '<'.status.'>',
+				\  'text': '['.status.']',
 				\})
 		endfor
-	else
+	elseif 0 < len(output)
 		if output[0] =~# '\C^[0-9a-f]'
 			let rev = 'git://'.output[0].':'
 			let list = [{
@@ -163,7 +163,7 @@ function! s:git_tree(diff, ...) range
 				\    'R': 'renamed',
 				\    'T': 'type changed',
 				\    'U': 'unmerged'
-				\  }, status, '<'.status.'>').(!empty(dst_path) ? ' (renamed '.src_path.')' : '').(src_mode !=# dst_mode ? ' ('.src_mode.' -> '.dst_mode.')' : ''),
+				\  }, status, '['.status.']').(!empty(dst_path) ? ' (renamed '.src_path.')' : '').(src_mode !=# dst_mode ? ' ('.src_mode.' -> '.dst_mode.')' : ''),
 				\})
 		endfor
 	endif
@@ -178,8 +178,8 @@ function! s:git_tree(diff, ...) range
 	endif
 endfunction
 
-function! s:git_diff(...) range
-	let rev = get(a:000, 0, '0')
+function! s:git_diff(...) abort range
+	let rev = get(a:000, 0, ':0')
 	" ::./file -> :./file
 	if rev ==# ':'
 		let rev = ''
@@ -193,10 +193,10 @@ function! s:git_diff(...) range
 	wincmd L
 endfunction
 
-function! s:git_ignore_stderr(chan_id, data, name) dict
+function! s:git_ignore_stderr(chan_id, data, name) abort dict
 endfunction
 
-function! s:git_statusline_update() dict
+function! s:git_statusline_update() abort dict
 	let self.status =
 		\ (self.bare ? 'BARE:' : self.inside ? 'GIT_DIR:' : '').
 		\ self.head.
@@ -217,7 +217,7 @@ function! s:git_statusline_update() dict
 	endif
 endfunction
 
-function! s:git_status_on_behind_ahead(chan_id, data, name) dict
+function! s:git_status_on_behind_ahead(chan_id, data, name) abort dict
 	if len(a:data) <=# 1
 		return
 	endif
@@ -225,7 +225,7 @@ function! s:git_status_on_behind_ahead(chan_id, data, name) dict
 	call call('s:git_statusline_update', [], self.git)
 endfunction
 
-function! s:git_status_on_head(chan_id, data, name) dict
+function! s:git_status_on_head(chan_id, data, name) abort dict
 	if len(a:data) <=# 1
 		return
 	endif
@@ -233,7 +233,7 @@ function! s:git_status_on_head(chan_id, data, name) dict
 	call call('s:git_statusline_update', [], self.git)
 endfunction
 
-function! s:git_status_on_status(chan_id, data, name) dict
+function! s:git_status_on_status(chan_id, data, name) abort dict
 	if len(a:data) <=# 1
 		return
 	endif
@@ -243,13 +243,18 @@ function! s:git_status_on_status(chan_id, data, name) dict
 	call call('s:git_statusline_update', [], self.git)
 endfunction
 
-function! s:git_status_on_bootstrap(chan_id, data, name) dict
+function! s:git_status_on_bootstrap(chan_id, data, name) abort dict
 	if len(a:data) <=# 1
 		return
 	endif
-	let [self.git.dir, self.git.bare, self.git.inside, self.git.head; _] = a:data
+	let [self.git.dir, self.git.bare, self.git.inside, self.git.head, cdup; _] = a:data + ['']
 	let self.git.bare = self.git.bare ==# 'true'
 	let self.git.inside = self.git.inside ==# 'true'
+	" Ladies and gentlemen, we are fucked. This is how we can get top-level
+	" directory with a single process call.
+	let self.git.wd .= cdup
+
+	let self.vcs = 'git'
 
 	if !self.git.inside
 		call jobstart(['git', '--no-optional-locks', '-C', self.git.wd, 'status', '--porcelain'], {
@@ -325,12 +330,13 @@ endfunction
 
 " git --no-optional-locks rev-list --walk-reflogs --count refs/stash
 " /usr/share/git/git-prompt.sh
-function! GitStatus()
+function! Git() abort
 	let dir = getcwd()
 	if !has_key(s:git, dir)
 		let s:git[dir] = {
+			\  'vcs': '',
 			\  'dir': '',
-			\  'wd': dir,
+			\  'wd': dir.'/',
 			\  'inside': 0,
 			\  'staged': 0,
 			\  'modified': 0,
@@ -342,7 +348,7 @@ function! GitStatus()
 			\  'total': 0,
 			\  'status': ''
 			\}
-		call jobstart(['git', '--no-optional-locks', '-C', dir, 'rev-parse', '--abbrev-ref', '--absolute-git-dir', '--is-bare-repository', '--is-inside-git-dir', '@'], {
+		call jobstart(['git', '--no-optional-locks', '-C', dir, 'rev-parse', '--abbrev-ref', '--absolute-git-dir', '--is-bare-repository', '--is-inside-git-dir', '@', '--show-cdup'], {
 			\  'pty': 0,
 			\  'stdout_buffered': 1,
 			\  'stderr_buffered': 1,
@@ -351,7 +357,7 @@ function! GitStatus()
 			\  'git': s:git[dir]
 			\})
 	endif
-	return s:git[dir]['status']
+	return s:git[dir]
 endfunction
 
 augroup vimrc_git
