@@ -2,13 +2,7 @@ Source git.vim
 
 augroup vimrc_statusline
 	autocmd!
-	" No extra noise.
-	set noshowmode
-
-	" function! s:get_file_icon()
-	" 	let b:icon = get(b:, 'icon', matchstr(substitute(system(['ls', '--color=always', '-d1', '--', bufname()]), \"\e[^m]*m\", '', 'g'), '..'))
-	" 	return b:icon
-	" endfunction
+	set noshowmode laststatus=2
 
 	set tabline=%!Tabline()
 	function! s:get_buf_name(bufnr)
@@ -59,38 +53,35 @@ augroup vimrc_statusline
 		return s
 	endfunction
 
-	let g:diff_lnum = '    '
-	function! s:StatusLineCursorChanged() abort
-		let lnum = line('.')
-		let g:diff_lnum = printf('%4s', get(s:, 'prev_lnum', lnum) != lnum ? (lnum > s:prev_lnum ? '+' : '').(lnum - s:prev_lnum) : '')
-		let s:prev_lnum = lnum
-	endfunction
+	autocmd InsertEnter,BufWipeout * let s:index = index(g:recent_buffers, bufnr())|if s:index >= 0|silent! unlet! g:recent_buffers[s:index]|endif
+	autocmd InsertEnter * call insert(g:recent_buffers, bufnr())
 
-	function! StatusLineFiletypeIcon() abort
-		return get({ 'unix': '', 'dos': '', 'mac': '' }, &fileformat, '')
-	endfunction
+	" autocmd OptionSet binary,fenc,enc,bomb,fileformat echom 'kecske'
 
-	autocmd CursorMoved * call s:StatusLineCursorChanged()
+	let g:statusline_lnum_change = ''
+	let s:prev_lnum = 0
+	autocmd CursorMoved *
+		\ let s:lnum = line('.')|
+		\ if s:lnum !=# s:prev_lnum|
+		\   let g:statusline_lnum_change = printf('%+d', s:lnum - s:prev_lnum)|
+		\   let s:prev_lnum = s:lnum|
+		\ endif
 
-		" \ setlocal statusline+=%2p%%\ %4l/%-4L:%-3v
-	autocmd WinLeave *
+	autocmd WinLeave,FocusLost *
 		\ setlocal statusline=%n:%f%h%w%(\ %m%)|
 		\ setlocal statusline+=%=|
-		\ setlocal statusline+=%2p%%\ %4l/%-4L\ L:%-3v\ C
-	autocmd VimEnter,WinEnter,BufWinEnter *
+		\ setlocal statusline+=%l/%L:%-3v
+	autocmd VimEnter,WinEnter,BufWinEnter,FocusGained *
 		\ setlocal statusline=%(%#StatusLineModeTerm#%{'t'==mode()?'\ \ T\ ':''}%#StatusLineModeTermEnd#%{'t'==mode()?'\ ':''}%#StatusLine#%)|
 		\ setlocal statusline+=%(\ %{DebuggerDebugging()?'🦋🐛🐝🐞🐧🦠':''}\ %)|
 		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{Git().status}\ %)\ %)|
 		\ setlocal statusline+=%n:%f%h%w%{exists('b:gzflag')?'[GZ]':''}%r%(\ %m%)%k|
 		\ setlocal statusline+=%9*%<%(\ %{StatusLineRecentBuffers()}%)%#StatusLine#|
-		\ setlocal statusline+=%=|
+		\ setlocal statusline+=%<%=|
 		\ setlocal statusline+=%1*%2*|
 		\ setlocal statusline+=%(\ %{&paste?'ρ':''}\ %)|
 		\ setlocal statusline+=%(\ %{&spell?&spelllang:''}\ \ %)|
-		\ setlocal statusline+=\ %{!&binary?(substitute((!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').'\ ','\\m^utf-8\ $','','').StatusLineFiletypeIcon()):\"bin\ \\uf471\"}|
-		\ setlocal statusline+=%(\ \ %{!&binary?!empty(&ft)?&ft:'no\ ft':''}%)|
-		\ setlocal statusline+=\ %3*\ %2p%%\ %4l/%-4L\ %{diff_lnum}\ L:%3v\ C
-
-	autocmd InsertEnter,BufWipeout * let s:index = index(g:recent_buffers, bufnr())|if s:index >= 0|silent! unlet! g:recent_buffers[s:index]|endif
-	autocmd InsertEnter * call insert(g:recent_buffers, bufnr())
+		\ setlocal statusline+=%(\ %{substitute(&binary?'bin':(!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').(&fileformat!=#'unix'?','.&fileformat:''),'^utf-8$','','')}\ %)|
+		\ setlocal statusline+=%(\ %{!&binary&&!empty(&ft)?&ft:''}\ %)|
+		\ setlocal statusline+=%3*\ %l(%{statusline_lnum_change})/%L:%-3v
 augroup END

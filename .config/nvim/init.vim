@@ -14,7 +14,50 @@
 " Fucking one hour to chop off 100ms at startup.
 " -> Will save time after 1h / 100ms = 36000 startups.
 
-if filewritable(stdpath('config').'/init.vim')
+if !has('nvim')
+	" Must be the first and must run only once since it touches other
+	" options. So vimrc can be "safely" reloaded.
+	if !&compatible
+		set nocompatible
+	endif
+	set formatoptions+=j " Delete comment character when J.
+	set runtimepath+=~/.local/share/nvim/site
+	set packpath+=~/.local/share/nvim/site
+	set cpo&vim
+	filetype plugin indent on
+	syntax on
+	syntax enable
+	set autoread
+	set title
+	set encoding=utf-8
+	set backupdir=/tmp/backup
+	set directory=/tmp/backupf
+	set ofu=syntaxcomplete#Complete
+	set ttyfast
+	set hlsearch
+	set gdefault
+	set incsearch
+	set smarttab
+
+	set sessionoptions-=options
+	set viewoptions-=options
+
+	let &t_SI = "\<Esc>[5 q"
+	let &t_EI = "\<Esc>[2 q"
+
+	let &t_SR = "\<Esc>[4 q"
+	let &t_ER = "\<Esc>[2 q"
+
+	set ttimeout ttimeoutlen=0
+
+	nnoremap g<M-n> %s///n
+
+	set cursorline cursorlineopt=number
+endif
+
+set shortmess+=mrFI
+
+if !has('nvim') || filewritable(stdpath('config').'/init.vim')
 	command! -nargs=+ IfLocal <args>
 	command! -nargs=+ IfSandbox
 else
@@ -35,6 +78,8 @@ set foldopen=
 set spelllang=en
 set ignorecase fileignorecase wildignorecase smartcase
 set scrolloff=5 sidescrolloff=23
+set nrformats-=octal
+
 set splitright
 set cinoptions+=t0,:0,l1
 set lazyredraw
@@ -55,6 +100,9 @@ augroup vimrc_autopath
 		\ endif
 augroup END
 set wildcharm=<C-Z>
+set autoindent
+set copyindent
+set wildmenu
 set wildmode=list:longest,full
 set wildignore+=*.a,*.d,*.o,*.out
 set wildignore+=.git
@@ -82,6 +130,10 @@ else
 	set termguicolors " 24-bit colors. Yuhhuuu.
 	set listchars=eol:$,tab:│\ ,trail:•,extends:⟩,precedes:⟨,space:·,nbsp:␣
 	set listchars=eol:$,tab:›\ ,trail:•,extends:⟩,precedes:⟨,space:·,nbsp:␣
+	if !has('nvim')
+		let &t_8f = "\<Esc>[38:2:%lu:%lu:%lum"
+		let &t_8b = "\<Esc>[48:2:%lu:%lu:%lum"
+	endif
 end
 
 	" let text = matchstr(getline(v:foldstart), '^.\{-}\S.\{-}\s\{-1}\zs\S.\{-}\ze\(:\?\s*{'.'{{\d\+\)\?$')
@@ -180,16 +232,20 @@ function! s:magic_ctrlg() abort
 endfunction
 inoremap <expr><C-g> <SID>magic_ctrlg()
 
-augroup vimrc_fasttimeout
-	autocmd!
-	autocmd InsertEnter * let saved_timeoutlen = &timeoutlen|set timeoutlen=500
-	autocmd InsertLeave * let &timeoutlen=saved_timeoutlen
-augroup END
+" augroup vimrc_fasttimeout
+" 	autocmd!
+" 	autocmd InsertEnter * let saved_timeoutlen = &timeoutlen|set timeoutlen=500
+" 	autocmd InsertLeave * let &timeoutlen=saved_timeoutlen
+" augroup END
 
 augroup vimrc_insertempty
 	autocmd!
 	autocmd InsertLeave * try|if empty(trim(getline('.')))|undojoin|call setline('.', '')|endif|catch /undojoin/|endtry
 augroup END
+
+if !has('nvim')
+	autocmd ShellCmdPost * redraw
+endif
 
 function! s:publish(bang, mods, args) abort
 	let prog =<< AWK
@@ -214,6 +270,9 @@ AWK
 	\    ? 'printf "M\t\%s\\n" '.join(map(flatten(map(a:args, {_,arg-> glob(arg, 1, 1)})), {_,file-> shellescape(file)}), ' ')
 	\    : 'git diff --name-status '.(empty(a:args) ? '@' : join(a:args, ' ')))
 	\ .(a:mods =~# 'verbose' ? '' : ' | awk -vFS="\t" -vpublic_site='.shellescape(public_site).' '.shellescape(join(prog, "\n"), 1))
+	if !has('nvim')
+		redraw!
+	endif
 	if !v:shell_error
 		if a:mods !~# 'verbose'
 			call feedkeys("\<CR>", "nt")
@@ -255,7 +314,7 @@ nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + 
 nnoremap <silent> <expr> <C-q> '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S?s-1<CR>
 	\ :noh\|call histdel("search", -1)\|let @/ = histget("search", -1)<CR>'
 
-command -nargs=1 Source execute 'source' fnameescape(stdpath('config').'/'.<q-args>)
+command! -nargs=1 Source execute 'source' fnameescape((has('nvim') ? stdpath('config') : '~/.vim').'/'.<q-args>)
 
 " Parameter text object.
 onoremap <silent> i, :<C-U>execute "keeppattern normal! v?\\m[(,]?;/\\S/\<lt>CR>o/\\m[,)]/s-1\<lt>CR>"<CR>
@@ -360,7 +419,7 @@ nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P_\", 'nt')\
 " }}}1
 
 nnoremap <silent> <M-m> :call <SID>make()<CR>
-nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>terminal make run<bar>endif<CR>
+nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>execute 'terminal make run'<bar>endif<CR>
 nnoremap <silent> <M-l> :cnext<CR>:silent! normal! zOzz<CR>
 nnoremap <silent> <M-L> :cprev<CR>:silent! normal! zOzz<CR>
 nnoremap <silent> <M-n> :cnext<CR>:silent! normal! zOzz<CR>
@@ -369,6 +428,14 @@ nnoremap <silent> <M-f> :next<CR>
 nnoremap <silent> <M-F> :prev<CR>
 nnoremap <silent> <M-w> :Bufdo update<CR>
 nnoremap <silent> <M-q> :quit<CR>
+
+nmap <silent> <Esc>m <M-m>
+for s:i in range(char2nr('@'), char2nr('Z'))
+	let s:l = tolower(nr2char(s:i))
+	let s:u = tolower(nr2char(s:i))
+	execute 'nmap <silent> <Esc>'.s:l.' <M-'.s:l.'>'
+	execute 'nmap <silent> <Esc>'.s:u.' <M-'.s:u.'>'
+endfor
 
 " put the first line of the paragraph at the top of the window
 " <C-E> does not want to get executed without execute... but <C-O> does... WTF!?
@@ -404,6 +471,8 @@ command! -bang -nargs=+ Bufdo let g:bufdo_bufnr = bufnr()|execute 'bufdo<bang>' 
 " sweep out untouched buffers
 command! Sweep windo let b:no_sweep = 1|Bufdo if (!&modifiable || 0 ==# changenr()) && !exists('b:no_sweep')|bdelete|endif|unlet! b:no_sweep
 
+command! TODO GREP \b(TODO|FIXME|BUG|WTF)\b.*:
+
 " execute macro over visual range
 xnoremap <expr><silent> @ printf(':normal! @%s<CR>', nr2char(getchar()))
 
@@ -414,6 +483,7 @@ command! StripTrailingWhite keepjumps keeppatterns lockmarks silent %s/\m\s\+$//
 augroup vimrc_japan
 	autocmd!
 	autocmd ColorScheme * highlight ExtraWhitespace ctermbg=197 ctermfg=231 guibg=#ff005f guifg=#ffffff
+	highlight ExtraWhitespace ctermbg=197 ctermfg=231 guibg=#ff005f guifg=#ffffff
 	autocmd FileType,BufWinEnter,WinNew *
 		\ if has_key(w:, 'japan')|
 		\   call matchdelete(w:japan)|
@@ -642,8 +712,9 @@ augroup vimrc_filetypes
 		\ nmap <buffer> e :e<Space>
 augroup END
 
-augroup vimrc_colorsreload
+augroup vimrc_reload
 	autocmd! BufWritePost colors/*.vim ++nested let &background=&background
+	autocmd! BufWritePost init.vim,vimrc ++nested source <afile>
 augroup END
 
 augroup vimrc_autoplug
@@ -657,10 +728,13 @@ augroup END
 IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 
 " IfLocal packadd debugger.nvim
+
 IfLocal packadd vim-gnupg
 
+packadd cfilter
+
 augroup vimrc_autodiffupdate
-	autocmd! TextChanged,TextChangedI,TextChangedP * if empty(&buftype)|diffupdate|endif
+	autocmd! TextChanged * if empty(&buftype)|diffupdate|endif
 augroup END
 
 nnoremap Q :normal n.<CR>zz
@@ -706,7 +780,7 @@ cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'GREP' : 'gr'
 cnoreabbrev <expr> grh getcmdtype() == ':' && getcmdpos() == 4 ? "GREP -g '*.h'" : 'grh'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
 command! -nargs=* GREP call feedkeys("\<CR>", "nt")|execute 'grep -g !check -g !docs -g !test -g !build -g !tests' substitute(<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>, 1), '<bar>', '\\<bar>', 'g')
-xnoremap // y:GREP -F <C-r>=shellescape(@")<CR><CR>
+xnoremap // y:GREP -F <C-r>=fnameescape(@")<CR><CR>
 nnoremap /. /\V.
 
 nnoremap g<C-f> :find <C-r><C-w><C-z><CR>
@@ -749,7 +823,9 @@ xnoremap <silent> s. c.<C-r><C-o>".<Esc>
 xnoremap <silent> s: c:<C-r><C-o>":<Esc>
 xmap <expr><silent> ss- &spelllang ==# 'en' ? 'c–<C-r><C-o>"–<Esc>' : 'c– <C-r><C-o>" –<Esc>'
 
+if has('nvim')
 IfLocal packadd crazy8.nvim
+endif
 
 augroup vimrc_newfilemagic
 	autocmd!
@@ -803,7 +879,7 @@ endfunction
 nnoremap <silent> g?f :call <SID>goto_function()<CR>
 
 nnoremap ! :ls<CR>:b<Space>
-nnoremap g/ :!ls --group-directories-first<CR>:find *
+nnoremap g/ :echo glob('*')<CR>:find *
 nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
 
 nnoremap <C-w>T <C-w>s<C-w>T
@@ -820,27 +896,41 @@ IfLocal command! PackUpdate execute 'terminal' printf('find %s -mindepth 3 -maxd
 set number relativenumber
 augroup vimrc_numbertoggle
 	autocmd!
-	autocmd FocusGained,InsertLeave,WinEnter,TermEnter * ++nested
+ " ,TermEnter
+	autocmd FocusGained,InsertLeave,WinEnter * ++nested
 		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
 		\   set relativenumber|
 		\ endif
-	autocmd FocusLost,InsertEnter,WinLeave,TermLeave * ++nested
+	" ,TermLeave
+	autocmd FocusLost,InsertEnter,WinLeave * ++nested
 		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
 		\   set norelativenumber|
 		\ endif
+	autocmd!
 augroup END
 
 set title
 
 augroup vimrc_term
 	autocmd!
-	autocmd TermOpen * startinsert|nmap <buffer> <Return> gf
-	autocmd TermClose * stopinsert|nnoremap <buffer> q <C-w>c
+	if has('nvim')
+		autocmd TermOpen * startinsert|nmap <buffer> <Return> gf
+		autocmd TermClose * stopinsert|nnoremap <buffer> q <C-w>c
+	else
+		autocmd TerminalOpen *
+			\ autocmd InsertEnter * execute 'startinsert|nmap <buffer> <Return> gf'|
+			\ autocmd InsertLeave * execute 'stopinsert|nnoremap <buffer> q <C-w>c'
+	endif
 	tnoremap <C-v> <C-\><C-n>
+	tnoremap <C-w><C-w> <C-\><C-n><C-w><C-w>
 augroup END
 
+if has('nvim')
 IfLocal packadd debugger.nvim
 IfSandbox execute ":function! g:DebuggerDebugging(...)\nreturn 0\nendfunction"
+else
+IfLocal execute ":function! g:DebuggerDebugging(...)\nreturn 0\nendfunction"
+endif
 
 augroup vimrc_autoresize
 	autocmd! VimResized * wincmd =
@@ -885,7 +975,7 @@ command! -nargs=* Termdebug delcommand Termdebug<bar>packadd termdebug<bar>Termd
 
 IfLocal noremap <silent> gc :<C-U>unmap gc<CR>:packadd vim-commentr<CR>:call feedkeys('gc', 'i')<CR>
 
-if &termguicolors
+if has('nvim') && &termguicolors
 	IfLocal packadd nvim-colorizer.lua
 	IfLocal lua require'colorizer'.setup { '*'; '!mail'; '!text' }
 endif
@@ -976,7 +1066,7 @@ augroup END
 
 if $TERM !=# 'linux'
 	augroup vimrc_persistentoptions
-		let s:options_vim = stdpath('config').'/options.vim'
+		let s:options_vim = (has('nvim') ? stdpath('config') : '~/.vim').'/options.vim'
 		function! s:update_options_vim() abort
 			try
 				execute 'source' fnameescape(s:options_vim)
@@ -990,19 +1080,27 @@ if $TERM !=# 'linux'
 		autocmd OptionSet background
 			\ call writefile([printf('set background=%s', &background)], s:options_vim)|
 			\ call system(['/usr/bin/pkill', '--signal', 'SIGUSR1', 'nvim'])
-		autocmd Signal SIGUSR1 call s:update_options_vim()|redraw!
+		if has('nvim')
+			autocmd Signal SIGUSR1 call s:update_options_vim()|redraw!
+		else
+			autocmd SigUSR1 call s:update_options_vim()|redraw!
+		endif
 	augroup END
 	" Must be after background
 	let colors_name = 'vivid'
 endif
 
+colorscheme vivid
+
+if has('nvim')
 augroup vimrc_autosave
 	autocmd! Signal SIGUSR1 silent! Bufdo update
 augroup END
+endif
 
 augroup vimrc_restorecursor
 	autocmd! BufReadPost * autocmd FileType <buffer> ++once autocmd BufEnter <buffer> ++once
-		\ if 1 <= line("'\"") && line("'\"") <= line("$") && &filetype !~? 'commit'|
+		\ if 1 <= line("'\"") && line("'\"") <= line("$") && &filetype !~? '\vgit|commit'|
 		\   execute 'normal! g`"zvzz'|
 		\ endif
 augroup END
@@ -1041,16 +1139,16 @@ function! s:cmagic_tilde() abort
 	if &shell =~# 'zsh'
 		let cmd = join([
 			\  '. $ZDOTDIR/hashes.zsh',
-			\  'eval text=$1',
+			\  'eval text=%s',
 			\  'unhash -dm \*',
 			\  'print -D -- $text'
 			\], "\n")
 	endif
 
 	let word = cmdline[word_start:cmdpos]
-	let word = trim(system([&shell, '-ce', cmd, '', word]))
+	let word = trim(system(printf(cmd, shellescape(word))))
 	if v:shell_error
-		retur '/'
+		return '/'
 	endif
 
 	return "\<C-\>e\"".escape(strpart(cmdline, 0, word_start).word.'/'.strpart(cmdline, cmdpos), '\"')."\"\<CR>"
@@ -1078,12 +1176,14 @@ function! s:on_cwd(chan_id, data, name) abort
 		let cwd = fnamemodify(cwd, ':h')
 	endwhile
 endfunction
+if has('nvim')
 call jobstart(['/usr/bin/pwd', '-L'], {
 	\  'pty': 0,
 	\  'stdout_buffered': 1,
 	\  'on_stdout': function('s:on_cwd'),
 	\  'on_stderr': {c,d,n-> 0}
 	\})
+endif
 
 delcommand Source
 
