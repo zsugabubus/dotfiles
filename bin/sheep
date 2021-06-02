@@ -2,54 +2,45 @@
 if test "$1" = "--"; then
   shift
 
+  NEWUSER=me
+
   bind() {
     mkdir -m755 -p "./rootfs/$1"
-    mount --bind "$1" "./rootfs/$1"
+    mount --make-unbindable --make-rslave --rbind "$1" "./rootfs$1"
   }
 
   bind_ro() {
-    mkdir -m755 -p "./rootfs/$1"
-    mount --bind -o ro "$1" "./rootfs/$1"
+    mkdir -m755 -p "./rootfs/${2:-$1}"
+    mount --make-unbindable --bind -o ro "$1" "./rootfs/${2:-$1}"
   }
 
-  P=$PWD
-
   cd /dev/shm || cd /tmp
-  mount --make-shared /
-  mount --make-rslave -t tmpfs tmpfs . -o size=2g,mode=755
+  mount --make-unbindable --make-private -t tmpfs tmpfs . -o noatime,size=2g,mode=755
   cd .
 
   mkdir --mode=755 rootfs work changes
 
-  mount --make-private /
-
-  mount \
-    -t overlay overlay \
-    -o "lowerdir=/,workdir=./work,upperdir=./changes" "./rootfs"
+  mount --make-unbindable --make-private -t overlay overlay -o lowerdir=/,workdir=./work,upperdir=./changes ./rootfs
 
   bind_ro /sys
-  # mount -t devtmpfs devtmpfs ./rootfs/dev
   bind_ro /dev
-  bind /dev/pts
-  # mount -t devpts devpts -orw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 /dev/pts
+  mount -t devpts devpts -onewinstance,nosuid,noexec,noatime ./rootfs/dev/pts
   bind_ro /proc
 
   bind_ro /tmp/.X11-unix
   mount -t tmpfs tmpfs ./rootfs/dev/shm -o size=1g,mode=777
 
-  bind_ro "$HOME"
-  mount --make-rshare -t tmpfs tmpfs "./rootfs/$HOME/.local" -o "size=100M,mode=777"
-  bind    "$(readlink "$HOME/mem")"
-  if test "$P" != "$HOME"; then
-    printf "\033[41;37;1mBinding $P read-write.\033[0m\n"
-    bind  "$P"
-  fi
+  bind_ro "$HOME" "/home/$NEWUSER"
+  mount --make-unbindable --make-rslave -t tmpfs tmpfs "./rootfs/home/$NEWUSER/.local" -o "size=100M,mode=777"
+  bind "$(readlink "$HOME/mem")"
+
   mkdir -m755 -- \
     "./rootfs/run/user/$UID/cache"
-  chown "$USER:$USER" -R --  \
-    "./rootfs/$HOME/.local" \
-    "./rootfs/run/user/$UID"
-  # bind_ro "$HOME/.local/share/nvim"
+  chown "$USER:$USER" \
+    "./rootfs/home/$NEWUSER/.local" \
+    "./rootfs/run/user/$UID" \
+    "./rootfs/run/user/$UID/cache"
+  # bind_ro "$HOME/.local/share/nvim/site" "/home/$NEWUSER/.local/share/nvim/site"
 
   chmod 755 -- \
     "./rootfs/run" \
@@ -61,24 +52,33 @@ if test "$1" = "--"; then
   pivot_root rootfs rootfs
   cd /
 
-  ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+  cd /etc
+  ln -sf /usr/share/zoneinfo/UTC localtime
   hostname sheep
-  echo sheep >/etc/hostname
+  rm fstab crypttab group- shadow-
+  usermod "$USER" -l "$NEWUSER" -d "/home/$NEWUSER"
+  echo "$NEWUSER:$NEWUSER" | chpasswd >/dev/null
+  echo sheep >hostname
 
-  cd -- "$P"
+  cd -- /home/$NEWUSER/mem
+
+  USER=$NEWUSER
   if test "$#" -gt 0; then
     eval "$@"
   else
-    exec su "$USER"
+    exec su "$NEWUSER"
   fi
 else
   exec sudo -E env -u SHLVL -u SUDO_COMMAND -u SUDO_USER "UID=$(id -u)" "USER=$USER" unshare \
     --mount \
     --uts \
     --ipc \
-    --cgroup \
     --pid \
+    --cgroup \
+    --time \
+    --boottime $(expr $(date --date="$(uptime -s)" +%s) - $(date +%s) + 1) \
     --mount-proc \
+    --propagation slave \
     --kill-child \
     --fork \
     -- "$0" -- "$@"
