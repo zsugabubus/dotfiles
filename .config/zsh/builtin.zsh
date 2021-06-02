@@ -23,8 +23,8 @@ function run-chpwd() {
 }
 zle -N run-chpwd
 
-watch=all # watch all logins
-logcheck=30 # every 30 seconds
-WATCHFMT="%n from %M has %a tty%l at %T %W"
+# watch=all # watch all logins
+# logcheck=30 # every 30 seconds
+# WATCHFMT="%n from %M has %a tty%l at %T %W"
 
 TIMEFMT='%J  %U user %S system %P cpu %*E total %MkB max %R faults'

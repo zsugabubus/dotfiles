@@ -220,18 +220,20 @@ source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 unfunction autoload_zle
 
-if [[ -o login ]]; then
-	set -o ignore_eof
-	function zle_exit() {
-		local prompt=
-		print -nv prompt "?\rzsh: Surely exit? "
-		read -esrq $prompt && exit
-		zle redisplay
-	}
-else
-	function zle_exit() {
+set -o ignore_eof
+function zle_exit() {
+	zle .reset-prompt
+	if [[ -n $zsh_scheduled_events ]]; then
+		print "zsh: you have scheduled events."
+	elif [[ -o login ]]; then
+		read -esrq "?zsh: surely exit? " && exit
+	else
 		exit
-	}
-fi
+	fi
+
+	zle redisplay
+	return
+}
+
 zle -N zle_exit
 bindkey '^D' zle_exit

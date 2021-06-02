@@ -23,7 +23,8 @@ local function prompt_powerline_setup() {
 		# It just works.
 		ZLE_RPROMPT_INDENT=$((1 - $+TMUX))
 		PS1='$_powerline_where%K{$POWERLINE_DIR_FG}%F{236} ${${vcs_info_msg_0_:-"$_powerline_path%F{$POWERLINE_DIR_FG}$_powerline_writeable"}//\$_powerline_writeable/$_powerline_writeable} %k%{%G%}%f '
-		RPS1='%F{250} %D{%K∶%M∶%S}$_powerline_keymap%b%(?.. %F{197}%{%G%}%K{197}%F{227} %B$ZSH_POWERLINE_STATUS%b)%(2L. %F{254}%{%G%}%K{254}%F{244} %L.)'"$([[ -n $TMUX ]] && print -n " " || print -n "%{ %}")"
+		# PS1='$_powerline_where%K{$POWERLINE_DIR_FG}%F{236} ${${$(__git_ps1 "%%{%%G%%} %%{%%G%%} %%{%%G%%} %s%%F{$POWERLINE_VCS_FG}"):-"$_powerline_path%F{$POWERLINE_DIR_FG}$_powerline_writeable"}//\$_powerline_writeable/$_powerline_writeable} %k%{%G%}%f '
+		RPS1='%F{250}%(1j. %%%j.)$_powerline_keymap%b%(?.. %F{197}%{%G%}%K{197}%F{227} %B$ZSH_POWERLINE_STATUS%b)%(2L. %F{254}%{%G%}%K{254}%F{244} %L.)'"$([[ -n $TMUX ]] && print -n " " || print -n "%{ %}")"
 		PS2='%K{254}%F{247} %_ %k%F{254}%f '
 		;;
 	esac
@@ -141,7 +142,7 @@ local function prompt_powerline_setup() {
 		;;
 	(*)
 		zstyle ':vcs_info:git*' formats '%{%G%} %r/%S$_powerline_writeable %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b%m%u%c%F{$POWERLINE_VCS_FG}' &&
-		zstyle ':vcs_info:git*' actionformats "%{%G%} %r/%S %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b [%a%m%u%c]%F{$POWERLINE_VCS_FG}" &&
+		zstyle ':vcs_info:git*' actionformats "%{%G%} %r/%S %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b [%a%u]%F{$POWERLINE_VCS_FG}" &&
 		zstyle ':vcs_info:*' branchformat "%{%G%} %b:%r" &&
 		zstyle ':vcs_info:*' nvcsformats '' # Will be replaced at the prompt. Needed because there is no expansion here.
 		;;

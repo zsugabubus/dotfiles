@@ -25,7 +25,7 @@ elif [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
 		fi
 	elif [[ -z $BUFFER && $content =~ '^https?://(((www.)?youtube.com|youtu.be)/|.*\.(mp[0-9]|gifv?|webm|m3u8|og[av])(\?.*)?$)' ]]; then
 		if [[ -z $BUFFER ]]; then
-			LBUFFER="mpv"
+			LBUFFER="mp"
 		fi
 	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
 		content="https://raw.githubusercontent.com/${match[1]}/${match[2]}"
@@ -43,6 +43,8 @@ elif [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
 	fi
 
 	LBUFFER+=${(q-)content}
+elif [[ $content =~ '^[ab]/(\S*)$' ]]; then
+	LBUFFER+=${(q-)match[1]}
 else
 	local start=$#LBUFFER
 

@@ -6,9 +6,7 @@ setopt aliases
 
 function -() { cd - }
 
-alias e="$EDITOR -p"
-alias ed="$EDITOR -d"
-alias eg="$EDITOR +Gstatus"
+alias e=$EDITOR
 
 alias -s {{c,h}{,pp,++},rs,txt,vim,diff}=open
 alias -s {bmp,jpg,png}=open
@@ -128,7 +126,7 @@ alias -g G='| grep -i'
 alias -g L='| less'
 alias diff='diff --color=auto'
 alias sf='() { local f=/tmp/strace; strace -fo $f $@ && $EDITOR $f; }'
-alias gccc='gcc -O2 -march=native -std=c11 -g -ldl main.c && time ./a.out'
+alias gccc='gcc -O2 -Wall -Wextra -march=native -std=c11 -g -ldl main.c && time ./a.out'
 alias gccd='() { gcc -O0 -march=native -std=c11 -g -ldl main.c $* && gdb ./a.out -ex run; }'
 alias df='df -h'
 alias grep='grep --color=auto'
@@ -186,31 +184,30 @@ alias am='alsamixer'
 alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
 alias mp='() { mpv 2>&- --player-operation-mode=pseudo-gui ${*:-.} &! }'
-alias mp.='mp *(.)'
-alias mpm='() { eval mp "*(m-${1:-1}/)" }'
 compdef mp=mpv_hack
+alias mpm='() { eval mp "*(m-${1:-1}/)" }'
+compdef mpm=mpv_hack
+alias mpn='() { eval mp "*(.om[1,${1:-100}])" }'
+compdef mpn=mpv_hack
 alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
-alias mpf='mp *(.)'
-compdef mpf=mpv_hack
-# function mpvs() { mpv --player-operation-mode=pseudo-gui "$1" --sub-file "${2:-/dev/null}" }
-# compdef mpvs=mpv_hack
-alias service='systemctl --user'
 alias www='() { if [[ 1 == $# ]]; then www $1; else www - : -- tar -cf - $*; fi } '
 alias timer='() { ( sleep ${1:-5m} && ~/doc/cuckoo-clock.mp3 ) &! }'
 alias gdbrun='() { local file=$1; shift; gdb -quiet $file -ex "run "${(jj j)${(qq)*}}; }'
 autoload -U zmv
-alias cpp='noglob _zmv -C'
-alias lnn='noglob _zmv -L'
+alias cpp='noglob __zmv -C'
+alias lnn='noglob __zmv -L'
+alias mvv='noglob __zmv -M'
+function __zmv() {
+	zmv -nvW $@ &&
+	{ read -srq "?Execute? " } always { print } &&
+	zmv -vW $@
+}
 alias lnv='() { () { $EDITOR +"inoremap <C-n> <C-x><C-f>" +startinsert! -- $1 &&  ln -nTfsv $(<$1) $2; } =(readlink -- $1) $1 && ls; }'
 compdef '_files -g "*(@)"' lnv
 alias lne=lnv
 compdef lne=lnv
 alias flat='() { [[ -d $1 ]] && mv -- $1/.*(N) $1/*(N) . && rmdir -p -- $1 }'
-alias mvv='noglob _zmv -M'
-function _zmv() {
-	zmv -nvW $@ && { read -srq "?Execute? " } always { print } && zmv -vW $@
-}
 function mve() {
 	local files=( ${@:-*} )
 	() {
@@ -228,12 +225,11 @@ function mve() {
 					any=1
 				fi
 			done
-			if (( ! any )) || { [[ -n $precmd ]] && ! { read -srq '?Proceed? [y/N] ' } always { print } }; then
+			if (( ! any )) || { [[ -n $precmd ]] && ! { read -srq '?Execute? [y/N] ' } always { print } }; then
 				break
 			fi
 		done
 	} =(print -l $files) =(print -l $files)
-	
 }
 function rmm() {
 	if [[ $1 = -* ]]; then
@@ -315,7 +311,7 @@ alias du..='du --apparent-size -chd 1 . | sort -h'
 alias ti='tikal'
 alias tt='ti'
 function sheep_pacman() {
-	sheep pacman -Sy --noconfirm $* '&&' su $USER
+	sheep 'pacman -Sy --noconfirm '$*' && su $USER'
 }
 function sheep_black() {
 	sheep \
@@ -369,6 +365,39 @@ function ab() {
 		local session=$(tr </dev/urandom -dc a-z | head -c3)
 	fi
 	abduco -c "$session" "${@:-$SHELL}"
+}
+
+# Jumping from one abduco to another.
+function rabbit() {
+	while session=$(
+		abduco -l |
+		awk "-vq=$session" 'NR == 1 { print > "/dev/tty" } 1 < NR { print | "fzy --query=" q "" }' |
+		sed 's/[^\t]*\t[^\t]*\t//'
+	) &&
+	test -n "$session" &&
+	abduco -A $session "$SHELL"
+	do
+	done
+}
+
+alias t=tmux
+
+function br() {
+	bwrap \
+		--unsetenv SHLVL \
+		--ro-bind / / \
+		--tmpfs /tmp \
+		--dev /dev \
+		--proc /proc \
+		--tmpfs /home \
+		--dir /home/user \
+		--bind "$(realpath ~m)" /home/user \
+		--unshare-all \
+		--hostname host \
+		--die-with-parent \
+		--as-pid-1 \
+		--chdir /home/user \
+		-- ${*:-/$SHELL}
 }
 
 function bwsh() {
