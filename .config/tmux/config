@@ -22,72 +22,52 @@ set -g display-panes-active-colour colour15
 set -g clock-mode-colour colour7
 %else
 source-file ~/.config/tmux/theme.conf
-#  #(~/.config/tmux/scripts/loadavg.sh)  #(~/.config/tmux/scripts/bwrate.sh enp10s0)
 %endif
 
 set -g clock-mode-style 24
 # 1}}}
 
-set -g history-limit 10000
+set -g history-limit 20000
 
-# status update interval
-set -g status-interval 60
-
-# time to show status messages for
-set -g display-time 1618
-
+set -g display-time 2500
 set -g repeat-time 418
 
-# allow commands immediately following send-prefix
+set -g status-keys emacs
+
+# Allow commands immediately following send-prefix.
 set -s escape-time 0
 
-# focus events enabled for terminals that support them
 set -g focus-events on
 
-# Prefix
-%if #{==:#{TERM},linux}
-set-option -g prefix 'C-b'
-%else
-set-option -g prefix 'C-\'
-%endif
+set -g prefix 'C-t'
 
-bind '\' send-prefix
-bind 'C-\' last-window
-bind C-- last-pane
-bind q display-panes -d 0
+bind C-t last-window
+bind t last-pane
 
-# Window switching
-bind -r n select-window -n
-bind -r p select-window -p
-
-# Pane switching
-bind -r h select-pane -L
-bind -r j select-pane -D
-bind -r k select-pane -U
-bind -r l select-pane -R
-
-# Pane resizing
 bind -r C-h resize-pane -L
-bind -r C-j resize-pane -D
-bind -r C-k resize-pane -U
-bind -r C-l resize-pane -R
 
-bind -r Space nextl
-bind H swapp -U
-bind K swapp -U
-bind L swapp -D
-bind J swapp -D
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
 
-# better splits with | and -
-bind | split-window -h
-bind - split-window -v
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 3
+bind -r K resize-pane -U 3
+bind -r L resize-pane -R 5
 
-# switch layouts
-bind =   select-layout even-horizontal
-bind '"' select-layout even-vertical
+bind c new-window -c "#{pane_current_path}"
+bind C-m new-window -c "#{pane_current_path}"
 
-# convert window into a pane
-bind W command-prompt -p "Create pane from window #:" "join-pane -s ':%%'"
+set-hook -g after-split-window[1] "select-layout tiled"
+set-hook -g window-layout-changed[2] 'set -wF pane-border-status "#{?#{==:#{window_panes},1},off,bottom}"'
+
+bind P set -w window-status-format " #I:#T " \; set -w window-status-current-format "#[bold] #I:#T "
+
+bind S display-panes -d 0 "swap-pane -t '%%'"
+
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
 
 # put useful info in the status bar
 set -g set-titles on
@@ -96,28 +76,41 @@ set -g set-titles-string '#H:#S.#I.#P #W #T' # window number,program name, activ
 # enable 256 colors mode - important if you want the solarized theme look
 # semi-decent in vim
 set -g default-terminal "$TERM"
+# Disable login shells.
+set -g default-command "$SHELL"
 
 # resize windows on larger screens - if off the size is capped to the smallest
 # screen size that has ever looked at it
 setw -g aggressive-resize on
 
-# reload config
-bind C-r source-file ~/.tmux.conf \; display-message "Config reloaded"
+bind r source-file ~/.tmux.conf
 
-bind -r C-b set -g status
-bind -r b set -g status
+bind b set -g status
 
-# show activity
-setw -g monitor-activity on
-set -g visual-activity off
+set -g visual-bell on
+set -g bell-action other
 
-# move windows
 bind -r > swap-window -t +1
 bind -r < swap-window -t -1
 
-# cursor shape
+bind-key C-u copy-mode \; send-keys -X page-up
+
+bind-key -T copy-mode-vi Escape send-keys -X cancel
+
+bind / copy-mode \; send-key ?
+
+bind v copy-mode
+bind V capture-pane -S - \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
+
+set -g copy-mode-match-style bg=#fdef39
+set -g copy-mode-current-match-style bg=#fdef39
+
+# Cursor shape.
 set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q'
 # set -as terminal-overrides ',*:Smulx=\E[4::%p1%dm'
+
+# Enable RGB color.
+set-option -ga terminal-overrides ",*:Tc"
 
 bind '~' setw synchronize-panes \; display "synchronize-panes: #{pane_synchronized}"
 
