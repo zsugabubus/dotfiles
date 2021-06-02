@@ -4,3 +4,6 @@ Session.vim
 *.d
 *.out
 .public_site
+
+*.orig
+*.rej
