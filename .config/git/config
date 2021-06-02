@@ -7,21 +7,21 @@
 	ae = a --edit
 	ai = a --interactive
 	ap = a --patch
+	au = a --update
 
-	branch = branch -v
-	b = branch
+	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:50)%(refname:short)%(color:bold normal)%(push:trackshort)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)%(color:reset) %(color:nobold dim white)%(push:short)'
 	br = b -r
-	#b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:40)%(refname:short)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)'
 
 	c = commit --verbose
 	cs = c --sign-off
-	cN = c --no-verify
 	cE = c --allow-empty
-	ca = c --amend --reset-author
+	cN = cE --no-verify
+	ca = cE --amend --reset-author
 	cc = commit --verbose --edit -F .git/COMMIT_EDITMSG
 
 	co = checkout
-	cop = co -p
+	co- = co @{-1}
+	cop = co --patch
 	cob = co -b
 
 	# Hehe.
@@ -49,10 +49,12 @@
 	mt = mergetool
 
 	rb = rebase
-	ri = r -i
-	rc = r --continue
+	ri = rb --interactive
+	rc = rb --continue
 
-	rp = reset -p
+	pl = pull
+
+	rp = reset --patch
 
 	s = status --ahead-behind --show-stash
 	ss = status -s
