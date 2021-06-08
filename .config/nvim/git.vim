@@ -2,6 +2,15 @@ set switchbuf=useopen,usetab
 nnoremap <silent><expr> gf (0 <=# match(expand('<cfile>'), '\v^\x{4,}$') ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>" : 0 <=# match(expand('<cfile>'), '^[ab]/') ? 'viWof/lgf' : 'gf')
 
 command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
+
+function! s:git_dir_complete(prefix, cmdline, pos) abort
+	let wd = Git().wd
+	return  map(filter(globpath(wd, a:prefix.'*', 1, 1), 'isdirectory(v:val)'), 'v:val['.len(wd).':]."/"')
+endfunction
+
+for s:cd in ['cd', 'lcd', 'tcd']
+	execute "command! -complete=customlist,<SID>git_dir_complete -nargs=? G".s:cd." execute '".s:cd." '.fnameescape(Git().wd.<q-args>)"
+endfor
 command! -nargs=* Gshow execute 'edit git://'.(empty(<q-args>) ? expand('<cword>') : <q-args>)
 command! -nargs=* Gtree call s:git_tree(0, <f-args>)
 command! -nargs=* Gtreediff call s:git_tree(1, <f-args>)
