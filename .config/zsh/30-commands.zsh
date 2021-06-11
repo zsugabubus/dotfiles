@@ -1,10 +1,8 @@
-source $ZDOTDIR/hashes.zsh
+zmodload zsh/sched
 
 autoload -Uz open
 
 setopt aliases
-
-function -() { cd - }
 
 alias e=$EDITOR
 
@@ -13,6 +11,9 @@ alias -s {bmp,jpg,png}=open
 alias -s {avi,mp{0,3,4},mkv}=open
 alias -s {pdf,ps}=open
 alias o=open
+
+alias -- -='cd -'
+for i ({1..9}) alias "$i"="cd -$i"
 
 function bin.country() {
 	curl --silent -H 'Accept-Version: 3' "https://lookup.binlist.net/$1" | jq -r '.country.name'
@@ -49,7 +50,7 @@ alias lt='\ls -ohtrF --color=tty --quoting-style=literal'
 alias la='ll -A'
 alias lc='ll -CA'
 alias pkill='pkill -x'
-alias d='dirs -v | head -10'
+alias d='dirs -v'
 alias va='nice -20 vlock -a'
 alias c-='cd -'
 function catf() {
@@ -121,9 +122,15 @@ function speedtest() {
 	}
 }
 compdef '_files -g "*.(png|jpg)"' feh
+
 alias -g G='| grep -i'
 # alias -g F='| fzf | { while read f; do print -z $(q-@)f; done }'
-alias -g L='| less'
+alias -g L='|& '$PAGER
+alias -g E='|& '$EDITOR
+
+# Disable persistent REPL history.
+alias node='NODE_REPL_HISTORY= node'
+
 alias diff='diff --color=auto'
 alias sf='() { local f=/tmp/strace; strace -fo $f $@ && $EDITOR $f; }'
 alias gccc='gcc -O2 -Wall -Wextra -march=native -std=c11 -g -ldl main.c && time ./a.out'
@@ -380,7 +387,7 @@ function rabbit() {
 	done
 }
 
-alias t=tmux
+alias t='tmux attach'
 
 function br() {
 	bwrap \

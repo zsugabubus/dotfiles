@@ -1,3 +1,5 @@
+DIRSTACKSIZE=10
+
 # Allow comments
 setopt interactive_comments
 setopt ksh_option_print

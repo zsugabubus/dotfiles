@@ -3,10 +3,12 @@ function preexec() {
 }
 
 function precmd() {
-	print -nP "\e]0;%n@%m: %~%(1j/ [%j job%(2j.s.)]/)\a"
+	# Set title and send bell. (Title sequence also ends with a bell.)
+	print -nP "\e]0;%n@%m: %~%(1j/ [%j job%(2j.s.)]/)\a\a"
 }
 
 function chpwd() {
+	dirs -v
 	lt -I '*.aria2' -I '*.torrent'
 }
 
@@ -23,8 +25,5 @@ function run-chpwd() {
 }
 zle -N run-chpwd
 
-# watch=all # watch all logins
-# logcheck=30 # every 30 seconds
-# WATCHFMT="%n from %M has %a tty%l at %T %W"
-
 TIMEFMT='%J  %U user %S system %P cpu %*E total %MkB max %R faults'
+REPORTTIME=1

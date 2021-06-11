@@ -79,7 +79,5 @@ match($0, /^([^m]*?)m(.*)$/, m) {
 
     icons[length(icons)+1]=cmd " " (length(icn) ? icn : "empty")
   }
-
-
 }
 { firstterm=1 }

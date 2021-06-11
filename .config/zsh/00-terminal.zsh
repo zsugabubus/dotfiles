@@ -22,6 +22,4 @@ if [[ $TERM == linux ]]; then
 	setterm --blank 1 --powerdown 1 --powersave powerdown
 fi
 
-# Freeze terminal
-# stty -ixon
 ttyctl -f

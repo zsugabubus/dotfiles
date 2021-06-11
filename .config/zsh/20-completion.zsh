@@ -27,26 +27,45 @@ setopt auto_param_keys
 setopt complete_aliases
 setopt complete_in_word
 
-local dircolors_gen=$HOME/.cache/dir_colors
-if [[ ! ~/.dir_colors -ot $dircolors_gen ]]; then
-	awk -f ~/.config/zsh/dircolors.awk ~/.dir_colors >$dircolors_gen
+# Cache LS_COLOR-like variables.
+if [[ ! -d ~/.cache/zsh ]]; then
+	mkdir ~/.cache/zsh
 fi
 
-# See: ZSHCOMPWID(1) “COMPLETION MATCHING CONTROL”
+if [[ ! ~/.dir_colors -ot ~/.cache/zsh/dir_colors ]]; then
+	awk -f ~/.config/zsh/dircolors.awk ~/.dir_colors >~/.cache/zsh/dir_colors
+	rm ~/.cache/zsh/dir_colors-* -i
+fi
+
+local type
+for type ('' .icons .colors); do
+	if [[ ! -f ~/.cache/zsh/dir_colors-$TERM$type ]]; then
+		TERM=$TERM$type dircolors -b ~/.cache/zsh/dir_colors >~/.cache/zsh/dir_colors-$TERM$type
+	fi
+done
+
+eval ${$(<~/.cache/zsh/dir_colors-$TERM)//empty}
+eval ${${$(<~/.cache/zsh/dir_colors-$TERM.icons)//LS_COLORS/LS_ICONS}//empty}
+
+local esc
+print -v esc '\e'
+export TREE_COLORS=${LS_COLORS//\\e/$esc}
+unset esc
+
+# See: ZSHCOMPWID(1) "COMPLETION MATCHING CONTROL"
 zstyle ':completion::complete:*::' matcher-list \
 	'' 'm:{a-zA-Z-_}={A-Za-z_-} l:|=* r:|[-.]=* r:|[-_./]|/=* r:|=*'
 
-eval ${${$(env TERM=$TERM.icons dircolors -b $dircolors_gen)//LS_COLORS/LS_ICONS}//empty}
-
-eval ${$(dircolors -b $dircolors_gen)//empty}
-export TREE_COLORS=$(sed 's.\\e.\x1b.g' <<<$LS_COLORS)
 # zstyle ':completion::complete:*' menu # no-select yes
 zstyle ':completion::complete:*' verbose yes
 zstyle ':completion::complete:*' file-sort modification reverse follow
-# zstyle ':completion::complete:*' list-colors ${(s.:.)LS_COLORS}
 # Place every tag in the same-named group.
 zstyle ':completion::complete:*' group-name ''
-zstyle ':completion::complete:*' list-colors ${(s.:.)$(eval ${$(env "TERM=$TERM.colors" dircolors -b $dircolors_gen)//empty}; <<<$LS_COLORS)}
+
+eval ${${$(<~/.cache/zsh/dir_colors-$TERM.colors)//LS_COLORS/LS_COLORS_ONLY}//empty}
+zstyle ':completion::complete:*' list-colors ${(s.:.)LS_COLORS_ONLY}
+unset LS_COLORS_ONLY
+
 # Complete files only once per line.
 zstyle ':completion::complete:*:other-files' ignore-line other
 zstyle ':completion::complete:*:directories' ignore-line other
@@ -58,8 +77,6 @@ zstyle ':completion::*' insert-tab false
 # zstyle ':completion::complete:e:*' menu select
 zstyle ':completion::complete:(mp|mpv):*' ignored-patterns '*.aria2' '(#i)**/*sample*' '*.(txt|nfo)'
 zstyle ':completion::complete:e:*' ignored-patterns '*.(o|d|out)'
-
-unset dircolors
 
 zstyle ':completion::complete:*' list-dirs-first true
 zstyle ':completion::complete:(cat|cp|rm|nvim):*' file-patterns \
