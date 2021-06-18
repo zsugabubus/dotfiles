@@ -76,12 +76,13 @@ Ciao hi clear
 execute "Ciao let colors_name = '".s:colors_name."'"
 Ciao if exists("syntax_on")|syntax reset|endif
 
-Hi Normal guifg=#2f323f|#eeede9 guibg=#eeeeee|#282935
+
+Hi Normal guifg=#2f323f|#eeede9 guibg=#eeeeee|#222432
 
 Hi Visual guibg=#accdfe|#5c4dbd gui=NONE
 Hi VisualNOS guifg=#d8d8dc
 Hi !StatusLine guifg=#313140|#f8ece8 guibg=#e8e8e8|#363a46 cterm=bold
-Hi !StatusLineNC guifg=#6e6e6e|#d8ccc8 guibg=StatusLine gui=NONE
+Hi !StatusLineNC guifg=#404040|#d8ccc8 guibg=StatusLine gui=NONE
 Hi !StatusLineTerm =Normal
 Hi !StatusLineTermNC =StatusLineTerm
 Hi !TabLine guifg=#444444|#f8fcf8 guibg=StatusLine gui=NONE
