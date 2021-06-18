@@ -1,7 +1,10 @@
 static char const BLOCK_SEP[] = " ";
 static char const GROUP_SEP[] = /* " \xe2\x9d\x98 " */ "\n\e[K";
 
-#define NAMED_DIR(hash) "$(zsh -c '. $ZDOTDIR/hashes.zsh;print " hash "')"
+#define NAMED_DIR(hash) "$(zsh -c '. $ZDOTDIR/??""-hashes.zsh;print "hash"')"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 static Block BLOCKS[] =
 {
@@ -14,16 +17,17 @@ static Block BLOCKS[] =
 	{ 2, block_datetime, NULL, " %a, %_d %b \e[1m%H∶%M\e[m" },
 
 	{ 3, block_alsa, "default,Master", ANSI_RGB(26, 83, 159, "%P%i%d (%p)") },
-	{ 3, block_alsa, "default,Digital", ANSI_RGB(26, 83, 159, "%C%i%p") },
+	{ 3, block_alsa, "default,Capture", ANSI_RGB(26, 83, 159, "%C%i%p") },
 
 	{ 4, block_cpu, "", ANSI_RGB(234, 15, 72, " " ANSI_BOLD("%p")) },
+	{ 4, block_read, "/sys/devices/system/cpu/intel_pstate/max_perf_pct", ANSI_RGB(234, 15, 72, "/ %l%%"), .interval = 60 },
 	{ 4, block_memory, NULL, ANSI_RGB(234, 85, 34, " %u/%t (" ANSI_BOLD("%p") ")") },
 
-	{ 5, block_fs, NAMED_DIR("~S"), "%i%n: %r%a" },
-	{ 5, block_fs, NAMED_DIR("~N"), "%i%n: %r%a" },
-	{ 5, block_fs, NAMED_DIR("~m"), "%i%n: %r%a" },
-	{ 5, block_fs, NAMED_DIR("~e/silicon"), "%i%n: %r%a" },
-	{ 5, block_fs, NAMED_DIR("~e/archive"), "%i%n: %r%a" },
+	{ 5, block_fs, NAMED_DIR("~S"), "%i%n: %r%a", .interval = 30 },
+	{ 5, block_fs, NAMED_DIR("~N"), "%i%n: %r%a", .interval = 30 },
+	{ 5, block_fs, NAMED_DIR("~m"), "%i%n: %r%a", .interval = 10 },
+	{ 5, block_fs, NAMED_DIR("~e/silicon"), "%i%n: %r%a", .interval = 30 },
+	{ 5, block_fs, NAMED_DIR("~e/archive"), "%i%n: %r%a", .interval = 30 },
 
 /* #define NET_UP_FORMAT ANSI_RGB(92, 169, 58, "%U%i%a  %R @ " ANSI_BOLD ("%r") "  %T @ " ANSI_BOLD("%t")) \ */
 #define NET_UP_FORMAT "%U%i%a  %R @ \e[1;38;5;34m%r\e[m  %T @ \e[1;38;5;33m%t\e[m" \
@@ -35,6 +39,8 @@ static Block BLOCKS[] =
 
 	{ 7, block_uptime, NULL, "♥ %t" },
 };
+
+#pragma GCC diagnostic pop
 
 #undef NAMED_DIR
 
