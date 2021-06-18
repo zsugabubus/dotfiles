@@ -398,15 +398,7 @@ augroup vimrc_git
 	autocmd!
 
 	let s:git = {}
-	autocmd ShellCmdPost,TermLeave,VimResume * let s:git = {}
-
-	" Alsa reset cache when away for a longer time.
-	autocmd FocusLost * let s:git_last_focused = localtime()
-	autocmd FocusGained *
-		\ if localtime() - s:git_last_focused > 5 * 60|
-		\   let s:git = {}|
-		\ endif|
-		\ unlet s:git_last_focused
+	autocmd ShellCmdPost,FileChangedShellPost,TermLeave,VimResume * let s:git = {}
 
 	autocmd BufReadCmd git://* ++nested
 		\ call s:git_pager([
@@ -414,7 +406,7 @@ augroup vimrc_git
 		\   '--compact-summary',
 		\   '--patch',
 		\   '--format=format:commit %H%nparent %P%ntree %T%nref: %D%nAuthor: %aN <%aE>%nDate:   %aD%nCommit: %cN <%cE>%n%n    %s%n%-b%n',
-		\   matchstr(expand("<amatch>"), '\v://\zs[^:/]*%(:.*)?')
+		\   matchstr(expand("<amatch>"), '\v://\zs[^:]*%(:.*)?')
 		\ ])
 
 	" Highlight conflict markers.

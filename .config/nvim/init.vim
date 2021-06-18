@@ -489,7 +489,7 @@ augroup vimrc_japan
 		\   call matchdelete(w:japan)|
 		\   unlet w:japan|
 		\ endif|
-		\ if &buftype ==# '' && !&readonly && &modifiable && index(['', 'text', 'git', 'gitcommit', 'markdown', 'mail', 'diff'], &filetype) ==# -1 |
+		\ if &buftype ==# '' && !&readonly && &modifiable && &filetype !~# '\v^(|text|markdown|mail)$|git|diff|log' |
 		\   let w:japan = matchadd('ExtraWhitespace', '\v +\t+|\s+%#@!$', 10)|
 		\ endif
 augroup END
@@ -498,7 +498,7 @@ cnoreabbrev <expr> man getcmdtype() == ':' && getcmdpos() == 4 ? 'Man' : 'man'
 command! -bar -bang -nargs=+ ManKeyword
 	\ try|
 	\   silent execute 'Man '.join([<f-args>][:-2], ' ')|
-	\   silent keeppattern execute 'normal! /^\v {7}\zs<\V'.escape([<f-args>][-1], '\')."\\>\<CR>"|
+	\   silent keeppattern execute 'normal! /^\v {3,}\zs<\V'.escape([<f-args>][-1], '\')."\\>\<CR>"|
 	\ catch|
 	\   execute 'Man<bang> '.[<f-args>][-1]|
 	\ finally|
@@ -587,8 +587,14 @@ augroup vimrc_skeletons
 	autocmd! BufNewFile * autocmd FileType <buffer> ++once
 		\ if 0 == changenr()|
 		\   call setline(1, get({
-		\     'c':   ['#include <stdio.h>', '#include <stdlib.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
-		\     'cpp': ['#include <stdio.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
+		\     'c': expand('<afile>') =~# 'main\.c$'
+		\            ? ['#include <stdio.h>', '#include <stdlib.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}']
+		\        : expand('<afile>') =~# '.h$'
+		\            ? ['#ifndef ']
+		\            : ['#include "'.matchstr(expand('<afile>'), '[^/]*\ze\.c$').'.h"', ''],
+		\     'cpp': expand('<afile>') =~# '.h$'
+		\              ? ['#ifndef ']
+		\              : ['#include <stdio.h>', '', 'int', 'main(int argc, char *argv[])', '{', "\tprintf(\"\");", '}'],
 		\     'html': ['<!DOCTYPE html>', '<html>', '<head>', '<meta charset=UTF-8>', '<title>Page Title</title>', '</head>', '<body>', "\t<h1>This is a Heading</h1>", '</body>', '</html>'],
 		\     'php': ['<?php'],
 		\     'sh': ['#!/bin/sh', ''],
@@ -604,7 +610,7 @@ augroup vimrc_filetypes
 	autocmd!
 	autocmd FileType man
 		\ for s:bookmark in split('sSYNOPSIS i#include dDESCRIPTION r^RETURN<bar>^EXIT eERRORS xEXAMPLES eSEE', ' ')|
-		\   execute "nnoremap <silent><buffer><nowait> g".s:bookmark[0]." :call search('\\v".s:bookmark[1:]."', 'w')<bar>normal! zt<CR>"|
+		\   execute "nnoremap <silent><buffer><nowait> g".s:bookmark[0]." :call cursor(1, 1)<bar>call search('\\v".s:bookmark[1:]."', 'W')<bar>normal! zt<CR>"|
 		\ endfor
 
 	autocmd FileType vim
@@ -614,7 +620,8 @@ augroup vimrc_filetypes
 		\ setlocal keywordprg=:ManKeyword\ 1\ mbsync
 
 	autocmd FileType tmux
-		\ setlocal keywordprg=:ManKeyword\ 1\ tmux
+		\ setlocal keywordprg=:ManKeyword\ 1\ tmux|
+		\ setlocal iskeyword+=-
 
 	autocmd FileType muttrc,neomuttrc
 		\ setlocal ts=4 et keywordprg=:ManKeyword\ 5\ neomuttrc
@@ -713,7 +720,7 @@ augroup vimrc_filetypes
 augroup END
 
 augroup vimrc_reload
-	autocmd! BufWritePost colors/*.vim ++nested let &background=&background
+	autocmd! BufWritePost *colors/*.vim ++nested let &background=&background
 	autocmd! BufWritePost init.vim,vimrc ++nested source <afile>
 augroup END
 
@@ -780,7 +787,7 @@ cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'GREP' : 'gr'
 cnoreabbrev <expr> grh getcmdtype() == ':' && getcmdpos() == 4 ? "GREP -g '*.h'" : 'grh'
 cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
 command! -nargs=* GREP call feedkeys("\<CR>", "nt")|execute 'grep -g !check -g !docs -g !test -g !build -g !tests' substitute(<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>, 1), '<bar>', '\\<bar>', 'g')
-xnoremap // y:GREP -F <C-r>=fnameescape(@")<CR><CR>
+xnoremap // y:GREP -F '<C-r>=@"<CR>'<CR>
 nnoremap /. /\V.
 
 nnoremap g<C-f> :find <C-r><C-w><C-z><CR>
@@ -842,7 +849,7 @@ augroup vimrc_newfilemagic
 augroup END
 
 function! s:normal_star(wordbounds) abort
-	let m = matchlist(getline('.'), '\v(\w*)%'.col('.').'c(\w+)|%'.col('.').'c\W+(\w+)')
+	let m = matchlist(getline('.'), '\v(\k*)%'.col('.').'c(\k+)|%'.col('.').'c[^[:keyword:]]*(\k+)')
 	if empty(m)
 		echohl Error
 		echo 'No string under cursor.'
@@ -866,17 +873,23 @@ xnoremap <expr> #  'y/<C-r>='."'\\V\\<'.escape(@\", '\\/').'\\>'\<CR>".'/e<CR>'
 xnoremap <expr> g* 'y/<C-r>='."'\\V'.escape(@\", '\\/')\<CR>".'/e<CR>'
 xnoremap <expr> g# 'y?<C-r>='."'\\V'.escape(@\", '\\?')\<CR>".'?e<CR>'
 
-function! s:goto_function() abort
+function! s:goto_def(type) abort
 	let what = expand('<cword>')
 	if empty(what)
 		return
 	endif
-	let pattern = get({
-		\  'php': 'function\s+\b\0\b'
-		\}, &filetype, '\0')
-	execute 'GREP' shellescape(substitute(pattern, '\\0', what, '')) '-m1'
+	let [lpat, rpat, arg] = get(get({
+		\  'php': #{ f: ['function\s+\b', '\b', "-tphp -m1"] },
+		\  'c': #{
+		\    f: ['^([a-zA-Z0-9_/$*]+[ \t]+)*\b', '\b', "-tc -m2"],
+		\    s: ['^(struct.*|typedef.*|^\} *)\b', '\b', "-tc -m2"],
+		\    d: ['^# *define +\b', '\b', "-tc -m2"]
+		\  }
+		\}, &filetype, {}), a:type, ['', '', ''])
+	execute 'GREP' shellescape(lpat.what.rpat, 1) arg
 endfunction
-nnoremap <silent> g?f :call <SID>goto_function()<CR>
+
+nnoremap <silent> g? :call <SID>goto_def(nr2char(getchar()))<CR>
 
 nnoremap ! :ls<CR>:b<Space>
 nnoremap g/ :echo glob('*')<CR>:find *
@@ -952,6 +965,34 @@ augroup vimrc_autodiffoff
 		\ endif
 augroup END
 
+augroup vimrc_cmdmagic
+	autocmd!
+	function! s:cmd_magic()
+		if v:event.cmdtype !=# ':' ||
+		\  v:event.abort ||
+		\  v:event.cmdlevel !=# 1
+			return
+		endif
+		echoe v:event
+		let cmdline = getcmdline()
+		if cmdline =~# '\v^b%[uffer]>'
+			let v:event.abort = 0
+			let v:errmsg = ''
+			" echoe cmdline
+			" execute cmdline
+			if v:errmsg =~# '^E93' " More than one match for...
+				call timer_start(0, {-> feedkeys(':'.cmdline.nr2char(&wildcharm), 'in')})
+			elseif v:errmsg =~# '^E94' " No matching buffer for...
+				call timer_start(0, {-> feedkeys(':e '.matchstr(cmdline, ' \zs.*').nr2char(&wildcharm), 'in')})
+			elseif !empty(v:errmsg)
+				echoe v:errmsg
+			endif
+		endif
+	endfunction
+	autocmd CmdlineLeave : call s:cmd_magic()
+	autocmd!
+augroup END
+
 Source statusline.vim
 
 let s:matchcolors = ['DiffAdd', 'DiffDelete', 'DiffChange']
@@ -1025,7 +1066,7 @@ let commentr_uncomment_map = ''
 nmap gcD gcdO
 nmap gcM gcmO
 
-function! s:magic_paste_reindent(nlines, def_indent) abort
+function! s:magic_paste_reindent(nlines, cur_indent) abort
 	let v:lnum = nextnonblank('.')
 	if !empty(&indentexpr)
 		let save_cursor = getcurpos()
@@ -1038,7 +1079,7 @@ function! s:magic_paste_reindent(nlines, def_indent) abort
 	endif
 
 	if indent <=# 0
-		let indent = a:def_indent
+		let indent = a:cur_indent
 	endif
 
 	let indent = (indent - indent(v:lnum)) / shiftwidth()
@@ -1054,7 +1095,11 @@ function! s:magic_paste(p) abort
 	endif
 
 	let reg = getreg(v:register)
-	return a:p.':call '.matchstr(expand('<sfile>'), '<SNR>.*').'_reindent('.(len(split(reg, "\n", 1)) - (getregtype(v:register) ==# 'V')).','.indent('.').")\<CR>"
+	let cur_indent = indent('.')
+	if cur_indent <=# 0
+		let cur_indent = indent(call(a:p ==# 'p' ? 'prevnonblank' : 'nextnonblank', ['.']))
+	endif
+	return a:p.':call '.matchstr(expand('<sfile>'), '<SNR>.*').'_reindent('.(len(split(reg, "\n", 1)) - (getregtype(v:register) ==# 'V')).','.cur_indent.")\<CR>"
 endfunction
 
 nnoremap <silent><expr> p <SID>magic_paste('p')
@@ -1138,7 +1183,7 @@ function! s:cmagic_tilde() abort
 
 	if &shell =~# 'zsh'
 		let cmd = join([
-			\  '. $ZDOTDIR/hashes.zsh',
+			\  '. $ZDOTDIR/??-hashes.zsh',
 			\  'eval text=%s',
 			\  'unhash -dm \*',
 			\  'print -D -- $text'
