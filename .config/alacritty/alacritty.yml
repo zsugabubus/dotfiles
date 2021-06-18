@@ -78,6 +78,15 @@ colors:
     cyan:    '0x26c6da'
     white:   '0xfefeff'
 
+hints:
+  enabled:
+    - regex: ""
+      command: None
+      mouse:
+        enabled: false
+        mods: None
+  launcher: None
+
 # Mouse bindings
 #
 # Available fields:
@@ -107,9 +116,6 @@ mouse:
 
   # If this is `true`, the cursor is temporarily hidden when typing.
   hide_when_typing: true
-
-  url:
-    launcher: None
 
 selection:
   semantic_escape_chars: ",│`|:\"' ()[]{}<>"
