@@ -19,7 +19,7 @@ static Block BLOCKS[] =
 	{ 3, block_alsa, "default,Master", ANSI_RGB(26, 83, 159, "%P%i%d (%p)") },
 	{ 3, block_alsa, "default,Capture", ANSI_RGB(26, 83, 159, "%C%i%p") },
 
-	{ 4, block_cpu, "", ANSI_RGB(234, 15, 72, " " ANSI_BOLD("%p")) },
+	{ 4, block_cpu, "", ANSI_RGB(234, 15, 72, " " ANSI_BOLD("%p")), .interval = 4 },
 	{ 4, block_read, "/sys/devices/system/cpu/intel_pstate/max_perf_pct", ANSI_RGB(234, 15, 72, "/ %l%%"), .interval = 60 },
 	{ 4, block_memory, NULL, ANSI_RGB(234, 85, 34, " %u/%t (" ANSI_BOLD("%p") ")") },
 
@@ -38,6 +38,13 @@ static Block BLOCKS[] =
 #undef NET_UP_FORMAT
 
 	{ 7, block_uptime, NULL, "♥ %t" },
+
+	{ 8, block_sensor, "hwmon3/fan1", "%Z\xef\x9c\x8f %i", .interval = 8 },
+
+	{ 9, block_text, NULL, "" },
+	{ 9, block_text, NULL, "" },
+	{ 9, block_sensor, "hwmon4/temp1", "%i", .interval = 8 },
+
 };
 
 #pragma GCC diagnostic pop
