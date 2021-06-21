@@ -34,13 +34,13 @@ fi
 
 if [[ ! ~/.dir_colors -ot ~/.cache/zsh/dir_colors ]]; then
 	awk -f ~/.config/zsh/dircolors.awk ~/.dir_colors >~/.cache/zsh/dir_colors
-	rm ~/.cache/zsh/dir_colors-* -i
+	rm -f ~/.cache/zsh/dir_colors-*(N)
 fi
 
 local type
 for type ('' .icons .colors); do
 	if [[ ! -f ~/.cache/zsh/dir_colors-$TERM$type ]]; then
-		TERM=$TERM$type dircolors -b ~/.cache/zsh/dir_colors >~/.cache/zsh/dir_colors-$TERM$type
+		TERM=$TERM$type dircolors -b ~/.cache/zsh/dir_colors >~/.cache/zsh/dir_colors-$TERM$type 2>/dev/null
 	fi
 done
 
