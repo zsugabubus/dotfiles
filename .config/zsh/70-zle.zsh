@@ -110,7 +110,7 @@ function self-insert() {
 		zle list-choices
 	fi
 }
-zle -N self-insert
+# zle -N self-insert
 
 function expand-or-complete-or-list-files() {
 	if [[ $#BUFFER == 0 ]]; then
