@@ -9,6 +9,9 @@
 	ap = a --patch
 	au = a --update
 
+	a3 = apply --3way
+	arej = apply --reject
+
 	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:50)%(refname:short)%(color:bold normal)%(push:trackshort)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)%(color:reset) %(color:nobold dim white)%(push:short)'
 	br = b -r
 
@@ -33,6 +36,9 @@
 
 	sh = show
 
+	sl = stash list
+	sp = sl -p
+
 	l = log --date-order --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	log-vim = l
 	la = l --all --full-history
@@ -40,7 +46,7 @@
 	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
 	lp = ll --patch
 	lm = l --no-merges
-	lt = l --stat
+	ls = l --stat
 	lmp = lm --patch
 
 	m = merge
@@ -49,7 +55,12 @@
 	mt = mergetool
 
 	rb = rebase
+	re = rb --edit-todo
 	ri = rb --interactive
+	rim = ri master
+	riom = ri origin/master
+	rbm = rb master
+	rbom = rb origin/master
 	rc = rb --continue
 
 	pl = pull
@@ -98,7 +109,7 @@
 	cmd = nvim -d "$MERGED" "$BASE" "$LOCAL" "$REMOTE" +"wincmd J"
 
 [rebase]
-	missingCommitsCheck = warn
+	missingCommitsCheck = error
 	instructionFormat = "%s (%an)"
 	autosquash = true
 
