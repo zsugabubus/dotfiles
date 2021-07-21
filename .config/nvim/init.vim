@@ -1183,6 +1183,7 @@ function! s:cmagic_tilde() abort
 
 	if &shell =~# 'zsh'
 		let cmd = join([
+			\  'set -eu',
 			\  '. $ZDOTDIR/??-hashes.zsh',
 			\  'eval text=%s',
 			\  'unhash -dm \*',
