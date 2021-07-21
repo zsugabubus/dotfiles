@@ -2,7 +2,7 @@
 Description=Keep %I spinning
 
 [Timer]
-OnCalendar=*:0/15
+OnCalendar=*:0/20
 
 [Install]
 WantedBy=default.target
