@@ -10,10 +10,10 @@ map	<C-e>	scroll down
 map	<C-i>	zoom in
 map	<C-o>	zoom out
 
-map	1	set "pages-per-row 1"
-map	2	set "pages-per-row 2"
-map	3	set "pages-per-row 3"
-map	4	set "pages-per-row 4"
+map	S	set "pages-per-row 1"
+map	D	set "pages-per-row 2"
+map	T	set "pages-per-row 3"
+map	Q	set "pages-per-row 4"
 
 map	u	scroll half-up
 map	d	scroll half-down
