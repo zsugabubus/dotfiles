@@ -10,3 +10,5 @@ none
 !po
 -g
 !tags
+--max-columns
+10000
