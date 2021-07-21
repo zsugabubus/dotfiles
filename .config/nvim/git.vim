@@ -406,7 +406,7 @@ augroup vimrc_git
 		\   '--compact-summary',
 		\   '--patch',
 		\   '--format=format:commit %H%nparent %P%ntree %T%nref: %D%nAuthor: %aN <%aE>%nDate:   %aD%nCommit: %cN <%cE>%n%n    %s%n%-b%n',
-		\   matchstr(expand("<amatch>"), '\v://\zs[^:]*%(:.*)?')
+		\   matchstr(expand("<amatch>"), '\v://\zs[^:/]*%(:.*)?')
 		\ ])
 
 	" Highlight conflict markers.
