@@ -133,7 +133,7 @@ alias node='NODE_REPL_HISTORY= node'
 
 alias diff='diff --color=auto'
 alias sf='() { local f=/tmp/strace; strace -fo $f $@ && $EDITOR $f; }'
-alias gccc='gcc -O2 -Wall -Wextra -march=native -std=c11 -g -ldl main.c && time ./a.out'
+alias gccc='gcc -O2 -Wall -Wextra -pthread -march=native -std=c11 -g -ldl main.c && time ./a.out'
 alias gccd='() { gcc -O0 -march=native -std=c11 -g -ldl main.c $* && gdb ./a.out -ex run; }'
 alias df='df -h'
 alias grep='grep --color=auto'
@@ -179,7 +179,7 @@ function fkill() {
 		xargs -r kill -${1:-9}
 }
 alias pot='ps uxf'
-alias orig='() { cp -- $1 $1.orig; }'
+alias cporig='() { cp -- $1 $1.orig; }'
 alias difforig='() { diff ${1%%.orig}.orig ${1%%.orig} }'
 compdef '_files -g "*.orig"' difforig
 alias iftop='sudo -E iftop'
@@ -387,7 +387,8 @@ function rabbit() {
 	done
 }
 
-alias t='tmux attach'
+alias t='exec tmux attach'
+alias tn='() { exec tmux new -s "$(basename "$(realpath .)")"}'
 
 function br() {
 	bwrap \
