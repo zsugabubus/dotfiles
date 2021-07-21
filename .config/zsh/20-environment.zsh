@@ -24,3 +24,6 @@ export DIFFPROG=$EDITOR' -d'
 export FZF_DEFAULT_OPTS='--tiebreak=end --layout=reverse --no-mouse --no-multi --hscroll-off=13'
 
 export GPG_TTY=$TTY
+
+export CARGO_HOME=~N/rust
+export RUSTUP_HOME=$CARGO_HOME
