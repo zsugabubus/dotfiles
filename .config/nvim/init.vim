@@ -1070,8 +1070,20 @@ function! s:magic_paste_reindent(nlines, cur_indent) abort
 	let v:lnum = nextnonblank('.')
 	if !empty(&indentexpr)
 		let save_cursor = getcurpos()
-		sandbox let indent = eval(&indentexpr)
-		call setpos('.', save_cursor)
+		" meson.vim is fucked like hell.
+		"
+		" We need silent! because some brainfucked people put echom inside
+		" indentexptr and someone other reviewed it and thought its okay.
+		"
+		" try...catch also needed just because. Why not? meson.vim shits into the
+		" fan, but forgets catching it.
+		try
+			silent! sandbox let indent = eval(&indentexpr)
+		catch
+			let indent = 0
+		finally
+			call setpos('.', save_cursor)
+		endtry
 	elseif &cindent
 		let indent = cindent(v:lnum)
 	else
