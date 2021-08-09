@@ -17,7 +17,8 @@ function on_change()
 		end
 
 		entry.string = entry.filename
-			:gsub('[.,;&_ ()[\135{}/-]', '')
+			:gsub('^.*/', '')
+			:gsub('[.,;&_ ()[\135{}-]', '')
 			:gsub('^[0-9]+', '')
 			:lower()
 	end
