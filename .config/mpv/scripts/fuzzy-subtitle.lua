@@ -1,4 +1,5 @@
 local utils = require 'mp.utils'
+local tmp_file = (os.getenv('TMPDIR') or '/tmp')..'/'..mp.get_script_name()
 
 mp.register_event('start-file', function()
 	local filename = mp.get_property('path')
@@ -40,8 +41,24 @@ end
 function walk(path, pats)
 	for i,file in pairs(utils.readdir(path, 'files') or {}) do
 		for i,pattern in pairs(pats) do
+
 			if file:find(pattern) ~= nil then
+				local gen = file:find('%.txt$') ~= nil
+				if gen then
+					local f = io.open(file, "r")
+					file = tmp_file..'.lrc'
+					local t = io.open(file, "w")
+					t:write('[0:0.0] ')
+					t:write(f:read("*all"))
+					f:close()
+					t:close()
+				end
+
 				mp.commandv('sub-add', file)
+
+				if gen then
+					os.remove(file)
+				end
 			end
 		end
 	end
