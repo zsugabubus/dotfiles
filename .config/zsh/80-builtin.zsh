@@ -9,7 +9,7 @@ function precmd() {
 
 function chpwd() {
 	dirs -v
-	lt -I '*.aria2' -I '*.torrent'
+	lt
 }
 
 function command_not_found_handler() {

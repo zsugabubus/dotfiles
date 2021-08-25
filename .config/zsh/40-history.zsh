@@ -20,16 +20,20 @@ unsetopt hist_beep
 
 function zshaddhistory() {
 	emulate -L zsh
-	# ! $PWD/ =~ ^${:-~m}/ &&
-	case ${${(z)1}[1]} in
-	e)
-		# Explicit save history.
-		return 0 ;;
-	zathura|man|kill|pkill|chmod|chattr|rm|rmdir|rd|mkdir|fd|mv[ve]|rmm|cpp|lnn|md|ls|lt)
-		# Saved on the internal history only.
-		return 2 ;;
-	ab|abduco|tmux|?|where|publish|poweroff|reboot|exit|spek)
-		# Do not save at all.
+
+	# 0: Remember.
+	# 1: Forget immediately.
+	# 2: Internal history only.
+
+	case ${words[1]} in
+	man|rm|poweroff|reboot|exit|where)
 		return 1 ;;
+	zathura)
+		return 2 ;;
 	esac
+
+	local words=${(z)1}
+	if [[ ${#words} = 1 && ${#words[0]} -le 5 ]]; then
+		return 2;
+	fi
 }

@@ -37,16 +37,28 @@ function mo() {
 	{ read -srq "?mount $dev /mnt? [Y/n]" } always { print } && sudo mount $dev /mnt
 }
 alias hh='HOME=$PWD'
+alias ht='HOME=${TMPDIR:-/tmp}'
 alias gcd='cd -- "$(git rev-parse --show-toplevel)"'
 alias vv='vlock -a'
 alias configure_make='./configure && make'
 alias make_install='() { for prefix in "" sudo; do $prefix make PREFIX=/usr prefix=/usr install && break; done }'
+alias meson_install='() {
+	buildtype=$(meson configure | awk "\$1 == \"buildtype\" {print \$2}") &&
+	meson configure build -Dbuildtype=release &&
+	meson compile -C build &&
+	sudo meson install -C ${1:-build} &&
+	meson configure build -Dbuildtype=$buildtype &&
+}'
+alias meson_buildtype='() {  ${${${1:-d}/d/debug}/r/release} }'
 alias make='nice -n15 make -j2'
+alias info='info --vi-keys'
+alias info_all='() { info --subnodes $@ }'
 alias h=man
 alias ls='ls -ohtrF --group-directories-first --color=tty --quoting-style=literal'
 alias l=ls
 alias ll='ls -vl'
 alias lt='\ls -ohtrF --color=tty --quoting-style=literal'
+alias lss='ls *(.Lm-2)'
 alias la='ll -A'
 alias lc='ll -CA'
 alias pkill='pkill -x'
@@ -200,7 +212,7 @@ alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
 alias www='() { if [[ 1 == $# ]]; then www $1; else www - : -- tar -cf - $*; fi } '
 alias timer='() { ( sleep ${1:-5m} && ~/doc/cuckoo-clock.mp3 ) &! }'
-alias gdbrun='() { local file=$1; shift; gdb -quiet $file -ex "run "${(jj j)${(qq)*}}; }'
+alias gdbrun='() { local file=$1; shift; gdb -quiet $file -ex "set confirm off" -ex "handle SIG32 noprint nostop" -ex "run "${(jj j)${(qq)*}}; }'
 autoload -U zmv
 alias cpp='noglob __zmv -C'
 alias lnn='noglob __zmv -L'
@@ -277,7 +289,7 @@ ZCALC_AUTO_INSERT_PREFIX=ans
 zcalc -f }'
 alias cal='cal -m'
 alias oct='od -tu1'
-alias rm='rm -d -I --one-file-system'
+alias rm='rm -vdI --one-file-system'
 alias rmdir='() {
 	if (($# > 0)); then
 		rmdir $@
@@ -335,18 +347,12 @@ function _check_user_files() {
 		print -rP "%F{yellow}%Bwarning:%f%b ~m is not empty."
 		tree -C ~m | less
 	fi
-	if pgrep -ax abduco &>/dev/null; then
-		print -rP "%F{red}%Berror:%f%b abduco is running."
-		return 1
-	fi
-	if pgrep -ax nvim &>/dev/null; then
-		print -rP "%F{red}%Berror:%f%b nvim is running."
-		return 1
-	fi
-	if pgrep -ax firefox &>/dev/null; then
-		print -rP "%F{red}%Berror:%f%b firefox is running."
-		return 1
-	fi
+	for prog in in abduco tmux nvim firefox; do
+		if pgrep -ax $prog &>/dev/null; then
+			print -rP "%F{red}%Berror:%f%b $prog is running"
+			return 1
+		fi
+	done
 	if ! { sync && sync }; then
 		print -rP "%F{red}%Berror:%f%b sync failed."
 		return 1
@@ -386,6 +392,8 @@ function rabbit() {
 	do
 	done
 }
+
+alias dn='DOTNET_CLI_TELEMETRY_OPTOUT=1 ht dotnet'
 
 alias t='exec tmux attach'
 alias tn='() { exec tmux new -s "$(basename "$(realpath .)")"}'
