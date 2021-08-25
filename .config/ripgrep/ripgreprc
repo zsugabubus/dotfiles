@@ -1,7 +1,4 @@
 --smart-case
-# disable BOM detection
---encoding
-none
 -g
 !node_modules
 -g
@@ -10,5 +7,9 @@ none
 !po
 -g
 !tags
+-g
+!dist
+-g
+!build
 --max-columns
 10000
