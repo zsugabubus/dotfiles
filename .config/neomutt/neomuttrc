@@ -105,7 +105,7 @@ set use_from
 # color status color242 color31       ' Σ(.*)' 1
 
 # set index_format='%4C [%Z] %<[y?%<[m?%<[d?%[ %H:%M]&%[%a %d]>&%[%b %d]>&%[ %m/%y]> %-23.23L %s%> %<M?%M  &%<l?%l&%c>>'
-set index_format="%zs%zc%zt %<[y?%<[m?%<[4d?%<[3d?%<[2d?%<[d?%[ %H∶%M]&%[Ytd %H]>&%[2 days]>&%[3 days]>&%[%a %d]>&%[%b %d]>&%[%y %b]> · %-28.28L %<M?(%2M)&%<X?&·>> %s %g %J"
+set index_format="%zs%zc%zt %<[y?%<[m?%<[4d?%<[3d?%<[2d?%<[d?%[ %H∶%M]&%[Ytd %H]>&%[2 days]>&%[3 days]>&%[%a %d]>&%[%b %d]>&%[%y %b]> · %-22.22L %<M?(%2M)&%<X?&·>> %s %g %J"
 set pager_format=" %n%zc  %T %s%*  %{!%a, %d %b %Y %H:%M %z} %<X?  %X > %P%<l?/%l &%c>  "
 set status_format=" %f%?r?%r ?  %m%?n?  %n?  %?d?  %d?%?t?  %t?%?F?  %F?%?p?   %p ? %* 料%s/%S  %P  "
 set vfolder_format=" %N %?n?%3n&   ?  %8m  · %f"
