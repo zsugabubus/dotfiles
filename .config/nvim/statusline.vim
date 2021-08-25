@@ -68,7 +68,7 @@ augroup vimrc_statusline
 		\ endif
 
 	autocmd WinLeave,FocusLost *
-		\ setlocal statusline=%n:%f%h%w%(\ %m%)|
+		\ setlocal statusline=%#StatusLineNC#%n:%f%h%w%(\ %m%)|
 		\ setlocal statusline+=%=|
 		\ setlocal statusline+=%l/%L:%-3v
 	autocmd VimEnter,WinEnter,BufWinEnter,FocusGained *

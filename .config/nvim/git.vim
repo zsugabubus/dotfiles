@@ -5,7 +5,7 @@ command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
 
 function! s:git_dir_complete(prefix, cmdline, pos) abort
 	let wd = Git().wd
-	return  map(filter(globpath(wd, a:prefix.'*', 1, 1), 'isdirectory(v:val)'), 'v:val['.len(wd).':]."/"')
+	return map(filter(globpath(wd, a:prefix.'*', 1, 1), 'isdirectory(v:val)'), 'v:val['.len(wd).':]."/"')
 endfunction
 
 for s:cd in ['cd', 'lcd', 'tcd']

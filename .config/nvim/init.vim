@@ -307,6 +307,7 @@ inoremap <expr> <C-j> line('.') ==# line('$') ? "\<C-O>o" : "\<Down>\<End>"
 
 command! -nargs=1 RegEdit let @<args>=input('"'.<q-args>.'=', @<args>)
 nnoremap d_ "_dd
+nnoremap <silent> dar :.argdelete<bar>argument<CR>
 
 nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), {_,nr-> nr2char(nr)}), {_,mark-> (getpos("'".mark)[1] ==# 0 ? mark : ' ')}), '').'"<CR>m'
 
@@ -367,10 +368,13 @@ augroup vimrc_errorformat
 	autocmd OptionSet makeprg call s:errorformat_make()
 augroup END
 
+command! Bell call writefile(["\x07"], '/dev/tty', 'b')
+
 function! s:make() abort
 	let start = strftime('%s')
 	echon "\U1f6a7  Building...  \U1f6a7"
 	make
+	Bell
 	redraw
 	let errors = 0
 	let warnings = 0
@@ -420,8 +424,8 @@ nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P_\", 'nt')\
 
 nnoremap <silent> <M-m> :call <SID>make()<CR>
 nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>execute 'terminal make run'<bar>endif<CR>
-nnoremap <silent> <M-l> :cnext<CR>:silent! normal! zOzz<CR>
-nnoremap <silent> <M-L> :cprev<CR>:silent! normal! zOzz<CR>
+nnoremap <silent> <M-l> :lnext<CR>:silent! normal! zOzz<CR>
+nnoremap <silent> <M-L> :lprev<CR>:silent! normal! zOzz<CR>
 nnoremap <silent> <M-n> :cnext<CR>:silent! normal! zOzz<CR>
 nnoremap <silent> <M-N> :cprev<CR>:silent! normal! zOzz<CR>
 nnoremap <silent> <M-f> :next<CR>
@@ -643,7 +647,7 @@ augroup vimrc_filetypes
 	autocmd FileType diff
 		\ nnoremap <expr> dd '-' == getline('.')[0] ? '0r ' : 'dd'
 
-	autocmd FileType html,php
+	autocmd FileType html,php,vue
 		\ setlocal equalprg=xmllint\ --encode\ UTF-8\ --html\ --nowrap\ --dropdtd\ --format\ -|
 		\ xnoremap <expr><buffer> s<<Space> mode() ==# 'V' ? 'c< <CR><C-r>"><Esc>' : 'c< <C-r>" ><Esc>'|
 		\ xnoremap <expr><buffer> sb mode() ==# 'V' ? 'c<lt>b><CR><C-r>"</b><Esc>' : 'c<lt>b><C-r>"</b><Esc>'|
@@ -666,7 +670,7 @@ augroup vimrc_filetypes
 	let php_sql_query = 1
 	let php_htmlInStrings = 1
 	let php_parent_error_close = 1
-	autocmd FileType vim,lua,javascript,yaml,css,stylus,xml,php,html,pug,gdb
+	autocmd FileType vim,lua,javascript,yaml,css,stylus,xml,php,html,pug,gdb,vue
 		\ setlocal ts=2
 
 	let c_gnu = 1
@@ -1221,7 +1225,7 @@ function! s:cmagic_tilde() abort
 	let cmdline = getcmdline()
 
 	" Only for file related operations.
-	if cmdline !~# '\v^%(e%[dit]|w%[rite]|[lt]?cd)>'
+	if cmdline !~# '\v^%(e%[dit]|r%[ead]|w%[rite]|[lt]?cd)>'
 		return '/'
 	endif
 
