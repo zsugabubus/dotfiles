@@ -1,9 +1,9 @@
 #!/bin/dash -eu
-cp "$2" "$2.orig"
-sed -i '/max-.*load-limit\|seed-ratio\|max-concurrent.*\|index-out/!d' "$2"
+sed <"$2" '/max-.*load-limit\|seed-ratio\|max-concurrent.*\|index-out/!d' | sort -u | sponge "$2"
+# cp "$2" "$2.orig"
 $EDITOR "$2"
-
-sort <"$2" | sponge "$2"
-sort <"$2.orig" | sponge "$2.orig"
-
-comm -2 -3 "$2" "$2.orig" | sponge "$2"
+# sort <"$2" | sponge "$2"
+# sort <"$2.orig" | sponge "$2.orig"
+#
+# comm -2 -3 "$2" "$2.orig" | sponge "$2"
+# $EDITOR "$2"
