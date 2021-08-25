@@ -17,7 +17,7 @@ static Block BLOCKS[] =
 	{ 2, block_datetime, NULL, " %a, %_d %b \e[1m%H∶%M\e[m" },
 
 	{ 3, block_alsa, "default,Master", ANSI_RGB(26, 83, 159, "%P%i%d (%p)") },
-	{ 3, block_alsa, "default,Capture", ANSI_RGB(26, 83, 159, "%C%i%p") },
+	{ 3, block_alsa, "default,Digital", ANSI_RGB(26, 83, 159, "%C%i%p") },
 
 	{ 4, block_cpu, "", ANSI_RGB(234, 15, 72, " " ANSI_BOLD("%p")), .interval = 4 },
 	{ 4, block_read, "/sys/devices/system/cpu/intel_pstate/max_perf_pct", ANSI_RGB(234, 15, 72, "/ %l%%"), .interval = 60 },
