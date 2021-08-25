@@ -1,118 +1,185 @@
-
 # Theme {{{1
 %if #{==:#{TERM},linux}
-set -g status-fg colour7
-set -g status-bg colour0
+set -g status-fg color7
+set -g status-bg color0
 
 set -g window-status-format "#I:#W#F"
-set -g window-status-current-style fg=colour15,bold
-set -g window-status-activity fg=colour1
+set -g window-status-current-style fg=color15,bold
+set -g window-status-activity fg=color1
 set -g window-status-separator ' '
 
-set -g message-command-style bg=colour0,fg=colour15
-set -g message-style bg=colour0,fg=colour15
-set -g mode-style bg=colour15,fg=colour0
+set -g message-command-style bg=color0,fg=color15
+set -g message-style bg=color0,fg=color15
+set -g mode-style bg=color15,fg=color0
 
-set -g pane-border-style bg=colour0,fg=colour7
-set -g pane-active-border-style bg=colour0,fg=colour15
+set -g pane-border-style bg=color0,fg=color7
+set -g pane-active-border-style bg=color0,fg=color15
 
-set -g display-panes-colour colour7
-set -g display-panes-active-colour colour15
+set -g display-panes-colour color7
+set -g display-panes-active-colour color15
 
-set -g clock-mode-colour colour7
+set -g clock-mode-colour color7
 %else
 source-file ~/.config/tmux/theme.conf
-%endif
 
-set -g clock-mode-style 24
-# 1}}}
+set -g status-left "[#S]"
+set -g status-right "%a, %b %d %R"
 
-set -g history-limit 20000
+# Really... making this fucking colon fucking optional is FUCKING IMPOSSIBLE.
+# WHY? THE FUCK? LITTLE SHITS. Why the fuck string interpolation is so fucking hard.
+set -g @window-status-format " #[fg=color245]#[default]#I#[fg=color245]:#[fg=default]#W#[fg=color245]:#[fg=default]#{?synchronize-panes,~,}#{?window_zoomed_flag,Z,}#{?window_marked_flag,M,}#{?monitor-activity,A,} "
+set -g window-status-format "#{E:@window-status-format}"
+set -g window-status-current-format "#{E:@window-status-format}"
 
-set -g display-time 0
-set -g repeat-time 418
+set -gF window-status-current-style 'bold,#{@highlight}'
+set -g window-status-activity-style bold,bg=color191,fg=color0
+set -g window-status-bell-style bold,fg=color196,bg=color221
+set -g window-status-separator ''
 
-set -g status-keys emacs
+set -g pane-border-style fg=color248
+set -g pane-border-format "#{pane_index} #W:#T"
+set -g pane-active-border fg=color220
+set -g pane-active-border-style '#{@highlight}'
 
-# Allow commands immediately following send-prefix.
-set -s escape-time 0
-
-set -g focus-events on
-
-set -g prefix 'C-t'
-
-bind C-t last-window
-bind t last-pane
-
-bind -r C-h resize-pane -L
-
-bind h select-pane -L
-bind j select-pane -D
-bind k select-pane -U
-bind l select-pane -R
-
-bind -r H resize-pane -L 5
-bind -r J resize-pane -D 3
-bind -r K resize-pane -U 3
-bind -r L resize-pane -R 5
-
-bind c new-window -c "#{pane_current_path}"
-bind C-m new-window -c "#{pane_current_path}"
-
-set-hook -g after-split-window[1] "select-layout tiled"
-set-hook -g window-layout-changed[2] 'set -wF pane-border-status "#{?#{==:#{window_panes},1},off,bottom}"'
-
-bind P set -w window-status-format " #I:#T " \; set -w window-status-current-format "#[bold] #I:#T "
-
-bind S display-panes -d 0 "swap-pane -t '%%'"
-
-bind | split-window -h -c "#{pane_current_path}"
-bind - split-window -v -c "#{pane_current_path}"
-
-# put useful info in the status bar
-set -g set-titles on
-set -g set-titles-string '#H:#S.#I.#P #W #T' # window number,program name, active(or not)
-
-# enable 256 colors mode - important if you want the solarized theme look
-# semi-decent in vim
-set -g default-terminal "$TERM"
-# Disable login shells.
-set -g default-command "$SHELL"
-
-# resize windows on larger screens - if off the size is capped to the smallest
-# screen size that has ever looked at it
-setw -g aggressive-resize on
-
-bind r source-file ~/.tmux.conf
-
-bind b set -g status
-
-set -g visual-bell on
-set -g bell-action other
-
-bind -r > swap-window -t +1
-bind -r < swap-window -t -1
-
-bind-key C-u copy-mode \; send-keys -X page-up
-
-bind-key -T copy-mode-vi Escape send-keys -X cancel
-
-bind / copy-mode \; send-key ?
-
-bind v copy-mode
-bind V capture-pane -S - \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
+set -g message-command-style bg=color254,fg=color250
+set -g message-style bg=color220,fg=color0
+set -g mode-style bg=color235,fg=color254
 
 set -g copy-mode-match-style bg=#fdef39
 set -g copy-mode-current-match-style bg=#fdef39
 
-# Cursor shape.
-set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q'
-# set -as terminal-overrides ',*:Smulx=\E[4::%p1%dm'
+%endif
+# 1}}}
+# Options {{{1
 
-# Enable RGB color.
-set-option -ga terminal-overrides ",*:Tc"
+set -g aggressive-resize on
+set -g bell-action other
+set -g clock-mode-style 24
+set -g default-command "$SHELL" # Disable login shells.
+set -g default-terminal "$TERM"
+set -g display-time 0
+set -g escape-time 0
+set -g focus-events on
+set -g history-limit 20000
+set -g prefix 'C-t'
+set -g renumber-windows on
+set -g repeat-time 418
+set -g set-titles on
+set -g set-titles-string '[#S]:#W #T'
+set -g status-interval 20
+set -g status-keys emacs
+set -g visual-bell on
+set -ga terminal-overrides ",*:Tc" # True color.
+set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q' # Cursor shape.
 
-bind '~' setw synchronize-panes \; display "synchronize-panes: #{?pane_synchronized,yes,no}"
-bind 'a' set monitor-activity \; display "monitor-activity: #{?monitor-activity,yes,no}"
+# 1}}}
+# Bindings {{{1
+unbind -a
+
+bind : command-prompt
+
+bind c new-window -a -t : -c "#{pane_current_path}"
+bind C-m new-window -a -t : -c "#{pane_current_path}"
+bind s split-window -c "#{pane_current_path}"
+bind C command-prompt -p '(new-session)' { new-session -s '%%' }
+
+bind C-p display-popup -E progress -M
+bind C-s display-popup -E ~/.config/heawm/quickstart
+
+bind t last-pane
+bind C-t last-window
+bind T switch-client -l
+
+bind $ command-prompt -I '#W' -p '(rename-session)' { rename-session -- '%%' }
+bind , command-prompt -I '#S' -p '(rename-window)' { rename-window -- '%%' }
+
+bind C-c display-menu -T 'Kill' \
+	'INT'  i { run { ~/.config/tmux/scripts/kill '#{pane_tty}' INT  } } \
+	'STOP' s { run { ~/.config/tmux/scripts/kill '#{pane_tty}' TSTP } } \
+	'TERM' t { run { ~/.config/tmux/scripts/kill '#{pane_tty}' TERM } } \
+	'CONT' c { run { ~/.config/tmux/scripts/kill '#{pane_tty}' CONT } } \
+	'KILL' K { run { ~/.config/tmux/scripts/kill '#{pane_tty}' KILL } } \
+
+bind -r h select-pane -L
+bind -r j select-pane -D
+bind -r k select-pane -U
+bind -r l select-pane -R
+
+bind -r H swap-pane -t '{left-of}'  \; select-pane -t '{left-of}'
+bind -r J swap-pane -t '{down-of}'  \; select-pane -t '{up-of}'
+bind -r K swap-pane -t '{up-of}'    \; select-pane -t '{down-of}'
+bind -r L swap-pane -t '{right-of}' \; select-pane -t '{right-of}'
+
+bind -r n next-window
+bind -r p previous-window
+bind '#' next-window -a
+
+bind f display-popup -E $SHELL -c ~/.config/tmux/scripts/find
+
+bind -r N swap-window -t :+1 \; next-window
+bind -r P swap-window -t :-1 \; previous-window
+
+bind -r ) switch-client -n
+bind -r ( switch-client -p
+
+bind ! display-menu -T 'Move' \
+	'swap pane'   'p' { display-panes -d 0 { swap-pane -t -- '%%' } } \
+	'break pane'  'b' { break-pane } \
+	'swap window' 'w' { command-prompt -1 -N -p 'swap-pane -t' { swap-pane -t ':=%%' ; select-pane -t ':=%%' } } \
+	'move'        'm' { command-prompt -T target { move-window -t '%%' } } \
+
+bind 0 select-window -t:=0
+bind 1 select-window -t:=1
+bind 2 select-window -t:=2
+bind 3 select-window -t:=3
+bind 4 select-window -t:=4
+bind 5 select-window -t:=5
+bind 6 select-window -t:=6
+bind 7 select-window -t:=7
+bind 8 select-window -t:=8
+bind 9 select-window -t:=9
+
+bind m select-pane -m
+bind z resize-pane -Z
+
+bind w choose-tree -Zs
+
+bind ' ' next-layout
+
+set-hook -g after-split-window[1] { select-layout tiled }
+set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{window_panes},1},off,bottom}' }
+
+bind W if -F '#{@title}' \
+             'set -wu @title   ; set -w window-status-format "#{E:@window-status-format}"' \
+             'set -w  @title 1 ; set -w window-status-format "#{E:@window-status-format}#T"' \;\
+       set -w window-status-current-format "#{E:window-status-format}"
+
+bind > send-keys -t home:muck C-m
+bind . send-keys -t home:muck c
+
+bind M if -F '#{!=:#{window_name},muck}' {
+	set -F @last_session "#{session_name}" ;
+	select-pane -m ;
+	attach-session -t home ;
+	select-window -t muck
+} {
+	run-shell "tmux switch-client -t #{@last_session}"
+}
+
+bind b set -g status
+
+bind r source-file ~/.tmux.conf
+
+bind -T copy-mode-vi Escape send-keys -X cancel
+
+bind C-u copy-mode \; send-keys -X page-up
+bind / copy-mode \; send-key ?
+bind v capture-pane -S - \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
+
+bind '~' set -w synchronize-panes
+bind a set -w monitor-activity \; if -F '#{monitor-activity}' 'last-window'
+
+bind d detach-client
+# 1}}}
 
 # vim: ft=tmux fdm=marker

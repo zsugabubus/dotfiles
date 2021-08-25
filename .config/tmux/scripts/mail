@@ -1,0 +1,6 @@
+#!/bin/dash
+# You piece of shit.
+case $(tmux list-windows -F '#{window_flags}' -f '#{==:#W,mail}' -t home) in
+*'[#!]'*)
+	echo ' !NEW MAIL! ' ;;
+esac

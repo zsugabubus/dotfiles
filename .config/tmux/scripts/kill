@@ -1,0 +1,3 @@
+#!/bin/dash -eu
+ps -o stat,pid -t "$1" |
+awk '/+/{system("kill -'"$2"' " $2)}'

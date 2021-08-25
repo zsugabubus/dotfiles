@@ -1,0 +1,9 @@
+#!/bin/dash -eu
+target=$(
+	tmux list-panes -a -F "$(printf '#{pane_id}\t#{session_name}:#{window_name}\t#{pane_title}')" |
+	column -t -s "$(printf '\t')" |
+	fzf --with-nth 2.. |
+	cut -d' ' -f1
+)
+test -n "$target"
+tmux switch-client -t "$target"
