@@ -1,10 +1,24 @@
-.gdb_history
-Session.vim
+# General build directory.
+/build
+
+# Generated files from the dark ages.
 *.o
 *.so
 *.d
-*.out
-.public_site
 
+# Vim :helptags.
+tags
+
+# Vim.
+/Session.vim
+
+# Git merge.
 *.orig
 *.rej
+
+# GDB.
+/.gdb_history
+
+# Miscellaneous.
+/.public_site
+*.patch
