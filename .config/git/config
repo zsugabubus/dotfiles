@@ -15,29 +15,30 @@
 	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:50)%(refname:short)%(color:bold normal)%(push:trackshort)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)%(color:reset) %(color:nobold dim white)%(push:short)'
 	br = b -r
 
-	c = commit --verbose
+	c = commit --allow-empty --verbose
 	cs = c --sign-off
-	cE = c --allow-empty
-	cN = cE --no-verify
-	ca = cE --amend --reset-author
-	cc = commit --verbose --edit -F .git/COMMIT_EDITMSG
+	cN = c --no-verify
+	ca = c --amend --reset-author
+	cc = c --edit -F .git/COMMIT_EDITMSG
 
 	co = checkout
 	co- = co @{-1}
+	co-- = co @{-2}
 	cop = co --patch
 	cob = co -b
+	com = co master
 
 	# Hehe.
 	cp = cherry-pick
 
 	d = diff
 	ds = diff --staged
-	di = d .
-
-	sh = show
 
 	sl = stash list
-	sp = sl -p
+	slp = sl -p
+	st = stash push
+	sp = stash pop
+	ss = sp
 
 	l = log --date-order --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	log-vim = l
@@ -62,8 +63,6 @@
 	rbm = rb master
 	rbom = rb origin/master
 	rc = rb --continue
-
-	pl = pull
 
 	rp = reset --patch
 
