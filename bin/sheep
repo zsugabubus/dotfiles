@@ -36,11 +36,13 @@ if test "$1" = "--"; then
 
   mkdir -m755 -- \
     "./rootfs/run/user/$UID/cache"
+  bind_ro "$HOME/.local/share/nvim/site" "/home/$NEWUSER/.local/share/nvim/site"
   chown "$USER:$USER" \
     "./rootfs/home/$NEWUSER/.local" \
+    "./rootfs/home/$NEWUSER/.local/share" \
+    "./rootfs/home/$NEWUSER/.local/share/nvim" \
     "./rootfs/run/user/$UID" \
     "./rootfs/run/user/$UID/cache"
-  # bind_ro "$HOME/.local/share/nvim/site" "/home/$NEWUSER/.local/share/nvim/site"
 
   chmod 755 -- \
     "./rootfs/run" \
