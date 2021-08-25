@@ -995,6 +995,43 @@ augroup END
 
 Source statusline.vim
 
+function! s:wincmd_magic(win_cmd, tmux_cmd)
+	let cur = winnr()
+	execute 'wincmd' a:win_cmd
+	" Something happened.
+	if cur !=# winnr()
+		return
+	endif
+
+	if empty($TMUX)
+		return
+	endif
+	call systemlist([
+	\  'tmux',
+	\  'set', '@_vim', '1', ';',
+	\  'select-pane', '-t', '{'.a:tmux_cmd[0].'}', ';',
+	\  'set', '-u', '@_vim'
+	\])
+	if !empty(a:tmux_cmd[1])
+		call systemlist([
+		\  'tmux',
+		\  'if', '-F', '#{@_vim}', 'set -u @_vim ; select-window -t "{'.a:tmux_cmd[1].'}"'
+		\])
+	endif
+endfunction
+
+for [s:win_cmd, s:tmux_cmd] in items({
+\  'h': ['left-of', 'previous'],
+\  'l': ['right-of', 'next'],
+\  'j': ['down-of', ''],
+\  'k': ['up-of', ''],
+\  'w': ['last', 'last']
+\})
+	for s:lhs in [s:win_cmd, '<C-'.s:win_cmd.'>']
+		execute 'nnoremap <silent> <C-w>'.s:lhs.' :call <SID>wincmd_magic('.string(s:win_cmd).','.string(s:tmux_cmd).')<CR>'
+	endfor
+endfor
+
 let s:matchcolors = ['DiffAdd', 'DiffDelete', 'DiffChange']
 let s:nmatchcolors = 0
 command! -nargs=+ Match call matchadd(s:matchcolors[s:nmatchcolors], <q-args>)|let s:nmatchcolors = (s:nmatchcolors + 1) % len(s:matchcolors)
