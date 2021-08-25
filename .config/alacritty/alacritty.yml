@@ -45,8 +45,8 @@ colors:
   # Default colors
   primary:
     background: '0xeeeeee' # zebra:light
-    foreground: '0x2a2523' # zebra:light
-#     background: '0x1c1c1c' # zebra:dark
+    foreground: '0x23252b' # zebra:light
+#     background: '0x222432' # zebra:dark
 #     foreground: '0xc4c4c4' # zebra:dark
 
     #    other red:     '0xed5466' 
