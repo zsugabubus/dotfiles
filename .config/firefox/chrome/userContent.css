@@ -1,0 +1,54 @@
+@import url(userContent-private.css);
+
+@-moz-document domain('translate.google.com') {
+	#gb {
+		display: none;
+	}
+}
+
+@-moz-document domain('google.com') {
+	/* Very tricky shitheads. */
+	#before-appbar + div,
+	div[role=dialog],
+	#lb {
+		display: none !important;
+	}
+
+	html {
+		overflow: visible !important;
+	}
+}
+
+@-moz-document domain('youtube.com') {
+	ytd-popup-container,
+	tp-yt-iron-overlay-backdrop,
+	iron-overlay-backdrop {
+		display: none !important;
+	}
+}
+
+@-moz-document domain('web.skype.com') {
+	#footer {
+		display: none !important;
+	}
+}
+
+@-moz-document domain('stackoverflow.com') {
+	body {
+		padding-top: 0;
+		margin-top: 0;
+	}
+
+	body > div.js-consent-banner,
+	#noscript-warning,
+	#question-header,
+	.top-bar {
+		display: none !important;
+	}
+}
+
+@-moz-document domain('github.com') {
+	div.js-cookie-consent-banner {
+		display: none !important;
+	}
+}
