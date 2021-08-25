@@ -1,5 +1,5 @@
 #!/bin/zsh -eu
-. $ZDOTDIR/hashes.zsh
+. $ZDOTDIR/??-hashes.zsh
 
 if [[ -d ~N/var ]]; then
 	dir='~N/var'
