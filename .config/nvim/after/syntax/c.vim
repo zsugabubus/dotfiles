@@ -45,11 +45,13 @@ syn keyword Identifier
 syn match Identifier "\v<v?%(f|d|s|sn)?w?printf>"
 syn match Identifier "\v<v?[fs]?w?scanf>"
 syn match Identifier "\v<U?INT%(8|16|32|64|MAX)_C>"
-syn match Identifier "\v<pthread_%(self|%(mutex_%(%(un)?lock|init|destroy)|rwlock_%(%(rd|wr|un)lock|try%(rd|wr)lock|init|destroy)|cleanup_%(push|pop)|join|cancel|setcancel%(type|state)|cond_%(init|destroy|wait|signal|broadcast))|create|detach|sigmask|exit|attr_%(init|setdetachstate))>"
+syn match Identifier "\v<pthread_%(testcancel|self|%(mutex_%(%(un|try)?lock|init|destroy)|rwlock%(attr_%(init|destroy)|_%(%(timed)?%(rd|wr|un)lock|try%(rd|wr)lock|init|destroy))|cleanup_%(push|pop)|join|cancel|setcancel%(type|state)|cond_%(init|destroy|wait|signal|broadcast))|create|detach|sigmask|exit|attr_%(init|setdetachstate))>"
 syn match cConstant "\v<%(PRI|SCN)[diouxX]%(%(LEAST|FAST)?%(8|16|32|64)|MAX|PTR)>"
 syn match cConstant "\v<%(%([US]?CHAR)|U?%(SHRT|INT%(%(_LEAST|_FAST)?%(8|16|32|64)?|PTR|MAX)|L?LONG)|SIZE|W%(CHAR|INT)|PTRDIFF|SIG_ATOMIC)_WIDTH>"
 syn match cConstant "\v<S_I%([RWX]%(USR|GRP|OTH)|RWX[UGO]|SVTX)>"
 syn match cConstant "\v<PTHREAD_%(%(COND|MUTEX|RWLOCK)_INITIALIZER|CANCEL_%(%(DIS|EN)ABLE|DEFERRED|ASYNCHRONOUS))>"
+syn keyword cConstant
+	\ ATOMIC_FLAG_INIT
 syn match cConstant "\v<[RWXF]_OK>"
 syn match cConstant "\v<F_[GS]ETF[DL]>"
 syn match cConstant "\v<O_%(RDONLY|WRONLY|RDWR|CREAT|EXCL|CLOEXEC|TRUNC|APPEND|NONBLOCK|PATH|DIRECTORY|EXCL|NOFOLLOW)>"
@@ -67,5 +69,7 @@ syn keyword cConstant
 	\ STDIN_FILENO STDOUT_FILENO STDERR_FILENO
 	\ POLLIN POLLPRI POLLOUT POLLERR POLLHUP POLLNVAL
 	\ AT_FDCWD AT_EMPTY_PATH
-syn match cType "\v<pthread%(_%(cond|mutex|rwlock|attr)|)_t>"
+syn match cType "\v<pthread%(_%(cond|mutex|rwlock%(attr)?|attr)|)_t>"
+syn keyword cType
+	\ atomic_flag
 syn keyword	cTodo contained WTF
