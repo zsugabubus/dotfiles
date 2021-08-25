@@ -85,6 +85,7 @@ CHR	1;40;97mﱡ \e[1;40;97
 .gif	m \e[
 .jpeg	m \e[
 .jpg	m \e[
+.webp	m \e[
 .ico	m \e[
 .mjpeg	m \e[
 .mjpg	m \e[
@@ -144,9 +145,11 @@ CHR	1;40;97mﱡ \e[1;40;97
 .bin	m \e[
 .py	m \e[
 
+.build	m \e[
 .m4	m \e[
 .am	m \e[
 .ac	m \e[
+.in	m \e[
 
 .m3u	m蘿\e[
 .m3u8	m蘿\e[
@@ -169,7 +172,7 @@ CHR	1;40;97mﱡ \e[1;40;97
 *install	4m \e[4
 *configure	4m \e[4
 
-.in	mזּ \e[
+.template	mזּ \e[
 *Makefile	m \e[
 *CMakeLists.txt	m \e[
 *tags	m狀\e[
