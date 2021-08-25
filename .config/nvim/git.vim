@@ -17,6 +17,8 @@ command! -nargs=* Gtreediff call s:git_tree(1, <f-args>)
 command! -nargs=* -range=% Glog
 	\ if <line1> ==# 1 && <line2> ==# line('$')|
 	\   enew|
+	\   nmap <silent><buffer><nowait> K k<Return>|
+	\   nmap <silent><buffer><nowait> J j<Return>|
 	\   call termopen(['git', 'log-vim'] + [<f-args>])|
 	\ else|
 	\   vertical new|
@@ -32,7 +34,8 @@ function! s:git_pager_update(bufnr, cmdline, new) abort
 		call deletebufline(a:bufnr, line('$'), '$')
 		setlocal readonly nomodifiable
 		if a:new
-			normal! gg}w
+			" So CTRL-O immediately takes back to the previous commit.
+			keepjump normal! gg}w
 		endif
 
 		filetype detect
@@ -69,9 +72,6 @@ function! s:git_pager(cmdline) abort
 	nnoremap <buffer><nowait> q <C-w>c
 	nnoremap <silent><buffer><nowait><expr> gu ':edit '.fnameescape(matchstr(expand('%'), '\v^git://[^:]*:([012]:)?.{-}\ze([^/]+/?)?$'))."\<CR>"
 	nmap <silent><buffer><nowait> u gu
-	nnoremap <silent><buffer><nowait> go :e %<C-r><C-f><CR>
-	nmap <silent><buffer><nowait> o go
-	nmap <silent><buffer><nowait> <Return> go
 	nnoremap <silent><buffer><nowait> ~ :call <SID>git_edit_rev('edit', '~'.v:count1)<CR>
 	nnoremap <silent><buffer><nowait> ^ :call <SID>git_edit_rev('edit', '^'.v:count1)<CR>
 	nnoremap <silent><buffer><nowait> - :call <SID>git_edit_rev('edit', '-'.v:count1)<CR>
