@@ -11,6 +11,8 @@ lsblk -o NAME,LABEL,FSAVAIL,FSUSE%
 echo
 cal -mw
 
+tikal
+
 echoti home
 seabar &
 pid=$!
