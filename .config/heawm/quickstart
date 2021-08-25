@@ -12,7 +12,7 @@ echo
 cal -mw
 
 echoti home
-~/pro/seabar/seabar &
+seabar &
 pid=$!
 
 while read -rk1; do
