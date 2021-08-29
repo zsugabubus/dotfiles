@@ -20,6 +20,7 @@
 }
 
 @-moz-document domain('youtube.com') {
+	#lightbox,
 	ytd-popup-container,
 	tp-yt-iron-overlay-backdrop,
 	iron-overlay-backdrop {
