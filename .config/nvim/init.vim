@@ -1010,16 +1010,15 @@ function! s:wincmd_magic(win_cmd, tmux_cmd)
 	if empty($TMUX)
 		return
 	endif
-	call systemlist([
+	let saved_pane_id = systemlist([
 	\  'tmux',
-	\  'set', '@_vim', '1', ';',
-	\  'select-pane', '-t', '{'.a:tmux_cmd[0].'}', ';',
-	\  'set', '-u', '@_vim'
+	\  'display-message', '-p', '-F', '#{pane_id}', ';',
+	\  'select-pane', '-t', '{'.a:tmux_cmd[0].'}',
 	\])
 	if !empty(a:tmux_cmd[1])
 		call systemlist([
 		\  'tmux',
-		\  'if', '-F', '#{@_vim}', 'set -u @_vim ; select-window -t "{'.a:tmux_cmd[1].'}"'
+		\  'if', '-F', '#{==:#{pane_id},'.saved_pane_id[0].'}', 'select-window -t "{'.a:tmux_cmd[1].'}"',
 		\])
 	endif
 endfunction
