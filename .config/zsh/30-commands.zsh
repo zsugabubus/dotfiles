@@ -61,6 +61,7 @@ alias lt='\ls -ohtrF --color=tty --quoting-style=literal'
 alias lss='ls *(.Lm-2)'
 alias la='ll -A'
 alias lc='ll -CA'
+alias le="ls -I '*.aria2' -I '*.torrent'"
 alias pkill='pkill -x'
 alias d='dirs -v'
 alias va='nice -20 vlock -a'
