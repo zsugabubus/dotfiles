@@ -1,0 +1,2 @@
+#!/bin/dash
+rm -vi "$MUCK_PATH"
