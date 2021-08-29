@@ -32,8 +32,5 @@ function zshaddhistory() {
 		return 2 ;;
 	esac
 
-	local words=${(z)1}
-	if [[ ${#words} = 1 && ${#words[0]} -le 5 ]]; then
-		return 2;
-	fi
+	return 0
 }
