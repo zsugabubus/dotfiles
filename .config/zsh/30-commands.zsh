@@ -202,7 +202,7 @@ alias j='jobs'
 alias am='alsamixer'
 alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
-alias mp='() { mpv 2>&- --player-operation-mode=pseudo-gui ${*:-.} &! }'
+alias mp='() { mpv 2>/dev/null --player-operation-mode=pseudo-gui ${*:-.} &! }'
 compdef mp=mpv_hack
 alias mpm='() { eval mp "*(m-${1:-1}/)" }'
 compdef mpm=mpv_hack
@@ -269,12 +269,12 @@ function mkcd() { mkdir -p -- "$*" && cd -- "$*" }
 alias mkln='() { mkdir -p -- "$(readlink $1)"; }'
 alias cdln='() { cd "${$(readlink $1):h}"; }'
 compdef '_files -g "*(@)"' cdln
-alias ccd='() { (( $# > 0 )) && cd -- $1; while cd -- * 2>/dev/null; do :; done; }'
+alias rcd='() { (( $# > 0 )) && cd -- $1; while cd -- * 2>/dev/null; do :; done; }'
 alias cp='cp -i'
 alias cpm='() { cp -t ~m $@ }'
 # alias cpp='cp --preserve --no-clobber'
 alias pm='progress -M'
-alias term='$TERMINAL >&- &disown'
+alias term='$TERMINAL >/dev/null &disown'
 alias fr='free -hwt'
 alias gr='grep -i'
 alias sl='ln -sf'
