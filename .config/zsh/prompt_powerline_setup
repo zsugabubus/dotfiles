@@ -17,14 +17,14 @@ local function prompt_powerline_setup() {
 		ZLE_RPROMPT_INDENT=1
 		PS1='[%n@%M $vcs_info_msg_0_]%(!,#,$) '
 		PS2='%_> '
-		RPS1='%(1j. %F{yellow}%B&%j%b%f.)%(0?.. %F{red}%B[$ZSH_POWERLINE_STATUS%{]%}%b)%f'
+		RPS1='%(1j. %F{yellow}%B&%j%b%f.)%(0?.. %F{red}%B[$zsh_powerline_status%{]%}%b)%f'
 		;;
 	*)
 		# It just works.
 		ZLE_RPROMPT_INDENT=$((1 - $+TMUX))
 		PS1='$_powerline_where%K{$POWERLINE_DIR_FG}%F{236} ${${vcs_info_msg_0_:-"$_powerline_path%F{$POWERLINE_DIR_FG}$_powerline_writeable"}//\$_powerline_writeable/$_powerline_writeable} %k%{%G%}%f '
 		# PS1='$_powerline_where%K{$POWERLINE_DIR_FG}%F{236} ${${$(__git_ps1 "%%{%%G%%} %%{%%G%%} %%{%%G%%} %s%%F{$POWERLINE_VCS_FG}"):-"$_powerline_path%F{$POWERLINE_DIR_FG}$_powerline_writeable"}//\$_powerline_writeable/$_powerline_writeable} %k%{%G%}%f '
-		RPS1='%F{250}%(1j. %%%j.)$_powerline_keymap%b%(?.. %F{197}%{%G%}%K{197}%F{227} %B$ZSH_POWERLINE_STATUS%b)%(2L. %F{254}%{%G%}%K{254}%F{244} %L.)'"$([[ -n $TMUX ]] && print -n " " || print -n "%{ %}")"
+		RPS1='%F{250}%(1j. %%%j.)$_powerline_keymap%b%(?.. %F{197}%{%G%}%K{197}%F{227} %B$zsh_powerline_status%b)%(2L. %F{254}%{%G%}%K{254}%F{244} %L.)'"$([[ -n $TMUX ]] && print -n " " || print -n "%{ %}")"
 		PS2='%K{254}%F{247} %_ %k%F{254}%f '
 		;;
 	esac
@@ -77,18 +77,23 @@ local function prompt_powerline_setup() {
 	}
 
 	function _powerline_precmd() {
-		ZSH_POWERLINE_STATUS=${${:-$signals[$(($? - 127))]}:-$?}
+		zsh_powerline_status=${${:-$signals[$(($? - 127))]}:-$?}
 		if (( $#pipestatus > 1 )); then
-			ZSH_POWERLINE_STATUS= # ${(j.|.)pipestatus}
+			zsh_powerline_status= # ${(j.|.)pipestatus}
 			for code in $pipestatus; do
-				ZSH_POWERLINE_STATUS=$ZSH_POWERLINE_STATUS\|${${:-$signals[$(($code - 127))]}:-$code}
+				zsh_powerline_status=$zsh_powerline_status\|${${:-$signals[$(($code - 127))]}:-$code}
 			done
-			ZSH_POWERLINE_STATUS=${ZSH_POWERLINE_STATUS:1}
+			zsh_powerline_status=${zsh_powerline_status:1}
 		fi
 		_powerline_where_info
 		_powerline_writeable_info
 
-		vcs_info 2>&-
+		if [[ -n $zsh_powerline_do_vcs_info ]]; then
+			vcs_info 2>&-
+			if [[ -z $vcs_info_msg_0_ ]]; then
+				unset zsh_powerline_do_vcs_info
+			fi
+		fi
 	}
 
 	function _powerline_reset_cursor() {
@@ -111,6 +116,8 @@ local function prompt_powerline_setup() {
 		else
 			_powerline_path="%{%G%} $_powerline_path"
 		fi
+
+		zsh_powerline_do_vcs_info=1
 	}
 
 	case "$TERM" in
