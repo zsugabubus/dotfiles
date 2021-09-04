@@ -32,11 +32,7 @@ set new_mail_command="$my_cfg/scripts/new-mail %n %u &"
 
 unset help
 
-# https://github.com/sheoak/neomutt-powerline-nerdfonts/blob/master/powerline.neomuttrc
-set to_chars=""
-set status_chars=" "
-ifdef crypt_chars set crypt_chars=" "
-set flag_chars="  "
+set status_chars="-*RA"
 set flag_safe
 set quit
 set delete
@@ -93,23 +89,11 @@ set ssl_force_tls
 unset ssl_starttls
 set use_from
 
-# set status_chars =" *%A"
-# set status_format=" %_h %r%f%?l? (%l)?   Σ%?M?%M/?%m%?n?  %n?%?o?  %o?%?d?  %d?%?F?  %F?%?t?  %t?%?p? ﮦ %p?%?b?  %b? %>   %P  料%s/%S"
-
-# color status color24 color254       ''
-# color status color238 color254       '(.*)' 1
-# color status color240 color254       '^(.*)  ' 1
-# color status green color254       ' [^Σ]'
-# color status red color252       '(.*) Σ' 1
-# color status yellow color31       '() Σ' 1
-# color status color242 color31       ' Σ(.*)' 1
-
-# set index_format='%4C [%Z] %<[y?%<[m?%<[d?%[ %H:%M]&%[%a %d]>&%[%b %d]>&%[ %m/%y]> %-23.23L %s%> %<M?%M  &%<l?%l&%c>>'
-set index_format="%zs%zc%zt %<[y?%<[m?%<[4d?%<[3d?%<[2d?%<[d?%[ %H∶%M]&%[Ytd %H]>&%[2 days]>&%[3 days]>&%[%a %d]>&%[%b %d]>&%[%y %b]> · %-22.22L %<M?(%2M)&%<X?&·>> %s %g %J"
-set pager_format=" %n%zc  %T %s%*  %{!%a, %d %b %Y %H:%M %z} %<X?  %X > %P%<l?/%l &%c>  "
-set status_format=" %f%?r?%r ?  %m%?n?  %n?  %?d?  %d?%?t?  %t?%?F?  %F?%?p?   %p ? %* 料%s/%S  %P  "
-set vfolder_format=" %N %?n?%3n&   ?  %8m  · %f"
-set compose_format=' %_h  %a , ~%l%> '
+set index_format="%zs%zc%zt %<[y?%<[m?%<[4d?%<[3d?%<[2d?%<[d?%[ %H∶%M]&%[Ytd %H]>&%[2 days]>&%[3 days]>&%[%a %d]>&%[%b %d]>&%[%y %b]> · %-22.22L %<M?(%2M)&%<X?& >> %s %g %J"
+set pager_format=" %n%zc %{!%a, %d %b %Y %H:%M %z}%* %<X? A:%X > %P%<l? of %l&%c> "
+set status_format=" %f%?r?%r ? %m%?n? N%n?%?d? D%d?%?t? *%t?%?F? !%F?%?p?   %p ? %* (sort: %s/%S) %P "
+# set vfolder_format=" %N %?n?%3n&   ?  %8m  · %f"
+set compose_format=' %_h  A:%a, ~%l%> '
 set attach_format=" %?u??%D %I:%n  %T%-75.75d%* %5s · %m/%M%?C?;charset=%C? "
 
 # 1}}}
