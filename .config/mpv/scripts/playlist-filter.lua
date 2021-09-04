@@ -15,6 +15,7 @@ mp.observe_property('playlist', nil, function()
 		   s:match('%.torrent$') or
 		   s:match('%.srt$') or
 		   s:match('%.nfo$') or
+		   s:match('%.part$') or
 		   s:match('%.txt$') then
 			mp.msg.info('removing playlist entry', s)
 			mp.command(('playlist-remove %d'):format(i - 1))
