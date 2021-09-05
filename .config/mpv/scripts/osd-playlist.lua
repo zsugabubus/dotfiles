@@ -1,10 +1,5 @@
-local osd = mp.create_osd_overlay("ass-events")
+local osd = mp.create_osd_overlay('ass-events')
 local visible = false
-local timeout = mp.add_timeout(mp.get_property_number('osd-duration') / 1000, function()
-	handle_message('toggle')
-end)
-timeout:kill()
-
 local options = require 'mp.options'
 
 local opts = {
@@ -23,11 +18,11 @@ mp.observe_property('playlist-pos', 'number', function(_, pos)
 	end
 end)
 
-function update()
-	mp.register_idle(_update)
+function schedule_update()
+	mp.register_idle(update_osd)
 end
 
-function compute()
+function get_height()
 	local font_size = mp.get_property_number('osd-font-size')
 	local scaled_font_size = font_size * opts.font_scale
 	-- Trim a half-half line from top and bottom to make visually a bit more pleasant.
@@ -39,8 +34,8 @@ function compute()
 	return nlines, y
 end
 
-function _update()
-	mp.unregister_idle(_update)
+function update_osd()
+	mp.unregister_idle(update_osd)
 
 	local width, height, ratio = mp.get_osd_size()
 	if 0 == height then
@@ -48,7 +43,7 @@ function _update()
 	end
 	local pos = mp.get_property_number('playlist-pos-1')
 	local playlist = mp.get_property_native('playlist')
-	local nlines, y = compute()
+	local nlines, y = get_height()
 
 	local from = pos - math.floor(nlines * (forward and 0.2 or 0.8))
 	if from < 1 then
@@ -127,44 +122,48 @@ function _update()
 	osd:update()
 end
 
+local timeout = mp.add_timeout(mp.get_property_number('osd-duration') / 1000, function()
+	handle_message('toggle')
+end)
+timeout:kill()
+
 function handle_message(action)
-	timeout:kill()
-	if action == 'show' then
+	local temporary = false
+
+	if action == 'show' or action == 'peek' then
+		temporary = action == 'peek' and (not visible or timeout:is_enabled())
 		visible = true
 	elseif action == 'hide' then
 		visible = false
-	elseif action == 'toggle' or
-	       action == 'blink' then
-		-- Otherwise it already contains the negated value.
-		if not timeout.is_enabled() then
-			visible = not visible
-		end
-		if action == 'blink' then
-			timeout:resume()
-		end
+	elseif action == 'toggle' or action == 'blink' then
+		visible = not visible
+		temporary = action == 'blink'
+	end
+
+	if temporary then
+		timeout:resume()
+	else
+		timeout:kill()
 	end
 
 	if visible then
-		mp.observe_property('playlist', nil, update)
-		mp.observe_property('playlist-pos', nil, update)
+		mp.observe_property('playlist', nil, schedule_update)
+		mp.observe_property('playlist-pos', nil, schedule_update)
 	else
-		mp.unobserve_property(update)
+		mp.unobserve_property(schedule_update)
 		osd:remove()
 	end
 end
 
-for _, action in pairs({'show', 'hide', 'blink', 'toggle'}) do
+for _, action in pairs({'show', 'peek', 'hide', 'toggle', 'blink'}) do
 	mp.register_script_message(action, function() handle_message(action) end)
 end
 
 function half_scroll(dir)
-	local nlines = compute()
+	local nlines = get_height()
 	local pos = dir * math.floor((nlines + 1) / 2) + mp.get_property_number('playlist-pos')
-	mp.msg.error(pos, nlines, dir)
 	pos = math.max(0, pos)
-	mp.msg.error(pos, nlines, dir)
 	pos = math.min(mp.get_property_number('playlist-count') - 1, pos)
-	mp.msg.error(pos, nlines, dir)
 	mp.set_property_number('playlist-pos', pos)
 end
 
