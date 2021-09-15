@@ -1,5 +1,5 @@
 local utils = require 'mp.utils'
-local tmp_file = (os.getenv('TMPDIR') or '/tmp')..'/'..mp.get_script_name()
+local tmp_file = (os.getenv('TMPDIR') or '/tmp') .. '/' .. mp.get_script_name()
 
 mp.register_event('start-file', function()
 	local filename = mp.get_property('path')
@@ -16,11 +16,11 @@ mp.register_event('start-file', function()
 
 	local serno, epno = string.match(basename, '[sS]0*(%d+)[eE]0*(%d+)')
 	if serno ~= nil and epno ~= nil then
-		addpat(pats, '[sS]0*'..serno..'[eE]0*'..epno..'.*')
+		addpat(pats, '[sS]0*' .. serno .. '[eE]0*' .. epno .. '.*')
 	end
 
 	for i,subdir in pairs(mp.get_property_native('sub-file-paths')) do
-		walk(dirname..'/'..subdir, pats)
+		walk(dirname .. '/' .. subdir, pats)
 	end
 end)
 
@@ -30,7 +30,7 @@ function addpat(pats, pat)
 	end
 
 	for i,ext in pairs({'srt', 'lrc', 'txt'}) do
-		table.insert(pats, pat..'%.'..ext..'$')
+		table.insert(pats, pat .. '%.' .. ext .. '$')
 	end
 end
 
@@ -39,17 +39,20 @@ function text2pat(text)
 end
 
 function walk(path, pats)
+	local nfiles = 0
 	for i,file in pairs(utils.readdir(path, 'files') or {}) do
+		nfiles = nfiles + 1
+
 		for i,pattern in pairs(pats) do
 
 			if file:find(pattern) ~= nil then
 				local gen = file:find('%.txt$') ~= nil
 				if gen then
-					local f = io.open(file, "r")
-					file = tmp_file..'.lrc'
-					local t = io.open(file, "w")
+					local f = io.open(file, 'r')
+					file = tmp_file .. '.lrc'
+					local t = io.open(file, 'w')
 					t:write('[0:0.0] ')
-					t:write(f:read("*all"))
+					t:write(f:read('*all'))
 					f:close()
 					t:close()
 				end
@@ -62,7 +65,9 @@ function walk(path, pats)
 			end
 		end
 	end
-	for i,dir in pairs(utils.readdir(path, 'dirs') or {}) do
-		walk(path..'/'..dir, pats)
+	if nfiles <= 1 then
+		for i,dir in pairs(utils.readdir(path, 'dirs') or {}) do
+			walk(path .. '/' .. dir, pats)
+		end
 	end
 end

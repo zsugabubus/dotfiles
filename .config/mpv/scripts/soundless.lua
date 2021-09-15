@@ -1,5 +1,5 @@
 -- For dumpass people who do not get why they cannot hear anything.
-local osd = mp.create_osd_overlay("ass-events")
+local osd = mp.create_osd_overlay('ass-events')
 
 function get_icon(align, icon)
 	return "{\\an" .. align .. "\\1a&H40\\fscx200\\fscy200\\fnmpv-osd-symbols}" .. icon

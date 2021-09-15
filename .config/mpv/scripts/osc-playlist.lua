@@ -18,10 +18,6 @@ mp.observe_property('playlist-pos', 'number', function(_, pos)
 	end
 end)
 
-function schedule_update()
-	mp.register_idle(update_osd)
-end
-
 function get_height()
 	local font_size = mp.get_property_number('osd-font-size')
 	local scaled_font_size = font_size * opts.font_scale
@@ -34,8 +30,12 @@ function get_height()
 	return nlines, y
 end
 
-function update_osd()
-	mp.unregister_idle(update_osd)
+function update()
+	mp.unregister_idle(_update)
+	mp.register_idle(_update)
+end
+function _update()
+	mp.unregister_idle(_update)
 
 	local width, height, ratio = mp.get_osd_size()
 	if 0 == height then
@@ -128,8 +128,9 @@ end)
 timeout:kill()
 
 function handle_message(action)
-	local temporary = false
+	timeout:kill()
 
+	local temporary = false
 	if action == 'show' or action == 'peek' then
 		temporary = action == 'peek' and (not visible or timeout:is_enabled())
 		visible = true
@@ -142,15 +143,13 @@ function handle_message(action)
 
 	if temporary then
 		timeout:resume()
-	else
-		timeout:kill()
 	end
 
 	if visible then
-		mp.observe_property('playlist', nil, schedule_update)
-		mp.observe_property('playlist-pos', nil, schedule_update)
+		mp.observe_property('playlist', nil, update)
+		mp.observe_property('playlist-pos', nil, update)
 	else
-		mp.unobserve_property(schedule_update)
+		mp.unobserve_property(update)
 		osd:remove()
 	end
 end

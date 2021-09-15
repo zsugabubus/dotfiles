@@ -64,6 +64,6 @@ end
 
 for _, mod in ipairs({'', 'Shift+'}) do
 	for _, key in ipairs({'WHEEL_UP', 'WHEEL_DOWN', 'MBTN_MID'}) do
-		mp.add_forced_key_binding(mod..key, scroll, {complex=true})
+		mp.add_forced_key_binding(mod .. key, scroll, {complex=true})
 	end
 end

@@ -12,7 +12,7 @@ mp.observe_property('playlist-pos', 'number', function(_, pos)
 	end
 end)
 
-mp.add_key_binding('Ctrl+o', 'playlist-prev', function()
+mp.add_key_binding('Ctrl+o', 'playlist-older', function()
 	if 2 <= #jumplist then
 		-- Pop current.
 		jumplist[#jumplist] = nil

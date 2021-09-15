@@ -1,5 +1,5 @@
 local utils = require 'mp.utils'
-mp.add_key_binding('shift+DEL', 'delete-file', function()
+mp.add_key_binding('Shift+DEL', 'delete-file', function()
 	if not mp.get_property_bool('pause') and mp.get_property_number('time-pos') < 1 then
 		return
 	end
@@ -21,7 +21,9 @@ mp.add_key_binding('shift+DEL', 'delete-file', function()
 		local dir_name, _ = utils.split_path(path)
 		if os.rename(path, dir_name .. '/.deleted') then
 			mp.command('playlist_remove current')
-			mp.osd_message('Deleted: ' .. file_path)
+			local msg = ('Deleted: %s'):format(file_path)
+			mp.msg.info(msg)
+			mp.osd_message(msg)
 		else
 			mp.osd_message('Failed to delete')
 		end
