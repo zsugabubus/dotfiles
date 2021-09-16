@@ -49,6 +49,10 @@
 }
 
 @-moz-document domain('github.com') {
+	body {
+		font-family: unset !important;
+	}
+
 	div.js-cookie-consent-banner {
 		display: none !important;
 	}
