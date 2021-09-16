@@ -14,7 +14,10 @@
 	--statuslabel-background: var(--tab-selected-background);
 	--selection-color: #eeeeee;
 	--selection-background: #0087af;
+	--hover-background: rgba(0, 0, 0, .05);
 	--tabs-toolbar-background-color: #eeeeee;
 	--bar-background: #eeeeee;
 	--bar-badge-background: #e4e4e4;
+	--dialog-background: var(--bar-background);
+	--dialog-border-color: var(--tab-selected-background);
 }

@@ -9,6 +9,10 @@
 	--proton-tab-block-margin: 0 !important;
 	--inline-tab-padding: 0 !important;
 	--tab-min-height: 0 !important;
+	--urlbar-icon-padding: 0 !important;
+	--urlbar-icon-border-radius: 0 !important;
+	--in-content-page-background: var(--dialog-background) !important;
+	--autocomplete-popup-hover-background: var(--hover-background) !important;
 }
 
 #window-controls {
@@ -61,33 +65,38 @@
 #TabsToolbar tab.tabbrowser-tab {
 	color: var(--tab-color) !important;
 	font-size: 1rem !important;
-	/* needed for pinned tabs */
 	min-height: unset !important;
 	transition: none !important;
 	padding: 0 !important;
 }
 
-#TabsToolbar tab.tabbrowser-tab > .tab-stack {
-	position: relative;
+#TabsToolbar tab.tabbrowser-tab::after {
+	border: 0 !important;
+	margin: 0 !important;
 }
 
-#TabsToolbar tab.tabbrowser-tab > .tab-stack > .tab-background {
+#TabsToolbar .tab-background {
 	border-top: 0 !important;
 	box-shadow: none !important;
+	margin: 0 !important;
 }
 
-#TabsToolbar tab.tabbrowser-tab > .tab-stack > .tab-background > .tab-bottom-line {
+#TabsToolbar .tab-background > .tab-bottom-line {
 	position: absolute;
 	width: 100%;
 	bottom: 0;
 }
 
-#TabsToolbar tab.tabbrowser-tab > .tab-stack > .tab-background::before {
+#TabsToolbar .tab-background::before {
 	display: inline-block !important;
 	transform: translate(0, -1.5px);
 }
 
-#TabsToolbar tab.tabbrowser-tab > .tab-stack::after {
+#TabsToolbar .tab-stack {
+	position: relative;
+}
+
+#TabsToolbar .tab-stack::after {
 	content: '';
 	display: inline-block;
 	position: absolute;
@@ -98,17 +107,12 @@
 	transform: translate(0, -1.5px);
 }
 
-#TabsToolbar tab.tabbrowser-tab::after {
-	border: 0 !important;
-	margin: 0 !important;
-}
-
-#TabsToolbar tab.tabbrowser-tab .tab-content {
+#TabsToolbar .tab-content {
 	padding: 0 .8ch !important;
 	margin-left: .8ch !important;
 }
 
-#TabsToolbar tab.tabbrowser-tab .tab-label {
+#TabsToolbar .tab-label {
 	line-height: unset !important;
 	padding-left: 0.4ch;
 }
@@ -371,8 +375,7 @@ toolbarbutton:hover > .toolbarbutton-badge-stack {
 
 #urlbar-results,
 .urlbarView-results {
-	padding-block: 0 !important;
-	padding-inline: 0 !important;
+	padding: 0 !important;
 	background: var(--bar-background) !important;
 }
 
@@ -383,10 +386,25 @@ toolbarbutton:hover > .toolbarbutton-badge-stack {
 	margin: 0 !important;
 }
 
+/* Firefox Suggest */
+.urlbarView-row[type=dynamic] {
+	min-height: unset !important;
+}
+
+.urlbarView-row[label]::before {
+	content: none !important;
+}
+
+.urlbarView-dynamic-onboardTabToSearch-description {
+	display: none !important;
+}
+
 .urlbarView-type-icon,
 .urlbarView-favicon {
-	/* TODO: Find out how it can be vertically aligned. */
-	margin: 0 0.25ch 1px 0 !important;
+	margin: 0 !important;
+	/* Dynamic search. */
+	min-width: unset !important;
+	height: unset !important;
 }
 
 .urlbarView-body-inner {
@@ -435,6 +453,10 @@ moz-input-box *::selection {
 	right: 0;
 }
 
+#identity-box .identity-box-button {
+	padding: unset !important;
+}
+
 #identity-box:hover:not(.no-hover):not([open="true"]) {
 	background-color: #00f;
 }
@@ -443,10 +465,10 @@ moz-input-box *::selection {
 	background: transparent !important;
 }
 
-#star-button {
-	width: 1rem !important;
-	height: 1rem !important;
-	padding: 0 !important;
+.urlbar-page-action {
+	width: unset !important;
+	height: unset !important;
+	background-color: transparent !important; /* Disable hover effect. */
 }
 
 #star-button[starred] {
@@ -461,4 +483,28 @@ moz-input-box *::selection {
 #statuspanel-label {
 	background: var(--statuslabel-background) !important;
 	color: var(--statuslabel-color) !important;
+}
+
+.dialogBox {
+	border-radius: unset !important;
+	border: 1px solid var(--dialog-border-color) !important;
+	box-shadow:
+		0 .9rem 2.5rem -1rem rgba(0, 0, 0, .4),
+		0 1px 3px rgba(0, 0, 0, .08) !important;
+}
+
+.dialogOverlay[topmost="true"],
+#window-modal-dialog::backdrop {
+	background-color: rgba(250, 250, 250, .6) !important;
+}
+
+button {
+	appearance: button !important;
+	padding: unset !important;
+	color: unset !important;
+	font-weight: unset !important;
+}
+
+button[default] {
+	font-weight: bold !important;
 }
