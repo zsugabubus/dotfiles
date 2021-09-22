@@ -107,10 +107,19 @@
 	trustExitCode = yes
 	cmd = nvim -d "$MERGED" "$BASE" "$LOCAL" "$REMOTE" +"wincmd J"
 
+[fetch]
+	prune = yes
+
+[pull]
+	rebase = yes
+
 [rebase]
 	missingCommitsCheck = error
 	instructionFormat = "%s (%an)"
-	autosquash = true
+	autosquash = yes
 
-[pull]
-	rebase = true
+[sendemail]
+	smtpEncryption = tls
+	annotate = yes
+	assume8bitEncoding = yes
+	xmailer = no
