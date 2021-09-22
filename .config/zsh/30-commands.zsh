@@ -62,6 +62,7 @@ alias lss='ls *(.Lm-2)'
 alias la='ll -A'
 alias lc='ll -CA'
 alias le="ls -I '*.aria2' -I '*.torrent'"
+alias topp='() { top -p${^$(pidof $1)} }'
 alias pkill='pkill -x'
 alias d='dirs -v'
 alias va='nice -20 vlock -a'
@@ -213,7 +214,7 @@ alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
 alias www='() { if [[ 1 == $# ]]; then www $1; else www - : -- tar -cf - $*; fi } '
 alias timer='() { ( sleep ${1:-5m} && ~/doc/cuckoo-clock.mp3 ) &! }'
-alias gdbrun='() { local file=$1; shift; gdb -quiet $file -ex "set confirm off" -ex "handle SIG32 noprint nostop" -ex "run "${(jj j)${(qq)*}}; }'
+alias gdbrun='() { local file=${1:-./a.out}; shift; gdb -quiet $file -ex "set confirm off" -ex "handle SIG32 noprint nostop" -ex "run "${(jj j)${(qq)*}}; }'
 autoload -U zmv
 alias cpp='noglob __zmv -C'
 alias lnn='noglob __zmv -L'
@@ -290,7 +291,7 @@ ZCALC_AUTO_INSERT_PREFIX=ans
 zcalc -f }'
 alias cal='cal -m'
 alias oct='od -tu1'
-alias rm='rm -vdI --one-file-system'
+alias rm='rm -dI --one-file-system'
 alias rmdir='() {
 	if (($# > 0)); then
 		rmdir $@
