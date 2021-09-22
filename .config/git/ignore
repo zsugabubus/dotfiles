@@ -23,3 +23,4 @@ tags
 /.public_site
 *.patch
 *-private*
+/node_modules
