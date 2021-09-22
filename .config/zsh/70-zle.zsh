@@ -58,6 +58,7 @@ bindkey -M vicmd '^X^V' edit-command-words
 
 autoload_zle ctrlz-magic
 bindkey -M viins '^Z' ctrlz-magic
+bindkey -M vicmd '^Z' ctrlz-magic
 
 # bindkey -M viins $terminfo[kcuu1] history-substring-search-up
 # bindkey -M viins $terminfo[kcud1] history-substring-search-down
