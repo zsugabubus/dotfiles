@@ -1,4 +1,6 @@
+let g:git_max_tabs = 15
 set switchbuf=useopen,usetab
+
 nnoremap <silent><expr> gf (0 <=# match(expand('<cfile>'), '\v^\x{4,}$') ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>" : 0 <=# match(expand('<cfile>'), '^[ab]/') ? 'viWof/lgf' : 'gf')
 
 command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
@@ -141,8 +143,10 @@ function! s:git_tree(diff, ...) abort range
 			cclose
 		endif
 
+		let too_much = g:git_max_tabs < len(output)
+
 		for change in output
-			let [_, src_mode, dst_mode, src_hash, dst_hash, status, score, src_path, dst_path; _] = matchlist(change, '\C\v^:(\d{6}) (\d{6}) ([0-9a-f]{40}) ([0-9a-f]{40}) ([A-Z])(\d*)\t([^\t]+)(\t[^\t]+)?$')
+			let [_, src_mode, dst_mode, src_hash, dst_hash, status, score, src_path, dst_path; _] = matchlist(change, '\C\v^:(\d{6}) (\d{6}) ([0-9a-f]{40}) ([0-9a-f]{40}) ([A-Z])(\d*)\t([^\t]+)%(\t([^\t]+))?$')
 			if src_hash =~# '\v^0{40}$'
 				let src_hash = ''
 			endif
@@ -152,7 +156,7 @@ function! s:git_tree(diff, ...) abort range
 
 			let filename = !empty(dst_path) ? dst_path : src_path
 			let dst_bufname = (!empty(dst_hash) ? 'git://'.dst_hash.'/' : '').filename
-			if a:diff
+			if a:diff && !too_much
 				let dst_bufnr = bufnr(dst_bufname, 1)
 				execute '$tab' dst_bufnr 'sbuffer'
 				set buflisted
@@ -184,7 +188,7 @@ function! s:git_tree(diff, ...) abort range
 				\    'R': 'renamed',
 				\    'T': 'type changed',
 				\    'U': 'unmerged'
-				\  }, status, '['.status.']').(!empty(dst_path) ? ' (renamed '.src_path.')' : '').(src_mode !=# dst_mode ? ' ('.src_mode.' -> '.dst_mode.')' : ''),
+				\  }, status, '['.status.']').(!empty(dst_path) ? ' from '.src_path : '').(src_mode !=# dst_mode ? ' ('.src_mode.' -> '.dst_mode.')' : ''),
 				\})
 		endfor
 	endif
