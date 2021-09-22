@@ -86,7 +86,7 @@ endfunction
 
 function! s:git_tree(diff, ...) abort range
 	let list = []
-	let common_diff_options = ['--root', '-r']
+	let common_diff_options = ['--root', '-r', '--find-renames']
 	let W = '\v^[W/]$'
 	let I = '\v^%(I|:|:0|0)$'
 	if !a:0
