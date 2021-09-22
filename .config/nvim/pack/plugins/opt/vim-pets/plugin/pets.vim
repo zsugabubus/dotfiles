@@ -68,6 +68,12 @@ augroup vim_pets_snippets
 		\ ["\\<([a-zA-Z0-9:]+)[^>]{-}\\ze\\s*/", " />"],
 		\]
 
+	autocmd FileType css let b:pets_snippets += [
+		\ ['\s*!', ' !important;'],
+		\ [':\ze\s*([a-z]) ', {m-> ' '.matchstr('inherit none unset', '\v<'.m[1].'.{-}>')}],
+		\ ['^\s*\ze([a-z]+) ', {m-> matchstr(' border-width border border-top border-right border-bottom border-left border-radius border-top-left-radius border-top-right-radius border-bottom-left-radius border-bottom-right-radius font font-size font-weight box-shadow position content display margin margin-top margin-right margin-bottom margin-left padding padding-top padding-right padding-bottom margin-left width height min-width min-height ', '\v \zs'.substitute(m[1], '.', '-\0\\S{-}', 'g')[1:].'\ze ').': '}]
+		\]
+
 	autocmd FileType c,cpp let b:pets_snippets += [
 		\ ['^\s*enum\s+(\k+)\s*{', {m-> "{\<CR>".toupper(substitute(m[1], '\C\v[^A-Z_]\zs\ze[A-Z]|[A-Z]\zs\ze[A-Z][a-z]', '_', 'g'))."_,\<CR>};\<Esc>k$i"}],
 		\ ["^\\s*<%(if|for|while)> ", " ("],
