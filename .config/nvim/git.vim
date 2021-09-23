@@ -1,31 +1,110 @@
 let g:git_max_tabs = 15
 set switchbuf=useopen,usetab
-
 nnoremap <silent><expr> gf (0 <=# match(expand('<cfile>'), '\v^\x{4,}$') ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>" : 0 <=# match(expand('<cfile>'), '^[ab]/') ? 'viWof/lgf' : 'gf')
 
-command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
-
-function! s:git_dir_complete(prefix, cmdline, pos) abort
-	let wd = Git().wd
-	return map(filter(globpath(wd, a:prefix.'*', 1, 1), 'isdirectory(v:val)'), 'v:val['.len(wd).':]."/"')
+function! s:git_ignore_stderr(chan_id, data, name) abort dict
 endfunction
 
-for s:cd in ['cd', 'lcd', 'tcd']
-	execute "command! -complete=customlist,<SID>git_dir_complete -nargs=? G".s:cd." execute '".s:cd." '.fnameescape(Git().wd.<q-args>)"
-endfor
-command! -nargs=* Gshow execute 'edit git://'.(empty(<q-args>) ? expand('<cword>') : <q-args>)
-command! -nargs=* Gtree call s:git_tree(0, <f-args>)
-command! -nargs=* Gtreediff call s:git_tree(1, <f-args>)
-command! -nargs=* -range=% Glog
-	\ if <line1> ==# 1 && <line2> ==# line('$')|
-	\   enew|
-	\   nmap <silent><buffer><nowait> K k<Return>|
-	\   nmap <silent><buffer><nowait> J j<Return>|
-	\   call termopen(['git', 'log-vim'] + [<f-args>])|
-	\ else|
-	\   vertical new|
-	\   call s:git_pager(['log', '-L<line1>,<line2>:'.expand('#')])|
-	\ endif
+function! s:git_print_stderr(chan_id, data, name) abort dict
+	call s:print_error(a:data)
+endfunction
+
+let s:git_jobs = {}
+
+function! s:git_nvim_on_exit(chan_id, data, name) abort dict
+	unlet s:git_jobs[a:chan_id]
+endfunction
+
+function! s:git_vim_on_exit(ch) abort
+	let output = []
+	while ch_status(a:ch, { 'part': 'out' }) ==# 'buffered'
+		let output += [ch_read(a:ch)]
+	endwhile
+	let process = job_info(ch_getjob(a:ch)).process
+	let [job, cb, git] = s:git_jobs[process]
+	unlet s:git_jobs[process]
+	if output ==# ['']
+		return
+	endif
+	call call(function(cb), [output], git)
+endfunction
+
+function! s:git_nvim_on_stdout(chan_id, data, name) abort dict
+	call call(self.cb, [a:data], self.self)
+endfunction
+
+function! s:git_run(cb, ...) abort dict
+	let cmd = ['git', '--no-optional-locks'] + a:000
+	if 1 <=# &verbose
+		echomsg 'git: Running ' string(cmd)
+	end
+
+	if has('nvim')
+		let job_id = jobstart(cmd, {
+			\  'pty': 0,
+			\  'stdout_buffered': 1,
+			\  'stderr_buffered': 1,
+			\  'on_stdout': function('s:git_nvim_on_stdout'),
+			\  'on_stderr': function(!empty(self) ? 's:git_ignore_stderr' : 's:git_print_stderr'),
+			\  'on_exit': function('s:git_nvim_on_exit'),
+			\  'self': self,
+			\  'cb': a:cb
+			\})
+		if job_id <=# 0
+			echoerr 'git: jobstart() failed'
+			call interrupt()
+		endif
+		let s:git_jobs[job_id] = job_id
+	else
+		let job = job_start(cmd, {
+			\  'in_io': 'null',
+			\  'out_io': 'pipe',
+			\  'err_io': 'null',
+			\  'close_cb': function('s:git_vim_on_exit')
+			\})
+		let s:git_jobs[job_info(job).process] = [job, a:cb, self]
+	endif
+endfunction
+
+function! s:git_cancel() abort
+	if empty(s:git_jobs)
+		echomsg 'git: No running jobs'
+		return
+	else
+		echomsg printf('git: Cancelling %d jobs...', len(s:git_jobs))
+	endif
+
+	if has('nvim')
+		for job_id in values(s:git_jobs)
+			call jobstop(job_id)
+		endfor
+	else
+		" TODO: Implement
+	endif
+endfunction
+
+function! s:print_error(output) abort
+	echohl Error
+	echomsg join(a:output, "\n")
+	echohl None
+endfunction
+
+function! s:git_do(...) abort
+	if has('nvim')
+		let cmd = ['git', '--no-optional-locks'] + a:000
+	else
+		let cmd = 'git --no-optional-locks'.join(map(copy(a:000), {_,x-> ' '.shellescape(x)}), '')
+	endif
+	if 1 <=# &verbose
+		echomsg 'git: Running ' string(cmd)
+	end
+	let output = systemlist(cmd)
+	if v:shell_error
+		call s:print_error(output)
+		call interrupt()
+	endif
+	return output
+endfunction
 
 function! s:git_pager_update(bufnr, cmdline, new) abort
 	if has('nvim')
@@ -42,31 +121,18 @@ function! s:git_pager_update(bufnr, cmdline, new) abort
 
 		filetype detect
 	else
-		let b:git_job = job_start(['git'] + a:cmdline, { 'in_io': 'null', 'out_io': 'buffer', 'out_buf': a:bufnr, 'out_modifiable': 0 })
+		let b:git_job = job_start(['git'] + a:cmdline, {
+			\  'in_io': 'null',
+			\  'out_io': 'buffer',
+			\  'out_buf': a:bufnr,
+			\  'out_modifiable': 0
+			\})
 	endif
-endfunction
-
-function! s:print_error(output) abort
-	echohl Error
-	for line in a:output
-		echomsg line
-	endfor
-	echohl None
 endfunction
 
 function! s:git_edit_rev(edit, mod) abort
 	let [_, rev, path; _] = matchlist(expand('%'), '\v^git://([^:]*)(.*)$')
-
-	if has('nvim')
-		let output = systemlist(['git', '--no-optional-locks', 'rev-parse', rev.a:mod])
-	else
-		let output = systemlist('git --no-optional-locks rev-parse '.shellescape(rev.a:mod))
-	endif
-	if v:shell_error
-		call s:print_error(output)
-		return
-	endif
-
+	let output = s:git_do('rev-parse', rev.a:mod)
 	execute a:edit fnameescape('git://'.output[0].path)
 endfunction
 
@@ -84,7 +150,39 @@ function! s:git_pager(cmdline) abort
 	call s:git_pager_update(bufnr(), a:cmdline, 1)
 endfunction
 
-function! s:git_tree(diff, ...) abort range
+function! s:git_dir_complete(prefix, cmdline, pos) abort
+	let wd = Git().wd
+	return map(filter(globpath(wd, a:prefix.'*', 1, 1), 'isdirectory(v:val)'), 'v:val['.len(wd).':]."/"')
+endfunction
+
+for s:cd in ['cd', 'lcd', 'tcd']
+	execute "command! -complete=customlist,<SID>git_dir_complete -nargs=? G".s:cd." execute '".s:cd." '.fnameescape(Git().wd.<q-args>)"
+endfor
+
+command! Gcancel call s:git_cancel()
+command! -nargs=* Gshow execute 'edit git://'.(empty(<q-args>) ? expand('<cword>') : <q-args>)
+command! -nargs=* -range=% Glog call s:git_log(<line1>, <line2>, <f-args>)
+command! -nargs=* Gtree call s:git_tree(0, <f-args>)
+command! -nargs=* Gtreediff call s:git_tree(1, <f-args>)
+command! -nargs=* -range Gdiff call s:git_diff(<f-args>)
+command! -nargs=* -range=% Gblame call s:git_blame(<line1>, <line2>, <f-args>)
+for [s:git_cmd, s:cmd] in [['Gconflicts', 'laddexpr'], ['Gcconflicts', 'caddexpr']]
+	execute "command! ".s:git_cmd." noautocmd g/^=======$/".s:cmd." expand('%').':'.line('.').':'.getline('.')|doautocmd QuickFixCmdPost ".s:cmd
+endfor
+
+function! s:git_log(firstlin, lastlin, ...) abort
+	if a:firstlin ==# 1 && a:lastlin ==# line('$')
+		enew
+		nmap <silent><buffer><nowait> K k<Return>
+		nmap <silent><buffer><nowait> J j<Return>
+		call termopen(['git', 'log-vim'] + a:000)
+	else
+		vertical new
+		call s:git_pager(['log', printf('-L%d,%d:%s', a:firstlin, a:lastlin, expand('#'))])
+	endif
+endfunction
+
+function! s:git_tree(diff, ...) abort
 	let list = []
 	let common_diff_options = ['--root', '-r', '--find-renames']
 	let W = '\v^[W/]$'
@@ -105,15 +203,7 @@ function! s:git_tree(diff, ...) abort range
 	else " <tree-1> [<tree-2>=<tree-1> parents]
 		let cmd = ['diff-tree'] + common_diff_options + a:000
 	endif
-	if has('nvim')
-		let output = systemlist(['git', '--no-optional-locks'] + cmd)
-	else
-		let output = systemlist('git --no-optional-locks'.join(map(copy(cmd), {_,x-> ' '.shellescape(x)}), ''))
-	endif
-	if v:shell_error
-		call s:print_error(output)
-		return
-	endif
+	let output = call(s:git_do, cmd)
 
 	" call add(list, {
 	" 	\  'text': 'status of '.join(a:000, ' '),
@@ -143,10 +233,20 @@ function! s:git_tree(diff, ...) abort range
 			cclose
 		endif
 
+		let status_map = {
+			\  'A': 'new',
+			\  'C': 'copied',
+			\  'D': 'gone',
+			\  'M': 'modified',
+			\  'R': 'renamed',
+			\  'T': 'type changed',
+			\  'U': 'unmerged'
+			\}
 		let too_much = g:git_max_tabs < len(output)
 
 		for change in output
-			let [_, src_mode, dst_mode, src_hash, dst_hash, status, score, src_path, dst_path; _] = matchlist(change, '\C\v^:(\d{6}) (\d{6}) ([0-9a-f]{40}) ([0-9a-f]{40}) ([A-Z])(\d*)\t([^\t]+)%(\t([^\t]+))?$')
+			let [_, src_mode, dst_mode, src_hash, dst_hash, status, score, src_path, dst_path; _] =
+				\ matchlist(change, '\C\v^:(\d{6}) (\d{6}) ([0-9a-f]{40}) ([0-9a-f]{40}) ([A-Z])(\d*)\t([^\t]+)%(\t([^\t]+))?$')
 			if src_hash =~# '\v^0{40}$'
 				let src_hash = ''
 			endif
@@ -159,7 +259,7 @@ function! s:git_tree(diff, ...) abort range
 			if a:diff && !too_much
 				let dst_bufnr = bufnr(dst_bufname, 1)
 				execute '$tab' dst_bufnr 'sbuffer'
-				set buflisted
+				setlocal buflisted
 				diffthis
 
 				if !empty(src_hash)
@@ -169,26 +269,21 @@ function! s:git_tree(diff, ...) abort range
 					diffthis
 					wincmd H
 				endif
+
+				redraw
 			else
 				let dst_bufnr = 0
 			endif
-
-			redraw
 
 			call add(list, {
 				\  'type': status,
 				\  'bufnr': dst_bufnr,
 				\  'module': filename,
 				\  'filename': dst_bufname,
-				\  'text': get({
-				\    'A': 'new',
-				\    'C': 'copied',
-				\    'D': 'gone',
-				\    'M': 'modified',
-				\    'R': 'renamed',
-				\    'T': 'type changed',
-				\    'U': 'unmerged'
-				\  }, status, '['.status.']').(!empty(dst_path) ? ' from '.src_path : '').(src_mode !=# dst_mode ? ' ('.src_mode.' -> '.dst_mode.')' : ''),
+				\  'text':
+				\    get(STATUS_MAP, status, '['.status.']').
+				\    (!empty(dst_path) ? ' from '.src_path : '').
+				\    (src_mode !=# dst_mode ? ' ('.src_mode.' -> '.dst_mode.')' : ''),
 				\})
 		endfor
 	endif
@@ -218,44 +313,99 @@ function! s:git_diff(...) abort range
 	wincmd L
 endfunction
 
-function! s:git_ignore_stderr(chan_id, data, name) abort dict
+function! s:git_blame(firstlin, lastlin, ...) abort
+	let args = a:000
+
+	" Default range if not specified.
+	if -1 ==# match(args, '^-L')
+		let args = ['-L'.a:firstlin.','.a:lastlin] + args
+	endif
+
+	" Default search pattern. (Shorter than <C-R>/.)
+	let magic_l = match(args, '^-L/')
+	if 0 <=# magic_l
+		let args = copy(args)
+		let args[magic_l] = '-L/'.escape(getreg('/'), '\/') .'/'
+	endif
+
+	let file = expand('%')
+	let args = ['blame'] + args + (!empty(file) ? ['--', file] : file)
+	call call('s:git_run', ['s:git_blame_stdout'] + args, {})
 endfunction
 
-let s:git_jobs = {}
+function! s:git_blame_jump(flags)
+	call search('\v^([^ ]* ).*\n\zs\1@!', 'W'.a:flags)
+	let @/ = '\V'.escape(matchstr(getline(line('.')), '\m^[^ ]*'), '\')
 
-function! s:git_vim_close_cb(ch) abort
-	let output = []
-	while ch_status(a:ch, { 'part': 'out' }) ==# 'buffered'
-		let output += [ch_read(a:ch)]
-	endwhile
-	let process = job_info(ch_getjob(a:ch)).process
-	let [job, cb, git] = s:git_jobs[process]
-	unlet s:git_jobs[process]
-	if output ==# ['']
+	" Setting it to 1 does nothing hence this workaround.
+	if !v:hlsearch
+		call feedkeys(":set hlsearch|echo\<CR>", 'n')
+	endif
+endfunction
+
+function! s:git_blame_width(n) abort
+	let w:git_blame_winwidth = a:n
+	execute 'vertical' 'resize' w:git_blame_winwidth
+endfunction
+
+function! s:git_blame_stdout(data) abort dict range
+	if len(a:data) <=# 1
 		return
 	endif
-	call call(function(cb), [output], git)
+
+	let cur_lnum = line('.')
+	setlocal scrollbind
+
+	let buf = bufadd('')
+	call setbufvar(buf, '&bufhidden', 'wipe')
+	call setbufvar(buf, '&buftype', 'nofile')
+	call setbufvar(buf, '&swapfile', 0)
+	call setbufvar(buf, '&undolevels', -1)
+
+	execute 'vertical' 'leftabove' 'sbuffer' buf
+	setlocal norelativenumber nonumber
+	nmap <nowait><silent><buffer> <CR> gf
+	nmap <nowait><silent><buffer> [ :call <SID>git_blame_jump('b')<CR>
+	nmap <nowait><silent><buffer> ] :call <SID>git_blame_jump('')<CR>
+	nmap <nowait><silent><buffer> c :call <SID>git_blame_width(9)<CR>
+	nmap <nowait><silent><buffer> a :call <SID>git_blame_width(29)<CR>
+	nmap <nowait><silent><buffer> d :call <SID>git_blame_width(54)<CR>
+
+	let last_lnum = 1
+	for line in a:data
+		if !empty(line)
+			let lnum = +matchstr(line, '\v \zs\d+\ze\)', 42) " Magic number
+			if last_lnum <# lnum
+				call appendbufline(buf, last_lnum, repeat([''], lnum - last_lnum))
+			endif
+			call setbufline(buf, lnum, line)
+			let last_lnum = lnum + 1
+		endif
+	endfor
+
+	call feedkeys('d')
+	call cursor(cur_lnum, 1)
+	redraw " Otherwise scrollbind gets fucked up.
+	setlocal nomodifiable scrollbind
+	setlocal ft=git-blame
 endfunction
 
-function! s:git_nvim_on_stdout(chan_id, data, name) abort dict
-	call call(self.cb, [a:data], self.git)
+function! g:Git_blame_do_winresize() abort
+	let winnr = winnr()
+	for i in range(1, winnr('$'))
+		let winwidth = getwinvar(i, 'git_blame_winwidth')
+		if winwidth
+			execute i.'windo' 'vertical' 'resize' winwidth
+		endif
+	endfor
+	execute winnr.'windo :'
 endfunction
 
-function! s:git_run(git, cb, ...)
-	if has('nvim')
-		call jobstart(['git'] + a:000, {
-			\  'pty': 0,
-			\  'stdout_buffered': 1,
-			\  'stderr_buffered': 1,
-			\  'on_stdout': function('s:git_nvim_on_stdout'),
-			\  'on_stderr': function('s:git_ignore_stderr'),
-			\  'git': a:git,
-			\  'cb': a:cb
-			\})
-	else
-		let job = job_start(['git'] + a:000, { 'in_io': 'null', 'out_io': 'pipe', 'err_io': 'null', 'close_cb': function('s:git_vim_close_cb') })
-		let s:git_jobs[job_info(job).process] = [job, a:cb, a:git]
-	endif
+function! s:git_setup_diff_ft()
+	map <nowait><silent><buffer> [ :call search('\m^@@ ', 'bW')<CR>
+	map <nowait><silent><buffer> ] :call search('\m^@@ ', 'W')<CR>
+	map <nowait><silent><buffer> { :call search('\m^diff ', 'bW')<CR>
+	map <nowait><silent><buffer> } :call search('\m^diff ', 'W')<CR>
 endfunction
 
 function! s:git_statusline_update() abort dict
@@ -317,10 +467,23 @@ function! s:git_status_on_bootstrap(data) abort dict
 	let self.vcs = 'git'
 
 	if !self.inside
-		call s:git_run(self, 's:git_status_on_status', '--no-optional-locks', '-C', self.wd, 'status', '--porcelain')
+		call call('s:git_run', [
+			\  's:git_status_on_status',
+			\  '-C', self.wd,
+			\  'status',
+			\  '--porcelain'
+			\], self)
 	endif
 
-	call s:git_run(self, 's:git_status_on_behind_ahead', '--no-optional-locks', '-C', self.wd, 'rev-list', '--count', '--left-right', '--count', '@{upstream}...@')
+	call call('s:git_run', [
+		\  's:git_status_on_behind_ahead',
+		\  '-C', self.wd,
+		\  'rev-list',
+		\  '--count',
+		\  '--left-right',
+		\  '--count',
+		\  '@{upstream}...@'
+		\], self)
 
 	" sequencer/todo
 	if isdirectory(self.dir.'/rebase-merge')
@@ -361,7 +524,13 @@ function! s:git_status_on_bootstrap(data) abort dict
 
 	if self.head ==# 'HEAD'
 		" Detached.
-		call s:git_run(self, 's:git_status_on_head', '--no-optional-locks', '-C', self.wd, 'name-rev', '--name-only', self.head)
+		call call('s:git_run', [
+		\  's:git_status_on_head',
+		\  '-C', self.wd,
+		\  'name-rev',
+		\  '--name-only',
+		\  self.head
+		\], self)
 	endif
 
 	let self.head = substitute(self.head, '^refs/heads/', '', '')
@@ -393,13 +562,27 @@ function! Git() abort
 			\  'total': 0,
 			\  'status': ''
 			\}
-		call s:git_run(s:git[dir], 's:git_status_on_bootstrap', '--no-optional-locks', '-C', dir, 'rev-parse', '--abbrev-ref', '--absolute-git-dir', '--is-bare-repository', '--is-inside-git-dir', '@', '--show-cdup')
+		call call('s:git_run', [
+			\  's:git_status_on_bootstrap',
+			\  '-C', dir,
+			\  'rev-parse',
+			\  '--abbrev-ref',
+			\  '--absolute-git-dir',
+			\  '--is-bare-repository',
+			\  '--is-inside-git-dir',
+			\  '@',
+			\  '--show-cdup'
+			\], s:git[dir])
 	endif
 	return s:git[dir]
 endfunction
 
 augroup vimrc_git
 	autocmd!
+
+	" Defer window resizing since nvim crashes if it is done as part of the
+	" autocmd handler.
+	autocmd VimResized * if empty(getcmdtype())|call feedkeys(":call g:Git_blame_do_winresize()|echo\<CR>", 'ni')|endif
 
 	let s:git = {}
 	autocmd ShellCmdPost,FileChangedShellPost,TermLeave,VimResume * let s:git = {}
@@ -415,4 +598,6 @@ augroup vimrc_git
 
 	" Highlight conflict markers.
 	autocmd Colorscheme * match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
+
+	autocmd FileType diff call s:git_setup_diff_ft()
 augroup END
