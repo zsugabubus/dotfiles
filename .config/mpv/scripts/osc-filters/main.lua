@@ -82,15 +82,16 @@ for i=1,9 do
 end
 
 function avdict_to_string(o)
-	local s = ''
+	local s = {}
 	for k,v in pairs(o) do
-		s = s .. ':' .. k .. '=' .. v
+		table.insert(s, table.concat{k, '=', v})
 	end
-	return s:sub(2)
+	return table.concat(s, ':')
 end
 
 function print_filters(name, t)
-	osd.data = osd.data .. '{\\r}' .. name .. NBSP .. 'Filters:'
+	table.insert(osd.data, table.concat{
+		'{\\r}', name, NBSP, 'Filters:'})
 	filters[t] = mp.get_property_native(t)
 
 	local f = filters[t]
@@ -102,23 +103,27 @@ function print_filters(name, t)
 	end
 
 	if #f == 0 then
-		osd.data = osd.data .. (t == tab and '{\\b1}' or '') .. NBSP .. 'none'
+		table.insert(osd.data, table.concat{
+			(t == tab and '{\\b1}' or ''), NBSP, 'none'})
 	end
 	for i=1,#f do
 		local pars = f[i].params
 		local enabled = f[i].enabled
 		local selected = t == tab and i == current[t]
-		osd.data = osd.data ..
-			'\\N{\\r\\b1}' .. (selected and '' or '{\\alpha&HFF}') ..
-			RIGHT_ARROW ..
-			(selected and '' or '{\\r}') ..
-			'{\\alpha&H00}' .. NBSP ..
-			(enabled and '●' or '○') .. NBSP ..
-			i .. ':' .. NBSP ..
-			f[i].name .. NBSP ..
-			(pars.graph and '[' .. pars.graph .. ']' or avdict_to_string(pars))
+		table.insert(osd.data, table.concat{
+			'\\N{\\r\\b1}',
+			(selected and '' or '{\\alpha&HFF}'),
+			RIGHT_ARROW,
+			(selected and '' or '{\\b0}'),
+			'{\\alpha&H00}', NBSP,
+			(enabled and '●' or '○'), NBSP})
+		table.insert(osd.data, table.concat({
+			i, ':', NBSP}))
+		table.insert(osd.data, table.concat({
+			f[i].name, NBSP,
+			(pars.graph and '[' .. pars.graph .. ']' or avdict_to_string(pars))}))
 	end
-	osd.data = osd.data .. '\\N'
+	table.insert(osd.data, '\\N')
 end
 
 function update()
@@ -132,11 +137,12 @@ function _update()
 		return
 	end
 
-	osd.data = NBSP .. '\n'
+	osd.data = {NBSP .. '\n'}
 	print_filters('Audio', 'af')
-	osd.data = osd.data .. '\\N'
+	table.insert(osd.data, '\\N')
 	print_filters('Video', 'vf')
 
+	osd.data = table.concat(osd.data)
 	osd:update()
 end
 

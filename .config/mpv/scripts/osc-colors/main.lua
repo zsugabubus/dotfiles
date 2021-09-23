@@ -111,23 +111,24 @@ function _update()
 		return
 	end
 
-	osd.data = NBSP .. '\n'
+	osd.data = {NBSP .. '\n'}
 
 	for _,x in ipairs(OPTIONS) do
-		osd.data =
-			osd.data .. "{\\fnmpv-osd-symbols}\238\128" .. string.char(128 + x.icon) .. ' ' ..
-			x.option:sub(1, 1):upper() .. x.option:sub(2) .. ': ' ..
-			mp.get_property_number(x.option) .. '\\N'
+		table.insert(osd.data, table.concat{
+			"{\\fnmpv-osd-symbols}\238\128", string.char(128 + x.icon), ' ',
+			x.option:sub(1, 1):upper(), x.option:sub(2), ': ',
+			mp.get_property_number(x.option), '\\N'
+		})
 	end
 
 	if visible then
-		osd.data = osd.data .. '{\\fscx75\\fscy75}'
+		table.insert(osd.data, '{\\fscx75\\fscy75}')
 		for i,preset in ipairs(PRESETS) do
-			osd.data = osd.data .. '\\N' .. ('%d: %s'):format(i - 1, preset.name)
+			table.insert(osd.data, ('\\N%d: %s'):format(i - 1, preset.name))
 		end
 	end
 
-	osd.data = osd.data:gsub(' ', NBSP)
+	osd.data = table.concat(osd.data):gsub(' ', NBSP)
 
 	osd:update()
 	if not visible then

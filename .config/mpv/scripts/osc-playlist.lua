@@ -1,3 +1,7 @@
+local NBSP = '\194\160'
+local RIGHT_ARROW = '\226\158\156'
+local HORIZONTAL_ELLIPSIS = '\226\128\166'
+
 local osd = mp.create_osd_overlay('ass-events')
 local visible = false
 local options = require 'mp.options'
@@ -58,10 +62,8 @@ function _update()
 		end
 	end
 
-	osd.data = ('{\\r\\bord2\\pos(0, %d)\\fnmpv-osd-symbols}'):format(y)
+	osd.data = {('{\\r\\bord2\\pos(0, %d)\\fnmpv-osd-symbols}'):format(y)}
 
-	local NBSP = '\194\160'
-	local RIGHT_ARROW = '\226\158\156'
 	for i=from,to do
 		local item = playlist[i]
 
@@ -81,7 +83,6 @@ function _update()
 			end
 
 			if 80 < #display then
-				local HORIZONTAL_ELLIPSIS = '\226\128\166'
 				display = display:gsub('/.*/', '/' .. HORIZONTAL_ELLIPSIS .. '/')
 			end
 
@@ -94,31 +95,32 @@ function _update()
 				:gsub('%.[0-9A-Za-z]+$', '')
 		end
 
-		osd.data = osd.data ..
-			('\\N{\\r\\b0\\fscx%f\\fscy%f}'):format(opts.font_scale * 100, opts.font_scale * 100) ..
-			'{\\alpha&H00}' ..
+		table.insert(osd.data, table.concat{
+			('\\N{\\r\\fscx%f\\fscy%f}'):format(opts.font_scale * 100, opts.font_scale * 100),
+			'{\\alpha&H00}',
 			(opts.rtl
 				and (
 					item.current and '{\\b1}' or ''
 				)
-				or (
-					NBSP ..
-					(item.current and '{\\b1}' or '{\\alpha&HFF}') ..
-					RIGHT_ARROW ..
-					'{\\alpha&H00}' ..
+				or table.concat{
+					NBSP,
+					'{\\b1}',
+					(item.current and '' or '{\\alpha&HFF}'),
+					RIGHT_ARROW,
+					(item.current and '' or '{\\b0}'),
+					'{\\alpha&H00}',
 					NBSP
-				)
-			) ..
-			display ..
+				}
+			),
+			display,
 			(opts.rtl
-				and (
-					(item.current and '' or '{\\alpha&HFF}') ..
-					'<'
-				)
+				and ((item.current and '' or '{\\alpha&HFF}') .. '<')
 				or ''
 			)
+		})
 	end
 
+	osd.data = table.concat(osd.data)
 	osd:update()
 end
 
