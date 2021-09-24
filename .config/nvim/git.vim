@@ -607,7 +607,7 @@ augroup vimrc_git
 
 	" Defer window resizing since nvim crashes if it is done as part of the
 	" autocmd handler.
-	autocmd VimResized * if empty(getcmdtype())|call feedkeys(":call g:Git_blame_do_winresize()|echo\<CR>", 'ni')|endif
+	autocmd VimResized * if mode(1) ==# 'n'|call feedkeys(":call g:Git_blame_do_winresize()|echo\<CR>", 'ni')|endif
 
 	let s:git = {}
 	autocmd ShellCmdPost,FileChangedShellPost,TermLeave,VimResume * let s:git = {}
