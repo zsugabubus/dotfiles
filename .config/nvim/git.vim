@@ -1,3 +1,5 @@
+let g:git_symbols = "SMUT"
+let g:git_symbols = "+*%$" " git-prompt
 let g:git_max_tabs = 15
 set switchbuf=useopen,usetab
 nnoremap <silent><expr> gf (0 <=# match(expand('<cfile>'), '\v^\x{4,}$') ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>" : 0 <=# match(expand('<cfile>'), '^[ab]/') ? 'viWof/lgf' : 'gf')
@@ -412,10 +414,14 @@ function! s:git_statusline_update() abort dict
 	let self.status =
 		\ (self.bare ? 'BARE:' : '').
 		\ self.head.
-		\ ("S"[!self.staged]).("M"[!self.modified]).("U"[!self.untracked]).
-		\ (self.ahead ># 0 || self.behind ># 0
-		\  ? (self.behind ? '<'.(self.behind ># 1 ? self.behind : '') : '').
-		\    (self.ahead ? '>'.(self.ahead ># 1 ? self.ahead : '') : '')
+		\ (g:git_symbols[0][!self.staged]).
+		\ (g:git_symbols[1][!self.modified]).
+		\ (g:git_symbols[2][!self.untracked]).
+		\ (0 <# self.stashed
+		\  ? g:git_symbols[3].(1 <# self.stashed ? self.stashed : '') : '').
+		\ (0 <# self.ahead || 0 <# self.behind
+		\  ? (self.behind ? '<'.(1 <# self.behind ? self.behind : '') : '').
+		\    (self.ahead ? '>'.(1 <# self.ahead ? self.ahead : '') : '')
 		\  : !self.ahead && !self.behind
 		\  ? '='
 		\  : '').
@@ -437,8 +443,13 @@ function! s:git_status_on_behind_ahead(data) abort dict
 		" Has no upstream.
 		return
 	endtry
-	let self.behind = str2nr(self.behind)
-	let self.ahead = str2nr(self.ahead)
+	let self.behind = +self.behind
+	let self.ahead = +self.ahead
+	call call('s:git_statusline_update', [], self)
+endfunction
+
+function! s:git_status_on_stashed(data) abort dict
+	let self.stashed = +a:data[0]
 	call call('s:git_statusline_update', [], self)
 endfunction
 
@@ -451,6 +462,20 @@ function! s:git_status_on_status(data) abort dict
 	let self.staged = 0 <=# match(a:data, '^\m[MARC]')
 	let self.modified = 0 <=# match(a:data, '^\m.[MARC]')
 	let self.untracked = 0 <=# match(a:data, '^\m\n??')
+
+	if !self.staged && !self.modified
+		call call('s:git_run', [
+			\  's:git_status_on_stashed',
+			\  '-C', self.wd,
+			\  'rev-list',
+			\  '--walk-reflogs',
+			\  '--count',
+			\  'refs/stash',
+			\], self)
+	else
+		let self.stashed = -1
+	endif
+
 	call call('s:git_statusline_update', [], self)
 endfunction
 
@@ -538,7 +563,6 @@ function! s:git_status_on_bootstrap(data) abort dict
 	call call('s:git_statusline_update', [], self)
 endfunction
 
-" git --no-optional-locks rev-list --walk-reflogs --count refs/stash
 " /usr/share/git/git-prompt.sh
 function! Git() abort
 	let bufname = bufname()
@@ -554,6 +578,7 @@ function! Git() abort
 			\  'inside': 0,
 			\  'staged': 0,
 			\  'modified': 0,
+			\  'stashed': 0,
 			\  'untracked': 0,
 			\  'behind': 0,
 			\  'ahead': 0,
