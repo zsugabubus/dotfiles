@@ -104,7 +104,7 @@ set autoindent
 set copyindent
 set wildmenu
 set wildmode=list:longest,full
-set wildignore+=*.a,*.d,*.o,*.out
+set wildignore+=*.a,*.d,*.o,*.out,*.dll
 set wildignore+=.git
 set wildignore+=*.lock,*~,tests/**,t/**,check/**,node_modules
 " Rank files lower with no suffix.
