@@ -931,7 +931,7 @@ set title
 augroup vimrc_term
 	autocmd!
 	if has('nvim')
-		autocmd TermOpen * startinsert|nmap <buffer> <Return> gf
+		autocmd TermOpen * call s:term_open()
 		autocmd TermClose * stopinsert|nnoremap <buffer> q <C-w>c
 	else
 		autocmd TerminalOpen *
@@ -940,6 +940,34 @@ augroup vimrc_term
 	endif
 	tnoremap <C-v> <C-\><C-n>
 	tnoremap <C-w><C-w> <C-\><C-n><C-w><C-w>
+
+	function! s:term_open() abort
+		nmap <buffer> <Return> gf
+
+		let b:passthrough = {}
+		for x in [
+		\  ['<C-d>', 'd'],
+		\  ['<C-u>', 'u']
+		\]
+			execute call('printf', ["nnoremap <silent><nowait><buffer> %s :call <SID>term_passthrough('less', '%s')<CR>"] + x)
+		endfor
+
+		startinsert
+	endfunction
+
+	function! s:term_passthrough(cmd, keys) abort
+		if get(b:passthrough, a:cmd, -1) <# 0
+			let pid = matchstr(bufname(), '\vterm://.{-}//\zs\d+\ze:')
+			let children = systemlist(['ps', '--no-headers', '-o', 'cmd', '-g', pid])
+			let b:passthrough[a:cmd] = 0 <=# match(children, '/'.a:cmd.'$')
+		endif
+
+		if !b:passthrough[a:cmd]
+			return
+		endif
+
+		call feedkeys('a'.a:keys."\<C-\>\<C-n>:\<C-r>=line('w0')+".(line('.') - line('w0'))."\<CR>\<CR>", 'nit')
+	endfunction
 augroup END
 
 if has('nvim')
