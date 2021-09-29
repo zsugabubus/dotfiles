@@ -11,5 +11,9 @@
 !dist
 -g
 !build
+-g
+!*\.min\.*
+-g
+!*\.map
 --max-columns
 10000
