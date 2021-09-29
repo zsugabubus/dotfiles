@@ -834,10 +834,6 @@ xnoremap <silent> s. c.<C-r><C-o>".<Esc>
 xnoremap <silent> s: c:<C-r><C-o>":<Esc>
 xmap <expr><silent> ss- &spelllang ==# 'en' ? 'c–<C-r><C-o>"–<Esc>' : 'c– <C-r><C-o>" –<Esc>'
 
-if has('nvim')
-IfLocal packadd crazy8.nvim
-endif
-
 augroup vimrc_newfilemagic
 	autocmd!
 
@@ -1074,9 +1070,8 @@ IfLocal packadd vim-paperplane
 IfLocal packadd vim-pets
 IfLocal packadd vim-mall
 IfLocal packadd vim-vnicode
-
+IfLocal packadd vim-dent
 IfLocal packadd vim-fuzzysearch
-
 " IfLocal packadd showempty.nvim
 " IfLocal packadd showindent.nvim
 
