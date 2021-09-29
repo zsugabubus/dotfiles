@@ -5,12 +5,6 @@ function! vimdent#Detect() abort
 		return
 	endif
 
-	if &verbose
-		command! -nargs=+ -buffer VimdentDebug echomsg 'vimdent:' <args>
-	else
-		command! -nargs=+ -buffer VimdentDebug
-	endif
-
 	let context = 0
 
 	let bufnr = bufnr()
@@ -37,8 +31,10 @@ function! vimdent#Detect() abort
 			let &tabstop = ts
 			let &expandtab = getbufvar(other, '&expandtab')
 			let &softtabstop = getbufvar(other, '&softtabstop')
+
+			echomsg printf('(%d) sw=%d ts=%d et=%d from %s', level, &sw, &ts, &et, bufname(other))
+
 			let context = level
-			VimdentDebug printf('(%d) sw=%d ts=%d et=%d from %s', context, &sw, &ts, &et, bufname(other))
 			if context ==# 2
 				break
 			endif
@@ -89,13 +85,8 @@ function! vimdent#Detect() abort
 		endif
 	endfor
 
-	if &verbose
-		VimdentDebug 'tabs,spaces' 'count'
-		for [d, n] in items(indents)
-			VimdentDebug d n
-		endfor
-		VimdentDebug 'spaces:' spaces 'vs' 'tabs:' tabs
-	endif
+	echomsg 'indents:' indents
+	echomsg 'spaces:' spaces 'vs' 'tabs:' tabs
 
 	let max_spaces = max(spaces)
 	if max_spaces <=# tabs && 0 <# tabs
@@ -104,7 +95,7 @@ function! vimdent#Detect() abort
 		setlocal noexpandtab
 		" No spaces so same as a tab.
 		setlocal shiftwidth=0 softtabstop=0
-		VimdentDebug 'ts=default'
+		echomsg 'ts=default'
 	elseif 0 <# max_spaces
 		for [d, n] in items(spaces)
 			if n ==# max_spaces
@@ -133,9 +124,7 @@ function! vimdent#Detect() abort
 			endif
 		endfor
 
-		if &verbose
-			VimdentDebug 'shifts:' string(spaces)
-		endif
+		echomsg 'shifts:' spaces
 
 		let ts = ts_minus_sw + &shiftwidth
 
@@ -143,7 +132,7 @@ function! vimdent#Detect() abort
 		" when a file found with set and compatible &sw and &ts we can use those
 		" values.
 		if context ==# 2 && !(&tabstop % &shiftwidth)
-			VimdentDebug printf('sw=%d ts=%d sts=%d (inherited)', &sw, &ts, &sts)
+			echomsg printf('sw=%d ts=%d sts=%d (inherited)', &sw, &ts, &sts)
 		" Other &sw, &ts pairings are (likely) junk.
 		elseif
 			\ &shiftwidth * 2 == ts ||
@@ -151,16 +140,14 @@ function! vimdent#Detect() abort
 			setlocal noexpandtab
 			let &tabstop = ts
 			let &softtabstop = &tabstop
-			VimdentDebug printf('sw=%d ts=sts=%d et=%d', &sw, &ts, &et)
+			echomsg printf('sw=%d ts=sts=%d et=%d', &sw, &ts, &et)
 		else
 			setlocal expandtab
 			let &tabstop = &shiftwidth
 			let &softtabstop = &tabstop
-			VimdentDebug printf('sw=ts=sts=%d et=%d', &sw, &et)
+			echomsg printf('sw=ts=sts=%d et=%d', &sw, &et)
 		endif
 	else
-		VimdentDebug 'all=default'
+		echomsg 'all=default'
 	endif
-
-	delcommand! VimdentDebug
 endfunction
