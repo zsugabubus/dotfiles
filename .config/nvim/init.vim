@@ -54,9 +54,6 @@ if !has('nvim')
 
 	set cursorline cursorlineopt=number
 endif
-
-set shortmess+=mrFI
-
 if !has('nvim') || filewritable(stdpath('config').'/init.vim')
 	command! -nargs=+ IfLocal <args>
 	command! -nargs=+ IfSandbox
@@ -65,21 +62,21 @@ else
 	command! -nargs=+ IfSandbox <args>
 endif
 
-" get rid of shit
+" Create a command abbrevation.
+command! -nargs=+ Ccabbrev let s:_ = [<f-args>][0]|execute(printf("cnoreabbrev <expr> %s getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s", s:_, len(s:_) + 1, <q-args>[len(s:_) + 1:], string(s:_)))
+
+" Get rid of bloat.
 let loaded_tutor_mode_plugin = 1
 let loaded_fzf = 1
 
-" Fuck your mother.
-nnoremap U <Nop>
-
+set shortmess+=mrFI
 set nowrap
-set ts=8 sw=0 sts=0 noet
+setglobal ts=8 sw=0 sts=0 noet
 set foldopen=
 set spelllang=en
 set ignorecase fileignorecase wildignorecase smartcase
 set scrolloff=5 sidescrolloff=23
 set nrformats-=octal
-
 set splitright
 set cinoptions+=t0,:0,l1
 set lazyredraw
@@ -115,19 +112,17 @@ set diffopt=filler,vertical,algorithm:patience
 set nomore
 set foldtext=VimFoldText()
 set nojoinspaces " no double space
-" XXX: How autocomplete with last?
-set completeopt=menu,longest,noselect,preview
-
+set completeopt=menu,longest,noselect,preview " XXX: How autocomplete with last?
 " Shadon't
 IfSandbox set shada="NONE" noundofile nowritebackup
 IfLocal set undofile undodir=$HOME/.cache/nvim/undo
-
 set list
 set showbreak=\\
 if $TERM ==# 'linux'
 	set listchars=eol:$,tab:>\ ,trail:+,extends::,precedes::,nbsp:_
 else
-	set termguicolors " 24-bit colors. Yuhhuuu.
+	" 24-bit colors. Yuhhuuu.
+	set termguicolors
 	set listchars=eol:$,tab:│\ ,trail:•,extends:⟩,precedes:⟨,space:·,nbsp:␣
 	set listchars=eol:$,tab:›\ ,trail:•,extends:⟩,precedes:⟨,space:·,nbsp:␣
 	if !has('nvim')
@@ -136,8 +131,22 @@ else
 	endif
 end
 
-	" let text = matchstr(getline(v:foldstart), '^.\{-}\S.\{-}\s\{-1}\zs\S.\{-}\ze\(:\?\s*{'.'{{\d\+\)\?$')
-	"
+set title
+
+set number relativenumber
+augroup vimrc_numbertoggle
+	autocmd!
+	autocmd FocusGained,InsertLeave,WinEnter * ++nested
+		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
+		\   setlocal relativenumber|
+		\ endif
+	autocmd FocusLost,InsertEnter,WinLeave * ++nested
+		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
+		\   setlocal norelativenumber|
+		\ endif
+	autocmd!
+augroup END
+
 function! VimFoldText() abort
 	let right = ' ('.string(v:foldend - v:foldstart + 1).' )'
 	let line = getline(nextnonblank(v:foldstart))
@@ -152,7 +161,6 @@ endfunction
 cnoremap <C-p> <Up>
 cnoremap <C-n> <Down>
 
-" BUG: lnoremap doesn't work
 inoremap <M-b> <C-Left>
 inoremap <M-f> <C-Right>
 cnoremap <M-b> <C-Left>
@@ -163,7 +171,12 @@ inoremap <C-e> <C-o>g_<Right>
 cnoremap <C-a> <Home>
 cnoremap <C-e> <End>
 
+inoremap <expr> <C-s> strftime("%F")
+inoremap <expr> <C-f> expand("%:t:r")
+
+" How many times... you little shit...
 nnoremap U <nop>
+
 nnoremap <expr> + (!&diff ? 'g+' : ":diffput\<CR>")
 nnoremap <expr> - (!&diff ? 'g-' : ":diffget\<CR>")
 xnoremap <expr> + (!&diff ? '' : ":diffput\<CR>")
@@ -174,10 +187,6 @@ noremap <expr> < (!&diff ? '<' : ":diffget 3\<CR>")
 nnoremap <expr> dL (!&diff ? 'dL' : ":diffget LOCAL\<CR>")
 nnoremap <expr> dB (!&diff ? 'dB' : ":diffget BASE\<CR>")
 nnoremap <expr> dR (!&diff ? 'dR' : ":diffget REMOTE\<CR>")
-
-" jump to merge conflicts
-nnoremap <silent> ]= :call search('^=======$', 'Wz')<CR>
-nnoremap <silent> [= :call search('^=======$', 'Wbz')<CR>
 
 " replace f/F and t/T to jump only to the beginning of snake_case or
 " PascalCase words if pattern is lowercase; otherwise normal f/F and t/T that
@@ -232,15 +241,16 @@ function! s:magic_ctrlg() abort
 endfunction
 inoremap <expr><C-g> <SID>magic_ctrlg()
 
-" augroup vimrc_fasttimeout
-" 	autocmd!
-" 	autocmd InsertEnter * let saved_timeoutlen = &timeoutlen|set timeoutlen=500
-" 	autocmd InsertLeave * let &timeoutlen=saved_timeoutlen
-" augroup END
-
 augroup vimrc_insertempty
 	autocmd!
-	autocmd InsertLeave * try|if empty(trim(getline('.')))|undojoin|call setline('.', '')|endif|catch /undojoin/|endtry
+	autocmd InsertLeave *
+		\ try|
+		\   if empty(trim(getline('.')))|
+		\     undojoin|
+		\     call setline('.', '')|
+		\   endif|
+		\ catch /undojoin/|
+		\ endtry
 augroup END
 
 if !has('nvim')
@@ -283,14 +293,19 @@ AWK
 		echohl Error
 		echomsg 'Upload failed'
 		echohl None
+
 	endif
 endfunction
 command! -nargs=* -bang Publish call s:publish(<bang>0, <q-mods>, [<f-args>])
+
 nnoremap <silent> <M-p> :update<bar>Publish! %<CR>
+
+nnoremap Q :normal n.<CR>zz
 
 " Reindent inner % lines.
 nmap >i >%<<$%<<$%
 nmap <i <%>>$%>>$%
+
 " Delete surrounding lines.
 nmap d< $<%%dd<C-O>dd
 
@@ -298,24 +313,23 @@ inoremap <C-r> <C-r><C-o>
 
 " kO -- Only useful if you have reached the line with a motion.
 nnoremap <expr> a "aO"[prevnonblank(line('.')) ==# line('.') - 1 && prevnonblank(line('.') + 1) ==# line('.') + 1]
+" Reindent before append.
 nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
-
-inoremap <expr> <C-s> strftime("%F")
-inoremap <expr> <C-f> expand("%:t:r")
 
 inoremap <expr> <C-j> line('.') ==# line('$') ? "\<C-O>o" : "\<Down>\<End>"
 
-command! -nargs=1 RegEdit let @<args>=input('"'.<q-args>.'=', @<args>)
 nnoremap d_ "_dd
+
+" Delete argument from list.
 nnoremap <silent> dar :.argdelete<bar>argument<CR>
 
+" m but show available marks.
 nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), {_,nr-> nr2char(nr)}), {_,mark-> (getpos("'".mark)[1] ==# 0 ? mark : ' ')}), '').'"<CR>m'
 
+" Text objects {{{1
 " Jump to parent indention.
 nnoremap <silent> <expr> <C-q> '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S?s-1<CR>
 	\ :noh\|call histdel("search", -1)\|let @/ = histget("search", -1)<CR>'
-
-command! -nargs=1 Source execute 'source' fnameescape((has('nvim') ? stdpath('config') : '~/.vim').'/'.<q-args>)
 
 " Parameter text object.
 onoremap <silent> i, :<C-U>execute "keeppattern normal! v?\\m[(,]?;/\\S/\<lt>CR>o/\\m[,)]/s-1\<lt>CR>"<CR>
@@ -347,10 +361,15 @@ omap <silent> af :<C-U>normal vaf<CR>
 " Make {, } linewise.
 onoremap <silent> { V{
 onoremap <silent> } V}
+" 1}}}
 
 " Visual lines.
 nnoremap <Up> gk
 nnoremap <Down> gj
+
+command! -nargs=1 RegEdit let @<args>=input('"'.<q-args>.'=', @<args>)
+
+command! -nargs=1 Source execute 'source' fnameescape((has('nvim') ? stdpath('config') : '~/.vim').'/'.<q-args>)
 
 augroup vimrc_errorformat
 	autocmd!
@@ -368,6 +387,7 @@ augroup vimrc_errorformat
 	autocmd OptionSet makeprg call s:errorformat_make()
 augroup END
 
+" Christmas bells.
 command! Bell call writefile(["\x07"], '/dev/tty', 'b')
 
 function! s:make() abort
@@ -420,7 +440,7 @@ nnoremap <silent> SW  = ciW<Esc>wviWp`^PB
 
 " Swap xxx = yyy.
 nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P_\", 'nt')\<CR>"
-" }}}1
+" 1}}}
 
 nnoremap <silent> <M-m> :call <SID>make()<CR>
 nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>execute 'terminal make run'<bar>endif<CR>
@@ -432,14 +452,6 @@ nnoremap <silent> <M-f> :next<CR>
 nnoremap <silent> <M-F> :prev<CR>
 nnoremap <silent> <M-w> :Bufdo update<CR>
 nnoremap <silent> <M-q> :quit<CR>
-
-nmap <silent> <Esc>m <M-m>
-for s:i in range(char2nr('@'), char2nr('Z'))
-	let s:l = tolower(nr2char(s:i))
-	let s:u = tolower(nr2char(s:i))
-	execute 'nmap <silent> <Esc>'.s:l.' <M-'.s:l.'>'
-	execute 'nmap <silent> <Esc>'.s:u.' <M-'.s:u.'>'
-endfor
 
 " put the first line of the paragraph at the top of the window
 " <C-E> does not want to get executed without execute... but <C-O> does... WTF!?
@@ -465,25 +477,28 @@ map gY "+yy
 " Repeat last action over visual block.
 xnoremap . :normal! .<CR>
 
+" Execute macro over visual range
+xnoremap <expr><silent> @ printf(':normal! @%s<CR>', nr2char(getchar()))
+
 command! Bg let &background = 'light' == &background ? 'dark' : 'light'
 
-" Perform glob on all lines.
+" Perform glob on every lines.
 command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
 
+" Do command on every buffer and return to current.
 command! -bang -nargs=+ Bufdo let g:bufdo_bufnr = bufnr()|execute 'bufdo<bang>' <q-args>|execute 'buffer' g:bufdo_bufnr|unlet g:bufdo_bufnr
 
-" sweep out untouched buffers
+" Sweep out untouched buffers.
 command! Sweep windo let b:no_sweep = 1|Bufdo if (!&modifiable || 0 ==# changenr()) && !exists('b:no_sweep')|bdelete|endif|unlet! b:no_sweep
 
+" Collect TODO items.
 command! TODO GREP \b(TODO|FIXME|BUG|WTF)\b.*:
-
-" execute macro over visual range
-xnoremap <expr><silent> @ printf(':normal! @%s<CR>', nr2char(getchar()))
 
 command! SynShow echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
 
 command! StripTrailingWhite keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e
-" Highlight illegal whitespace.
+
+" Highlight illegal whitespace. (Red on white.)
 augroup vimrc_japan
 	autocmd!
 	autocmd ColorScheme * highlight ExtraWhitespace ctermbg=197 ctermfg=231 guibg=#ff005f guifg=#ffffff
@@ -498,7 +513,7 @@ augroup vimrc_japan
 		\ endif
 augroup END
 
-cnoreabbrev <expr> man getcmdtype() == ':' && getcmdpos() == 4 ? 'Man' : 'man'
+Ccabbrev man 'Man'
 command! -bar -bang -nargs=+ ManKeyword
 	\ try|
 	\   silent execute 'Man '.join([<f-args>][:-2], ' ')|
@@ -578,15 +593,6 @@ ia Youl'  You’ll
 ia wel'   we’ll
 ia Wel'   We’ll
 
-" function! s:unmap_all(map, prefix)
-" 	redir => mappings
-" 		silent execute a:map.'map' a:prefix
-" 	redir END
-" 	for mapping in split(mappings, \"\n\")
-" 		execute 'silent!' a:map.'unmap' matchstr(l:mapping, '\v^. *\zs[^ ]+')
-" 	endfor
-" endfunction
-
 augroup vimrc_skeletons
 	autocmd! BufNewFile * autocmd FileType <buffer> ++once
 		\ if 0 == changenr()|
@@ -604,7 +610,7 @@ augroup vimrc_skeletons
 		\     'sh': ['#!/bin/sh', ''],
 		\     'zsh': ['#!/bin/zsh', ''],
 		\     'bash': ['#!/bin/bash', ''],
-		\     'python': ['#!/usr/bin/env PYTHONDONTWRITEBYTECODE=1 python3', '']
+		\     'python': ['#!/usr/bin/env python3', '']
 		\   }, &filetype, []))|
 		\ endif|
 		\ normal! G
@@ -615,7 +621,10 @@ augroup vimrc_filetypes
 	autocmd FileType man
 		\ for s:bookmark in split('sSYNOPSIS i#include dDESCRIPTION r^RETURN<bar>^EXIT eERRORS xEXAMPLES eSEE', ' ')|
 		\   execute "nnoremap <silent><buffer><nowait> g".s:bookmark[0]." :call cursor(1, 1)<bar>call search('\\v".s:bookmark[1:]."', 'W')<bar>normal! zt<CR>"|
-		\ endfor
+		\ endfor|
+		\ nnoremap <buffer> // /\v^ {7}\S@=%(.*\n {11,14}\S)@=.{-}\zs\V|
+		\ nnoremap <buffer> <space> <C-D>|
+		\ nmap <buffer> /- //-
 
 	autocmd FileType vim
 		\ command! -range Execute execute substitute(join(getline(<line1>, <line2>), "\n"), '\m\n\s*\', '', 'g')
@@ -685,7 +694,7 @@ augroup vimrc_filetypes
 		\ setlocal ts=2 suffixesadd+=.lua
 
 	autocmd FileType gitcommit
-		\ command! WTC call setline(1, systemlist(['curl', '-s', 'http://whatthecommit.com/index.txt'])[0])|
+		\ command! -buffer WTC call setline(1, systemlist(['curl', '-s', 'http://whatthecommit.com/index.txt'])[0])|
 		\ syntax match Normal ":bug:" conceal cchar=🐛
 
 	autocmd FileType json
@@ -699,11 +708,6 @@ augroup vimrc_filetypes
 
 	autocmd FileType gitcommit,markdown
 		\ setlocal spell expandtab ts=2
-
-	autocmd FileType man
-		\ nnoremap <buffer> // /\v^ {7}\S@=%(.*\n {11,14}\S)@=.{-}\zs\V|
-		\ nnoremap <buffer> <space> <C-D>|
-		\ nmap <buffer> /- //-
 
 	autocmd FileType mail
 		\ setlocal wrap ts=4 et spell|
@@ -728,15 +732,14 @@ augroup vimrc_reload
 	autocmd! BufWritePost init.vim,vimrc ++nested source <afile>
 augroup END
 
-augroup vimrc_autoplug
+augroup vimrc_autopackadd
 	autocmd!
 	IfLocal autocmd BufReadPre *.styl ++once packadd vim-stylus
 	IfLocal autocmd BufReadPre *.pug  ++once packadd vim-pug
 	IfLocal autocmd BufReadPre *.toml ++once packadd vim-toml
 	IfLocal autocmd BufReadPre *.glsl ++once packadd vim-glsl
+	IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 augroup END
-
-IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 
 " IfLocal packadd debugger.nvim
 
@@ -747,8 +750,6 @@ packadd cfilter
 augroup vimrc_autodiffupdate
 	autocmd! TextChanged * if empty(&buftype)|diffupdate|endif
 augroup END
-
-nnoremap Q :normal n.<CR>zz
 
 " Automatically open quickfix and location window and make it modifiable.
 augroup vimrc_quickfixfix
@@ -776,31 +777,42 @@ augroup vimrc_quickfixfix
 	autocmd QuitPre          * ++nested silent! lclose | silent! cclose
 augroup END
 
+" Quit from every diffed window; though quit is forbidden inside windo.
 augroup vimrc_diffquit
-	" quit from every diffed window; though quit is forbidden inside windo
 	autocmd! QuitPre * if &diff|execute 'windo if winnr() !=# '.winnr().' && &diff|quit|endif'|endif
 augroup END
 
+augroup vimrc_autodiffoff
+	autocmd!
+	autocmd BufHidden *
+		\ if !&buflisted|
+		\   diffoff!|
+		\ endif
+	autocmd BufUnload *
+		\ if &diff|
+		\   diffoff!|
+		\ endif
+augroup END
+
 " autocmd BufLeave * if &buftype ==# 'quickfix' | echo 'leaving qf' | endif
-cnoreabbrev <expr> f getcmdtype() == ':' && getcmdpos() == 2 ? 'find'.(' ' !=# v:char ? ' ' : '') : 'f'
+Ccabbrev f 'find'.(' ' !=# v:char ? ' ' : '')
 
-cnoreabbrev <expr> cd getcmdtype() == ':' && getcmdpos() == 3 ? (haslocaldir() ? 'lcd' : haslocaldir(-1) ? 'tcd' : 'cd') : 'cd'
-cnoreabbrev <expr> ccd getcmdtype() == ':' && getcmdpos() == 4 ? 'cd %:p:h' : 'ccd'
+Ccabbrev cd (haslocaldir() ? 'lcd' : haslocaldir(-1) ? 'tcd' : 'cd')
+Ccabbrev ccd 'cd %:p:h'
 
-cnoreabbrev <expr> gr getcmdtype() == ':' && getcmdpos() == 3 ? 'GREP' : 'gr'
-cnoreabbrev <expr> grh getcmdtype() == ':' && getcmdpos() == 4 ? "GREP -g '*.h'" : 'grh'
-cnoreabbrev <expr> . getcmdtype() == ':' && getcmdpos() == 2 ? '@:' : '.'
+" grep helper: search quoted text (can include spaces) when contains
+" no -args.
 command! -nargs=* GREP call feedkeys("\<CR>", "nt")|execute 'grep -g !check -g !docs -g !test -g !build -g !tests' substitute(<q-args> =~ '\v^''|%(^|\s)-\w' ? <q-args> : shellescape(<q-args>, 1), '<bar>', '\\<bar>', 'g')
 xnoremap // y:GREP -F '<C-r>=@"<CR>'<CR>
+Ccabbrev gr 'GREP'
+Ccabbrev grh "GREP -g '*.h'"
+
+Ccabbrev . '@:'
+
 nnoremap /. /\V.
 
-nnoremap g<C-f> :find <C-r><C-w><C-z><CR>
-
 let pets_joker = ''
-" tab or complete
-inoremap <expr> <Tab> col('.') > 1 && strpart(getline('.'), col('.') - 2, 3) =~ '^\w' ? "\<C-N>" : "\<Tab>"
 cnoremap <expr> <C-z> getcmdtype() == ':' ? '<C-f>A<C-x><C-v>' : '<C-f>A<C-n>'
-inoremap <S-Tab> \<C-P>
 
 xnoremap <expr> O (line('v') !=# line('.') ? line('v') < line('.') : col('v') <  col('.')) ? '' : 'o'
 
@@ -844,7 +856,7 @@ augroup vimrc_newfilemagic
 	" Auto chmod +x.
 	autocmd BufNewFile * autocmd BufWritePost <buffer> ++once
 			\ if getline(1)[:1] ==# '#!' || '#' ==# &commentstring[0]|
-			\   silent! call system(['chmod', '+x', '--', expand('%')])|
+			\   silent! call system(['chmod', '+x', '--', expand('<afile>:p')])|
 			\ endif
 augroup END
 
@@ -893,6 +905,7 @@ nnoremap <silent> g? :call <SID>goto_def(nr2char(getchar()))<CR>
 
 nnoremap ! :ls<CR>:b<Space>
 nnoremap g/ :echo glob('*')<CR>:find *
+nnoremap g<C-f> :find <C-r><C-w><C-z><CR>
 nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
 
 nnoremap <C-w>T <C-w>s<C-w>T
@@ -906,26 +919,9 @@ xmap <expr><silent> <C-w>h ':resize'.(abs(line("v") - line("."))+(2*&scrolloff +
 
 IfLocal command! PackUpdate execute 'terminal' printf('find %s -mindepth 3 -maxdepth 3 -type d -exec printf \%%s:\\n {} \; -execdir git -C {} pull \;', shellescape(stdpath('data').'/site/pack'))
 
-set number relativenumber
-augroup vimrc_numbertoggle
-	autocmd!
- " ,TermEnter
-	autocmd FocusGained,InsertLeave,WinEnter * ++nested
-		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
-		\   set relativenumber|
-		\ endif
-	" ,TermLeave
-	autocmd FocusLost,InsertEnter,WinLeave * ++nested
-		\ if &number && &buftype ==# '' && !&diff && &filetype !=# 'qf'|
-		\   set norelativenumber|
-		\ endif
-	autocmd!
-augroup END
-
-set title
-
 augroup vimrc_term
 	autocmd!
+
 	if has('nvim')
 		autocmd TermOpen * call s:term_open()
 		autocmd TermClose * stopinsert|nnoremap <buffer> q <C-w>c
@@ -934,6 +930,7 @@ augroup vimrc_term
 			\ autocmd InsertEnter * execute 'startinsert|nmap <buffer> <Return> gf'|
 			\ autocmd InsertLeave * execute 'stopinsert|nnoremap <buffer> q <C-w>c'
 	endif
+
 	tnoremap <C-v> <C-\><C-n>
 	tnoremap <C-w><C-w> <C-\><C-n><C-w><C-w>
 
@@ -975,50 +972,6 @@ endif
 
 augroup vimrc_autoresize
 	autocmd! VimResized * wincmd =
-augroup END
-
-function! s:is_slow_fs(path) abort
-	return 0 <=# index(['fuseblk'], get(systemlist(['stat', '-f', fnamemodify(a:path, ':p'), '-c', '%T']), 0, ''))
-endfunction
-
-augroup vimrc_autodiffoff
-	autocmd!
-	autocmd BufHidden *
-		\ if !&buflisted|
-		\   diffoff!|
-		\ endif
-	autocmd BufUnload *
-		\ if &diff|
-		\   diffoff!|
-		\ endif
-augroup END
-
-augroup vimrc_cmdmagic
-	autocmd!
-	function! s:cmd_magic()
-		if v:event.cmdtype !=# ':' ||
-		\  v:event.abort ||
-		\  v:event.cmdlevel !=# 1
-			return
-		endif
-		echoe v:event
-		let cmdline = getcmdline()
-		if cmdline =~# '\v^b%[uffer]>'
-			let v:event.abort = 0
-			let v:errmsg = ''
-			" echoe cmdline
-			" execute cmdline
-			if v:errmsg =~# '^E93' " More than one match for...
-				call timer_start(0, {-> feedkeys(':'.cmdline.nr2char(&wildcharm), 'in')})
-			elseif v:errmsg =~# '^E94' " No matching buffer for...
-				call timer_start(0, {-> feedkeys(':e '.matchstr(cmdline, ' \zs.*').nr2char(&wildcharm), 'in')})
-			elseif !empty(v:errmsg)
-				echoe v:errmsg
-			endif
-		endif
-	endfunction
-	autocmd CmdlineLeave : call s:cmd_magic()
-	autocmd!
 augroup END
 
 Source statusline.vim
@@ -1149,6 +1102,8 @@ function! s:magic_paste_reindent(nlines, cur_indent) abort
 		endtry
 	elseif &cindent
 		let indent = cindent(v:lnum)
+	elseif &lisp
+		let indent = lispindent(v:lnum)
 	else
 		return
 	endif
@@ -1213,9 +1168,9 @@ endif
 colorscheme vivid
 
 if has('nvim')
-augroup vimrc_autosave
-	autocmd! Signal SIGUSR1 silent! Bufdo update
-augroup END
+	augroup vimrc_autosave
+		autocmd! Signal SIGUSR1 silent! Bufdo update
+	augroup END
 endif
 
 augroup vimrc_restorecursor
@@ -1238,7 +1193,8 @@ augroup vimrc_sessionmagic
 		\ endif
 augroup END
 
-function! s:cmagic_tilde() abort
+" Recognize user hashes from shell.
+function! s:magic_tilde() abort
 	if getcmdtype() !=# ':'
 		return '/'
 	endif
@@ -1275,38 +1231,16 @@ function! s:cmagic_tilde() abort
 	return "\<C-\>e\"".escape(strpart(cmdline, 0, word_start).word.'/'.strpart(cmdline, cmdpos), '\"')."\"\<CR>"
 endfunction
 
-cnoremap <expr> / <SID>cmagic_tilde()
+cnoremap <expr> / <SID>magic_tilde()
 
 let @p = "i\<C-R>+\<CR>\<Esc>"
 " Make typedef and struct from typedef struct.
 let @s = "0ldt;h%hPpa;\<Esc>v0y{O\<Esc>jpjdwf ;dEO\<Esc>"
 let @n = "dd*\<C-w>\<C-w>nzz\<C-w>\<C-w>"
 
-" Local configuration.
-function! s:on_cwd(chan_id, data, name) abort
-	let cwd = a:data[0]
-
-	let TRUSTED = ['~/pro/*']
-	let safepat = join(map(TRUSTED, {_,path-> glob2regpat(path)}), '\|')
-
-	while cwd !=# '/'
-		let filepath = cwd.'/.vimrc'
-		if fnamemodify(cwd, ':~') =~ safepat && filereadable(filepath)
-			execute 'source' fnameescape(filepath)
-		endif
-		let cwd = fnamemodify(cwd, ':h')
-	endwhile
-endfunction
-if has('nvim')
-call jobstart(['/usr/bin/pwd', '-L'], {
-	\  'pty': 0,
-	\  'stdout_buffered': 1,
-	\  'on_stdout': function('s:on_cwd'),
-	\  'on_stderr': {c,d,n-> 0}
-	\})
-endif
-
 delcommand Source
+
+delcommand Ccabbrev
 
 delcommand IfSandbox
 delcommand IfLocal
