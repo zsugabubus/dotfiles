@@ -52,7 +52,11 @@ endfunction
 
 augroup vim_pets_snippets
 	autocmd!
-	autocmd BufNew,BufCreate,BufAdd,BufReadPost,FileType,BufWinEnter *
+
+	" Reset.
+	autocmd FileType * let b:pets_snippets = []
+
+	autocmd BufNew,BufCreate,BufAdd,BufReadPost,BufWinEnter *
 		\ if !exists('b:pets_snippets')|
 		\   let b:pets_snippets = []|
 		\ endif
