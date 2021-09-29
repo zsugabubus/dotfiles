@@ -397,8 +397,14 @@ function rabbit() {
 
 alias dn='DOTNET_CLI_TELEMETRY_OPTOUT=1 ht dotnet'
 
-alias t='exec tmux attach'
-alias tn='() { exec tmux new -s "$(basename "$(realpath .)")"}'
+if [[ -o login ]]; then
+	alias _leave_shell=''
+else
+	alias _leave_shell='exec'
+fi
+
+alias t='_leave_shell tmux attach'
+alias tn='() { _leave_shell tmux new -s $PWD:t }'
 
 function br() {
 	bwrap \
