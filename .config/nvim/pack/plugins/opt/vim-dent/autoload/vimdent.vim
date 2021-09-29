@@ -1,4 +1,8 @@
-function! vimdent#Detect() abort
+if has('nvim')
+	lua require 'vimdent'
+endif
+
+function! vimdent#Detect(...) abort
 	if
 		\ !empty(&buftype) ||
 		\ 0 <=# index(split('help diff', ' '), &filetype)
@@ -45,18 +49,28 @@ function! vimdent#Detect() abort
 	try
 		setlocal ts=100
 
-		let indents = {}
-		let prev_tab = 0
-		let prev_sp = 0
-		for lnum in range(1, min([line('$'), 5000]))
-			let indent = indent(lnum)
-			let tab = indent / 100
-			let space = indent % 100
-			let d = (tab - prev_tab).','.(space - prev_sp)
-			let indents[d] = get(indents, d, 0) + 1
-			let prev_tab = tab
-			let prev_sp = space
-		endfor
+		let max_lines = 5000
+		if has('nvim')
+			let indents = luaeval("_VimdentGetIndents(_A)", max_lines)
+		else
+			" Welcome to Vim that carefully reads even your comments. This loop is
+			" so hot that compressing names results in ms of speedup. And for
+			" millions of users times millions of files...
+
+			let I = {} " indents
+			let T = 0 " prev_tabs
+			let S = 0 " prev_spaces
+			for l in range(1, min([line('$'), max_lines]))
+let i=indent(l)
+let t=i/100
+let s=i%100
+let d=(t-T).','.(s-S)
+let I[d]=get(I,d,0)+1
+let T=t
+let S=s
+			endfor
+			let indents = I
+		endif
 	finally
 		let &tabstop = ts
 	endtry
@@ -64,9 +78,11 @@ function! vimdent#Detect() abort
 	" Filter out:
 	" - No changes.
 	" - Multiple tab changes.
+	" - Single space changes.
 	call filter(indents, {d,n->
 		\ d !=# '0,0' &&
-		\ abs(matchstr(d, '.*\ze,')) <=# 1
+		\ abs(matchstr(d, '.*\ze,')) <=# 1 &&
+		\ abs(matchstr(d, ',\zs.*')) !=# 1
 		\})
 
 	" Find out most common kind change. Tab or space?
