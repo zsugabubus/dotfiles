@@ -22,8 +22,7 @@ local last_changed = OPTIONS[1].option
 
 local ignore_once, file_loaded = true, false
 mp.register_event('end-file', function()
-	file_loaded = false
-	visible = false
+	file_loaded, visible = false, false
 	update_menu()
 end)
 mp.register_event('playback-restart', function() file_loaded = true end)
@@ -89,9 +88,8 @@ end
 for i=0,9 do
 	keys[string.char(string.byte('0') + i)] =
 		function()
-			ignore_once = true
+			ignore_once, visible = true, false
 			select_abs(i + 1)
-			visible = false
 			update_menu()
 		end
 end
@@ -131,8 +129,9 @@ function _update()
 	osd.data = table.concat(osd.data):gsub(' ', NBSP)
 
 	osd:update()
+
+	timeout:kill()
 	if not visible then
-		timeout:kill()
 		timeout:resume()
 	end
 end
@@ -156,9 +155,7 @@ function update_menu()
 end
 
 mp.register_script_message('toggle', function()
-	timeout:kill()
 	visible = not visible
-	ignore_once = false
-	file_loaded = true
+	ignore_once, file_loaded = false, true
 	update_menu()
 end)
