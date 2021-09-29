@@ -138,7 +138,6 @@ function speedtest() {
 compdef '_files -g "*.(png|jpg)"' feh
 
 alias -g G='| grep -i'
-# alias -g F='| fzf | { while read f; do print -z $(q-@)f; done }'
 alias -g L='|& '$PAGER
 alias -g E='|& '$EDITOR
 
@@ -166,7 +165,7 @@ function _ripgrep_dashe() { rg -e "$*"; }
 alias f='noglob ff'
 alias f='noglob f'
 function f() {
-	find -mindepth 1 -iname $@ -printf '%P\0' 2>/dev/null |
+	find -mindepth 1 -iname ${@:-'*'} -printf '%P\0' 2>/dev/null |
 	xargs -r0 --max-args=17 ls -1d --color |
 	fzf -1 --ansi -d $'\xa0' -n2.. --ansi --multi --bind 'alt-enter:select-all,ctrl-o:execute($EDITOR {+2})' --preview 'stat {+2}' | {
 		local files=()
@@ -265,9 +264,7 @@ alias mv='mv -i'
 alias mv~='() { mv $1 $1~ }'
 alias backup='() { cp $1 $1~ }'
 alias asm='gcc -fno-stack-protector -fno-asynchronous-unwind-tables -S'
-alias mkcd='noglob mkcd'
-alias md='mkcd'
-function mkcd() { mkdir -p -- "$*" && cd -- "$*" }
+function md() { mkdir -p -- "$*" && cd -- "$*" }
 alias mkln='() { mkdir -p -- "$(readlink $1)"; }'
 alias cdln='() { cd "${$(readlink $1):h}"; }'
 compdef '_files -g "*(@)"' cdln
@@ -279,7 +276,6 @@ alias pm='progress -M'
 alias term='$TERMINAL >/dev/null &disown'
 alias fr='free -hwt'
 alias gr='grep -i'
-alias sl='ln -sf'
 alias zcalc='() {
 autoload -Uz zcalc{,-auto-insert}
 zle -N zcalc-auto-insert
@@ -292,24 +288,24 @@ zcalc -f }'
 alias cal='cal -m'
 alias oct='od -tu1'
 alias rm='rm -dI --one-file-system'
-alias rmdir='() {
+function rmdir() {
 	if (($# > 0)); then
-		rmdir $@
+		command rmdir $@
 	else
 		local dirname=${PWD:t}
 		cd -q -- ${PWD:h} &&
-		if rmdir -- $dirname; then
+		if command rmdir -- $dirname; then
 			cd .
 		else
 			cd $dirname
 		fi
 	fi
-}'
+}
 alias cpd='() { rsync -aihPv -- $^*/ }'
 # alias p='pass letmein &>/dev/null'
 alias iotop='sudo iotop'
 alias fcf='() { print -z $(fc -nl 0 | fzf); }'
-alias iptables='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
+alias ipt='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
 alias pl='pass login'
 compdef '_files -W ~/.config/passwords' pl
 alias bc='bc -lq'
@@ -322,10 +318,9 @@ function pdfmerge() {
 	local out=a.pdf
 	command gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -sOutputFile="$out" ${@:-*.pdf}
 }
-alias calcurse='calcurse -q'
 # alias abook='abook --config ~/.config/abook/abookrc --datafile ~/.config/abook/addressbook'
 alias curl='curl --compressed'
-alias co='curl --remote-name-all -L'
+alias curlL='curl --remote-name-all -L'
 alias oz='() { od -A x -t x1z -v $@ | sed '"'"'s/  >\(.*\)<$/  |\1|/'"'"' }'
 alias du.='du --apparent-size -csh . | sort -h'
 alias du..='du --apparent-size -chd 1 . | sort -h'
@@ -386,7 +381,7 @@ function ab() {
 function rabbit() {
 	while session=$(
 		abduco -l |
-		awk "-vq=$session" 'NR == 1 { print > "/dev/tty" } 1 < NR { print | "fzy --query=" q "" }' |
+		awk "-vq=$session" 'NR == 1 { print > "/dev/tty" } 1 < NR { print | "fzf --query=" q "" }' |
 		sed 's/[^\t]*\t[^\t]*\t//'
 	) &&
 	test -n "$session" &&
@@ -575,19 +570,3 @@ function --() {
 # a1net() {
 #		ssh router.lan "uci set firewall.@rule[13].enabled='${1:-1}' && uci commit && /etc/init.d/firewall reload"
 # }
-
-
-# zstyle ':mime:' mailcap ~/.mailcap
-# zstyle ':mime:' disown true
-# zstyle ':mime:' current-shell true
-# zstyle :mime: mime-types ~/.config/mime.types  # /usr/local/etc/mime.types \
-#			/etc/mime.types
-# autoload -U zsh-mime-setup
-# zsh-mime-setup
-
-# if [ -n "$DISPLAY" ]; then
-#		alias asdf='
-#			xkbcomp -I$HOME/.config/xkb $HOME/.config/xkb/keymap/custom.xkb $DISPLAY &&
-#			xcape -e "Hyper_L=space;Control_L=Escape;Caps_Lock=Escape"'
-#		alias aoeu='setxkbmap hu && pkill xcape'
-# fi
