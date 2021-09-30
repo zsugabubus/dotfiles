@@ -205,7 +205,7 @@ function! s:git_tree(diff, ...) abort
 	else " <tree-1> [<tree-2>=<tree-1> parents]
 		let cmd = ['diff-tree'] + common_diff_options + a:000
 	endif
-	let output = call(s:git_do, cmd)
+	let output = call('s:git_do', cmd)
 
 	" call add(list, {
 	" 	\  'text': 'status of '.join(a:000, ' '),
