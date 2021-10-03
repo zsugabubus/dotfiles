@@ -5,7 +5,7 @@ endif
 function! vimdent#Detect(...) abort
 	if
 		\ !empty(&buftype) ||
-		\ 0 <=# index(split('help diff', ' '), &filetype)
+		\ &filetype =~? 'help\|diff\|git'
 		return
 	endif
 
