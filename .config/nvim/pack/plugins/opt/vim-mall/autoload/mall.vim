@@ -11,7 +11,7 @@ endfunction
 function s:do_align() abort
 	let fillchar = ' '
 	let lines = {}
-	let offs = {}
+	let voffsets = {}
 	let cmd = ''
 
 	" If 0, align all columns.
@@ -23,10 +23,11 @@ function s:do_align() abort
 	for lnum in range(line("'<"), line("'>"))
 		let syntax = s:get_syntax_type(lnum, 1)
 		let lines[lnum] = []
-		let offs[lnum] = 0
-		let oldvcol = 1
-		let oldcol = 1
+		let voffsets[lnum] = 0
+		let from_vcol = 1
+		let from_col = 1
 		let col = 1
+		let line = getline(lnum)
 		while len(lines[lnum]) <# g:mall_count
 			call cursor(lnum, col)
 			if col('.') !=# col
@@ -57,21 +58,20 @@ function s:do_align() abort
 				continue
 			endif
 
-			let line = strpart(getline(lnum), oldcol - 1, col - oldcol)
+			let segment = strpart(line, from_col - 1, col - from_col)
 
 			let vcol = virtcol("']")
-			call add(lines[lnum], [line, oldvcol, vcol])
-			let [oldcol, oldvcol] = [col, vcol]
+			call add(lines[lnum], [segment, from_vcol, vcol])
+			let [from_col, from_vcol] = [col, vcol]
 		endwhile
 	endfor
 
-	let pat = '\v^.{-}\zs\V'.escape(fillchar, '\').'\*\v$'
+	let pat = '\V'.escape(fillchar, '\').'\*\v$'
 
 	let index = 0
-	let oldwall = 1
 	while 1
 		" The virtcol columns should be aligned to.
-		let wall = 0
+		let align_to = 0
 
 		let any = 0
 		for [lnum, columns] in items(lines)
@@ -83,10 +83,9 @@ function s:do_align() abort
 			let any = 1
 			let column = columns[index]
 			let segment = column[0]
-			let start = column[1] + offs[lnum]
-			let vcol = start + strdisplaywidth(strpart(segment, 0, match(segment, pat)), start)
-			" echom start '+' strpart(segment, 0, match(segment, pat)) '->' vcol
-			let wall = max([wall, vcol])
+			let start = column[1] + voffsets[lnum]
+			let vcol = start + strdisplaywidth(strpart(segment, 0, match(segment, pat)), start - 1)
+			let align_to = max([align_to, vcol])
 		endfor
 
 		" No more columns to align.
@@ -94,21 +93,19 @@ function s:do_align() abort
 			break
 		endif
 
-		" echom 'max width='.wall
-		" echom lines
-
 		for [lnum, columns] in items(lines)
 			if len(columns) <=# index
 				continue
 			endif
+
 			let column = columns[index]
-			let endvcol = column[2] + offs[lnum]
-			if endvcol <# wall
-				let cmd .= lnum.'G'.endvcol.'|'.(wall - endvcol).'i'.fillchar."\<Esc>"
-			elseif wall <# endvcol
-				let cmd .= lnum.'G'.endvcol.'|d'.wall.'|'
+			let end_vcol = column[2] + voffsets[lnum]
+			if end_vcol <# align_to
+				let cmd .= lnum.'G'.end_vcol.'|'.(align_to - end_vcol).'i'.fillchar."\<Esc>"
+			elseif align_to <# end_vcol
+				let cmd .= lnum.'G'.end_vcol.'|d'.align_to.'|'
 			endif
-			let offs[lnum] += wall - endvcol
+			let voffsets[lnum] += align_to - end_vcol
 		endfor
 
 		let index += 1
@@ -121,13 +118,13 @@ function! mall#align(mode) abort
 	let view = winsaveview()
 	set opfunc=<SID>noop
 
-	let [oldws, oldve] = [&ws, &ve]
+	let [saved_ws, saved_ve] = [&ws, &ve]
 	try
 		set nowrapscan virtualedit=all
 		call s:do_align()
 	finally
 		set opfunc=mall#align
-		let [&ws, &ve] = [oldws, oldve]
+		let [&ws, &ve] = [saved_ws, saved_ve]
 		call winrestview(view)
 	endtry
 endfunction
