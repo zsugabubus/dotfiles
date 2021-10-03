@@ -1,4 +1,4 @@
-local utils = require 'mp.utils'
+local utils = require('mp.utils')
 mp.add_key_binding('Shift+DEL', 'delete-file', function()
 	if not mp.get_property_bool('pause') and mp.get_property_number('time-pos') < 1 then
 		return

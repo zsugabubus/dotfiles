@@ -1,14 +1,21 @@
 local NBSP = '\194\160'
 local RIGHT_ARROW = '\226\158\156'
 
+local Mode = require('mode')
+local options = require('mp.options')
 local utils = require('mp.utils')
+
 local script_opts = mp.command_native({'expand-path', '~~/script-opts'})
-local mode = dofile(mp.get_script_directory() .. '/mode.lua')
 local osd = mp.create_osd_overlay('ass-events')
 local visible = false
 local tab
 local current = {af=1, vf=1}
 local filters = {}
+
+local opts = {
+	font_scale = 0.9,
+}
+options.read_options(opts, nil, update)
 
 function move_rel(n)
 	local f, old = filters[tab], current[tab]
@@ -27,103 +34,123 @@ function select_abs(n)
 end
 
 function select_rel(n)
-	select_abs(current[tab] + n)
+	local f = filters[tab]
+	n = current[tab] + n
+	if n < 1 then
+		n = #f
+	elseif #f < n then
+		n = 1
+	end
+	select_abs(n)
 end
 
 local keys = {
-	HOME=function() select_abs(1) end,
-	END=function() select_abs(999) end,
+	HOME={'select', function() select_abs(1) end},
+	END={'select', function() select_abs(999) end},
 	g='HOME',
-	['Shift+g']='END',
+	G='END',
+	DOWN={'select', function() select_rel(1) end},
+	UP={'select', function() select_rel(-1) end},
 	j='DOWN',
 	k='UP',
-	['Shift+j']='Shift+DOWN',
-	['Shift+k']='Shift+UP',
-	DOWN=function() select_rel(1) end,
-	UP=function() select_rel(-1) end,
-	['Shift+DOWN']=function() move_rel(1) end,
-	['Shift+UP']=function() move_rel(-1) end,
-	TAB=function()
+	['Shift+DOWN']={'move', function() move_rel(1) end},
+	['Shift+UP']={'move', function() move_rel(-1) end},
+	J='Shift+DOWN',
+	K='Shift+UP',
+	TAB={'switch group', function()
 		tab = tab == 'af' and 'vf' or 'af'
 		update()
-	end,
-	Space=function()
+	end},
+	SPACE={'toggle enabled', function()
 		local f, i = filters[tab], current[tab]
 		if f[i] ~= nil then
 			f[i].enabled = not f[i].enabled
 			mp.set_property_native(tab, f)
 		end
-	end,
-	DEL=function()
+	end},
+	DEL={'delete', function()
 		local f, i = filters[tab], current[tab]
 		f[i] = nil
-	end,
+	end},
 	D='DEL',
-	r=function()
+	r={'reset group', function()
 		mp.set_property(tab, table.concat(dofile(script_opts .. '/filters.lua')[tab], ','))
-	end,
-	a=function()
+	end},
+	a={'audio', function()
 		tab = 'af'
 		update()
-	end,
-	v=function()
+	end},
+	v={'video', function()
 		tab = 'vf'
 		update()
-	end,
-	q=function()
+	end},
+	q={'quit', function()
 		visible = false
 		update_menu()
-	end,
+	end},
 	ESC='q',
+	['0..9']={'select'},
 }
 for i=1,9 do
 	keys[string.char(string.byte('0') + i)] =
 		function() select_abs(i) end
 end
 
-function avdict_to_string(o)
-	local s = {}
-	for k,v in pairs(o) do
-		table.insert(s, table.concat{k, '=', v})
+local mode = Mode(keys)
+
+function osd_append(...)
+	for _, s in ipairs({...}) do
+		osd.data[#osd.data + 1] = s
 	end
-	return table.concat(s, ':')
 end
 
-function print_filters(name, t)
-	table.insert(osd.data, table.concat{
-		'{\\r}', name, NBSP, 'Filters:'})
-	filters[t] = mp.get_property_native(t)
+function osd_append_avdict(o)
+	local first = true
+	for k, v in pairs(o) do
+		if not first then
+			osd_append(':')
+		end
+		first = false
+		osd_append(k, '=', v)
+	end
+end
 
+function osd_append_filters(name, t)
+	filters[t] = mp.get_property_native(t)
 	local f = filters[t]
 
 	if current[t] < 1 then
-		current[t] = #f
-	elseif #f < current[t] then
 		current[t] = 1
+	elseif #f < current[t] then
+		current[t] = #f
 	end
 
+	osd_append(name, NBSP, 'Filters:')
+
 	if #f == 0 then
-		table.insert(osd.data, table.concat{
-			(t == tab and '{\\b1}' or ''), NBSP, 'none'})
+		osd_append((t == tab and '{\\b1}' or ''), NBSP, 'none')
 	end
 	for i=1,#f do
 		local pars = f[i].params
 		local enabled = f[i].enabled
 		local selected = t == tab and i == current[t]
-		table.insert(osd.data, table.concat{
-			'\\N{\\r\\b1}',
+		osd_append(
+			'\\N{\\b1}',
 			(selected and '' or '{\\alpha&HFF}'),
 			RIGHT_ARROW,
 			(selected and '' or '{\\b0}'),
 			'{\\alpha&H00}', NBSP,
-			(enabled and '●' or '○'), NBSP})
-		table.insert(osd.data, table.concat({
-			i, ':', NBSP}))
-		table.insert(osd.data, table.concat({
-			f[i].name, NBSP,
-			(pars.graph and '[' .. pars.graph .. ']' or avdict_to_string(pars))}))
+			(enabled and '●' or '○'), NBSP,
+			i, ':', NBSP,
+			f[i].name, NBSP)
+
+		if pars.graph then
+			osd_append('[', pars.graph, ']')
+		else
+			osd_append_avdict(pars)
+		end
 	end
-	table.insert(osd.data, '\\N')
+	osd_append('{\\b0}\\N')
 end
 
 function update()
@@ -137,23 +164,30 @@ function _update()
 		return
 	end
 
-	osd.data = {NBSP .. '\n'}
-	print_filters('Audio', 'af')
-	table.insert(osd.data, '\\N')
-	print_filters('Video', 'vf')
+	osd.data = {
+		NBSP .. '\n',
+		('{\\fscx%d\\fscy%d}'):format(opts.font_scale * 100, opts.font_scale * 100),
+	}
+
+	osd_append_filters('Audio', 'af')
+	osd_append('\\N')
+	osd_append_filters('Video', 'vf')
+
+	osd_append(mode:get_ass_help())
 
 	osd.data = table.concat(osd.data)
 	osd:update()
 end
 
 function update_menu()
+	mp.unobserve_property(update)
+
 	if visible then
 		mp.observe_property('af', 'none', update)
 		mp.observe_property('vf', 'none', update)
-		mode.add_key_bindings(keys)
+		mode:add_key_bindings()
 	else
-		mp.unobserve_property(update)
-		mode.remove_key_bindings(keys)
+		mode:remove_key_bindings()
 		osd:remove()
 	end
 end
@@ -163,7 +197,7 @@ mp.add_key_binding('F', 'toggle', function()
 	update_menu()
 end)
 
-keys.v()
-keys.r()
-keys.a()
-keys.r()
+keys.v[2]()
+keys.r[2]()
+keys.a[2]()
+keys.r[2]()

@@ -8,7 +8,7 @@ mp.observe_property('playlist', nil, function()
 	for i=#playlist, 1, -1 do
 		local entry = playlist[i]
 		local s = entry.filename:lower()
-		if s:match('^sample[/.-]') or
+		if s:match('^sa?mple?[/.-]') or
 		   s:match('[/!.-]sample') or
 		   s:match('%.aria2$') or
 		   s:match('%.exe$') or

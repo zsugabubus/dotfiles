@@ -1,5 +1,5 @@
-local options = require 'mp.options'
-local msg = require 'mp.msg'
+local options = require('mp.options')
+local msg = require('mp.msg')
 
 local opts = {
 	speed = 2.71828 -- speeeeeeed

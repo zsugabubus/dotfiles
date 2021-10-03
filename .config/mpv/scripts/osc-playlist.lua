@@ -2,16 +2,15 @@ local NBSP = '\194\160'
 local RIGHT_ARROW = '\226\158\156'
 local HORIZONTAL_ELLIPSIS = '\226\128\166'
 
+local options = require('mp.options')
+
 local osd = mp.create_osd_overlay('ass-events')
 local visible = false
-local options = require 'mp.options'
 
 local opts = {
-	rtl = false,
 	font_scale = 0.65,
 }
-
-options.read_options(opts)
+options.read_options(opts, nil, update)
 
 local prev_pos = 0
 local forward = true
@@ -25,13 +24,19 @@ end)
 function get_height()
 	local font_size = mp.get_property_number('osd-font-size')
 	local scaled_font_size = font_size * opts.font_scale
-	-- Trim a half-half line from top and bottom to make visually a bit more pleasant.
-	local margin_v = mp.get_property_number('osd-margin-y') + scaled_font_size / 4
 
-	local y = font_size + scaled_font_size / 4
-	local nlines = math.floor((osd.res_y - margin_v - y) / scaled_font_size) - 1
+	local margin_y = 2 * mp.get_property_number('osd-margin-y')
+	local playlist_y = osd.res_y - margin_y - font_size
+	-- Subtract one line so it is visually a bit more pleasant.
+	local nlines = math.floor(playlist_y / scaled_font_size) - 1
 
-	return nlines, y
+	return nlines, font_size + (playlist_y - nlines * scaled_font_size) / 2
+end
+
+function osd_append(...)
+	for _, s in ipairs({...}) do
+		osd.data[#osd.data + 1] = s
+	end
 end
 
 function update()
@@ -62,7 +67,23 @@ function _update()
 		end
 	end
 
-	osd.data = {('{\\r\\bord2\\pos(0, %d)\\fnmpv-osd-symbols}'):format(y)}
+	osd.data = {
+		('{\\pos(0, %d)}'):format(y),
+		('{\\fscx%f\\fscy%f}'):format(opts.font_scale * 100, opts.font_scale * 100),
+	}
+
+	local ass_style = {}
+	for _, current in ipairs({false, true}) do
+		ass_style[current] = table.concat{
+			'\\N',
+			'{\\alpha&H00}', NBSP,
+			'{\\b1}',
+			(current and '' or '{\\alpha&HFF}'),
+			RIGHT_ARROW,
+			(current and '' or '{\\b0}'),
+			'{\\alpha&H00}', NBSP,
+		}
+	end
 
 	for i=from,to do
 		local item = playlist[i]
@@ -93,31 +114,11 @@ function _update()
 				:gsub(NBSP .. '[1-9][0-9][0-9][0-9]' .. NBSP .. '[A-Za-z0-9][^/]', '')
 				-- Trim extension.
 				:gsub('%.[0-9A-Za-z]+$', '')
+				-- ASS escape.
+				:gsub('{', '\\{')
 		end
 
-		table.insert(osd.data, table.concat{
-			('\\N{\\r\\fscx%f\\fscy%f}'):format(opts.font_scale * 100, opts.font_scale * 100),
-			'{\\alpha&H00}',
-			(opts.rtl
-				and (
-					item.current and '{\\b1}' or ''
-				)
-				or table.concat{
-					NBSP,
-					'{\\b1}',
-					(item.current and '' or '{\\alpha&HFF}'),
-					RIGHT_ARROW,
-					(item.current and '' or '{\\b0}'),
-					'{\\alpha&H00}',
-					NBSP
-				}
-			),
-			display,
-			(opts.rtl
-				and ((item.current and '' or '{\\alpha&HFF}') .. '<')
-				or ''
-			)
-		})
+		osd_append(ass_style[item.current or false], display)
 	end
 
 	osd.data = table.concat(osd.data)

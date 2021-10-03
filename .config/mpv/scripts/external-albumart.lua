@@ -1,4 +1,4 @@
-local utils = require 'mp.utils'
+local utils = require('mp.utils')
 local COVERS = {'cover.jpg', 'cover.png'}
 
 mp.observe_property('track-list', 'native', function()
