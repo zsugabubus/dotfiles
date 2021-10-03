@@ -19,15 +19,12 @@ while :; do
 		# find -H $root -mindepth 1 $find_args \( \( -xtype d -name '.*' -prune \) -o -printf '%P\0' \) 2>/dev/null |
 		rg --files -0 |
 		( { [[ -z $basedir ]] || cd -q -- $basedir } && xargs -0r ls -UbNd --color -- 2>/dev/null ) |
-		fzf -d $'\xa0' -n2.. --ansi --multi --bind alt-enter:select-all+accept --bind /:accept-non-empty
+		fzf -d $'\xa0' --ansi --multi --bind alt-enter:select-all+accept-non-empty --bind enter:accept-non-empty --bind ')':jump-accept
 	) || break
-
-	print -v esc $'\033'
-	files=${(S)files//$esc*m/}
 
 	# nbsp=$(print $'\xa0'); print -v nbsp2 $'\xa0'; [[ "$nbsp" == "$nbsp2" ]] || { echo "What?" && echo "$nbsp\n$nbsp2" | od -c }
 
-	files=( ${(f)files//? /} )
+	files=( ${${(f)files}//#?[ ]#/} )
 
 	if [[ $#files = 0 ]]; then
 		break
