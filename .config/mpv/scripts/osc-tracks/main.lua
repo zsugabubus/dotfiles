@@ -101,7 +101,7 @@ function osd_append_track(track)
 		(enabled and '●' or '○'), NBSP,
 		track.id, ':', NBSP)
 
-	osd_append('[', track.lang or 'unk', ']', NBSP)
+	osd_append('[', track.lang or 'und', ']', NBSP)
 
 	if track.title then
 		osd_append("'", track.title:gsub(' ', NBSP), "'", NBSP)
