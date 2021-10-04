@@ -1,6 +1,8 @@
 local osd = mp.create_osd_overlay('ass-events')
 local visible = false
 
+osd.z = 10
+
 function asscape(s)
 	return s:gsub('\\', '\\\\'):gsub('{', '\\{')
 end
