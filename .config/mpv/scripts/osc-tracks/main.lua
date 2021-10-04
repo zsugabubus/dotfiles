@@ -111,7 +111,9 @@ function osd_append_track(track)
 	if track['demux-w'] then
 		osd_append(NBSP, track['demux-w'], 'x', track['demux-h'])
 	end
-	if track['demux-channel-count'] then
+	if track['demux-channels'] and 1 ~= track['demux-channels']:find('unknown') then
+		osd_append(NBSP, track['demux-channels'])
+	elseif track['demux-channel-count'] then
 		osd_append(NBSP, track['demux-channel-count'], 'ch')
 	end
 	if track['demux-samplerate']
