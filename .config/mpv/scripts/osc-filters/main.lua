@@ -57,7 +57,7 @@ local keys = {
 	['Shift+UP']={'move', function() move_rel(-1) end},
 	J='Shift+DOWN',
 	K='Shift+UP',
-	TAB={'switch group', function()
+	TAB={'select type', function()
 		tab = tab == 'af' and 'vf' or 'af'
 		update()
 	end},
@@ -73,7 +73,7 @@ local keys = {
 		f[i] = nil
 	end},
 	D='DEL',
-	r={'reset group', function()
+	r={'reset type', function()
 		mp.set_property(tab, table.concat(dofile(script_opts .. '/filters.lua')[tab], ','))
 	end},
 	a={'audio', function()

@@ -50,14 +50,18 @@ local keys = {
 	end},
 	j='DOWN',
 	k='UP',
-	['Shift+UP']={'select tracklist', function()
+	['Shift+UP']={'select type', function()
 		current = ({video='sub', audio='video', sub='audio'})[current]
 		update()
 	end},
-	['Shift+DOWN']={'select tracklist', function()
+	['Shift+DOWN']={'select type', function()
 		current = ({video='audio', audio='sub', sub='video'})[current]
 		update()
 	end},
+	LEFT='Shift+UP',
+	RIGHT='Shift+DOWN',
+	h='LEFT',
+	l='RIGHT',
 	TAB='Shift+DOWN',
 	['Shift+TAB']='Shift+UP',
 	q={'quit', function()
