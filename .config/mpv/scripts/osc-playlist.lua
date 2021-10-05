@@ -115,7 +115,7 @@ function _update()
 				-- Trim extension.
 				:gsub('%.[0-9A-Za-z]+$', '')
 				-- ASS escape.
-				:gsub('{', '\\{')
+				:gsub('[\\{]', '\\%0')
 		end
 
 		osd_append(ass_style[item.current or false], display)
