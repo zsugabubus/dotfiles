@@ -89,6 +89,7 @@ local keys = {
 		update_menu()
 	end},
 	ESC='q',
+	ENTER='q',
 	['0..9']={'select'},
 }
 for i=1,9 do

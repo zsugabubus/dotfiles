@@ -71,6 +71,7 @@ local keys = {
 	['0..9']={'switch track'},
 	t='q',
 	ESC='q',
+	ENTER='q',
 }
 for i=0,9 do
 	keys[string.char(string.byte('0') + i)] =

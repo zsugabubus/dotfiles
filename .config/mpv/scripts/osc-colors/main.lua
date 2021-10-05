@@ -74,6 +74,7 @@ local keys = {
 		update_menu()
 	end},
 	ESC='q',
+	ENTER='q',
 	n={'switch preset', function() select_rel(1) end},
 	p={'switch preset', function() select_rel(-1) end},
 	r={'reset', function() mp.commandv('osd-bar', 'set', current, 0) end},
