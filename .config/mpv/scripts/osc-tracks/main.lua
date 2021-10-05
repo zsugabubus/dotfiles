@@ -86,8 +86,12 @@ function osd_append(...)
 	end
 end
 
-function osd_append_track(track)
+function ass_escape(s)
+	local x = s:gsub('[\\{]', '\\%0')
+	return x
+end
 
+function osd_append_track(track)
 	local enabled = track.selected
 	if enabled then
 		if track.type == 'audio' then
@@ -108,26 +112,43 @@ function osd_append_track(track)
 	osd_append('[', track.lang or 'und', ']', NBSP)
 
 	if track.title then
-		osd_append("'", track.title:gsub(' ', NBSP), "'", NBSP)
+		osd_append("'", ass_escape(track.title):gsub(' ', NBSP), "'", NBSP)
 	end
+
 	osd_append('(')
+
 	osd_append(track.codec)
+
 	if track['demux-w'] then
 		osd_append(NBSP, track['demux-w'], 'x', track['demux-h'])
+	elseif track.type == 'video' and track.selected then
+		local pars = mp.get_property_native('video-params')
+		osd_append(NBSP, pars.w, 'x', pars.h)
 	end
+
 	if track['demux-channels'] and 1 ~= track['demux-channels']:find('unknown') then
 		osd_append(NBSP, track['demux-channels'])
-	elseif track['demux-channel-count'] then
-		osd_append(NBSP, track['demux-channel-count'], 'ch')
+	else
+		local apars = mp.get_property_native('audio-params')
+		if track.type == 'audio' and track.selected and apars and apars['hr-channels'] then
+			osd_append(NBSP, apars['hr-channels'])
+		elseif track['demux-channel-count'] then
+			osd_append(NBSP, track['demux-channel-count'], 'ch')
+		end
 	end
-	if track['demux-samplerate']
-	then osd_append(NBSP, track['demux-samplerate'], 'Hz') end
+
+	if track['demux-samplerate'] then
+		osd_append(NBSP, track['demux-samplerate'], 'Hz')
+	end
+
 	if track['demux-fps'] then
 		osd_append(NBSP, math.ceil(track['demux-fps']), 'fps')
 	end
+
 	if track['demux-rotation'] then
 		osd_append(NBSP, track['demux-rotation'], 'deg')
 	end
+
 	osd_append(')')
 
 	for _, flag in ipairs(TRACK_FLAGS) do
