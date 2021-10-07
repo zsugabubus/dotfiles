@@ -43,13 +43,17 @@ function update()
 		end
 		if track.type == 'video' then
 			local pars = mp.get_property_native('video-params')
-			osd_append('\n{\\an3', style,
-				('%s%dx%d'):format(track.albumart and '[P] ' or '', pars.w, pars.h))
+			if pars then
+				osd_append('\n{\\an3', style,
+					('%s%dx%d'):format(track.albumart and '[P] ' or '', pars.w, pars.h))
+			end
 			break
 		elseif track.type == 'audio' then
-			local apars = mp.get_property_native('audio-params')
-			osd_append('\n{\\an3', style,
-				('%s %s'):format(track.codec, apars['hr-channels']))
+			local pars = mp.get_property_native('audio-params')
+			if pars then
+				osd_append('\n{\\an3', style,
+					('%s %s'):format(track.codec, pars['hr-channels']))
+			end
 		end
 		::continue::
 	end
