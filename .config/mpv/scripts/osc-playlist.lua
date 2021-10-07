@@ -113,7 +113,7 @@ function _update()
 				:gsub(NBSP .. '[0-9]+p[^/]*', '')
 				:gsub(NBSP .. '[1-9][0-9][0-9][0-9]' .. NBSP .. '[A-Za-z0-9][^/]', '')
 				-- Trim extension.
-				:gsub('%.[0-9A-Za-z]+$', '')
+				:gsub('([^/])%.[0-9A-Za-z]+$', '%1')
 				-- ASS escape.
 				:gsub('[\\{]', '\\%0')
 		end
