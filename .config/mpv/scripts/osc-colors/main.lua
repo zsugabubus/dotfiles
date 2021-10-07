@@ -1,6 +1,3 @@
-local NBSP = '\194\160'
-local RIGHT_ARROW = '\226\158\156'
-
 local OPTIONS = {
 	{option='brightness', icon=0xa},
 	{option='contrast',   icon=0x7},
@@ -11,9 +8,9 @@ local OPTIONS = {
 
 local Mode = require('mode')
 local options = require('mp.options')
+local osd = require('osd')
 local utils = require('mp.utils')
 
-local osd = mp.create_osd_overlay('ass-events')
 local visible = false
 local current = OPTIONS[1].option
 
@@ -44,7 +41,7 @@ local timeout = mp.add_timeout(mp.get_property_number('osd-duration') / 1000, fu
 end)
 timeout:kill()
 
-function select_abs(i)
+local function select_abs(i)
 	local preset = PRESETS[i]
 	for _, x in ipairs(OPTIONS) do
 		mp.set_property_number(x.option, preset[x.option:sub(1, 1)] or 0)
@@ -52,7 +49,7 @@ function select_abs(i)
 	mp.osd_message(('Color preset: %s'):format(preset.name))
 end
 
-function select_rel(n)
+local function select_rel(n)
 	local i = 1
 	for k, preset in pairs(PRESETS) do
 		local match = true
@@ -135,17 +132,7 @@ local mode = Mode(keys)
 mp.register_script_message('next-preset', keys.n[2])
 mp.register_script_message('prev-preset', keys.p[2])
 
-function osd_append(...)
-	for _, s in ipairs({...}) do
-		osd.data[#osd.data + 1] = s
-	end
-end
-
-function update()
-	mp.unregister_idle(_update)
-	mp.register_idle(_update)
-end
-function _update()
+local function _update()
 	mp.unregister_idle(_update)
 
 	if ignore_once or not file_loaded then
@@ -154,36 +141,33 @@ function _update()
 	end
 
 	osd.data = {
-		NBSP .. '\n',
-		('{\\fscx%d\\fscy%d}'):format(opts.font_scale * 100, opts.font_scale * 100),
+		osd.NBSP, ('\n{\\q2\\fscx%d\\fscy%d}'):format(
+			opts.font_scale * 100, opts.font_scale * 100),
 	}
 
 	for _, x in ipairs(OPTIONS) do
 		if visible then
 			local selected = current == x.option
-			osd_append(
+			osd:append(
 				(selected and '' or '{\\alpha&HFF}'),
-				RIGHT_ARROW,
+				osd.RIGHT_ARROW,
 				(selected and '' or '{\\b0}'),
-				'{\\alpha&H00}', NBSP)
+				'{\\alpha&H00} ')
 		end
 
-		osd_append(
-			"{\\fnmpv-osd-symbols}\238\128", string.char(128 + x.icon), NBSP,
-			x.option:sub(1, 1):upper(), x.option:sub(2), ':', NBSP,
+		osd:append(
+			"{\\fnmpv-osd-symbols}\238\128", string.char(128 + x.icon), ' ',
+			x.option:sub(1, 1):upper(), x.option:sub(2), ': ',
 			mp.get_property_number(x.option), '\\N')
 	end
 
 	if visible then
-		osd_append(
-			NBSP, '\n',
-			'{\\fscx75\\fscy75}',
-			'Available Presets:')
+		osd:append(osd.NBSP, '\n{\\q2\\fscx75\\fscy75}', 'Available Presets:')
 		for i, preset in ipairs(PRESETS) do
-			osd_append('\\N', i - 1, ':', NBSP, preset.name)
+			osd:append('\\N', i - 1, ': ', preset.name)
 		end
 
-		osd_append(mode:get_ass_help())
+		osd:append(mode:get_ass_help())
 	end
 
 	osd.data = table.concat(osd.data)
@@ -193,6 +177,10 @@ function _update()
 	if not visible then
 		timeout:resume()
 	end
+end
+function update()
+	mp.unregister_idle(_update)
+	mp.register_idle(_update)
 end
 
 for _, x in ipairs(OPTIONS) do

@@ -1,6 +1,3 @@
-local NBSP = '\194\160'
-local RIGHT_ARROW = '\226\158\156'
-
 local TRACK_FLAGS = {
 	{'forced'},
 	{'visual-impaired', 'vi'},
@@ -12,8 +9,8 @@ local TRACK_FLAGS = {
 
 local Mode = require('mode')
 local options = require('mp.options')
+local osd = require('osd')
 
-local osd = mp.create_osd_overlay('ass-events')
 local visible = false
 local current = 'video'
 
@@ -21,6 +18,53 @@ local opts = {
 	font_scale = 0.9,
 }
 options.read_options(opts, nil, update)
+
+local function switch_track(prop, all)
+	local tracks = mp.get_property_native('track-list')
+	for i=#tracks,1,-1 do
+		local track = tracks[i]
+		if (all or track.type == current) and track[prop] then
+			mp.set_property_number(track.type, track.id)
+		end
+	end
+end
+
+local function cycle_track(prop, up)
+	local tracks, data = mp.get_property_native('track-list')
+	local from, to, step
+	if up then
+		from, to, step = 1, #tracks, 1
+	else
+		from, to, step = #tracks, 1, -1
+	end
+
+	for i=from, to, step do
+		local track = tracks[i]
+		if track.type == current then
+			if track.selected then
+				data = track[prop]
+				if not data then
+					return
+				end
+			elseif track[prop] == data then
+				mp.set_property_number(current, track.id)
+				return
+			end
+		end
+	end
+
+	if not data then
+		return
+	end
+
+	for i=from, to, step do
+		local track = tracks[i]
+		if track.type == current and track[prop] == data then
+			mp.set_property_number(current, track.id)
+			return
+		end
+	end
+end
 
 local keys = {
 	a={'audios', function()
@@ -103,65 +147,12 @@ for i=0,9 do
 end
 local mode = Mode(keys)
 
-function cycle_track(prop, up)
-	local tracks, data = mp.get_property_native('track-list')
-	local from, to, step
-	if up then
-		from, to, step = 1, #tracks, 1
-	else
-		from, to, step = #tracks, 1, -1
-	end
-
-	for i=from, to, step do
-		local track = tracks[i]
-		if track.type == current then
-			if track.selected then
-				data = track[prop]
-				if not data then
-					return
-				end
-			elseif track[prop] == data then
-				mp.set_property_number(current, track.id)
-				return
-			end
-		end
-	end
-
-	if not data then
-		return
-	end
-
-	for i=from, to, step do
-		local track = tracks[i]
-		if track.type == current and track[prop] == data then
-			mp.set_property_number(current, track.id)
-			return
-		end
-	end
-end
-
-function switch_track(prop, all)
-	local tracks = mp.get_property_native('track-list')
-	for i=#tracks,1,-1 do
-		local track = tracks[i]
-		if (all or track.type == current) and track[prop] then
-			mp.set_property_number(track.type, track.id)
-		end
-	end
-end
-
-function osd_append(...)
-	for _, s in ipairs({...}) do
-		osd.data[#osd.data + 1] = s
-	end
-end
-
-function ass_escape(s)
+local function ass_escape(s)
 	local x = s:gsub('[\\{]', '\\%0')
 	return x
 end
 
-function osd_append_track(track)
+local function osd_append_track(track)
 	local enabled = track.selected
 	if enabled then
 		if track.type == 'audio' then
@@ -171,93 +162,93 @@ function osd_append_track(track)
 		end
 	end
 
-	osd_append(
+	osd:append(
 		'\\N',
 		(track.selected and current == track.type and '' or '{\\alpha&HFF}'),
-		RIGHT_ARROW,
-		'{\\alpha&H00}', NBSP,
-		(enabled and '●' or '○'), NBSP,
-		track.id, ':', NBSP)
+		osd.RIGHT_ARROW,
+		'{\\alpha&H00} ',
+		(enabled and '●' or '○'), ' ',
+		track.id, ': ')
 
-	osd_append('[', track.lang or 'und', ']', NBSP)
+	osd:append('[', track.lang or 'und', '] ')
 
 	if track.title then
-		osd_append("'", ass_escape(track.title):gsub(' ', NBSP), "'", NBSP)
+		osd:append("'", ass_escape(track.title), "' ")
 	end
 
-	osd_append('(')
+	osd:append('(')
 
-	osd_append(track.codec)
+	osd:append(track.codec)
 
 	if track['demux-w'] then
-		osd_append(NBSP, track['demux-w'], 'x', track['demux-h'])
+		osd:append(' ', track['demux-w'], 'x', track['demux-h'])
 	elseif track.type == 'video' and track.selected then
-		local pars = mp.get_property_native('video-params')
+		local pars =
+			mp.get_property_native('video-params') or
+			mp.get_property_native('video-out-params')
 		if pars then
-			osd_append(NBSP, pars.w, 'x', pars.h)
+			osd:append(' ', pars.w, 'x', pars.h)
 		end
 	end
 
 	if track['demux-channels'] and 1 ~= track['demux-channels']:find('unknown') then
-		osd_append(NBSP, track['demux-channels'])
+		osd:append(' ', track['demux-channels'])
 	else
-		local pars = mp.get_property_native('audio-params')
+		local pars =
+			mp.get_property_native('audio-params') or
+			mp.get_property_native('audio-out-params')
 		if track.type == 'audio' and track.selected and pars and pars['hr-channels'] then
-			osd_append(NBSP, pars['hr-channels'])
+			osd:append(' ', pars['hr-channels'])
 		elseif track['demux-channel-count'] then
-			osd_append(NBSP, track['demux-channel-count'], 'ch')
+			osd:append(' ', track['demux-channel-count'], 'ch')
 		end
 	end
 
 	if track['demux-samplerate'] then
-		osd_append(NBSP, track['demux-samplerate'], 'Hz')
+		osd:append(' ', track['demux-samplerate'], 'Hz')
 	end
 
 	if track['demux-fps'] then
-		osd_append(NBSP, math.ceil(track['demux-fps']), 'fps')
+		osd:append(' ', math.ceil(track['demux-fps']), 'fps')
 	end
 
 	if track['demux-rotation'] then
-		osd_append(NBSP, track['demux-rotation'], 'deg')
+		osd:append(' ', track['demux-rotation'], 'deg')
 	end
 
-	osd_append(')')
+	osd:append(')')
 
 	for _, flag in ipairs(TRACK_FLAGS) do
 		local key, display = table.unpack(flag)
 		if track[key] then
-			osd_append(NBSP, '(', display or key, ')')
+			osd:append(' (', display or key, ')')
 		end
 	end
 end
 
-function osd_append_track_list(name, track_type, tracks)
-	osd_append('Available', NBSP, name, NBSP, 'Tracks:')
+local function osd_append_track_list(name, track_type, tracks)
+	osd:append('Available ', name, ' Tracks:')
 
 	local any_selected = false
 	for i=1,#tracks do
 		any_selected = any_selected or tracks[i].selected
 	end
 
-	osd_append(
+	osd:append(
 		'\\N',
 		(not any_selected and current == track_type and '' or '{\\alpha&HFF}'),
-		RIGHT_ARROW,
-		'{\\alpha&H00}', NBSP,
-		'○', NBSP,
-		'0:', NBSP, 'none')
+		osd.RIGHT_ARROW,
+		'{\\alpha&H00} ',
+		'○', ' ',
+		'0: none')
 
 	for i=1,#tracks do
 		osd_append_track(tracks[i])
 	end
-	osd_append('\\N')
+	osd:append('\\N')
 end
 
-function update()
-	mp.unregister_idle(_update)
-	mp.register_idle(_update)
-end
-function _update()
+local function _update()
 	mp.unregister_idle(_update)
 
 	local tracks = {
@@ -265,43 +256,49 @@ function _update()
 		audio={},
 		sub={}
 	}
-	local n = 0
+	local lines = 3 * 3 -- Available + none + separator
 	for _, track in ipairs(mp.get_property_native('track-list')) do
 		local list = tracks[track.type]
 		list[#list + 1] = track
-		n = n + 1
+		lines = lines + 1
 	end
 
-
-	local font_scale = opts.font_scale - n * .005
+	local font_scale = math.min(
+		opts.font_scale,
+		osd:compute_font_scale(lines)
+	)
 
 	osd.data = {
-		NBSP .. '\n',
-		('{\\fscx%d\\fscy%d}'):format(font_scale * 100, font_scale * 100),
+		osd.NBSP, ('\n{\\q2\\fscx%d\\fscy%d}'):format(font_scale * 100, font_scale * 100),
 	}
 
 	osd_append_track_list('Video', 'video', tracks.video)
-	osd_append('\\N')
+	osd:append('\\N')
 	osd_append_track_list('Audio', 'audio', tracks.audio)
-	osd_append('\\N')
+	osd:append('\\N')
 	osd_append_track_list('Subtitle', 'sub', tracks.sub)
 
-	osd_append(mode:get_ass_help())
+	osd:append(mode:get_ass_help())
 
 	osd.data = table.concat(osd.data)
 	osd:update()
 end
+function update()
+	mp.unregister_idle(_update)
+	mp.register_idle(_update)
+end
 
 function update_menu()
 	mp.unobserve_property(update)
+	mp.unregister_event(update)
 
 	if visible then
 		mode:add_key_bindings()
 		mp.observe_property('track-list', nil, update)
 		mp.observe_property('sub-visibility', nil, update)
 		mp.observe_property('mute', nil, update)
-		mp.observe_property('audio-params', nil, update)
 		mp.observe_property('video-params', nil, update)
+		mp.observe_property('audio-params', nil, update)
 		update()
 	else
 		mode:remove_key_bindings()

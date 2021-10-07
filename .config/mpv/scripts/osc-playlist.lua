@@ -21,7 +21,7 @@ mp.observe_property('playlist-pos', 'number', function(_, pos)
 	end
 end)
 
-function get_height()
+local function get_height()
 	local font_size = mp.get_property_number('osd-font-size')
 	local scaled_font_size = font_size * opts.font_scale
 
@@ -39,11 +39,7 @@ function osd_append(...)
 	end
 end
 
-function update()
-	mp.unregister_idle(_update)
-	mp.register_idle(_update)
-end
-function _update()
+local function _update()
 	mp.unregister_idle(_update)
 
 	local width, height, ratio = mp.get_osd_size()
@@ -68,8 +64,8 @@ function _update()
 	end
 
 	osd.data = {
-		('{\\pos(0, %d)}'):format(y),
-		('{\\fscx%f\\fscy%f}'):format(opts.font_scale * 100, opts.font_scale * 100),
+		('{\\q2\\pos(0, %d)\\fscx%f\\fscy%f}'):format(
+			y, opts.font_scale * 100, opts.font_scale * 100),
 	}
 
 	local ass_style = {}
@@ -81,7 +77,7 @@ function _update()
 			(current and '' or '{\\alpha&HFF}'),
 			RIGHT_ARROW,
 			(current and '' or '{\\b0}'),
-			'{\\alpha&H00}', NBSP,
+			'{\\alpha&H00} ',
 		}
 	end
 
@@ -108,10 +104,9 @@ function _update()
 			end
 
 			display = display
-				:gsub(space, NBSP)
 				-- Hehh.
-				:gsub(NBSP .. '[0-9]+p[^/]*', '')
-				:gsub(NBSP .. '[1-9][0-9][0-9][0-9]' .. NBSP .. '[A-Za-z0-9][^/]', '')
+				:gsub(' [0-9]+p[^/]*', '')
+				:gsub(' [1-9][0-9][0-9][0-9] [A-Za-z0-9][^/]', '')
 				-- Trim extension.
 				:gsub('([^/])%.[0-9A-Za-z]+$', '%1')
 				-- ASS escape.
@@ -123,6 +118,10 @@ function _update()
 
 	osd.data = table.concat(osd.data)
 	osd:update()
+end
+function update()
+	mp.unregister_idle(_update)
+	mp.register_idle(_update)
 end
 
 local timeout = mp.add_timeout(mp.get_property_number('osd-duration') / 1000, function()

@@ -1,4 +1,3 @@
-local NBSP = '\194\160'
 local Mode = {}
 
 function Mode:add_key_bindings()
@@ -68,7 +67,7 @@ function Mode:get_ass_help()
 	table.sort(order)
 
 	local data = {
-		'\n{\\r\\a2\\bord2\\alpha&H50\\fscx50\\fscy50}',
+		'\n{\\r\\a2\\bord2\\alpha&H50\\q1\\fscx50\\fscy50}',
 	}
 
 	for _, text in ipairs(order) do
