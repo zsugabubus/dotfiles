@@ -193,15 +193,17 @@ function osd_append_track(track)
 		osd_append(NBSP, track['demux-w'], 'x', track['demux-h'])
 	elseif track.type == 'video' and track.selected then
 		local pars = mp.get_property_native('video-params')
-		osd_append(NBSP, pars.w, 'x', pars.h)
+		if pars then
+			osd_append(NBSP, pars.w, 'x', pars.h)
+		end
 	end
 
 	if track['demux-channels'] and 1 ~= track['demux-channels']:find('unknown') then
 		osd_append(NBSP, track['demux-channels'])
 	else
-		local apars = mp.get_property_native('audio-params')
-		if track.type == 'audio' and track.selected and apars and apars['hr-channels'] then
-			osd_append(NBSP, apars['hr-channels'])
+		local pars = mp.get_property_native('audio-params')
+		if track.type == 'audio' and track.selected and pars and pars['hr-channels'] then
+			osd_append(NBSP, pars['hr-channels'])
 		elseif track['demux-channel-count'] then
 			osd_append(NBSP, track['demux-channel-count'], 'ch')
 		end
@@ -293,6 +295,8 @@ function update_menu()
 		mp.observe_property('track-list', nil, update)
 		mp.observe_property('sub-visibility', nil, update)
 		mp.observe_property('mute', nil, update)
+		mp.observe_property('audio-params', nil, update)
+		mp.observe_property('video-params', nil, update)
 		update()
 	else
 		mode:remove_key_bindings()
