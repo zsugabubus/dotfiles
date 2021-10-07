@@ -3,12 +3,12 @@ local visible = false
 
 osd.z = 10
 
-function ass_escape(s)
+local function ass_escape(s)
 	local x = s:gsub('[\\{]', '\\%0')
 	return x
 end
 
-function osd_append(...)
+local function osd_append(...)
 	for _, s in ipairs({...}) do
 		osd.data[#osd.data + 1] = s
 	end
@@ -34,7 +34,7 @@ function update()
 	elseif title then
 		osd_append(ass_escape(title))
 	else
-		osd_append(ass_escape(mp.get_property_native('path', '')))
+		osd_append(ass_escape(mp.get_property_native('path')))
 	end
 
 	for _, track in ipairs(mp.get_property_native('track-list')) do
@@ -81,4 +81,19 @@ mp.add_key_binding('T', 'show-title', function()
 		mp.unregister_event(update)
 		osd:remove()
 	end
+end, {repeatable=false})
+
+--- Yank
+local function shesc(s)
+	return ("'%s'"):format(s:gsub("'", "'\"'\"'"))
+end
+
+mp.add_key_binding('y', 'yank-title', function()
+	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
+	local title = mp.get_property_native('metadata/by-key/Title', nil) or
+	              mp.get_property_native('media-title', nil)
+	local version = mp.get_property_native('metadata/by-key/Version', nil)
+	local title = ('%s%s%s%s'):format(artist or '', artist and ' - ' or '', title, version and (' (%s)'):format(version) or '')
+	os.execute(('printf %%s %s | xclip -l 1 -selection clipboard &'):format(shesc(title)))
+	mp.osd_message('Yanked: ' .. title)
 end, {repeatable=false})
