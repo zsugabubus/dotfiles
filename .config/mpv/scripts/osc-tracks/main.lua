@@ -324,7 +324,7 @@ end
 
 mp.add_key_binding('t', 'show-tracks', function()
 	for i, track in ipairs(mp.get_property_native('track-list')) do
-		if not current or track.type == 'video' then
+		if not current then
 			current = track.type
 		end
 	end
