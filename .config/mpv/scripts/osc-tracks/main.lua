@@ -35,6 +35,28 @@ local keys = {
 		current = 'sub'
 		update()
 	end},
+	n={'none', function()
+		mp.set_property_number(current, 0)
+	end},
+	d={'default', function()
+		switch_track('default', false)
+	end},
+	D={'default', function()
+		switch_track('default', true)
+	end},
+	f={'forced', function()
+		switch_track('forced', false)
+	end},
+	F={'forced', function()
+		switch_track('forced', true)
+	end},
+	-- Other.
+	o={'same language', function()
+		cycle_track('lang', true)
+	end},
+	O={'same language', function()
+		cycle_track('lang', false)
+	end},
 	SPACE={'toggle enabled', function()
 		if current == 'audio' then
 			mp.commandv('no-osd', 'cycle', 'mute')
@@ -80,6 +102,53 @@ for i=0,9 do
 		end
 end
 local mode = Mode(keys)
+
+function cycle_track(prop, up)
+	local tracks, data = mp.get_property_native('track-list')
+	local from, to, step
+	if up then
+		from, to, step = 1, #tracks, 1
+	else
+		from, to, step = #tracks, 1, -1
+	end
+
+	for i=from, to, step do
+		local track = tracks[i]
+		if track.type == current then
+			if track.selected then
+				data = track[prop]
+				if not data then
+					return
+				end
+			elseif track[prop] == data then
+				mp.set_property_number(current, track.id)
+				return
+			end
+		end
+	end
+
+	if not data then
+		return
+	end
+
+	for i=from, to, step do
+		local track = tracks[i]
+		if track.type == current and track[prop] == data then
+			mp.set_property_number(current, track.id)
+			return
+		end
+	end
+end
+
+function switch_track(prop, all)
+	local tracks = mp.get_property_native('track-list')
+	for i=#tracks,1,-1 do
+		local track = tracks[i]
+		if (all or track.type == current) and track[prop] then
+			mp.set_property_number(track.type, track.id)
+		end
+	end
+end
 
 function osd_append(...)
 	for _, s in ipairs({...}) do
