@@ -265,14 +265,19 @@ function _update()
 		audio={},
 		sub={}
 	}
+	local n = 0
 	for _, track in ipairs(mp.get_property_native('track-list')) do
 		local list = tracks[track.type]
 		list[#list + 1] = track
+		n = n + 1
 	end
+
+
+	local font_scale = opts.font_scale - n * .005
 
 	osd.data = {
 		NBSP .. '\n',
-		('{\\fscx%d\\fscy%d}'):format(opts.font_scale * 100, opts.font_scale * 100),
+		('{\\fscx%d\\fscy%d}'):format(font_scale * 100, font_scale * 100),
 	}
 
 	osd_append_track_list('Video', 'video', tracks.video)
