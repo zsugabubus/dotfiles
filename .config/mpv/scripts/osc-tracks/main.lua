@@ -147,11 +147,6 @@ for i=0,9 do
 end
 local mode = Mode(keys)
 
-local function ass_escape(s)
-	local x = s:gsub('[\\{]', '\\%0')
-	return x
-end
-
 local function osd_append_track(track)
 	local enabled = track.selected
 	if enabled then
@@ -173,7 +168,7 @@ local function osd_append_track(track)
 	osd:append('[', track.lang or 'und', '] ')
 
 	if track.title then
-		osd:append("'", ass_escape(track.title), "' ")
+		osd:append("'", osd.ass_escape(track.title), "' ")
 	end
 
 	osd:append('(')

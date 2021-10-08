@@ -17,6 +17,15 @@ function Osd:append(...)
 	end
 end
 
+function Osd.ass_escape(s)
+	local x = s:gsub('\n', ' '):gsub('[\\{]', '\\%0')
+	return x
+end
+
+function Osd.ass_escape_lines(s)
+	return s:gsub('([^\n]*)\n', function(m) return Osd.ass_escape(m) .. '\\N' end)
+end
+
 Osd.__index = Osd
 
 setmetatable(getmetatable(osd), Osd)
