@@ -1,9 +1,8 @@
-local RIGHT_ARROW = '\226\158\156'
 local HORIZONTAL_ELLIPSIS = '\226\128\166'
 
 local options = require('mp.options')
+local osd = require('osd')
 
-local osd = mp.create_osd_overlay('ass-events')
 local visible = false
 
 local opts = {
@@ -30,12 +29,6 @@ local function get_height()
 	local nlines = math.floor(playlist_y / scaled_font_size) - 1
 
 	return nlines, font_size + (playlist_y - nlines * scaled_font_size) / 2
-end
-
-function osd_append(...)
-	for _, s in ipairs({...}) do
-		osd.data[#osd.data + 1] = s
-	end
 end
 
 local function _update()
@@ -74,7 +67,7 @@ local function _update()
 			'{\\alpha&H00}\\h',
 			'{\\b1}',
 			(current and '' or '{\\alpha&HFF}'),
-			RIGHT_ARROW,
+			osd.RIGHT_ARROW,
 			(current and '' or '{\\b0}'),
 			'{\\alpha&H00} ',
 		}
@@ -109,11 +102,9 @@ local function _update()
 				:gsub(' [1-9][0-9][0-9][0-9] [A-Za-z0-9][^/]', '')
 				-- Trim extension.
 				:gsub('([^/])%.[0-9A-Za-z]+$', '%1')
-				-- ASS escape.
-				:gsub('[\\{]', '\\%0')
 		end
 
-		osd_append(ass_style[item.current or false], display)
+		osd:append(ass_style[item.current or false], osd.ass_escape(display))
 	end
 
 	osd.data = table.concat(osd.data)
