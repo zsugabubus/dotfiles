@@ -1,8 +1,9 @@
+local SORT_OPTS = {no=true, filename=true}
+
 local sort = mp.get_opt('sort')
-local VALID = {no=true, filename=true}
-if sort and not VALID[sort] then
+if sort and not SORT_OPTS[sort] then
 	local s = {"If --script-opts=sort=X is given, it must be one of"}
-	for k in pairs(VALID) do
+	for k in pairs(SORT_OPTS) do
 		s[#s + 1] = #s <= 1 and ': ' or ', '
 		s[#s + 1] = '`'
 		s[#s + 1] = k
@@ -80,7 +81,7 @@ local function do_sort()
 	end
 
 	table.sort(order, function(a, b)
-		x, y = playlist[a], playlist[b]
+		local x, y = playlist[a], playlist[b]
 		if x.string ~= y.string then
 			return x.string < y.string
 		else
