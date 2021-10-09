@@ -181,7 +181,6 @@ local function _update()
 
 	osd:append(mode:get_ass_help())
 
-	osd.data = table.concat(osd.data)
 	osd:update()
 end
 function update()

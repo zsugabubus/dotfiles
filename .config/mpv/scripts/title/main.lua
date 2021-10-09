@@ -57,7 +57,6 @@ function update()
 		'/',
 		mp.get_property('playlist-count'))
 
-	osd.data = table.concat(osd.data)
 	osd:update()
 end
 

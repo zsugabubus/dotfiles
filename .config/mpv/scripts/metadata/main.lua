@@ -41,8 +41,6 @@ local function _update()
 		osd:append('(no metadata)')
 	end
 
-	osd.data = table.concat(osd.data)
-
 	osd:update()
 end
 function update()

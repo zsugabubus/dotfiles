@@ -170,7 +170,6 @@ local function _update()
 		osd:append(mode:get_ass_help())
 	end
 
-	osd.data = table.concat(osd.data)
 	osd:update()
 
 	timeout:kill()

@@ -107,7 +107,6 @@ local function _update()
 		osd:append(ass_style[item.current or false], osd.ass_escape(display))
 	end
 
-	osd.data = table.concat(osd.data)
 	osd:update()
 end
 function update()

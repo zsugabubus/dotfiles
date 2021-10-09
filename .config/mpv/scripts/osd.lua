@@ -1,6 +1,6 @@
 local osd = mp.create_osd_overlay('ass-events')
 
-local Osd = {}
+local Osd = getmetatable(osd)
 
 Osd.RIGHT_ARROW = '\226\158\156'
 
@@ -16,6 +16,12 @@ function Osd:append(...)
 	end
 end
 
+local Osd_update = Osd.update
+function Osd:update()
+	self.data = table.concat(self.data)
+	Osd_update(self)
+end
+
 function Osd.ass_escape(s)
 	-- ASS' escape handling is WTF, so we just place ZWJ after RSs.
 	local x = s:gsub('\n', ' '):gsub('\\', '\\\239\187\191')
@@ -25,9 +31,5 @@ end
 function Osd.ass_escape_lines(s)
 	return s:gsub('([^\n]*)\n', function(m) return Osd.ass_escape(m) .. '\\N' end)
 end
-
-Osd.__index = Osd
-
-setmetatable(getmetatable(osd), Osd)
 
 return osd
