@@ -1,4 +1,3 @@
-local NBSP = '\194\160'
 local RIGHT_ARROW = '\226\158\156'
 local HORIZONTAL_ELLIPSIS = '\226\128\166'
 
@@ -72,7 +71,7 @@ local function _update()
 	for _, current in ipairs({false, true}) do
 		ass_style[current] = table.concat{
 			'\\N',
-			'{\\alpha&H00}', NBSP,
+			'{\\alpha&H00}\\h',
 			'{\\b1}',
 			(current and '' or '{\\alpha&HFF}'),
 			RIGHT_ARROW,

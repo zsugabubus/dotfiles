@@ -19,7 +19,7 @@ local function _update()
 	)
 
 	osd.data = {
-		osd.NBSP, ('{\\an9}\n{\\fscx%d\\fscy%d\\an9\\q0\\a1\\bord2}'):format(
+		('{\\an9}\\h\n{\\fscx%d\\fscy%d\\an9\\q0\\a1\\bord2}'):format(
 			font_scale * 100, font_scale * 100),
 	}
 

@@ -264,7 +264,7 @@ local function _update()
 	)
 
 	osd.data = {
-		osd.NBSP, ('\n{\\q2\\fscx%d\\fscy%d}'):format(font_scale * 100, font_scale * 100),
+		('\\h\n{\\q2\\fscx%d\\fscy%d}'):format(font_scale * 100, font_scale * 100),
 	}
 
 	osd_append_track_list('Video', 'video', tracks.video)

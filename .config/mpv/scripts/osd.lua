@@ -2,7 +2,6 @@ local osd = mp.create_osd_overlay('ass-events')
 
 local Osd = {}
 
-Osd.NBSP = '\194\160'
 Osd.RIGHT_ARROW = '\226\158\156'
 
 function Osd:compute_font_scale(lines)

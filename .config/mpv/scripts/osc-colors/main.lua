@@ -141,7 +141,7 @@ local function _update()
 	end
 
 	osd.data = {
-		osd.NBSP, ('\n{\\q2\\fscx%d\\fscy%d}'):format(
+		('\\h\n{\\q2\\fscx%d\\fscy%d}'):format(
 			opts.font_scale * 100, opts.font_scale * 100),
 	}
 
@@ -162,7 +162,7 @@ local function _update()
 	end
 
 	if visible then
-		osd:append(osd.NBSP, '\n{\\q2\\fscx75\\fscy75}', 'Available Presets:')
+		osd:append('\\h\n{\\q2\\fscx75\\fscy75}', 'Available Presets:')
 		for i, preset in ipairs(PRESETS) do
 			osd:append('\\N', i - 1, ': ', preset.name)
 		end
