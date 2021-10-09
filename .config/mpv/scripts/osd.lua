@@ -17,7 +17,8 @@ function Osd:append(...)
 end
 
 function Osd.ass_escape(s)
-	local x = s:gsub('\n', ' '):gsub('[\\{]', '\\%0')
+	-- ASS' escape handling is WTF, so we just place ZWJ after RSs.
+	local x = s:gsub('\n', ' '):gsub('\\', '\\\239\187\191')
 	return x
 end
 
