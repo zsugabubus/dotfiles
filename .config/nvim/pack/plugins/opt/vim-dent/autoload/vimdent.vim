@@ -47,7 +47,7 @@ function! vimdent#Detect(...) abort
 
 	let ts = &tabstop
 	try
-		setlocal ts=100
+		noautocmd setlocal ts=100
 
 		let max_lines = 5000
 		if has('nvim')
@@ -72,7 +72,7 @@ let S=s
 			let indents = I
 		endif
 	finally
-		let &tabstop = ts
+		noautocmd let &tabstop = ts
 	endtry
 
 	" Filter out:
