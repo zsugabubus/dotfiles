@@ -212,10 +212,11 @@ function! s:git_tree(diff, ...) abort
 	" 	\})
 
 	if cmd[0] ==# 'status'
+		let wd = Git().wd
 		for change in output
 			let [_, status, path; _] = matchlist(change, '\v^(..) (.*)$')
 			call add(list, {
-				\  'filename': path,
+				\  'filename': wd.path,
 				\  'type': status,
 				\  'text': '['.status.']',
 				\})
