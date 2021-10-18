@@ -284,7 +284,7 @@ function! s:git_tree(diff, ...) abort
 				\  'module': filename,
 				\  'filename': dst_bufname,
 				\  'text':
-				\    get(STATUS_MAP, status, '['.status.']').
+				\    get(status_map, status, '['.status.']').
 				\    (!empty(dst_path) ? ' from '.src_path : '').
 				\    (src_mode !=# dst_mode ? ' ('.src_mode.' -> '.dst_mode.')' : ''),
 				\})
