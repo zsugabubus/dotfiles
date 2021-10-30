@@ -1,2 +1,0 @@
-#!/usr/bin/dash
-ln -nrsf colors/papercolor-$1 colors/papercolor
