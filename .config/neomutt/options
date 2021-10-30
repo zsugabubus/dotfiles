@@ -1,0 +1,48 @@
+reset all
+
+set abort_backspace=no
+set abort_key=<Esc>
+set abort_noattach=ask-yes
+set alias_file=~/.aliases
+set attach_save_without_prompting # attach_save_dir="`zsh -c '. $ZDOTDIR/??-hashes.zsh; print ~m'`"
+set beep_new
+set delete=ask-no
+set dsn_notify="failure,delay"
+set edit_headers
+set editor="$EDITOR"
+set envelope_from
+set fast_reply
+set folder="$MAIL"
+set help=no
+set hide_missing=no
+set hostname=localhost
+set include
+set mail_check=10
+set mail_check_recent=no
+set mail_check_stats mail_check_stats_interval=600
+set maildir_check_cur
+set mark_old=no
+set mbox_type=Maildir
+set menu_scroll menu_context=3 nomenu_move_off
+set narrow_tree
+set pager_index_lines=7
+set pager_stop
+set postponed=+postponed
+set quit
+set record=+sent
+set reply_to
+set sidebar_format="%D%* %?F?!?%?N?%N/?%S" sidebar_width=22
+set sidebar_next_new_wrap
+set sidebar_sort_method=path sidebar_sort_method=unsorted
+set sidebar_visible
+set sleep_time=0
+set sort=threads sort_aux=last-date-received
+set sort_browser=date
+set spoolfile=+nsa/inbox
+set tilde
+set timeout=0
+set use_domain=no
+set use_from
+set wait_key=no
+
+# vim: ft=neomuttrc

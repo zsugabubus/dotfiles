@@ -1,5 +1,1 @@
-accounts/
-aliases
-certs
-crypto
-signatures
+*.theme

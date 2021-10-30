@@ -1,121 +1,168 @@
-# disable custom command execution for security reason
-# bind generic,alias,attach,browser,editor,index,compose,pager,pgp,postpone ':' noop
+unbind *
+unmacro *
 
-# General {{{1
-bind editor                             \ct       complete
-bind editor                             <Tab>     complete-query
-bind editor                             <Space>   noop
-bind attach                             <Space>   view-mailcap
-bind generic,index,pager                ZZ        quit
-bind index                              x         noop
-bind generic,compose,attach,pager       x         noop
-bind generic,compose,attach,pager       q         exit
-bind index                              q         noop
-bind generic,compose,attach,pager,index i         noop
-bind index                              =         limit
+bind attach,browser,index,postpone 1 jump
+bind attach,browser,index,postpone 2 jump
+bind attach,browser,index,postpone 3 jump
+bind attach,browser,index,postpone 4 jump
+bind attach,browser,index,postpone 5 jump
+bind attach,browser,index,postpone 6 jump
+bind attach,browser,index,postpone 7 jump
+bind attach,browser,index,postpone 8 jump
+bind attach,browser,index,postpone 9 jump
 
-# Misc {{{1
-macro index,pager                       a         "<pipe-message>$my_abook --add-email-quiet<return>" "add this sender to Abook"
-bind index,pager,attach,compose         v         noop
-bind index                              v=        show-limit
-bind index,pager                        va        view-attachments
-macro index,pager                       vu        "<pipe-message> urlview<Enter>" "view URLs in message"
-macro attach,compose                    vu        "<pipe-entry> urlview<Enter>" "view URLs in message"
-macro attach                            S         <save-entry><kill-line>$HOME/mem/<enter>
+bind attach,browser,compose,index g first-entry
+bind attach,browser,compose,index G last-entry
+bind generic,pager g top
+bind generic,pager G bottom
 
-bind index                              p         recall-message
+bind index,pager [ previous-thread
+bind index,pager ] next-thread
 
-# Moving around {{{1
-bind attach,pager,index                 g         noop
-bind attach,browser,index               gg        first-entry
-bind attach,browser,index               G         last-entry
-bind generic,pager                      gg        top
-bind index                              gf        root-message
-bind generic,pager                      G         bottom
+bind index h root-message
+bind index J next-new
+bind index K previous-new
 
-bind pager,index ';' noop
-bind pager,index , noop
-bind generic                            [         noop
-bind generic                            ]         noop
-bind pager,index                        [[        previous-new-then-unread
-bind pager,index                        ]]        next-new-then-unread
-macro pager,index                       [t        "<previous-thread><enter-command>bind index,pager ';' previous-thread<enter><enter-command>bind index,pager , next-thread<enter>" "jump to previous thread"
-macro pager,index                       ]t        "<next-thread><enter-command>bind index,pager ';' next-thread<enter><enter-command>bind index,pager , previous-thread<enter>" "jump to next thread"
-macro pager,index                       [s        "<previous-subthread><enter-command>bind index,pager ';' previous-subthread<enter><enter-command>bind index,pager , next-subthread<enter>" "jump to previous subthread"
-macro pager,index                       ]s        "<next-subthread><enter-command>bind index,pager ';' next-subthread<enter><enter-command>bind index,pager , previous-subthread<enter>" "jump to next subthread"
-macro pager,index                       [n        "<previous-new-then-unread><enter-command>bind index,pager ';' previous-new-then-unread<enter><enter-command>bind index,pager , next-new-then-unread<enter>" "jump to previous new message"
-macro pager,index                       ]n        "<next-new-then-unread><enter-command>bind index,pager ';' next-new-then-unread<enter><enter-command>bind index,pager , previous-new-then-unread<enter>" "jump to next new message"
+bind attach,browser,compose,index,postpone k previous-entry
+bind attach,browser,compose,index,postpone j next-entry
+bind pager K previous-entry
+bind pager J next-entry
+bind compose,pager k previous-line
+bind compose,pager j next-line
 
-bind index                              k         previous-entry #-line
-bind index                              j         next-entry
-bind pager                              K         previous-entry
-bind pager                              J         next-entry
-bind pager                              k         previous-line
-bind pager                              j         next-line
+bind index o sort-mailbox
+bind index O sort-reverse
 
-# bind generic,alias,attach,browser,editor,index,compose,pager,pgp,postpone 'j' next-line
-# bind generic,alias,attach,browser,editor,index,compose,pager,pgp,postpone 'k' previous-line
+macro index = <limit>=
+macro index % <limit>%
+macro index ~ <limit>~
+bind index l limit
+macro index L "<limit>all<return>"
 
-bind attach,generic,browser,pager,index \cF       next-page
-bind attach,generic,browser,pager,index \cB       previous-page
-bind attach,generic,browser,pager,index \cu       half-up
-bind attach,generic,browser,pager,index \cd       half-down
-bind browser,pager                      \ce       next-line
-bind browser,pager                      \cy       previous-line
-bind index                              \ce       next-line
-bind index                              \cy       previous-line
-bind generic                            z         noop
-bind generic                            zt        current-top
-bind generic                            zz        current-middle
-bind generic                            zb        current-bottom
+bind generic t tag-entry
+bind pager t tag-message
 
-# Mail & Reply {{{1
+bind index,pager V view-raw-message
+bind index,pager v view-attachments
 
-bind index,pager                        <Esc>e    noop
-bind index                              L         noop
-bind generic                            za        check-stats
+bind index,pager | pipe-message
 
-# reply {{{2
-bind index,pager                        r         noop
-bind index,pager                        rt        reply
-bind index,pager                        rs        compose-to-sender
-bind index,pager                        rr        resend-message
-bind index,pager                        rg        group-reply
-bind index,pager                        ra        group-reply
-bind index,pager                        rl        list-reply
+bind attach,postpone d delete-entry
+bind attach,postpone u undelete-entry
+bind attach p view-pager
+bind attach t view-text
+bind attach v view-attach
+macro attach <return> v
+bind attach s save-entry
+bind attach,compose | pipe-entry
+bind attach - collapse-parts
 
-# forward {{{2
-bind index,pager                        f         noop
-bind index,pager                        ft        forward-message
-bind index,pager                        fg        forward-to-group
-bind index,pager                        b         noop
-bind index,pager                        fb        bounce-message
+macro index T at
+bind index ap tag-pattern
+macro index a~ "ap~"
+bind index at tag-thread
+bind index as tag-subthread
+macro index A <tag-pattern>~A<return>
+bind index x untag-pattern
+macro index X <untag-pattern>~A<return>
 
-# delete {{{2
-bind pager,index                        d         noop
-bind pager,index                        D         noop
-bind pager,index                        dd        delete-message
-bind pager,index                        dt        delete-subthread
-bind pager,index                        dT        delete-thread
-bind pager,index                        DT        purge-thread
-bind pager,index                        DD        purge-message
+bind index,pager u undelete-message
+macro index U <undelete-pattern>~T
 
-# Compose {{{2
-bind compose                            y         noop
-bind compose                            Y         send-message
+bind index,pager d delete-message
+macro index D <delete-pattern>~T
 
-# Refreshing {{{2
-bind index                              <Esc>$    imap-fetch-mail
+bind index N toggle-new
 
-# Sidebar {{{1
-bind index,pager                        \cB       sidebar-toggle-visible
-bind index,pager                        \cP       sidebar-prev
-bind index,pager                        \cN       sidebar-next
-bind index,pager                        \cO       sidebar-open
+bind index,pager M resend-message
+bind index,pager m mail
 
-bind index                              za        collapse-thread
-bind index                              zA        collapse-thread
-bind index                              zM        collapse-all
-bind index                              zR        collapse-all
+bind index,pager f forward-message
+bind index,pager r reply
+bind index,pager R group-reply
+# bind index,pager R list-reply
 
+bind index,pager b bounce-message
+bind index,pager ! flag-message
+
+macro index / l~
+
+bind attach,browser,pager,postpone / search
+bind attach,browser,pager,postpone n search-next
+bind attach,browser,pager,postpone N search-opposite
+
+bind index,pager p purge-message
+bind index,pager P purge-thread
+
+bind index,pager e edit
+bind index,pager E edit-label
+
+bind index,pager w display-address
+
+bind index,pager $ sync-mailbox
+bind index q quit
+macro index Q <enter-command>set maildir_trash<return><quit>
+bind attach,generic,browser,pager,index Z quit
+
+bind attach,generic,browser,pager,index \cu half-up
+bind attach,generic,browser,pager,index \cd half-down
+macro pager <space> "<enter-command>set pager_stop=no<return><half-down><enter-command>set pager_stop=yes<return>"
+bind attach,browser,compose,index,pager,postpone \ce next-line
+bind attach,browser,compose,index,pager,postpone \cy previous-line
+
+bind attach,generic,browser,pager,index zt current-top
+bind attach,generic,browser,pager,index zz current-middle
+bind attach,generic,browser,pager,index zb current-bottom
+
+macro index,pager \cR "<enter-command>source ~/.config/neomutt/neomuttrc<return>"
+
+bind index,pager \cB sidebar-toggle-visible
+macro index,pager \cN "<check-stats><enter-command>toggle sidebar_new_mail_only<return>"
+
+bind pager h display-toggle-weed
+
+bind index,pager s save-message
+
+macro index,pager ( <sidebar-prev><sidebar-open>
+macro index,pager ) <sidebar-next><sidebar-open>
+macro index,pager { <check-stats><sidebar-prev-new><sidebar-open>
+macro index,pager } <check-stats><sidebar-next-new><sidebar-open>
+
+macro index \eL <check-new><refresh>
+
+bind index za collapse-all
+
+macro index,pager c <change-folder>?<toggle-mailboxes>
+
+macro index C <enter-command>cd<space>
+
+bind browser c change-dir
+bind browser h goto-parent
+bind browser l descend-directory
+
+macro compose <return> m
+bind compose A attach-message
+bind compose D detach-file
+bind compose J move-down
+bind compose K move-up
+bind compose a attach-file
+bind compose b edit-bcc
+bind compose c edit-cc
+bind compose e edit-file
+bind compose f edit-from
+bind compose i toggle-disposition
+bind compose l toggle-unlink
+bind compose m edit-message
+bind compose n rename-file
+bind compose o edit-description
+bind compose p postpone-message
+bind compose r edit-reply-to
+bind compose s edit-subject
+bind compose t edit-to
+bind compose v view-attach
+bind compose y send-message
+bind compose g pgp-menu
+
+bind postpone d delete-entry
+bind postpone u undelete-entry
 # vim: ft=neomuttrc

@@ -1,2 +1,2 @@
 #!/usr/bin/dash
-ln -nrsf colors.$1 colors.theme
+ln -nrsf colors-256.$1 colors-256.theme

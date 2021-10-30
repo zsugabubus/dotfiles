@@ -1,0 +1,22 @@
+#!/bin/dash -eu
+cd -- "$MAIL"
+
+for dir in */*/cur */cur; do
+	dir=${dir%/*}
+	mailbox=${dir%/*}
+	echo "mailboxes =$dir"
+	echo "folder-hook $dir 'source =$mailbox/neomuttrc'"
+done
+
+for signature in */signature; do
+	dir=${signature%/*}
+	echo "folder-hook $dir 'set signature==$signature'"
+done
+
+for dir in */inbox */cur; do
+	mailbox=${dir%/cur}
+	key=${mailbox%${mailbox#?}}
+	echo "macro index <space>$key \"<change-folder>=$mailbox<return>\""
+done
+
+# vim: ft=sh
