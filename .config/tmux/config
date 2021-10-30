@@ -27,7 +27,7 @@ set -g status-right "%a, %b %d %R"
 
 # Really... making this fucking colon fucking optional is FUCKING IMPOSSIBLE.
 # WHY? THE FUCK? LITTLE SHITS. Why the fuck string interpolation is so fucking hard.
-set -g @window-status-format " #[fg=color245]#[default]#I#[fg=color245]:#[fg=default]#W#[fg=color245]:#[fg=default]#{?synchronize-panes,~,}#{?window_zoomed_flag,Z,}#{?window_marked_flag,M,}#{?monitor-activity,A,} "
+set -g @window-status-format " #[fg=color245]#[default]#I#[fg=color245]:#[fg=default]#W#[fg=color245]:#[fg=default]#{?synchronize-panes,~,}#{window_flags}#{?window_zoomed_flag,Z,}#{?monitor-activity,A,} "
 set -g window-status-format "#{E:@window-status-format}"
 set -g window-status-current-format "#{E:@window-status-format}"
 
@@ -90,8 +90,8 @@ bind t last-pane
 bind C-t last-window
 bind T switch-client -l
 
-bind $ command-prompt -I '#W' -p '(rename-session)' { rename-session -- '%%' }
-bind , command-prompt -I '#S' -p '(rename-window)' { rename-window -- '%%' }
+bind $ command-prompt -I '#S' -p '(rename-session)' { rename-session -- '%%' }
+bind , command-prompt -I '#W' -p '(rename-window)' { rename-window -- '%%' }
 
 bind C-c display-menu -T 'Kill' \
 	'INT'  i { run { ~/.config/tmux/scripts/kill '#{pane_tty}' INT  } } \
@@ -126,7 +126,7 @@ bind ! display-menu -T 'Move' \
 	'swap pane'   'p' { display-panes -d 0 { swap-pane -t -- '%%' } } \
 	'break pane'  'b' { break-pane } \
 	'swap window' 'w' { command-prompt -1 -N -p 'swap-pane -t' { swap-pane -t ':=%%' ; select-pane -t ':=%%' } } \
-	'move'        'm' { command-prompt -T target { move-window -t '%%' } } \
+	'move'        'm' { command-prompt -T -p target { move-window -t '%%' } } \
 
 bind 0 select-window -t:=0
 bind 1 select-window -t:=1
