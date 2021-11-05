@@ -192,8 +192,8 @@ function update_menu()
 	mp.unobserve_property(update)
 
 	if visible then
-		mp.observe_property('vf', 'none', update)
-		mp.observe_property('af', 'none', update)
+		mp.observe_property('vf', nil, update)
+		mp.observe_property('af', nil, update)
 		mode:add_key_bindings()
 	else
 		mode:remove_key_bindings()

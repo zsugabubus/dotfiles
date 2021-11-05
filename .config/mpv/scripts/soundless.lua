@@ -29,5 +29,5 @@ function update()
 	end
 end
 
-mp.observe_property('mute', 'none', update)
-mp.observe_property('pause', 'none', update)
+mp.observe_property('mute', nil, update)
+mp.observe_property('pause', nil, update)
