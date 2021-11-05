@@ -3,7 +3,9 @@ local visible = false
 
 osd.z = 10
 
-function update()
+function _update()
+	mp.unregister_idle(_update)
+
 	local style = '\\c&H00ffFF\\bord2\\fscx70\\fscy70}'
 	osd.data = {}
 
@@ -59,12 +61,21 @@ function update()
 
 	osd:update()
 end
+function update()
+	mp.unregister_idle(_update)
+	mp.register_idle(_update)
+end
 
 mp.add_key_binding('T', 'show-title', function()
+	mp.unobserve_property(update)
+
 	visible = not visible
 	if visible then
 		mp.register_event('file-loaded', update)
-		update()
+		mp.observe_property('playlist-count', nil, update)
+		mp.observe_property('playlist-pos', nil, update)
+		mp.observe_property('video-params', nil, update)
+		mp.observe_property('audio-params', nil, update)
 	else
 		mp.unregister_event(update)
 		osd:remove()
