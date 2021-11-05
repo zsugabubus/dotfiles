@@ -393,6 +393,11 @@ command! Bell call writefile(["\x07"], '/dev/tty', 'b')
 function! s:make() abort
 	let start = strftime('%s')
 	echon "\U1f6a7  Building...  \U1f6a7"
+	if filereadable('Makefile')
+		set makeprg=make
+	elseif filereadable('meson.build')
+		set makeprg=ninja\ -C\ build
+	endif
 	make
 	Bell
 	redraw
