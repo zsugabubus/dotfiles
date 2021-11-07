@@ -1,0 +1,11 @@
+[Unit]
+Description=Clearnet MailBox Synchronization
+Requires=mbsync-profile@clearnet.service
+After=mbsync-profile@clearnet.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/mbsync -ac "%t/mbsyncrc.clearnet"
+
+[Install]
+WantedBy=default.target
