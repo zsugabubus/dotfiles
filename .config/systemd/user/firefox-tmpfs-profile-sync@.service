@@ -1,5 +1,5 @@
 [Unit]
-Description=Synchronization of Firefox profile %I
+Description=Synchronization of Firefox Profile %I
 Requisite=firefox-tmpfs-profile@%i.service
 After=firefox-tmpfs-profile@%i.service
 AssertPathExists=%t/firefox/%i
