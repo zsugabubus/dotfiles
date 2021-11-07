@@ -133,6 +133,7 @@ end
 
 set title
 
+set cursorline cursorlineopt=number
 set number relativenumber
 augroup vimrc_numbertoggle
 	autocmd!
@@ -176,17 +177,6 @@ inoremap <expr> <C-f> expand("%:t:r")
 
 " How many times... you little shit...
 nnoremap U <nop>
-
-nnoremap <expr> + (!&diff ? 'g+' : ":diffput\<CR>")
-nnoremap <expr> - (!&diff ? 'g-' : ":diffget\<CR>")
-xnoremap <expr> + (!&diff ? '' : ":diffput\<CR>")
-xnoremap <expr> - (!&diff ? '' : ":diffget\<CR>")
-noremap <expr> > (!&diff ? '>' : ":diffget 2\<CR>")
-noremap <expr> < (!&diff ? '<' : ":diffget 3\<CR>")
-
-nnoremap <expr> dL (!&diff ? 'dL' : ":diffget LOCAL\<CR>")
-nnoremap <expr> dB (!&diff ? 'dB' : ":diffget BASE\<CR>")
-nnoremap <expr> dR (!&diff ? 'dR' : ":diffget REMOTE\<CR>")
 
 " replace f/F and t/T to jump only to the beginning of snake_case or
 " PascalCase words if pattern is lowercase; otherwise normal f/F and t/T that
@@ -296,8 +286,8 @@ AWK
 
 	endif
 endfunction
-command! -nargs=* -bang Publish call s:publish(<bang>0, <q-mods>, [<f-args>])
 
+command! -nargs=* -bang Publish call s:publish(<bang>0, <q-mods>, [<f-args>])
 nnoremap <silent> <M-p> :update<bar>Publish! %<CR>
 
 nnoremap Q :normal n.<CR>zz
@@ -371,33 +361,40 @@ command! -nargs=1 RegEdit let @<args>=input('"'.<q-args>.'=', @<args>)
 
 command! -nargs=1 Source execute 'source' fnameescape((has('nvim') ? stdpath('config') : '~/.vim').'/'.<q-args>)
 
+" Christmas bells.
+command! Bell call writefile(["\x07"], '/dev/tty', 'b')
+
+function! s:errorformat_make() abort
+	if 'make' == &makeprg|
+		set errorformat^=make:\ %*[[]%f:%l:\ %m
+		set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %.%#]\ Error\ %n
+		set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %m
+		set errorformat^=/usr/bin/ld:\ %f:%l:\ %m
+	endif
+endfunction
+
 augroup vimrc_errorformat
 	autocmd!
-
-	function! s:errorformat_make() abort
-		if 'make' == &makeprg|
-			set errorformat^=make:\ %*[[]%f:%l:\ %m
-			set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %.%#]\ Error\ %n
-			set errorformat^=make%.%#:\ ***\ %*[[]%f:%l:\ %m
-			set errorformat^=/usr/bin/ld:\ %f:%l:\ %m
-		endif
-	endfunction
-
 	autocmd VimEnter * call s:errorformat_make()
 	autocmd OptionSet makeprg call s:errorformat_make()
 augroup END
 
-" Christmas bells.
-command! Bell call writefile(["\x07"], '/dev/tty', 'b')
+function! s:makeprg_magic() abort
+	if !empty(&l:makeprg)
+		return
+	endif
+
+	if filereadable('Makefile')
+		setlocal makeprg=make
+	elseif filereadable('meson.build')
+		setlocal makeprg=ninja\ -C\ build
+	endif
+endfunction
 
 function! s:make() abort
 	let start = strftime('%s')
 	echon "\U1f6a7  Building...  \U1f6a7"
-	if filereadable('Makefile')
-		set makeprg=make
-	elseif filereadable('meson.build')
-		set makeprg=ninja\ -C\ build
-	endif
+	call s:makeprg_magic()
 	make
 	Bell
 	redraw
@@ -436,6 +433,8 @@ function! s:make() abort
 	endif
 endfunction
 
+nnoremap <silent> <M-m> :call <SID>make()<CR>
+nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>execute 'tabnew<bar>terminal make run'<bar>endif<CR>
 " Swap word {{{1
 " Swap word word.
 nnoremap <silent> Sw ciw<Esc>wviwp`^Pb
@@ -447,8 +446,6 @@ nnoremap <silent> SW  = ciW<Esc>wviWp`^PB
 nnoremap <expr> S= ":call feedkeys(\"_vt=BEc\\<LT>Esc>wwv$F,f;F;hp`^P_\", 'nt')\<CR>"
 " 1}}}
 
-nnoremap <silent> <M-m> :call <SID>make()<CR>
-nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>execute 'terminal make run'<bar>endif<CR>
 nnoremap <silent> <M-l> :lnext<CR>:silent! normal! zOzz<CR>
 nnoremap <silent> <M-L> :lprev<CR>:silent! normal! zOzz<CR>
 nnoremap <silent> <M-n> :cnext<CR>:silent! normal! zOzz<CR>
@@ -467,9 +464,8 @@ nnoremap <silent> gss :setlocal spell!<CR>
 nnoremap <silent> gse :setlocal spell spelllang=en<CR>
 nnoremap <silent> gsh :setlocal spell spelllang=hu<CR>
 
-" nomacs
+nnoremap <M-!> <Cmd>lua require'telescope.builtin'.find_files({cwd=require('telescope.utils').buffer_dir(), previewer=false})<CR>
 nnoremap <expr> <M-!> ':edit '.fnameescape(expand('%:h')).'/<C-z>'
-nmap <M-e> <M-!>
 nnoremap <expr> <M-t> ':tabedit '.fnameescape(expand('%:h')).'/<C-z>'
 " nnoremap <expr> <M-o> ':edit '.expand('%:h').'/<C-z>'
 nnoremap <silent> <M-o> :buffer #<CR>
@@ -529,6 +525,37 @@ command! -bar -bang -nargs=+ ManKeyword
 	\   noh|
 	\ endtry
 
+" let auto_save = ''
+" command! -nargs=? AutoSave let auto_save = <q-args>
+" augroup vimrc_autosave
+" 	autocmd!
+" 	autocmd FocusLost *
+" 		\ if auto_save ==# 'f'|
+" 		\   execute 'Bufdo update'|
+" 		\ endif
+" augroup END
+
+augroup vimrc_autodiffupdate
+	autocmd! TextChanged * if empty(&buftype)|diffupdate|endif
+augroup END
+
+" Quit from every diffed window; though quit is forbidden inside windo.
+augroup vimrc_diffquit
+	autocmd! QuitPre * if &diff|execute 'windo if winnr() !=# '.winnr().' && &diff|quit|endif'|endif
+augroup END
+
+augroup vimrc_autodiffoff
+	autocmd!
+	autocmd BufHidden *
+		\ if !&buflisted|
+		\   diffoff!|
+		\ endif
+	autocmd BufUnload *
+		\ if &diff|
+		\   diffoff!|
+		\ endif
+augroup END
+
 function! Diff(spec) abort
 	let ft = &ft
 
@@ -557,7 +584,19 @@ function! Diff(spec) abort
 	wincmd p
 	diffthis
 endfunction
+
 command! -nargs=? Diff call Diff(<q-args>)
+
+nnoremap <expr> + (!&diff ? 'g+' : ":diffput\<CR>")
+nnoremap <expr> - (!&diff ? 'g-' : ":diffget\<CR>")
+xnoremap <expr> + (!&diff ? '' : ":diffput\<CR>")
+xnoremap <expr> - (!&diff ? '' : ":diffget\<CR>")
+noremap <expr> > (!&diff ? '>' : ":diffget 2\<CR>")
+noremap <expr> < (!&diff ? '<' : ":diffget 3\<CR>")
+
+nnoremap <expr> dL (!&diff ? 'dL' : ":diffget LOCAL\<CR>")
+nnoremap <expr> dB (!&diff ? 'dB' : ":diffget BASE\<CR>")
+nnoremap <expr> dR (!&diff ? 'dR' : ":diffget REMOTE\<CR>")
 
 ca emtyp empty
 ia emtyp empty
@@ -629,10 +668,15 @@ augroup vimrc_filetypes
 		\ endfor|
 		\ nnoremap <buffer> // /\v^ {7}\S@=%(.*\n {11,14}\S)@=.{-}\zs\V|
 		\ nnoremap <buffer> <space> <C-D>|
+		\ nnoremap <silent><buffer><nowait> ] :<C-U>call search('\v^[A-Z0-9]*\(\d', 'W')<CR>zt|
+		\ nnoremap <silent><buffer><nowait> [ :<C-U>call search('\v^[A-Z0-9]*\(\d', 'Wb')<CR>zt|
 		\ nmap <buffer> /- //-
 
 	autocmd FileType vim
 		\ command! -range Execute execute substitute(join(getline(<line1>, <line2>), "\n"), '\m\n\s*\', '', 'g')
+
+	autocmd FileType remind
+		\ setlocal keywordprg=:ManKeyword\ 1\ remind
 
 	autocmd FileType mbsyncrc
 		\ setlocal keywordprg=:ManKeyword\ 1\ mbsync
@@ -671,7 +715,9 @@ augroup vimrc_filetypes
 
 	autocmd FileType sh,zsh,dash
 		\ setlocal ts=2|
-		\ xnoremap <buffer> s< c<<EOF<CR><C-r><C-o>"EOF<CR><Esc><<gvo$B<Esc>i
+		\ xnoremap <buffer> s< c<<EOF<CR><C-r><C-o>"EOF<CR><Esc><<gvo$B<Esc>i|
+		\ nnoremap <silent><buffer><nowait> ]] :call search('^.*\(function\<bar>()\s*{\)', 'W')<CR>|
+		\ nnoremap <silent><buffer><nowait> [[ :call search('^.*\(function\<bar>()\s*{\)', 'Wb')<CR>
 
 	autocmd FileType php
 		\ set makeprg=php\ -lq\ %|
@@ -684,8 +730,11 @@ augroup vimrc_filetypes
 	let php_sql_query = 1
 	let php_htmlInStrings = 1
 	let php_parent_error_close = 1
-	autocmd FileType vim,lua,javascript,yaml,css,stylus,xml,php,html,pug,gdb,vue
-		\ setlocal ts=2
+	autocmd FileType vim,lua,javascript,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson
+		\ setlocal ts=2 sw=0
+
+	autocmd FileType awk,cshtml
+		\ setlocal ts=4 sw=0
 
 	let c_gnu = 1
 	let c_no_curly_error = 1 " (struct s){ } <-- avoid red
@@ -726,7 +775,7 @@ augroup vimrc_filetypes
 
 	let netrw_banner = 0
 	let netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
-	let netrw_keepdir = 0
+	" let netrw_keepdir = 0
 	autocmd FileType netrw
 		\ nmap <buffer> . -|
 		\ nmap <buffer> e :e<Space>
@@ -743,6 +792,7 @@ augroup vimrc_autopackadd
 	IfLocal autocmd BufReadPre *.pug  ++once packadd vim-pug
 	IfLocal autocmd BufReadPre *.toml ++once packadd vim-toml
 	IfLocal autocmd BufReadPre *.glsl ++once packadd vim-glsl
+	IfLocal autocmd BufReadPre *.zig ++once packadd zig.vim
 	IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 augroup END
 
@@ -751,10 +801,6 @@ augroup END
 IfLocal packadd vim-gnupg
 
 packadd cfilter
-
-augroup vimrc_autodiffupdate
-	autocmd! TextChanged * if empty(&buftype)|diffupdate|endif
-augroup END
 
 " Automatically open quickfix and location window and make it modifiable.
 augroup vimrc_quickfixfix
@@ -782,28 +828,15 @@ augroup vimrc_quickfixfix
 	autocmd QuitPre          * ++nested silent! lclose | silent! cclose
 augroup END
 
-" Quit from every diffed window; though quit is forbidden inside windo.
-augroup vimrc_diffquit
-	autocmd! QuitPre * if &diff|execute 'windo if winnr() !=# '.winnr().' && &diff|quit|endif'|endif
-augroup END
-
-augroup vimrc_autodiffoff
-	autocmd!
-	autocmd BufHidden *
-		\ if !&buflisted|
-		\   diffoff!|
-		\ endif
-	autocmd BufUnload *
-		\ if &diff|
-		\   diffoff!|
-		\ endif
-augroup END
-
 " autocmd BufLeave * if &buftype ==# 'quickfix' | echo 'leaving qf' | endif
 Ccabbrev f 'find'.(' ' !=# v:char ? ' ' : '')
 
-Ccabbrev cd (haslocaldir() ? 'lcd' : haslocaldir(-1) ? 'tcd' : 'cd')
-Ccabbrev ccd 'cd %:p:h'
+function! g:Acd()
+	return haslocaldir() ? 'lcd' : haslocaldir(-1) ? 'tcd' : 'cd'
+endfunction
+
+Ccabbrev cd Acd()
+Ccabbrev ccd Acd().' %:p:h'
 
 " grep helper: search quoted text (can include spaces) when contains
 " no -args.
@@ -890,26 +923,12 @@ xnoremap <expr> #  'y/<C-r>='."'\\V\\<'.escape(@\", '\\/').'\\>'\<CR>".'/e<CR>'
 xnoremap <expr> g* 'y/<C-r>='."'\\V'.escape(@\", '\\/')\<CR>".'/e<CR>'
 xnoremap <expr> g# 'y?<C-r>='."'\\V'.escape(@\", '\\?')\<CR>".'?e<CR>'
 
-function! s:goto_def(type) abort
-	let what = expand('<cword>')
-	if empty(what)
-		return
-	endif
-	let [lpat, rpat, arg] = get(get({
-		\  'php': #{ f: ['function\s+\b', '\b', "-tphp -m1"] },
-		\  'c': #{
-		\    f: ['^([a-zA-Z0-9_/$*]+[ \t]+)*\b', '\b', "-tc -m2"],
-		\    s: ['^(struct.*|typedef.*|^\} *)\b', '\b', "-tc -m2"],
-		\    d: ['^# *define +\b', '\b', "-tc -m2"]
-		\  }
-		\}, &filetype, {}), a:type, ['', '', ''])
-	execute 'GREP' shellescape(lpat.what.rpat, 1) arg
-endfunction
-
-nnoremap <silent> g? :call <SID>goto_def(nr2char(getchar()))<CR>
+silent! unmap Y
 
 nnoremap ! :ls<CR>:b<Space>
+
 nnoremap g/ :echo glob('*')<CR>:find *
+nnoremap g/ <Cmd>lua require'telescope.builtin'.find_files({previewer=false})<CR>
 nnoremap g<C-f> :find <C-r><C-w><C-z><CR>
 nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
 
@@ -1024,6 +1043,8 @@ command! -nargs=+ Match call matchadd(s:matchcolors[s:nmatchcolors], <q-args>)|l
 " Delay loading of vim-jumpmotion.
 IfLocal noremap <silent> <Space> :<C-U>unmap <lt>Space><CR>:packadd vim-jumpmotion<CR>:call feedkeys(' ', 'i')<CR>
 
+IfLocal packadd plenary.nvim
+IfLocal packadd telescope.nvim
 IfLocal packadd vim-paperplane
 IfLocal packadd vim-pets
 IfLocal packadd vim-mall
@@ -1139,7 +1160,6 @@ endfunction
 
 nnoremap <silent><expr> p <SID>magic_paste('p')
 nnoremap <silent><expr> P <SID>magic_paste('P')
-
 augroup vimrc_stdin
 	autocmd! StdinReadPost * setlocal buftype=nofile bufhidden=hide noswapfile
 augroup END
@@ -1208,7 +1228,7 @@ function! s:magic_tilde() abort
 	let cmdline = getcmdline()
 
 	" Only for file related operations.
-	if cmdline !~# '\v^%(e%[dit]|r%[ead]|w%[rite]|[lt]?cd)>'
+	if cmdline !~# '\v^%((tab)?e%[dit]|r%[ead]|w%[rite]|[lt]?cd|(tab)?new)>'
 		return '/'
 	endif
 
@@ -1221,19 +1241,20 @@ function! s:magic_tilde() abort
 		let cmd = join([
 			\  'set -eu',
 			\  '. $ZDOTDIR/??-hashes.zsh',
-			\  'eval text=%s',
+			\  'path=$~0',
 			\  'unhash -dm \*',
-			\  'print -D -- $text'
+			\  'print -D -- $path',
 			\], "\n")
 	endif
 
 	let word = cmdline[word_start:cmdpos]
-	let word = trim(system(printf(cmd, shellescape(word))))
+	let output = trim(system([&shell, '-c', cmd, word]))
 	if v:shell_error
+		throw 'magic-tilde: '.output
 		return '/'
 	endif
 
-	return "\<C-\>e\"".escape(strpart(cmdline, 0, word_start).word.'/'.strpart(cmdline, cmdpos), '\"')."\"\<CR>"
+	return "\<C-\>e\"".escape(strpart(cmdline, 0, word_start).output.'/'.strpart(cmdline, cmdpos), '\"')."\"\<CR>"
 endfunction
 
 cnoremap <expr> / <SID>magic_tilde()
@@ -1249,3 +1270,5 @@ delcommand Ccabbrev
 
 delcommand IfSandbox
 delcommand IfLocal
+
+command -range URLFilter silent '<,'>v/^http/d|silent '<,'>!awk '{print $1}' | sort -u
