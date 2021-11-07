@@ -1,5 +1,7 @@
 #autoload
 
+emulate -L zsh
+
 BUFFER=${(FQ)${(z)BUFFER}}
 function send-break() {
 	zle -D send-break

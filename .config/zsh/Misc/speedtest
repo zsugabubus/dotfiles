@@ -1,0 +1,14 @@
+#autoload
+
+emulate -L zsh
+
+trap return INT
+
+() {
+	print -P "%B%F{blue}::%f Download %F{blue}::%f%b"
+	curl http://speedtest.tele2.net/1GB.zip -o /dev/null
+}
+() {
+	print -P "\n%B%F{blue}::%f Upload %F{blue}::%f%b"
+	curl -T /dev/zero http://speedtest.tele2.net/upload.php -o /dev/null
+}

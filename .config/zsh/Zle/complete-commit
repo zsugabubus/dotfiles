@@ -1,0 +1,18 @@
+#autoload
+
+emulate -L zsh
+
+setopt err_return pipe_fail
+
+local commit
+
+commit=$(
+	git log-formatted --color=always |
+	fzf --ansi |
+	cut -d' ' -f1
+)
+
+[[ -z $BUFFER ]] && LBUFFER+='e'
+[[ $LBUFFER =~ '\S$' ]] && LBUFFER+=' '
+[[ ${${(zA)BUFFER}[1]} == e ]] && LBUFFER+=git://
+LBUFFER+=$commit

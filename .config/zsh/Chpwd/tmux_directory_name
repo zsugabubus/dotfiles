@@ -1,0 +1,23 @@
+#autoload
+emulate -L zsh
+
+case $1 in
+n)
+	local dir
+	case $2 in
+	tmux-pane)
+		dir=$(tmux display-message -p -F '#{pane_current_path}' -t!) || return ;;
+	*)
+		return 1 ;;
+	esac
+
+	typeset -ga reply
+	reply=( $dir )
+	return 0 ;;
+
+c)
+	_wanted dynamic-dirs expl 'tmux directory' compadd -S\] -- tmux-pane
+	return ;;
+esac
+
+return 1

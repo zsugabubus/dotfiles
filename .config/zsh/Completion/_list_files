@@ -1,14 +1,41 @@
 #autoload
 
-listfiles=("${(f@)$(
-  cd -q -- ${${(Q)${2:+$2/}}:-.} &&
-  LS_COLORS="${LS_ICONS}lc=:ec=:rc=:" \ls -1dfFb --color -- ${(PQ)1} 2>/dev/null
-)}")
+emulate -L zsh
+zmodload -F zsh/stat b:zstat
 
-#if (( #listfiles )); then
-  listopts=(-d listfiles -o match)
-#else
-#  listopts=()
-#fi
+readonly -gA _LIST_FILES_ICONS=( ${=${${(s.:.)LS_ICONS}//=/ }} )
 
-return 0
+function _list_files() {
+	listfiles=()
+
+	local dir=${(Q)${2:+$2/}}
+
+	local f
+	for f in ${(PQ)1}; do
+		local -a stat
+		local type=fi icon= class=
+		if zstat -sNA stat -F '' -- "$dir$f" 2>/dev/null; then
+			case $stat[3] in
+			-[r-][w-]x*)
+				type=ex; class='*'
+				;&
+			-*)
+				icon=$_LIST_FILES_ICONS[(k)$f]
+				;;
+			d*) type=di; class=/ ;;
+			l*) type=ln; class=@ ;;
+			c*) type=cd; class=% ;;
+			b*) type=bd; class='#' ;;
+			p*) type=pi; class='|' ;;
+			s*) type=so; class== ;;
+			esac
+		fi
+		[[ -z $icon ]] && icon=$_LIST_FILES_ICONS[$type]
+		listfiles+=$icon$f$class
+	done
+
+	listopts=(-d listfiles -o match)
+	return 0
+}
+
+[[ -o ksh_autoload ]] || _list_files "$@"

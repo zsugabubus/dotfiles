@@ -1,0 +1,15 @@
+#autoload
+
+emulate -L zsh
+
+{
+	local buildtype=$(
+		meson configure |
+		awk '$1 == "buildtype" {print $2}'
+	)
+	meson configure build -Dbuildtype=release
+	meson compile -C build
+	sudo meson install -C ${1:-build}
+} always {
+	meson configure build -Dbuildtype=$buildtype
+}

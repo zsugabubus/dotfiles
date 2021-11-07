@@ -1,3 +1,4 @@
+#!/usr/bin/awk -f
 BEGIN {
   delete terms
   delete coloricons

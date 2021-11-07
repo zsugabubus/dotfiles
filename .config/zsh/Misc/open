@@ -1,0 +1,49 @@
+#autoload
+
+emulate -L zsh
+
+local files=( "$@" ) prefix mime_type
+
+function open_with() {
+	"$@" -- "$files" &>/dev/null &!
+}
+
+if [[ ${files[1]} =~ .*.mp[03] ]]; then
+	mime_type=audio/mp3
+else
+	mime_type=$(file --mime-type -Lb -- "${files[1]}")
+fi
+
+case $mime_type in
+image/*)
+	if (( $#files == 1 )); then
+		open_with feh
+	else
+		open_with feh
+	fi
+	;;
+
+audio/*|video/*)
+	case $TERM in
+	linux) open_with mpv --player-operation-mode=cplayer ;;
+	*) open_with mpv --player-operation-mode=pseudo-gui ;;
+	esac
+	;;
+
+application/pdf|application/postscript)
+	open_with zathura ;;
+
+application/vnd.openxmlforamts-*)
+	open_with libreoffice ;;
+
+inode/directory)
+	cd -- $files[1] ;;
+
+*)
+	if (( $#files == 1 && ! __zfiles_active )); then
+		cd -- ${files[1]:h} &&
+		$EDITOR -- ${files[1]:t}
+	else
+		$EDITOR -- $files
+	fi
+esac

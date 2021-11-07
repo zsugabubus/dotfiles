@@ -1,0 +1,693 @@
+#autoload
+
+emulate -L zsh
+
+zmodload -F zsh/stat b:zstat
+zmodload zsh/curses
+zmodload zsh/system
+autoload -U colors && colors
+
+integer -g __zfiles_scrolloff=5
+integer -g __zfiles_do_stat=1 # 0=no; 1=yes; 2=yes+display
+integer -g __zfiles_glob_dots=0
+
+integer -g __zfiles_active # 0=no; 1=list; 2=vared
+
+typeset -g __zfiles_PWD
+typeset -ga __zfiles_files
+typeset -ga __zfiles_selection
+integer -g __zfiles_lines
+integer -g __zfiles_rendered_top __zfiles_cur __zfiles_top __zfiles_bottom
+
+typeset -g __zfiles_last_{cmd,f,f_forward}
+
+typeset -gA __zfiles_{stat,icon,color}_cache
+typeset -gA __zfiles_{icons,colors}
+
+typeset -grA __ZFILES_CONTROL_KEYMAP=(
+	t tab
+	n cr
+)
+
+typeset -r __ZFILES_DEFAULT_GLOB='*(N-/) *(N^-/)'
+typeset -r __ZFILES_DEFAULT_GLOB_LETTER=a
+
+typeset -g __zfiles_glob=$__ZFILES_DEFAULT_GLOB
+typeset -g __zfiles_glob_letter=$__ZFILES_DEFAULT_GLOB_LETTER
+
+typeset -gA __zfiles_bindings=(
+	[g]='__zfiles_select_scroll 1'
+	[G]='__zfiles_select_scroll $#__zfiles_files'
+	[k]='__zfiles_select_scroll -1'
+	[j]='__zfiles_select_scroll +1'
+	[K]='__zfiles_select_scroll -$__zfiles_lines'
+	[J]='__zfiles_select_scroll +$__zfiles_lines'
+	['\<C-U\>']='__zfiles_scroll_half -'
+	['\<C-D\>']='__zfiles_scroll_half +'
+	[' ']='__zfiles_scroll_keep +$__zfiles_lines'
+	[S]='(( __zfiles_do_stat=(__zfiles_do_stat + 1) % 3 )); __zfiles_touch_prompt=1'
+	[s]='__zfiles-stat File'
+	['\<C-E\>']='__zfiles_scroll_select -1'
+	['\<C-Y\>']='__zfiles_scroll_select +1'
+	[h]='cd ..'
+	['\<cr\>']='__zfiles_open File'
+	[l]='__zfiles_open File'
+	['\<C-L\>']='__zfiles_chpwd; zcurses refresh; __zfiles_touch_prompt=1; __zfiles_render'
+	# [zt]='__zfiles_scroll -5'
+	# [zz]='__zfiles_scroll $(( __zfiles_cur - __zfiles_lines / 2 ))'
+	# [zb]='__zfiles_scroll $(( __zfiles_top + __zfiles_lines ))'
+	[t]='__zfiles_toggle File'
+	[m]='__zfiles_cmd "mkdir "'
+	[e]='__zfiles_cmd "$EDITOR "'
+	['~']='__zfiles_cmd cd "~"'
+	['-']='__zfiles_cmd cd "~-"'
+	[c]='__zfiles_cmd cd ${(qD)PWD}/'
+	[':']='__zfiles_cmd $__zfiles_last_cmd; __zfiles_last_cmd=$REPLY'
+	['r']='eval $__zfiles_last_cmd'
+	['\]']='__zfiles_bracket 1'
+	['\[']='__zfiles_bracket 0'
+	['f?']='__zfiles_f 1 1 ${__zfiles_input#f}'
+	['F?']='__zfiles_f 1 0 ${__zfiles_input#F}'
+	[';']='__zfiles_f 0 $__zfiles_last_f_forward $__zfiles_last_f'
+	[',']='__zfiles_f 0 $(( __zfiles_last_f_forward^1 )) $__zfiles_last_f'
+	['.']='(( __zfiles_glob_dots^=1 )); __zfiles_update_files'
+	['+']='__zfiles_tag "+"'
+	['-']='__zfiles_tag "-"'
+	['=']='__zfiles_tag "="'
+	[v]='__zfiles_shellout vidir Files'
+	[V]='__zfiles_shellout vidir AllFiles'
+	[p]='pushd "$PWD"'
+	[q]='return'
+	['\<C-\[\>']='return'
+)
+
+__zfiles_bindings[\\*g]='__zfiles_set_glob "glob"'
+__zfiles_bindings[\\*\\*]='__zfiles_files=$__zfiles_selection && __zfiles_select_scroll 0'
+() {
+	while (( $# )); do
+		__zfiles_bindings[\\*${(b)1}]='__zfiles_glob='${(qq)2}' && __zfiles_glob_letter='${(qq)1}' && __zfiles_update_files'
+		shift 2
+	done
+} \
+	"$__ZFILES_DEFAULT_GLOB_LETTER" "$__ZFILES_DEFAULT_GLOB" \
+	r '***' \
+	t '^*.(torrent|aria2|~|part)(om)' \
+	p '*.(png|jpg)(om)' \
+	d '*(-/)' \
+	f '*(^-/)' \
+	m '*(om)' \
+	M '*(Om)' \
+
+alias -g AllFiles='$__zfiles_files'
+alias -g File='${__zfiles_files[(e)$__zfiles_cur]:?}'
+alias -g Files='${${__zfiles_selection:-$__zfiles_files[(e)$__zfiles_cur]}:?}'
+
+function __zfiles-leave() {
+	zcurses end
+	echoti cnorm
+}
+
+function __zfiles-enter() {
+	echoti civis
+	zcurses init
+	zcurses clear list
+	zcurses refresh list
+}
+
+# {FILE}
+function __zfiles-stat() {
+	local -a stat
+	if ! zstat -NA stat -F '' -- "$1" 2>/dev/null; then
+		if ! zstat -LNA stat -F '' -- "$1" 2>/dev/null; then
+			stat=(
+				[3]='??????????'
+				[4]=0
+				[5]='?'
+				[6]='?'
+				[8]=0
+			)
+		elif [[ $stat[3] = l* ]]; then
+			# Broken link.
+			stat[3]=L${stat[3]#l}
+		fi
+	fi
+
+	local buf size=$stat[8]
+	if ! (( size >> 10 )); then
+		# Nothing
+	elif ! (( size >> 20 )); then
+		size=$(( size >> 10 ))k
+	elif ! (( size >> 30 )); then
+		size=$(( size >> 20 ))M
+	elif ! (( size >> 40 )); then
+		size=$(( size >> 30 ))G
+	else
+		size=$(( size >> 40 ))T
+	fi
+
+	local nlink=$stat[4]
+	if (( nlink < 1000 )); then
+		# Nothing.
+	elif (( nlink < 1000000 )); then
+		nlink=$(( nlink / 1000 ))K
+	else
+		nlink=$(( nlink / 1000000 ))M
+	fi
+
+	# target=${stat[14]}
+	printf -v buf \
+		'%s %4s %s %s %5s ' \
+		${stat[3]} $nlink ${(r:8:)stat[5]} ${(r:8:)stat[6]} $size
+	__zfiles_stat_cache[(e)$1]=$buf
+
+	# File type is now computed.
+	__zfiles_color_cache[(e)$1]=
+	__zfiles_icon_cache[(e)$1]=
+}
+
+# {MSG}
+function __zfiles_error() {
+	__zfiles-leave
+	printf >&2 '%s\n' ${fg_bold[red]}"$*"${reset_color}
+	read -k1 '?Continue...'
+	__zfiles-enter
+}
+
+function __zfiles_update_prompt() {
+	if [[ -z $__zfiles_prompt ]]; then
+		# print -v is fucked outside ASCII.
+		__zfiles_prompt=${$(print -nP '${${(%%)PS1}//\\%/%%}'):-> }
+		__zfiles_touch_prompt=1
+	fi
+}
+
+function __zfiles_render() {
+	if (( __zfiles_rendered_top != __zfiles_top )); then
+		# Scrolling upwards makes ncurses scrolling in the prompt to the middle of
+		# the screen but assumes that it is clear so it does not update screen
+		# under it. The result is garbage.
+		#
+		# The workaround is that we clear the prompt so that it meets with the assumtions
+		# of ncurses. Though it may flickers a bit in some terminals.
+		if (( __zfiles_top < __zfiles_rendered_top )); then
+			echoti sc
+			echoti home
+			echoti el
+			echoti rc
+		fi
+
+		zcurses scroll list $(( __zfiles_top - __zfiles_rendered_top ))
+		__zfiles_touch_prompt=1
+		__zfiles_rendered_top=__zfiles_top
+	fi
+
+	integer line=0 i
+	local icon color stat type class
+	for (( i=__zfiles_top; i <= __zfiles_bottom; ++i, ++line )) do
+		local file=$__zfiles_files[(e)$i]
+
+		zcurses move list $line 0
+
+		if (( ${+__zfiles_selection[(re)$file]} )); then
+			zcurses attr list reverse
+			zcurses char list '*'
+		else
+			zcurses char list ' '
+		fi
+		if (( i == __zfiles_cur )); then
+			zcurses attr list reverse
+		else
+			zcurses attr list -reverse
+		fi
+
+		if (( __zfiles_do_stat )) && [[ ! -v '__zfiles_stat_cache[(e)${:-$file}]' ]]; then
+			__zfiles-stat $file
+		fi
+
+		type=fi
+		icon=
+		class=
+		color=
+		stat=$__zfiles_stat_cache[(e)$file]
+		case $stat in
+		-[r-][w-]x*)
+			type=ex; class='*'
+			;&
+		-*)
+			icon=$__zfiles_icon_cache[(e)$file]
+			if [[ -z $icon ]]; then
+				__zfiles_icon_cache[(e)$file]=${${__zfiles_icons[(k)$file]:-$__zfiles_icons[(e)$type]}:-??}
+				icon=$__zfiles_icon_cache[(e)$file]
+			fi
+
+			color=$__zfiles_color_cache[(e)$file]
+			if [[ -z $color ]]; then
+				__zfiles_color_cache[(e)$file]=${${__zfiles_colors[(k)$file]:-$__zfiles_colors[(e)$type]}:-default/default}
+				color=$__zfiles_color_cache[(e)$file]
+			fi
+			;;
+		d*) type=di; class=/ ;;
+		l*) type=ln; class=@ ;;
+		c*) type=cd; class=% ;;
+		b*) type=bd; class='#' ;;
+		p*) type=pi; class='|' ;;
+		s*) type=so; class== ;;
+		L*) type=or; class=@ ;;
+		esac
+
+		[[ -z $icon ]] && icon=${__zfiles_icons[(e)$type]:-??}
+		[[ -z $color ]] && color=${__zfiles_colors[(e)$type]:-default/default}
+
+		if (( 2 <= __zfiles_do_stat )); then
+			zcurses string list "$stat"
+		fi
+		zcurses attr list ${=color}
+		zcurses string list "$icon"
+		zcurses string list "$file"
+		zcurses attr list -bold -underline -reverse default/default
+		zcurses string list "$class"
+
+		zcurses clear list eol
+	done
+
+	zcurses attr list 250/default
+	for (( ; line < __zfiles_lines; ++line )) do
+		zcurses move list $line 0
+		zcurses char list '~'
+		zcurses clear list eol
+	done
+	zcurses attr list default/default
+
+	if [[ -n $__zfiles_input ]]; then
+		zcurses move list $(( __zfiles_lines - 1 )) $(( COLUMNS - 10 ))
+		zcurses string list "$__zfiles_input"
+	fi
+
+	zcurses move list $(( __zfiles_cur - __zfiles_top )) 0
+	zcurses refresh list
+
+	__zfiles_update_prompt
+
+	if (( __zfiles_touch_prompt )); then
+		__zfiles_render_prompt
+	fi
+}
+
+function __zfiles_render_prompt() {
+	__zfiles_touch_prompt=0
+	echoti sc
+	echoti home
+	printf "%s %5d/%-5d [%c%c] *%d" \
+		$__zfiles_prompt \
+		$__zfiles_cur \
+		$#__zfiles_files \
+		$__zfiles_glob_letter \
+		${${:--sS}:$__zfiles_do_stat:1} \
+		$#__zfiles_selection
+	echoti el
+	echoti rc
+}
+
+function __zfiles_adjust_scroll() {
+	if (( __zfiles_cur < __zfiles_top + __zfiles_scrolloff )); then
+		__zfiles_top=$(( __zfiles_cur - __zfiles_scrolloff ))
+	elif (( __zfiles_top + __zfiles_lines - __zfiles_scrolloff <= __zfiles_cur )); then
+		__zfiles_top=$(( __zfiles_cur - __zfiles_lines + 1 + __zfiles_scrolloff ))
+	fi
+
+	local top=$__zfiles_top
+	if (( top < 1 )); then
+		top=1
+	fi
+
+	__zfiles_bottom=$(( top + __zfiles_lines - 1 ))
+	if (( $#__zfiles_files < __zfiles_bottom )); then
+		__zfiles_bottom=$#__zfiles_files
+		top=$(( __zfiles_bottom - __zfiles_lines + 1 ))
+		if (( top < 1 )); then
+			top=1
+		fi
+	fi
+
+	__zfiles_top=$top
+}
+
+function __zfiles_adjust_cur() {
+	# if (( __zfiles_cur < __zfiles_top )); then
+	# 	__zfiles_cur=__zfiles_top
+	# elif ( ( __zfiles_top + $(( LINES  < __zfiles_cur )); then
+	# fi
+	# __zfiles_select $1
+}
+
+# {+|-}{LINES}
+function __zfiles_scroll() {
+	__zfiles_top=$(( __zfiles_top $1 ))
+}
+
+# {+|-}{LINES}
+function __zfiles_scroll_keep() {
+	__zfiles_select $1
+	# __zfiles_scroll $1
+	__zfiles_adjust_scroll
+}
+
+# {+|-}{LINES}
+function __zfiles_scroll_select() {
+	__zfiles_scroll $1
+	__zfiles_adjust_cur
+}
+
+# {+|-}
+function __zfiles_scroll_half() {
+	__zfiles_scroll_keep $1$(( $__zfiles_lines / 2 ))
+}
+
+function __zfiles_tag() {
+}
+
+function __zfiles_update_files() {
+	if (( __zfiles_glob_dots )); then
+		setopt glob_dots
+	else
+		setopt noglob_dots
+	fi
+	__zfiles_files=( ${~${=__zfiles_glob}} )
+	__zfiles_select_scroll 1
+}
+
+function __zfiles_chpwd() {
+	__zfiles_update_files
+
+	__zfiles_prompt=
+	__zfiles_selection=()
+	__zfiles_drop_caches
+	__zfiles_PWD=$PWD
+}
+
+function __zfiles_resize() {
+	zcurses resize $LINES $COLUMNS endwin
+}
+
+function __zfiles_select_scroll() {
+	__zfiles_select $*
+	__zfiles_adjust_scroll
+}
+
+function __zfiles_select() {
+	if [[ -z ${1%[+-]*} ]]; then
+		__zfiles_cur=$(( __zfiles_cur $1 ))
+	else
+		__zfiles_cur=$1
+	fi
+
+	if (( __zfiles_cur < 1 )); then
+		__zfiles_cur=1
+	fi
+
+	if (( $#__zfiles_files < __zfiles_cur )); then
+		__zfiles_cur=$#__zfiles_files
+	fi
+
+	__zfiles_touch_prompt=1
+}
+
+bindkey -N __zfiles-viins viins
+function __zfiles-zle-append-files() {
+	if [[ $LBUFFER =~ '\S$' ]]; then
+		LBUFFER+=' '
+	fi
+	LBUFFER+='Files'
+}
+zle -N __zfiles-zle-append-files
+bindkey -M __zfiles-viins '^F' __zfiles-zle-append-files
+
+function __zfiles-zle-append-files-and-accept() {
+	LBUFFER+=' Files'
+	zle .accept-line
+}
+zle -N __zfiles-zle-append-files-and-accept
+bindkey -M __zfiles-viins '^[^M' __zfiles-zle-append-files-and-accept
+
+function __zfiles_shellout() {
+	{
+		__zfiles-leave
+		"$@"
+	} always {
+		__zfiles-enter
+	}
+}
+
+function __zfiles_vared() {
+	{
+		__zfiles_active=2
+		__zfiles_prompt=
+
+		echoti home
+		__zfiles_update_prompt
+
+		vared -M __zfiles-viins -p "${__zfiles_prompt//\%/%%} " "$@"
+	} always {
+		__zfiles_prompt=
+		__zfiles_active=1
+	}
+}
+
+function __zfiles_cmd() {
+	local cmd=$*
+	if __zfiles_shellout __zfiles_vared -e cmd; then
+		REPLY=$cmd
+		eval $cmd || printf 'exit status %d\r' $?
+	fi
+}
+
+# {FORWARD}
+function __zfiles_bracket() {
+	integer i search_d=-1
+	for (( i=$__zfiles_cur; 1 <= i && i <= $#__zfiles_files; i+=$1 ? 1 : -1 )) do
+		local file=$__zfiles_files[(e)$i]
+		local stat=$__zfiles_stat_cache[(e)$file]
+		if (( search_d < 0 )); then
+			! [[ $stat =~ '^d' ]]
+			search_d=$?
+		else
+			[[ $stat =~ '^d' ]]
+			(( search_d == $? )) && break
+		fi
+	done
+	__zfiles_select_scroll $i
+}
+
+# {SAVE} {FORWARD} {LETTER}
+function __zfiles_f() {
+	if (( $1 )); then
+		__zfiles_last_f_forward=$2
+		__zfiles_last_f=$3
+	fi
+
+	local patterns=('' '.') flags=
+	[[ $3 =~ '[[:lower:]]' ]] && flags='#i'
+
+	integer closest_index
+	if (( $2 )); then
+		closest_index=$#__zfiles_files
+	else
+		closest_index=0
+	fi
+	integer do_scroll=0
+	local prefix index
+	for prefix in "${patterns[@]}"; do
+		if (( $2 )); then
+			index=${${__zfiles_files:$__zfiles_cur}[(i)($flags)$prefix$3*]}
+			(( index+=__zfiles_cur ))
+		else
+			index=${${__zfiles_files:0:$((__zfiles_cur - 1))}[(I)($flags)$prefix$3*]}
+		fi
+		if (( $2 )); then
+			(( index < closest_index ))
+		else
+			(( closest_index < index ))
+		fi && {
+			do_scroll=1
+			closest_index=$index
+		}
+	done
+	(( do_scroll )) && __zfiles_select_scroll $closest_index
+}
+
+function __zfiles_toggle() {
+	if (( ${+__zfiles_selection[(re)$1]} )); then
+		__zfiles_selection[(e)${__zfiles_selection[(rie)$1]}]=()
+	else
+		__zfiles_selection+=($1)
+	fi
+	__zfiles_touch_prompt=1
+	__zfiles_select_scroll +1
+}
+
+# {PROMPT} {VAR}
+function __zfiles_set_glob() {
+	if __zfiles_shellout __zfiles_vared -p "${bold_color}$1${reset_color}=" -eca __zfiles_glob; then
+		__zfiles_glob_letter=g
+		__zfiles_update_files
+	fi
+}
+
+function __zfiles_open() {
+	if test -d $1; then
+		cd $1
+	else
+		__zfiles-leave
+		if (( $+functions[open] )); then
+			open $1
+		else
+			$EDITOR -- $1
+		fi
+		__zfiles-enter
+	fi
+}
+
+function __zfiles_drop_caches() {
+	__zfiles_stat_cache=()
+	__zfiles_color_cache=()
+	__zfiles_icon_cache=()
+}
+
+function __zfiles_sgr2curses() {
+	REPLY=
+	if [[ -z $1 ]]; then
+		return
+	fi
+
+	local attrs fg bg
+
+	integer i
+	local params=( 0 ${(s.;.)1} )
+	for (( i=1; i <= $#params; ++i )); do
+		local n=${params[i]}
+		case $n in
+		0) attrs=; fg=; bg= ;;
+		1) attrs+='bold ' ;;
+		3)
+			# Ignore reverse video.
+			;;
+		4) attrs+='underline ' ;;
+		3[0-7]) fg=$(( n - 30 )) ;;
+		38)
+			if (( $params[++i] == 5 )); then
+				fg=$(( $params[++i] ))
+			fi
+			;;
+		4[0-7]) fg=$(( n - 30 )) ;;
+		48)
+			if (( $params[++i] == 5 )); then
+				bg=$(( $params[++i] ))
+			fi
+			;;
+		9[0-7]) fg=$(( n + 8 )) ;;
+		10[0-7]) bg=$(( n + 8 )) ;;
+		*) printf >&2 'unknown attribute (%d) in LS_COLOR: %s\n' "$n" "$params" ;;
+		esac
+	done
+
+	if [[ -z $attrs$fg$bg ]]; then
+		REPLY=
+	else
+		REPLY=$attrs${fg:-default}/${bg:-default}
+	fi
+}
+
+function __zfiles_update_ls_colors() {
+	__zfiles_icons=( ${=${${(s.:.)LS_ICONS}//=/ }} )
+	__zfiles_colors=()
+	typeset pat color
+	for pat color in ${(kv)${=${${(s.:.)LS_COLORS}//=/ }}}; do
+		local sgr=${color%%m*}
+		if [[ $sgr != $color ]]; then
+			__zfiles_sgr2curses $sgr
+			if [[ -n $REPLY ]]; then
+				__zfiles_colors[(e)$pat]=$REPLY
+			fi
+		fi
+	done
+}
+
+function zfiles-show() {
+	{
+		setopt local_options local_traps
+		setopt glob glob_star_short extended_glob null_glob
+
+		__zfiles_active=1
+
+		echoti civis
+
+		# zformat -a to format tables
+		add-zsh-hook chpwd __zfiles_chpwd
+
+		trap return INT
+		trap __zfiles_resize WINCH
+
+		zcurses init
+		for win in $zcurses_windows; do
+			[[ stdscr = $win ]] || zcurses delwin $win
+		done
+		__zfiles_lines=$(( LINES - 1 ))
+		zcurses addwin list $__zfiles_lines $COLUMNS 1 0
+		zcurses scroll list off
+		zcurses clear list
+		zcurses timeout list 5000
+
+		[[ -n $1 && $1 != $PWD ]] && cd -- "$1"
+
+		# Otherwise retain old file list.
+		if [[ $PWD != $__zfiles_PWD ]]; then
+			__zfiles_chpwd
+		else
+			__zfiles_touch_prompt=1
+		fi
+
+		__zfiles_input=
+		while :; do
+			__zfiles_render
+
+			if ! zcurses input list; then
+				if (( __zfiles_do_stat )); then
+					__zfiles-stat $__zfiles_files[(e)$__zfiles_cur]
+				fi
+				continue
+			fi
+
+			if [[ ${(q+)REPLY} =~ "^\\$'\\\(.*)'$|^(<)$" ]]; then
+				REPLY="<${__ZFILES_CONTROL_KEYMAP[(k)${match[1]}]:-${match[1]}}>"
+			fi
+			__zfiles_input=$__zfiles_input$REPLY
+
+			local binding=${(v)__zfiles_bindings[(k)$__zfiles_input]}
+			if [[ -n $binding ]]; then
+				eval $binding ||:
+				__zfiles_input=
+			elif [[ -n $__zfiles_input ]] && [[ -z "${__zfiles_bindings[(i)${(b)${(b)__zfiles_input}}*]}" ]]; then
+				__zfiles_error "no binding for ${(qq)__zfiles_input}"
+				__zfiles_input=
+			fi
+		done
+	} always {
+		add-zsh-hook -D chpwd __zfiles_chpwd
+
+		zcurses delwin list
+		__zfiles-leave
+
+		__zfiles_drop_caches
+		__zfiles_active=0
+	}
+}
+
+zle -N zfiles-show
+
+__zfiles_update_ls_colors
+
+function zfiles() {
+	zfiles-show "$@"
+}
+
+[[ -o ksh_autoload ]] || zfiles "$@"

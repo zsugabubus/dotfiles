@@ -1,0 +1,5 @@
+#compdef gdbrun
+
+_arguments \
+	'(-):command name: _command_names -e' \
+	'*::arguments:_normal'

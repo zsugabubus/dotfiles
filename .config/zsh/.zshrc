@@ -1,8 +1,12 @@
 #!/usr/bin/zsh
-fpath=($HOME/.config/zsh/ $HOME/.config/zsh/Completion $HOME/.config/zsh/Zle $fpath)
+() {
+	typeset -ga fpath
+	fpath=($ZDOTDIR/*(/) $fpath)
 
-# interesting: dynamic directory names
-# https://superuser.com/questions/751523/dynamic-directory-hash
-# https://vincent.bernat.ch/en/blog/2015-zsh-directory-bookmarks
+	typeset i # We are lazi.
+	local f
+	for f ($ZDOTDIR/??-*.zsh) source $f
+}
 
-for f ($ZDOTDIR/??-*.zsh) source $f
+# This tricky shit has to be set from here.
+setopt print_exit_value

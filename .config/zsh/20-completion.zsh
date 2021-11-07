@@ -9,52 +9,24 @@ zstyle ':completion::complete:*' use-cache on
 zstyle ':completion::complete:*' cache-path ~/.cache/zcompcache
 zstyle ':completion:*' rehash false
 
-# Complete unambiguous part and show all possible matches.
-setopt auto_list nolist_ambiguous
-# Allow <Tab> completing menu.
-setopt auto_menu
-# Only second <Tab> completes menu.
-setopt nomenu_complete
-unsetopt list_types # Functionality is provided by `ls`.
-setopt list_rows_first
-setopt list_packed
-# setopt always_to_end
-setopt glob_complete
-setopt extended_glob
-setopt case_glob
-setopt auto_remove_slash
+setopt auto_list nolist_ambiguous # Complete unambiguous part and show all possible matches.
+setopt auto_menu # Allow <Tab> completing menu.
 setopt auto_param_keys
+setopt auto_remove_slash
+setopt case_glob
 setopt complete_aliases
 setopt complete_in_word
-
-# Cache LS_COLOR-like variables.
-if [[ ! -d ~/.cache/zsh ]]; then
-	mkdir ~/.cache/zsh
-fi
-
-if [[ ! ~/.dir_colors -ot ~/.cache/zsh/dir_colors ]]; then
-	awk -f ~/.config/zsh/dircolors.awk ~/.dir_colors >~/.cache/zsh/dir_colors
-	rm -f ~/.cache/zsh/dir_colors-*(N)
-fi
-
-local type
-for type ('' .icons .colors); do
-	if [[ ! -f ~/.cache/zsh/dir_colors-$TERM$type ]]; then
-		TERM=$TERM$type dircolors -b ~/.cache/zsh/dir_colors >~/.cache/zsh/dir_colors-$TERM$type 2>/dev/null
-	fi
-done
-
-eval ${$(<~/.cache/zsh/dir_colors-$TERM)//empty}
-eval ${${$(<~/.cache/zsh/dir_colors-$TERM.icons)//LS_COLORS/LS_ICONS}//empty}
-
-local esc
-print -v esc '\e'
-export TREE_COLORS=${LS_COLORS//\\e/$esc}
-unset esc
+setopt extended_glob
+setopt glob_complete
+setopt glob_star_short
+setopt list_packed
+setopt list_rows_first
+setopt nomenu_complete # Only second <Tab> completes menu.
+unsetopt list_types
 
 # See: ZSHCOMPWID(1) "COMPLETION MATCHING CONTROL"
 zstyle ':completion::complete:*::' matcher-list \
-	'' 'm:{a-zA-Z-_}={A-Za-z_-} l:|=* r:|[-.]=* r:|[-_./]|/=* r:|=*'
+	'' 'm:{[:lower:]-_}={[:upper:]_-} l:|=* r:|[-.]=* r:|[-_./]|/=* r:|=*'
 
 # zstyle ':completion::complete:*' menu # no-select yes
 zstyle ':completion::complete:*' verbose yes
@@ -62,9 +34,7 @@ zstyle ':completion::complete:*' file-sort modification reverse follow
 # Place every tag in the same-named group.
 zstyle ':completion::complete:*' group-name ''
 
-eval ${${$(<~/.cache/zsh/dir_colors-$TERM.colors)//LS_COLORS/LS_COLORS_ONLY}//empty}
 zstyle ':completion::complete:*' list-colors ${(s.:.)LS_COLORS_ONLY}
-unset LS_COLORS_ONLY
 
 # Complete files only once per line.
 zstyle ':completion::complete:*:other-files' ignore-line other
@@ -81,6 +51,8 @@ zstyle ':completion::complete:e:*' ignored-patterns '*.(o|d|out)'
 zstyle ':completion::complete:*' list-dirs-first true
 zstyle ':completion::complete:(cat|cp|rm|nvim):*' file-patterns \
 	'%p(^-/):other-files:files %p(-/):directories:directories'
+
+zstyle ':completion:*' recursive-files {~p,~c}/\*
 
 zstyle ':completion::complete:-tilde-::' group-order named-directories path-directories expand
 

@@ -1,0 +1,198 @@
+#autoload
+
+emulate -L zsh
+
+POWERLINE_DIR_FG=254
+POWERLINE_VCS_FG=113
+
+local function __powerline-chpwd() {
+	# Directory changed while zle widget was active.
+	zle && zle .reset-prompt
+
+	# nvcsformat
+	print -Pnv __powerline_path -f '%s' '%~'
+	if (( #__powerline_path > COLUMNS * 10 / 24 )); then
+		print -Pnv __powerline_path -f '%s' '%'$(( COLUMNS * 10 / 24 ))'<%{%G…%}<%(5~|%-1~/%{%G…%}/%3~|%4~)'
+	fi
+
+	local pathdev
+	if pathdev=$(findmnt --real -fnrM . -o SOURCE); then
+		__powerline_path="${pathdev#/dev/} $__powerline_path"
+	fi
+	__powerline_path=${__powerline_path//\%/%%}
+
+	if [[ ! -w . ]]; then
+		# %{%G%}
+		__powerline_writeable=' %F{249}[RO]%F{$POWERLINE_DIR_FG}'
+	else
+		__powerline_writeable=
+	fi
+
+	__powerline_update_vcs_info=1
+}
+
+local function __powerline-preexec() {
+	local git_command=${${${(zA)2}:0:5}[(Ie)git]}
+	(( __powerline_update_vcs_info|=git_command ))
+}
+
+local function __powerline-precmd() {
+	set -- $? $pipestatus
+	# status is either same as the last...
+	if [[ ${@[-1]} == $1 ]]; then
+		shift
+	else
+		# or not... e.g. after C-c in vared.
+		# \_O_/
+		set -- $1
+	fi
+
+	__powerline_status=
+	local exit_status=
+	for exit_status; do
+		__powerline_status+=\|${${:-$signals[$(( $exit_status - 127 ))]}:-$exit_status}
+	done
+	__powerline_status=${__powerline_status:1}
+	if [[ $__powerline_status != 0 ]]; then
+		__powerline_status=" %F{197}%{%G%}%K{197}%F{227} %B$__powerline_status%b"
+	else
+		__powerline_status=
+	fi
+
+	if (( __powerline_update_vcs_info )); then
+		__powerline_update_vcs_info=0
+		vcs_info 2>&-
+	fi
+}
+
+local function __powerline-zshexit() {
+	# Reset cursor.
+	printf '\e[2 q\r'
+}
+
+# {DEFAULT-USER} {DEFAULT-HOST}
+local function prompt_powerline_setup() {
+	local default_user=$1 default_host=$2
+
+	autoload -Uz colors && colors
+
+	setopt prompt_subst
+	prompt_opts=(cr percent sp subst)
+
+	ZLE_PROMPT_INDENT=0
+	case $TERM in
+	linux)
+		ZLE_RPROMPT_INDENT=1
+		PS1='[%n@%M $vcs_info_msg_0_]%(!,#,$) '
+		PS2='%_> '
+		RPS1='%(1j. %F{yellow}%B&%j%b%f.)%(0?.. %F{red}%B[$__powerline_status%{]%}%b)%f'
+		;;
+	*)
+		# It just works.
+		ZLE_RPROMPT_INDENT=$(( 1 - $+TMUX ))
+		PS1='$(__powerline-command)$__powerline_where%K{$POWERLINE_DIR_FG}%F{236} ${${vcs_info_msg_0_:-"$__powerline_path%F{$POWERLINE_DIR_FG}$__powerline_writeable"}//\$__powerline_writeable/$__powerline_writeable} %k%{%G%}%f '
+		RPS1='%F{250}%(1j. %%%j.)$__powerline_keymap%b$__powerline_status%(2L. %F{254}%{%G%}%K{254}%F{244} %L.)'$([[ -n $TMUX ]] && print -n ' ' || print -n '%{ %}')
+		PS2='%K{254}%F{247} %_ %k%F{254}%f '
+		;;
+	esac
+
+	function zle-line-init zle-keymap-select() {
+		case $KEYMAP in
+		# For Rxvt.
+		viins|main) printf '\e[6 q\r' ;; # Non-blinking I-beam cursor.
+		*)          printf '\e[2 q\r' ;; # Non-blinking block cursor.
+		esac
+		case $KEYMAP in
+		vicmd)      __powerline_keymap=' %B%F{148}%{%G%}%F{22}%K{148} N' ;;
+		main|viins) __powerline_keymap=' %B%F{33}%{%G%}%F{255}%K{33} I' ;;
+		*)          __powerline_keymap='' ;;
+		esac
+		zle .reset-prompt
+		zle -R
+	}
+	zle -N zle-line-init
+	zle -N zle-keymap-select
+
+	function zle-line-finish() {
+		printf '\033[2 q\r' # Non-blinking block cursor.
+		__powerline_keymap=
+		zle .reset-prompt
+		zle -R
+	}
+	zle -N zle-line-finish
+
+	local useratdomain=${${${:-$USER@$HOST}/#$default_user@/@}/%@$default_host/@}
+	if [[ $useratdomain != @ ]]; then
+		__powerline_where='%K{234}%F{214}%B '$useratdomain' %b%K{$POWERLINE_DIR_FG}%F{234}%{%G%}'
+	else
+		__powerline_where=
+	fi
+
+	function __powerline-command() {
+		if (( 1 < __zfiles_active )); then
+			print '%K{234}%F{214}%B ZFILES %b%K{$POWERLINE_DIR_FG}%F{234}%{%G%}'
+		fi
+	}
+
+	case "$TERM" in
+	linux)
+		zstyle ':completion:*:warnings'  format '%F{red}%BNo matches for: %d%b%f'
+		zstyle ':completion:*'           format '%B------- %d -------%b'
+		;;
+	*)
+		zstyle ':completion::*:warnings' format '%K{197}%F{227}%B No matches %k%F{197}%b%f %d%b%k%f'
+		zstyle ':completion::*'          format '%K{238}%F{254} %d %k%F{238}%f'
+		;;
+	esac
+
+	autoload -Uz vcs_info
+	zstyle ':vcs_info:*' enable git
+	zstyle ':vcs_info:*' use-prompt-escapes true
+	zstyle ':vcs_info:*' check-for-changes false
+	zstyle ':vcs_info:*' check-for-staged-changes false
+	zstyle ':vcs_info:*' use-simple true
+	zstyle ':vcs_info:*' disable-patterns ${(b)HOME}
+	zstyle ':vcs_info:git*+set-message:*' hooks git-st
+	case $TERM in
+	linux)
+		zstyle ':vcs_info:git*' formats '%r/%S %s:(%b%m%u%c)'
+		# zstyle ':vcs_info:git*' actionformats "%r/%S [ %b|%a]%m%u%c   " &&
+		zstyle ':vcs_info:*' nvcsformats '%(5~|%-1~/.../%3~|%4~)'
+		;;
+
+	*)
+		zstyle ':vcs_info:git*' formats '%{%G%} %r/%S$__powerline_writeable %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b%m%u%c%F{$POWERLINE_VCS_FG}'
+		zstyle ':vcs_info:git*' formats '%r/%S$__powerline_writeable %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b%m%u%c%F{$POWERLINE_VCS_FG}'
+		zstyle ':vcs_info:git*' actionformats "%{%G%} %r/%S %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b [%a%u]%F{$POWERLINE_VCS_FG}"
+		zstyle ':vcs_info:*' branchformat "%{%G%} %b:%r"
+		# Will be replaced in PS1.
+		zstyle ':vcs_info:*' nvcsformats ''
+		;;
+	esac
+
+	autoload -Uz add-zsh-hook
+	add-zsh-hook preexec __powerline-preexec
+	add-zsh-hook precmd __powerline-precmd
+	add-zsh-hook chpwd __powerline-chpwd
+	add-zsh-hook zshexit __powerline-zshexit
+
+	__powerline-chpwd
+}
+
+function _prompt_powerline_teardown() {
+	__powerline-zshexit
+
+	add-zsh-hook -D preexec __powerline-preexec
+	add-zsh-hook -D precmd __powerline-precmd
+	add-zsh-hook -D chpwd __powerline-chpwd
+	add-zsh-hook -D zshexit __powerline-zshexit
+	unfunction __powerline-command
+	zstyle -d ':vcs_info:*'
+}
+
+function prompt_powerline_preview() {
+	prompt_preview_theme powerline
+	prompt_preview_theme powerline $USER $HOST
+}
+
+[[ -o ksh_autoload ]] || prompt_powerline_setup "$@"

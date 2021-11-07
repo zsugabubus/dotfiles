@@ -1,0 +1,10 @@
+#autoload
+
+emulate -L zsh
+
+local algo
+for algo in md5 sha1 sha256 sha224 sha384 sha512; do
+	print -rP "%B%F{blue}::%f Checking ${algo}sum...%b"
+	find -H -maxdepth 2 -iname ${algo}sum.txt -o -iname "*.${algo}" \
+		-execdir ${algo}sum -c {} \;
+done | ${PAGER:-less}

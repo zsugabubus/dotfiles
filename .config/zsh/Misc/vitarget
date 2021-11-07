@@ -1,0 +1,21 @@
+#autoload
+
+emulate -L zsh
+
+zmodload -F zsh/stat b:zstat
+zmodload zsh/system
+
+local f
+typeset -A stat
+
+for f; do
+	stat=()
+	if zstat -LNH stat -F '' -- $f && [[ ${stat[mode]:0:1} != 'l' ]]; then
+		printf '%s: not a link\n' "$f"
+		continue
+	fi
+
+	local target=$stat[link]
+	vared -p '${(q)f:t} -> ' target &&
+	ln -sf "$target" "$f"
+done

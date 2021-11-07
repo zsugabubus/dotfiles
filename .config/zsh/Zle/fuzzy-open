@@ -1,48 +1,38 @@
 #autoload
-#
+
+emulate -L zsh
+setopt extended_glob
+
 zmodload zsh/attr
 
 local files
 while :; do
-	if [[ $LBUFFER =~ '(\S+)$' ]]; then
-		local basedir=$(realpath -- $match[1])
-		local root=( $basedir )
-		local find_args=(-maxdepth 1)
+	if [[ $LBUFFER =~ '\S$' ]]; then
+		local dir=${~${(zA)LBUFFER}[-1]}
 	else
-		local basedir=
-		local root=( $PWD )
-		local find_args=()
+		local dir=
 	fi
 
-	files=$(
-		setopt pipefail
-		# find -H $root -mindepth 1 $find_args \( \( -xtype d -name '.*' -prune \) -o -printf '%P\0' \) 2>/dev/null |
-		rg --files -0 |
-		( { [[ -z $basedir ]] || cd -q -- $basedir } && xargs -0r ls -UbNd --color -- 2>/dev/null ) |
-		fzf -d $'\xa0' --ansi --multi --bind alt-enter:select-all+accept-non-empty --bind enter:accept-non-empty --bind ')':jump-accept
-	) || break
-
-	# nbsp=$(print $'\xa0'); print -v nbsp2 $'\xa0'; [[ "$nbsp" == "$nbsp2" ]] || { echo "What?" && echo "$nbsp\n$nbsp2" | od -c }
-
-	files=( ${${(f)files}//#?[ ]#/} )
-
-	if [[ $#files = 0 ]]; then
-		break
-	fi
+	files=( ${${(f)"$(
+		[[ -z $dir ]] || cd -q -- $dir
+		# exec 2>/dev/null does not work. Why?
+		rg --files -0 2>/dev/null |
+		xargs -0r ls -UbNd --color -- 2>/dev/null |
+		fzf -d $'\xa0' --height=50% --ansi --multi --bind alt-enter:select-all+accept-non-empty --bind enter:accept-non-empty --bind ')':jump-accept
+	)"}//#?[ ]#/} ) && (( $#files )) || break
 
 	if [[ ! zle || -z $BUFFER ]]; then
-		# Open with sensible application.
 		autoload -Uz open
 		open $files
 		break
 	else
-		if [[ -n "$basedir" && ! $LBUFFER =~ /$ ]]; then
+		if [[ -n $dir && ! $LBUFFER =~ /$ ]]; then
 			LBUFFER+='/'
-		elif [[ -z "$basedir" && $LBUFFER =~ \\S$ ]]; then
+		elif [[ -z $dir && $LBUFFER =~ \\S$ ]]; then
 			LBUFFER+=' '
 		fi
 		LBUFFER+=${(q-@)files}
-		if [[ $#files == 1 && -d $basedir/$files[1] ]]; then
+		if [[ $#files == 1 && -d $dir/$files[1] ]]; then
 			LBUFFER+=/
 		else
 			LBUFFER+=' '
@@ -51,6 +41,5 @@ while :; do
 	fi
 done
 
-echo
 zle reset-prompt
 _zsh_autosuggest_clear

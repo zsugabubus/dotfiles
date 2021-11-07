@@ -1,4 +1,6 @@
 #autoload
+#
+emulate -L zsh
 
 if [[ -z $BUFFER ]]; then
 	zle-line-finish

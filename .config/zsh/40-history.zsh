@@ -1,4 +1,4 @@
-HISTFILE="$XDG_RUNTIME_DIR/zhistory"
+HISTFILE=$XDG_RUNTIME_DIR/zhistory
 HISTSIZE=10000
 SAVEHIST=10000
 
@@ -7,10 +7,7 @@ setopt bang_hist
 setopt hist_expire_dups_first
 setopt hist_fcntl_lock
 setopt hist_find_no_dups
-setopt hist_ignore_all_dups
-setopt hist_ignore_dups
-setopt hist_ignore_space
-setopt hist_no_functions
+setopt hist_ignore_{dups,all_dups,space}
 setopt hist_no_store
 setopt hist_reduce_blanks
 setopt hist_save_no_dups
@@ -25,10 +22,15 @@ function zshaddhistory() {
 	# 1: Forget immediately.
 	# 2: Internal history only.
 
+	typeset -a words=( ${(zA)1} )
+	if (( $#words == 1 )); then
+		return 2
+	fi
+
 	case ${words[1]} in
-	man|rm|poweroff|reboot|exit|where)
+	rm|rmdir|poweroff|reboot|exit|run-help)
 		return 1 ;;
-	zathura)
+	man|zathura|where|which|license)
 		return 2 ;;
 	esac
 

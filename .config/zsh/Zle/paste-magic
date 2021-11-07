@@ -1,20 +1,39 @@
 #autoload
 
+emulate -L zsh
+
+local function vcs_cdup() {
+	git --no-optional-locks rev-parse --show-cdup 2>/dev/null
+}
+
+local function LBUFFER_space() {
+	[[ $LBUFFER =~ '\S$' ]] && LBUFFER+=' '
+}
+
 # autoload -Uz bracketed-paste-magic
-local content=
+local content
 zle .$WIDGET -N content
 zle .split-undo
 
-if [[ -z $BUFFER && $content =~ '^\s*(git clone )?(git://\S*|https://(git[^/]+/[^/ ]+/[^/ ]+|\S*\.git))/?[\n \t]*$' ]]; then
-	# Git remote.
+# Auto-clone Git remote.
+if [[ -z $BUFFER && $content =~ '^\s*(git clone )?(git://\S*|https?://(git\.\S*|\S*\.git|github.com/[^/]*/[^/]*))/?[\n \t]*$' ]]; then
 	[[ $PWD = ~ ]] && cd -- ~m
 	LBUFFER="git clone ${(q-)match[2]} --depth 1"
-elif [[ $content =~ '^[\t\n ]*git clone' ]]; then
-	# Git clone with custom URI.
+	print -z " cd -- ${${match[2]:t}%.git}"
+	return
+fi
+
+# Git clone with custom command.
+if [[ $content =~ '^[\t\n ]*git clone' ]]; then
 	[[ $PWD = ~ ]] && cd -- ~m
 	LBUFFER="$content --depth 1"
-elif [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
-	# URI.
+	# Tail of first link (or 3rd word if empty).
+	print -z " cd -- ${${${${${(z)content}[(r)*://*]:-${${(z)content}[3]}}:t}}%.git}"
+	return
+fi
+
+# URI.
+if [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
 	content=${match[1]}
 
 	if [[ $content =~ '^https?://.*\.patch$' ]]; then
@@ -38,23 +57,39 @@ elif [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
 		LBUFFER="curl -LO"
 	fi
 
-	if [[ $LBUFFER =~ '\S$' ]]; then
-		LBUFFER+=' '
-	fi
-
+	LBUFFER_space
 	LBUFFER+=${(q-)content}
-elif [[ $content =~ '^[ab]/(\S*)$' ]]; then
-	LBUFFER+=${(q-)match[1]}
-else
-	local start=$#LBUFFER
+	return
+fi
 
-	if (( #content < 100 )); then
-		LBUFFER+=${content//$'\n'/ }
-	else
-		LBUFFER+=$content
+# Path relative to VCS root.
+if [[ $content =~ '^[ab]/(\S*)$' ]]; then
+	LBUFFER_space
+	LBUFFER+=$(vcs_cdup)${(q-)match[1]}
+	return
+fi
+if (( ${#${(zA)content}} == 1 )); then
+	local f=${${(zA)content}[1]}
+	if [[ ! -a $f ]]; then
+		local cdupf=$(vcs_cdup)$f
+		if [[ -a $cdupf ]]; then
+			LBUFFER_space
+			LBUFFER+=${(q-)cdupf}
+			return
+		fi
 	fi
 
-	YANK_START=$start
-	YANK_END=$#LBUFFER
-	zle -f yank
 fi
+
+local start=$#LBUFFER
+
+# Remove line breaks for short text.
+if (( #content < 100 )); then
+	LBUFFER+=${content//$'\n'/ }
+else
+	LBUFFER+=$content
+fi
+
+YANK_START=$start
+YANK_END=$#LBUFFER
+zle -f yank
