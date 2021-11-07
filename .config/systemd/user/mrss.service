@@ -1,0 +1,6 @@
+[Unit]
+Description=RSS to Mailbox
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mrss --config "%E/mrss/config"

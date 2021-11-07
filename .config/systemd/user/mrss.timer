@@ -1,0 +1,11 @@
+[Unit]
+Description=RSS To Mailbox Timer
+
+[Timer]
+OnBootSec=5m
+OnUnitActiveSec=8h
+RandomizedDelaySec=5m
+Unit=mrss.service
+
+[Install]
+WantedBy=timers.target
