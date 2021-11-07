@@ -407,8 +407,11 @@ endfunction
 function! s:git_setup_diff_ft()
 	map <nowait><silent><buffer> [ :call search('\m^@@ ', 'bW')<CR>
 	map <nowait><silent><buffer> ] :call search('\m^@@ ', 'W')<CR>
+	map <nowait><silent><buffer> ( [
+	map <nowait><silent><buffer> ) ]
 	map <nowait><silent><buffer> { :call search('\m^diff ', 'bW')<CR>
 	map <nowait><silent><buffer> } :call search('\m^diff ', 'W')<CR>
+	noremap <nowait><silent><buffer> <space> <C-d>
 endfunction
 
 function! s:git_statusline_update() abort dict
@@ -626,5 +629,5 @@ augroup vimrc_git
 	" Highlight conflict markers.
 	autocmd Colorscheme * match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
 
-	autocmd FileType diff call s:git_setup_diff_ft()
+	autocmd FileType git,diff call s:git_setup_diff_ft()
 augroup END
