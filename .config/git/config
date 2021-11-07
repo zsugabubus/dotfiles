@@ -16,6 +16,7 @@
 	br = b -r
 
 	c = commit --allow-empty --verbose
+	cf = c --fixup
 	cs = c --sign-off
 	cN = c --no-verify
 	ca = c --amend --reset-author
@@ -33,6 +34,7 @@
 
 	d = diff
 	ds = diff --staged
+	dss = ds --stat
 
 	sl = stash list
 	slp = sl -p
@@ -40,15 +42,15 @@
 	sp = stash pop
 	ss = sp
 
-	l = log --date-order --graph --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
+	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
+	l = log-formatted --graph
+	lg = l --grep
 	log-vim = l
 	la = l --all --full-history
-	rl = l --reverse
 	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
 	lp = ll --patch
-	lm = l --no-merges
 	ls = l --stat
-	lmp = lm --patch
+	lf = log --follow --patch
 
 	m = merge
 	mc = m --continue
@@ -56,6 +58,8 @@
 	mt = mergetool
 
 	rb = rebase
+	rbb = rb -s recursive -X diff-algorithm=minimal,ignore-all-space
+
 	re = rb --edit-todo
 	ri = rb --interactive
 	rim = ri master
@@ -67,10 +71,17 @@
 	rp = reset --patch
 
 	s = status --ahead-behind --show-stash
-	ss = status -s
+	su = status --short
+	ss = su --untracked-files=no
+	sun = s --untracked-files=no
 
-	p = push
-	pu = push -u origin HEAD
+	f = fetch
+
+	p = pull
+
+	push-origin = push -u origin HEAD
+
+	rl = reflog
 
 	rs = remote show
 	rso = rs origin
