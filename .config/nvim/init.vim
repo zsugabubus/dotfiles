@@ -1,18 +1,13 @@
 " nvim -u NONE --cmd 'profile start profile|profile file *|source ~/.config/nvim/init.vim|profile stop'
-" https://github.com/liuchengxu/vim-clap
 
 " DB https://github.com/tpope/vim-dadbod
 " https://github.com/kristijanhusak/vim-dadbod-ui
 
-" https://vimways.org/2018/vim-and-git/
 " vim-ninja-feet
 " :so $VIMRUNTIME/syntax/hitest.vim
 
 " NVim bug statusline with \n \e \0 (zero width probably) messes up character
 " count. Followed by multi-width character crashes attrs[i] > 0.
-
-" Fucking one hour to chop off 100ms at startup.
-" -> Will save time after 1h / 100ms = 36000 startups.
 
 if !has('nvim')
 	" Must be the first and must run only once since it touches other
@@ -62,12 +57,26 @@ else
 	command! -nargs=+ IfSandbox <args>
 endif
 
+command! -nargs=1 Source execute 'source' fnameescape((has('nvim') ? stdpath('config') : '~/.vim').'/'.<q-args>)
+
+" PackCommand {pack} {cmd}...
+" Auto packadd {pack} on first {cmd} invocation.
+function s:pack_command(pack, ...)
+	let delcommands = copy(a:000)->map({_,cmd-> 'delcommand '.cmd.'|'})->join()
+	for cmd in a:000
+		execute printf('silent! command -bang -nargs=* %s %spackadd %s|<mods> %s<bang> <args>',
+			\ cmd, delcommands, a:pack, cmd)
+	endfor
+endfunction
+command! -nargs=* PackCommand call s:pack_command(<f-args>)
+
+IfLocal command! PackUpdate execute 'terminal' printf('find %s -mindepth 3 -maxdepth 3 -type d -exec printf \%%s:\\n {} \; -execdir git -C {} pull \;', shellescape(stdpath('data').'/site/pack'))
+
 " Create a command abbrevation.
 command! -nargs=+ Ccabbrev let s:_ = [<f-args>][0]|execute(printf("cnoreabbrev <expr> %s getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s", s:_, len(s:_) + 1, <q-args>[len(s:_) + 1:], string(s:_)))
 
 " Get rid of bloat.
 let loaded_tutor_mode_plugin = 1
-let loaded_fzf = 1
 
 set shortmess+=mrFI
 set nowrap
@@ -359,8 +368,6 @@ nnoremap <Down> gj
 
 command! -nargs=1 RegEdit let @<args>=input('"'.<q-args>.'=', @<args>)
 
-command! -nargs=1 Source execute 'source' fnameescape((has('nvim') ? stdpath('config') : '~/.vim').'/'.<q-args>)
-
 " Christmas bells.
 command! Bell call writefile(["\x07"], '/dev/tty', 'b')
 
@@ -464,7 +471,6 @@ nnoremap <silent> gss :setlocal spell!<CR>
 nnoremap <silent> gse :setlocal spell spelllang=en<CR>
 nnoremap <silent> gsh :setlocal spell spelllang=hu<CR>
 
-nnoremap <M-!> <Cmd>lua require'telescope.builtin'.find_files({cwd=require('telescope.utils').buffer_dir(), previewer=false})<CR>
 nnoremap <expr> <M-!> ':edit '.fnameescape(expand('%:h')).'/<C-z>'
 nnoremap <expr> <M-t> ':tabedit '.fnameescape(expand('%:h')).'/<C-z>'
 " nnoremap <expr> <M-o> ':edit '.expand('%:h').'/<C-z>'
@@ -796,8 +802,7 @@ augroup vimrc_autopackadd
 	IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 augroup END
 
-" IfLocal packadd debugger.nvim
-
+IfLocal packadd vim-mbsyncrc
 IfLocal packadd vim-gnupg
 
 packadd cfilter
@@ -925,10 +930,17 @@ xnoremap <expr> g# 'y?<C-r>='."'\\V'.escape(@\", '\\?')\<CR>".'?e<CR>'
 
 silent! unmap Y
 
+let g:fzf_preview_window = [] " Disable.
+PackCommand fzf.vim Buffers GFiles Tags
+
 nnoremap ! :ls<CR>:b<Space>
+nnoremap ! :Buffers<CR>
 
 nnoremap g/ :echo glob('*')<CR>:find *
-nnoremap g/ <Cmd>lua require'telescope.builtin'.find_files({previewer=false})<CR>
+nnoremap g/ <Cmd>GFiles<CR>
+
+nnoremap g<C-]> <Cmd>Tags<CR>
+
 nnoremap g<C-f> :find <C-r><C-w><C-z><CR>
 nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
 
@@ -940,8 +952,6 @@ nmap <silent><expr> <C-w>go ':tabdo windo if bufnr() ==# '.bufnr().' <bar> :bnex
 
 " resize window to fit selection
 xmap <expr><silent> <C-w>h ':resize'.(abs(line("v") - line("."))+(2*&scrolloff + 1)).'<CR>'
-
-IfLocal command! PackUpdate execute 'terminal' printf('find %s -mindepth 3 -maxdepth 3 -type d -exec printf \%%s:\\n {} \; -execdir git -C {} pull \;', shellescape(stdpath('data').'/site/pack'))
 
 augroup vimrc_term
 	autocmd!
@@ -1043,8 +1053,6 @@ command! -nargs=+ Match call matchadd(s:matchcolors[s:nmatchcolors], <q-args>)|l
 " Delay loading of vim-jumpmotion.
 IfLocal noremap <silent> <Space> :<C-U>unmap <lt>Space><CR>:packadd vim-jumpmotion<CR>:call feedkeys(' ', 'i')<CR>
 
-IfLocal packadd plenary.nvim
-IfLocal packadd telescope.nvim
 IfLocal packadd vim-paperplane
 IfLocal packadd vim-pets
 IfLocal packadd vim-mall
@@ -1265,6 +1273,7 @@ let @s = "0ldt;h%hPpa;\<Esc>v0y{O\<Esc>jpjdwf ;dEO\<Esc>"
 let @n = "dd*\<C-w>\<C-w>nzz\<C-w>\<C-w>"
 
 delcommand Source
+delcommand PackCommand
 
 delcommand Ccabbrev
 
