@@ -5,7 +5,7 @@
 " Licence:      WTFPL
 
 if exists('b:current_syntax')
-  finish
+	finish
 endif
 
 syntax match mbsyncSynError /.\+$/ keepend
@@ -13,8 +13,8 @@ syntax match mbsyncSynError /.\+$/ keepend
 syntax match mbsyncOption /\v^\s*<%(Path|MapInbox|Trash|Inbox|Tunnel|AuthMechs|CertificateFile|ClientCertificate|ClientKey|DisableExtension|IMAPStore|Account|PathDelimiter|Channel|Pattern|SyncState|FieldDelimiter)>/ skipwhite nextgroup=mbsyncString
 syntax match mbsyncOption /\v^\s*<%(DisableExtensions|Patterns|Group|Channels)>/ skipwhite nextgroup=mbsyncMoreString
 syntax match mbsyncOption /\v^\s*<%(MaxSize|BufferLimit)>/ skipwhite nextgroup=mbsyncSize
-syntax match mbsyncOption /\v^\s*<%(Master|Slave)>/ skipwhite nextgroup=mbsyncStore
-syntax match mbsyncOption /\v^\s*<%(Create|Remove|Expunge)>/ skipwhite nextgroup=mbsyncMasterSlave
+syntax match mbsyncOption /\v^\s*<%(Far|Near)>/ skipwhite nextgroup=mbsyncStore
+syntax match mbsyncOption /\v^\s*<%(Create|Remove|Expunge)>/ skipwhite nextgroup=mbsyncFarNear
 syntax match mbsyncOption /\v^\s*<%(Port|Timeout|PipelineDepth|MaxMessages)>/ skipwhite nextgroup=mbsyncNumber
 syntax match mbsyncOption /\v^\s*<%(Flatten|MaildirStore|InfoDelimiter|IMAPAccount|Host|User|Pass)>/ skipwhite nextgroup=mbsyncString
 syntax match mbsyncOption /\v^\s*<%(SubFolders)>/ skipwhite nextgroup=mbsyncSubFolders
@@ -39,14 +39,14 @@ syntax match  mbsyncSSLType      contained /\v<%(None|STARTTLS|IMAPS)>/
 syntax match  mbsyncSSLVersions  contained /\v<%(SSLv3|TLSv1(|.1|.2))>/
 syntax match  mbsyncSync         contained /\v<%(Pull|Push)?(New|ReNew|Delete|Flags)?>/ skipwhite nextgroup=mbsyncSync
 syntax match  mbsyncSync         contained /\v<(None|All)>/
-syntax match  mbsyncMasterSlave  contained /\v<(None|Master|Slave|Both)>/
+syntax match  mbsyncFarNear      contained /\v<(None|Far|Near|Both)>/
 syntax match  mbsyncPlusString   contained "+" nextgroup=mbsyncString
 
 syntax region mbsyncComment start=/^#/ end='$' contains=@Spell oneline keepend
 
 hi def link mbsyncComment      Comment
 hi def link mbsyncCommentError Error
-hi def link mbsyncMasterSlave  Identifier
+hi def link mbsyncFarNear      Identifier
 hi def link mbsyncMoreString   String
 hi def link mbsyncNumber       Number
 hi def link mbsyncOption       Type
@@ -60,4 +60,4 @@ hi def link mbsyncSync         Identifier
 hi def link mbsyncSynError     Error
 hi def link mbsyncYesNo        Boolean
 
-let b:current_syntax = 'mbsync'
+let b:current_syntax = 'mbsyncrc'
