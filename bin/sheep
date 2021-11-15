@@ -4,11 +4,6 @@ if test "$1" = "--"; then
 
   NEWUSER=me
 
-  bind() {
-    mkdir -m755 -p "./rootfs/$1"
-    mount --make-unbindable --make-rslave --rbind "$1" "./rootfs$1"
-  }
-
   bind_ro() {
     mkdir -m755 -p "./rootfs/${2:-$1}"
     mount --make-unbindable --bind -o ro "$1" "./rootfs/${2:-$1}"
@@ -30,26 +25,27 @@ if test "$1" = "--"; then
   bind_ro /tmp/.X11-unix
   mount -t tmpfs tmpfs ./rootfs/dev/shm -o size=1g,mode=777
 
-  bind_ro "$HOME" "/home/$NEWUSER"
-  mount --make-unbindable --make-rslave -t tmpfs tmpfs "./rootfs/home/$NEWUSER/.local" -o "size=100M,mode=777"
-  bind "$(readlink "$HOME/mem")"
-
+  for dir in .config .local/share/nvim/site; do
+    bind_ro "$HOME/$dir" "/home/$NEWUSER/$dir"
+  done
+  mount --make-unbindable -t tmpfs tmpfs "./rootfs/home/$NEWUSER/.config/passwords" -o "size=0M,mode=0"
+  cp -n -- \
+    "$HOME/.zshenv" \
+    "$HOME/.tmux.conf" \
+    "./rootfs/home/$NEWUSER"
   mkdir -m755 -- \
-    "./rootfs/run/user/$UID/cache"
-  bind_ro "$HOME/.local/share/nvim/site" "/home/$NEWUSER/.local/share/nvim/site"
+    "./rootfs/home/$NEWUSER/mem" \
+    "./rootfs/home/$NEWUSER/.cache"
+  mount --make-unbindable --make-rslave --rbind "$(readlink "$HOME/mem")" "./rootfs/home/$NEWUSER/mem"
+
   chown "$USER:$USER" \
+    "./rootfs/home/$NEWUSER" \
+    "./rootfs/home/$NEWUSER/.zshenv" \
+    "./rootfs/home/$NEWUSER/mem" \
+    "./rootfs/home/$NEWUSER/.cache" \
     "./rootfs/home/$NEWUSER/.local" \
     "./rootfs/home/$NEWUSER/.local/share" \
-    "./rootfs/home/$NEWUSER/.local/share/nvim" \
-    "./rootfs/run/user/$UID" \
-    "./rootfs/run/user/$UID/cache"
-
-  chmod 755 -- \
-    "./rootfs/run" \
-    "./rootfs/run/user"
-  chmod 700 -- \
-    "./rootfs/run/user/$UID" \
-    "./rootfs/run/user/$UID/cache"
+    "./rootfs/home/$NEWUSER/.local/share/nvim"
 
   pivot_root rootfs rootfs
   cd /
@@ -57,12 +53,13 @@ if test "$1" = "--"; then
   cd /etc
   ln -sf /usr/share/zoneinfo/UTC localtime
   hostname sheep
-  rm fstab crypttab group- shadow-
-  usermod "$USER" -l "$NEWUSER" -d "/home/$NEWUSER"
-  echo "$NEWUSER:$NEWUSER" | chpasswd >/dev/null
   echo sheep >hostname
+  usermod "$USER" -l "$NEWUSER" -d "/home/$NEWUSER"
+  groupmod "$USER" -n "$NEWUSER"
+  echo "$NEWUSER:$NEWUSER" | chpasswd >/dev/null
+  rm fstab crypttab passwd.OLD passwd- group- shadow-
 
-  cd -- /home/$NEWUSER/mem
+  cd "/home/$NEWUSER/mem"
 
   USER=$NEWUSER
   if test "$#" -gt 0; then
@@ -83,5 +80,5 @@ else
     --propagation slave \
     --kill-child \
     --fork \
-    -- "$0" -- "$@"
+    -- "$0" -- "${@:-$SHELL}"
 fi
