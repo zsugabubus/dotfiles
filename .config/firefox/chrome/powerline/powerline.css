@@ -13,6 +13,7 @@
 	--urlbar-icon-border-radius: 0 !important;
 	--in-content-page-background: var(--dialog-background) !important;
 	--autocomplete-popup-hover-background: var(--hover-background) !important;
+	--focus-outline-width: 0 !important;
 }
 
 #window-controls {
