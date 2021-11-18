@@ -1,7 +1,7 @@
 [Unit]
-Description=Generate MailBox Profile %I
+Description=%I MailBox Profile Generator
 RefuseManualStart=yes
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/make -C "%E/mbsync" "src=%i" "target=%t/mbsyncrc.%i"
+ExecStart=/usr/bin/make --quiet -C "%E/mbsync" "src=%i" "target=%t/mbsyncrc.%i"
