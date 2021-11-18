@@ -52,6 +52,12 @@ set -g copy-mode-current-match-style bg=#fdef39
 # 1}}}
 # Options {{{1
 
+%if "#{==:#{host},sheep}"
+set -g @prefix 'C-b'
+%else
+set -g @prefix 'C-t'
+%endif
+
 set -g aggressive-resize on
 set -g bell-action other
 set -g clock-mode-style 24
@@ -61,7 +67,7 @@ set -g display-time 0
 set -g escape-time 0
 set -g focus-events on
 set -g history-limit 20000
-set -g prefix 'C-t'
+set -gF prefix "#{@prefix}"
 set -g renumber-windows on
 set -g repeat-time 418
 set -g set-titles on
