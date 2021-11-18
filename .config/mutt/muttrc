@@ -1,0 +1,47 @@
+# http://www.mutt.org/doc/manual/
+set my_dotdir=~/.config/mutt
+
+source $my_dotdir/options
+
+# startup-hook check-stats
+
+ignore *
+unignore Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent:
+unhdr_order *
+hdr_order Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent:
+
+auto_view text/html text/x-diff
+unalternative_order *
+alternative_order text/enriched text/plain text/html
+
+source $my_dotdir/keys
+
+unhook *
+folder-hook .     'set index_format="%3C %Z %@date@ %-20.20L%@attach@%s (%?l?%4l&%4c?)"'
+folder-hook feeds 'set index_format="%3C %Z %@date@ %-30.30y%@attach@%s'
+
+index-format-hook attach "~X>"	"  "
+index-format-hook attach "~A"	"   "
+
+index-format-hook date "~d<1d"	"%[ %H:%M]"
+index-format-hook date "~d<2d"	"%[Ytd %H]"
+index-format-hook date "~d<3d"	"%[2 days]"
+index-format-hook date "~d<4d"	"%[3 days]"
+index-format-hook date "~d<1w"	"%[%a %H]"
+index-format-hook date "~d<y"	"%[%b %d]"
+index-format-hook date "~A"	"%[%y %b]"
+
+set my_reset_user='set realname=nobody from=nobody signature='
+# "sent" uses last configuration.
+folder-hook !sent $my_reset_user
+
+set my_reset_sendmail='set sendmail="/usr/bin/torsocks /usr/bin/msmtp"'
+folder-hook . $my_reset_sendmail
+
+source $my_dotdir/mailboxes.rc|
+source $my_dotdir/editor.rc|
+
+# To fire folder-hook on startup.
+push <sidebar-open>
+
+source $my_dotdir/colors-$TERM

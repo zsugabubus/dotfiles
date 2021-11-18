@@ -15,4 +15,4 @@ color quoted  color48 default
 color quoted1 color220 default
 color quoted2 color202 default
 color quoted3 color82 default # 113
-# vim: ft=neomuttrc
+# vim: ft=muttrc

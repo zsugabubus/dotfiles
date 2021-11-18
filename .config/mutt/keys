@@ -1,5 +1,5 @@
-unbind *
-unmacro *
+# unbind *
+# unmacro *
 
 bind attach,browser,index,postpone 1 jump
 bind attach,browser,index,postpone 2 jump
@@ -13,8 +13,10 @@ bind attach,browser,index,postpone 9 jump
 
 bind attach,browser,compose,index g first-entry
 bind attach,browser,compose,index G last-entry
-bind generic,pager g top
-bind generic,pager G bottom
+# bind generic,pager g top
+# bind generic,pager G bottom
+bind pager g top
+bind pager G bottom
 
 bind index,pager [ previous-thread
 bind index,pager ] next-thread
@@ -42,7 +44,7 @@ macro index L "<limit>all<return>"
 bind generic t tag-entry
 bind pager t tag-message
 
-bind index,pager V view-raw-message
+# bind index,pager V view-raw-message
 bind index,pager v view-attachments
 
 bind index,pager | pipe-message
@@ -92,7 +94,7 @@ bind attach,browser,pager,postpone n search-next
 bind attach,browser,pager,postpone N search-opposite
 
 bind index,pager p purge-message
-bind index,pager P purge-thread
+# bind index,pager P purge-thread
 
 bind index,pager e edit
 bind index,pager E edit-label
@@ -102,7 +104,7 @@ bind index,pager w display-address
 bind index,pager $ sync-mailbox
 bind index q quit
 macro index Q <enter-command>set maildir_trash<return><quit>
-bind attach,generic,browser,pager,index Z quit
+# bind attach,generic,browser,pager,index Z quit
 
 bind attach,generic,browser,pager,index \cu half-up
 bind attach,generic,browser,pager,index \cd half-down
@@ -110,11 +112,11 @@ macro pager <space> "<enter-command>set pager_stop=no<return><half-down><enter-c
 bind attach,browser,compose,index,pager,postpone \ce next-line
 bind attach,browser,compose,index,pager,postpone \cy previous-line
 
-bind attach,generic,browser,pager,index zt current-top
-bind attach,generic,browser,pager,index zz current-middle
-bind attach,generic,browser,pager,index zb current-bottom
+bind attach,generic,browser,index zt current-top
+bind attach,generic,browser,index zz current-middle
+bind attach,generic,browser,index zb current-bottom
 
-macro index,pager \cR "<enter-command>source ~/.config/neomutt/neomuttrc<return>"
+# macro index,pager \cR "<enter-command>source ~/.config/neomutt/neomuttrc<return>"
 
 bind index,pager \cB sidebar-toggle-visible
 macro index,pager \cN "<check-stats><enter-command>toggle sidebar_new_mail_only<return>"
@@ -137,7 +139,7 @@ macro index,pager c <change-folder>?<toggle-mailboxes>
 macro index C <enter-command>cd<space>
 
 bind browser c change-dir
-bind browser h goto-parent
+# bind browser h goto-parent
 bind browser l descend-directory
 
 macro compose <return> m
@@ -165,4 +167,4 @@ bind compose g pgp-menu
 
 bind postpone d delete-entry
 bind postpone u undelete-entry
-# vim: ft=neomuttrc
+# vim: ft=muttrc

@@ -8,12 +8,12 @@ color header color92 default "^To"
 color header brightcolor162 default "^Subject"
 
 # Inline.
-color attach_headers default       color254 "^\\[-- .*"
-color attach_headers brightdefault color254 "^\\[-- Attachment .*"
+# color attach_headers default       color254 "^\\[-- .*"
+# color attach_headers brightdefault color254 "^\\[-- Attachment .*"
 
 color quoted  color20 default
 color quoted1 color22  default
 color quoted2 color163 default
 color quoted3 color54 default
 
-# vim: ft=neomuttrc
+# vim: ft=muttrc

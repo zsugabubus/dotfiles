@@ -1,4 +1,4 @@
-uncolor *
+# uncolor *
 
 color indicator		black		brightwhite
 color search		yellow		default
@@ -10,4 +10,4 @@ color index		green		default	"~N|~O"
 color index		brightred	default	"~D"
 color index		brightwhite	default	"~F"
 
-# vim: noet ts=8 ft=neomuttrc
+# vim: noet ts=8 ft=muttrc

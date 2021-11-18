@@ -1,7 +1,7 @@
-uncolor *
+# uncolor *
 
 color indicator		brightcolor233	color214
-color progress		color235	color112
+# color progress		color235	color112
 color search		color227	color227
 color signature		white		default
 color tilde		color250	default
@@ -17,7 +17,7 @@ color index		brightred	default	"~D"
 color index		brightcolor235	color227	"~F"
 color index		color235	color222	"~T"
 
-color index_collapsed	brightcolor197	default
+# color index_collapsed	brightcolor197	default
 
 # Diff.
 color body		red		default	"^- \\s.*"
@@ -32,5 +32,5 @@ color body		brightcolor160	default	"^BAD signature.*"
 color body		color148	default	"^Good signature.*"
 color body		brightcolor160	default	"^Problem signature.*"
 
-source colors-256.theme
-# vim: noet ts=8 ft=neomuttrc
+source $my_dotdir/colors-256.theme
+# vim: noet ts=8 ft=muttrc

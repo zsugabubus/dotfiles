@@ -1,0 +1,7 @@
+#!/bin/dash
+if test -n "$TMUX"; then
+	echo 'set editor="$my_dotdir/bged"  background_edit=yes'
+else
+	echo 'set editor="$EDITOR"'
+fi
+# vim: ft=sh
