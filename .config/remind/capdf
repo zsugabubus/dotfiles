@@ -1,0 +1,53 @@
+#!/bin/zsh
+
+psreft2hun()
+{
+	printf '%s' "
+%!PS
+% Based on a PS lecture from November 2001.
+
+/$1 findfont dup
+% Find the font.
+length dict
+% Create a new dictionary the same size.
+copy begin
+% Copy font into the new dict and move it to the stack.
+/Encoding Encoding 256 array copy def % Make a writable copy of Encoding
+% http://www.jdawiseman.com/papers/trivia/character-entities.html
+
+Encoding 1  /aacute        put
+Encoding 2  /Aacute        put
+Encoding 3  /eacute        put
+Encoding 4  /Eacute        put
+Encoding 5  /iacute        put
+Encoding 6  /Iacute        put
+Encoding 7  /oacute        put
+Encoding 8  /Oacute        put
+Encoding 9  /odieresis     put
+Encoding 10 /Odieresis     put
+Encoding 11 /odblacute     put
+Encoding 12 /Odblacute     put
+% ^M
+Encoding 14 /uacute        put
+Encoding 15 /Uacute        put
+Encoding 16 /udieresis     put
+Encoding 17 /Udieresis     put
+Encoding 18 /uhungarumlaut put
+Encoding 19 /Uhungarumlaut put
+
+/$1 currentdict definefont pop
+% Turn current dict into a new font
+end
+"
+}
+
+() {
+	# faketime 2021-05-25
+	remind -pm ~/.config/remind/cal.rem |
+	rem2ps | {
+		psreft2hun Helvetica
+		psreft2hun Helvetica-BoldOblique
+		sed 'y/áÁéÉíÍóÓöÖőŐ úÚüÜűŰ/\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c \x0e\x0f\x10\x11\x12\x13/'
+	} | ps2pdf - $1 &&
+	zathura $1
+} =()
