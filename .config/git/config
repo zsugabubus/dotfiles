@@ -88,6 +88,9 @@
 
 	wt = worktree
 
+	serve = !git daemon --port=10000 --base-path=. --export-all --reuseaddr --informative-errors --verbose
+	hub = !git daemon --port=10000 --base-path=. --export-all --enable=receive-pack --reuseaddr --informative-errors --verbose
+
 [am]
 	threeWay = yes
 
@@ -134,3 +137,10 @@
 	annotate = yes
 	assume8bitEncoding = yes
 	xmailer = no
+
+[instaweb]
+	httpd = webrick
+	browser = echo
+
+[browser "echo"]
+	cmd = echo
