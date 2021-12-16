@@ -60,7 +60,7 @@ alias readelf='readelf -W'
 alias rm='rm -dI --one-file-system'
 alias tree='tree-color'
 alias vlock_all='nice -20 vlock -a'
-alias yt=youtube-dl
+alias yt=yt-dlp
 
 alias pl='pass login'
 compdef '_files -W ~/.config/passwords' pl
@@ -75,12 +75,24 @@ alias du.='du --apparent-size -csh . | sort -h'
 alias fm='findmnt --real -o TARGET,SOURCE,FSTYPE,SIZE,USED,AVAIL,USE%,OPTIONS'
 alias ipt='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
 alias make='nice -n15 make -j2'
-alias mktarget='() { mkdir -p -- $@:P }'
 alias oct='od -tu1'
-alias oz='() { od -Aexpect x -t x1z -v "$@" | sed '"'"'s/  >\(.*\)<$/  |\1|/'"'"' }'
 alias term='$TERMINAL >/dev/null &disown'
 alias topp='() { top -p${^$(pidof $1)} }'
 alias upnp='upnpc -u "http://router.lan:5000/rootDesc.xml"'
+
+function oz() {
+	od -Aexpect x -t x1z -v $@ |
+	sed 's/  >\(.*\)<$/  |\1|/'
+}
+
+function mktarget() {
+	mkdir -p -- $@:P
+}
+
+function mkbuild() {
+	ln -sT ${TMPDIR:-/tmp}/build-${${:-.}:a:t} build
+	mkdir -p -- ${${:-build}:P}
+}
 
 function gcd() {
 	cd -- $(git rev-parse --show-toplevel)
@@ -88,7 +100,7 @@ function gcd() {
 
 function strace_show() {
 	local tmp=/tmp/strace
-	strace -fo $tmp "$@" && $EDITOR $tmp
+	strace -fo $tmp $@ && $EDITOR $tmp
 }
 
 function gccc() {
@@ -184,15 +196,6 @@ function clean() {
 	done
 }
 
-function catf() {
-	local f
-	for f in ${@:-*(.)}; do
-		printf '=== %s ===\n' ${(qq)f}
-		(<$f)
-		print
-	done | less
-}
-
 function usb_rebind() {
 	sudo tee /sys/bus/usb/drivers/usb/unbind <<<$1
 	sudo tee /sys/bus/usb/drivers/usb/bind <<<$1
@@ -208,7 +211,7 @@ function md() {
 }
 
 function rmdir() {
-	if (( 1 < $# )); then
+	if (( $# )); then
 		command rmdir "$@"
 	else
 		local dirname=${PWD:t}
@@ -256,8 +259,9 @@ alias www='() { if [[ 1 == $# ]]; then www $1; else www - : -- tar -cf - $*; fi 
 alias timer='() { ( sleep ${1:-5m} && ~/doc/cuckoo-clock.mp3 ) &! }'
 
 autoload -U zmv
-alias mvv='noglob __zmv -M'
+alias sdir='noglob __zmv -M'
 function __zmv() {
+	emulate -L zsh
 	zmv -nvW "$@" &&
 	{ read -srq "?Execute? " } always { print } &&
 	zmv -vW "$@"
@@ -275,7 +279,7 @@ alias rcd='() { (( $# > 0 )) && cd -- $1; while cd -- * 2>/dev/null; do :; done;
 
 function sheep_pacman() {
 	# --noconfirm does ask confirmation for conflicting packages.
-	sheep 'yes | pacman -Sy '$*' && su $USER'
+	sheep 'yes | pacman -S '$*' && su $USER'
 }
 
 function sheep_black() {
@@ -395,14 +399,8 @@ function rs() {
 	redshift -b 0.$1 -o
 }
 
-local tmux_leave_shell
-if [[ -o login ]]; then
-	tmux_leave_shell=''
-else
-	tmux_leave_shell='exec '
-fi
-alias t="${tmux_leave_shell}tmux attach"
-alias tn="${tmux_leave_shell}tmux new -s \$PWD:t"
+alias t="tmux attach"
+alias tn="tmux new -s \$PWD:t"
 
 alias pub=publish
 function publish() {
@@ -466,7 +464,13 @@ function gnuplot_stdin() {
 }
 
 function chromium_clean() {
-	rm -rf .cache/chromium .config/chromium/Default/Service\ Worker
+	rm -rf \
+		~m/.cache/chromium \
+		~m/.config/chromium/Default/Service\ Worker
+}
+
+function iptables_accept_tcp() {
+	sudo iptables -I NEW_TCP -p tcp --dport ${1?Port missing} -j ACCEPT
 }
 
 # https://zsh.sourceforge.io/Contrib/scripts/users/bs/show
