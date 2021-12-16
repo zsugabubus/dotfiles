@@ -5,7 +5,7 @@ After=firefox-tmpfs-profile@%i.service
 AssertPathExists=%t/firefox/%i
 
 [Service]
-Type=simple
+Type=oneshot
 # ExecStop from the other service.
 ExecStart=/usr/bin/rsync -qax --delete "%t/firefox/%i/" "%h/.mozilla/firefox/%i/"
 
