@@ -27,11 +27,8 @@ end
 function scroll(e)
 	local scroll = e.key_name:find('WHEEL_') ~= nil
 
-	if e.event ~= 'down' then
-		--[[ if change_speed then
-			change_speed = false
-			mp.set_property_number('speed', 1)
-		end ]]
+	-- "down" on X, "press" on Wayland.
+	if e.event == 'up' then
 		return
 	end
 
