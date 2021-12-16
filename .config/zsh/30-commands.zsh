@@ -51,6 +51,7 @@ alias l='ls-color -ohtrvF --group-directories-first --color=tty --quoting-style=
 alias la='l -A'
 alias mdp='mdp -fi'
 alias mv='mv -i'
+alias n=mutt
 alias node='NODE_REPL_HISTORY= node' # Disable persistent history.
 alias o=open
 alias pkill='pkill -x'
@@ -88,16 +89,6 @@ function gcd() {
 function strace_show() {
 	local tmp=/tmp/strace
 	strace -fo $tmp "$@" && $EDITOR $tmp
-}
-
-function n() {
-	local args=()
-	if test -d inbox/cur; then
-		args+=(-f inbox)
-	elif test -d cur; then
-		args+=(-f .)
-	fi
-	neomutt $args
 }
 
 function gccc() {
@@ -173,6 +164,16 @@ function mo() {
 		print
 	} &&
 	sudo mount $dev /mnt
+}
+
+function mutt() {
+	local args=()
+	if [[ -d inbox/cur ]]; then
+		args+=(-f inbox)
+	elif [[ -d cur ]]; then
+		args+=(-f .)
+	fi
+	command mutt -n $args $@
 }
 
 function clean() {
