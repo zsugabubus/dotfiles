@@ -1,2 +1,2 @@
 #!/bin/dash
-feh --auto-zoom --scale-down "$(readlink "$MUCK_HOME/cover")" &
+feh --auto-zoom --scale-down "$MUCK_COVER" &
