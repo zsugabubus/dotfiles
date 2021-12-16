@@ -1267,6 +1267,23 @@ endfunction
 
 cnoremap <expr> / <SID>magic_tilde()
 
+if !empty($WAYLAND_DISPLAY)
+	let clipboard = {
+		\  'copy': {
+		\     '+': 'wl-copy --foreground --type text/plain',
+		\     '*': 'wl-copy --foreground --primary --type text/plain',
+		\   },
+		\  'paste': {
+		\     '+': {-> split(system('wl-paste --no-newline'), '\r\?\n', 1)},
+		\     '*': {-> split(system('wl-paste --no-newline --primary'), '\r\?\n', 1)},
+		\  },
+		\  'cache_enabled': 1,
+		\}
+endif
+
+"	\      '+': 'wl-paste --no-newline --type UTF8_STRING',
+"	\      '*': 'wl-paste --no-newline --primary --type UTF8_STRING',
+
 let @p = "i\<C-R>+\<CR>\<Esc>"
 " Make typedef and struct from typedef struct.
 let @s = "0ldt;h%hPpa;\<Esc>v0y{O\<Esc>jpjdwf ;dEO\<Esc>"
