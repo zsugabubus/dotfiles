@@ -1,8 +1,12 @@
-local SORT_OPTS = {no=true, filename=true}
+local SORT_OPTS = {
+	none=true,
+	alpha=true,
+	strict=true,
+}
 
-local sort = mp.get_opt('sort')
-if sort and not SORT_OPTS[sort] then
-	local s = {"If --script-opts=sort=X is given, it must be one of"}
+local sort = mp.get_opt('sort') or 'alpha'
+if not SORT_OPTS[sort] then
+	local s = {"--script-opts=sort=X must be one of"}
 	for k in pairs(SORT_OPTS) do
 		s[#s + 1] = #s <= 1 and ': ' or ', '
 		s[#s + 1] = '`'
@@ -11,8 +15,13 @@ if sort and not SORT_OPTS[sort] then
 	end
 	s[#s + 1] = ", got `"
 	s[#s + 1] = sort
-	s[#s + 1] = "'"
+	s[#s + 1] = "'."
 	mp.msg.error(table.concat(s))
+	return
+end
+
+if sort ~= 'none' then
+	mp.msg.info('Use --script-opts=sort=none to disable.')
 end
 
 local function do_filter()
@@ -56,7 +65,7 @@ local function playlist_swap(playlist, i1, i2)
 end
 
 local function do_sort()
-	if sort == 'no' then
+	if sort == 'none' then
 		return
 	end
 
@@ -68,15 +77,15 @@ local function do_sort()
 		local entry = playlist[i]
 		order[i] = i
 
-		if sort == 'filename' then
-			entry.string = entry.filename
-		else
+		if sort == 'alpha' then
 			entry.string = entry.filename
 				:gsub('^.*/', '')
 				:gsub('[.,;&_ ()[\135{}-]', '')
 				:gsub('^[0-9]+', '')
 				:lower() ..
 				entry.filename:gsub('[^0-9]', '')
+		elseif sort == 'strict' then
+			entry.string = entry.filename
 		end
 	end
 
