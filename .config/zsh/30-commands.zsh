@@ -119,7 +119,7 @@ function make_install() {
 
 alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
-alias mp='() { mpv 2>/dev/null --player-operation-mode=pseudo-gui ${*:-.} &! }'
+alias mp='() { ( exec mpv --input-ipc-server=/tmp/mpv$$ 2>/dev/null --player-operation-mode=pseudo-gui ${*:-.} ) &! }'
 compdef mp=mpv_hack
 alias mpm='() { eval mp "*(m-${1:-1}/)" }'
 compdef mpm=mpv_hack
@@ -127,6 +127,37 @@ alias mpn='() { eval mp "*(.om[1,${1:-100}])" }'
 compdef mpn=mpv_hack
 alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
+
+alias mpctl=mpvctl
+function mpvctl() {
+	local server servers=()
+	for server in  /tmp/mpv*(omN=); do
+		if ! echo -n | socat - $server 2>/dev/null; then
+			unlink $server
+		else
+			servers+=$server
+		fi
+	done
+
+	if (( 1 < $#servers )); then
+		select server in $servers; do break; done
+	else
+		server=${servers[1]}
+	fi
+
+	printf 'Controlling %s\n' $server
+	printf 'Press C-c to exit\r'
+	while read -srk1; do
+		if [[ $REPLY == $'\e' ]]; then
+			REPLY=ESC
+		fi
+		printf '{"command":["%s", "%s"]}\n' keydown $REPLY keyup $REPLY
+	done |
+	socat - $server |
+	while read -r; do
+		printf '%s\e[K\r' $REPLY
+	done
+}
 
 function mo() {
 	local dev=$(
