@@ -1,3 +1,3 @@
-#compdef vitarget
+#compdef eln
 
 _files -g '*(@)'

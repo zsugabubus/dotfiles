@@ -16,6 +16,6 @@ for f; do
 	fi
 
 	local target=$stat[link]
-	vared -p '${(q)f:t} -> ' target &&
+	vared -ep '${(q)f:t} -> ' target &&
 	ln -sf "$target" "$f"
 done
