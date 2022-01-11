@@ -1,0 +1,14 @@
+#autoload
+
+emulate -L zsh
+
+local f
+
+(( $# )) || set -- *(N)
+
+for f; do
+	local dst=$f
+	vared -e dst &&
+	mkdir -p -- $dst:h &&
+	mv -i -v -- "$f" "$dst"
+done
