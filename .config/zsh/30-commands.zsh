@@ -21,7 +21,6 @@ for i ({0..9}) alias -- -$i=cd\ -$i
 alias a=aria2t
 alias abduco='ABDUCO_SOCKET_DIR=$XDG_RUNTIME_DIR abduco'
 alias am='alsamixer'
-alias bc='bc -lq'
 alias cal='cal -m'
 alias cp='cp -i'
 alias curl='noglob curl --compressed'
@@ -79,6 +78,10 @@ alias oct='od -tu1'
 alias term='$TERMINAL >/dev/null &disown'
 alias topp='() { top -p${^$(pidof $1)} }'
 alias upnp='upnpc -u "http://router.lan:5000/rootDesc.xml"'
+
+function pc() {
+	python -qic 'from math import *'
+}
 
 function oz() {
 	od -Aexpect x -t x1z -v $@ |
