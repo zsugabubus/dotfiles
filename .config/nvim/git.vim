@@ -152,13 +152,37 @@ function! s:git_pager(cmdline) abort
 	call s:git_pager_update(bufnr(), a:cmdline, 1)
 endfunction
 
-function! s:git_dir_complete(prefix, cmdline, pos) abort
+function! s:git_complete_glob(prefix, cmdline, pos, dirs_only) abort
 	let wd = Git().wd
-	return map(filter(globpath(wd, a:prefix.'*', 1, 1), 'isdirectory(v:val)'), 'v:val['.len(wd).':]."/"')
+	let files = globpath(wd, a:prefix.'*', 0, 1)
+	if a:dirs_only
+		call filter(files, 'isdirectory(v:val)')
+	endif
+	let start = len(wd)
+	return map(files, {_,x-> x[start:].(a:dirs_only || isdirectory(x) ? '/' : '')})
 endfunction
 
-for s:cd in ['cd', 'lcd', 'tcd']
-	execute "command! -complete=customlist,<SID>git_dir_complete -nargs=? G".s:cd." execute '".s:cd." '.fnameescape(Git().wd.<q-args>)"
+function! s:git_complete_dir(prefix, cmdline, pos) abort
+	return s:git_complete_glob(a:prefix, a:cmdline, a:pos, 1)
+endfunction
+
+function! s:git_complete_file(prefix, cmdline, pos) abort
+	return s:git_complete_glob(a:prefix, a:cmdline, a:pos, 0)
+endfunction
+
+function! s:git_register_file_command(name, complete) abort
+	execute printf(
+		\ "command! -bang -complete=customlist,<SID>git_complete_%s -nargs=? G%s ".
+		\ "execute '%s<bang> '.substitute(simplify(fnamemodify(fnameescape(Git().cdup.<q-args>), ':.')), '^$', '.', '')",
+		\ a:complete, a:name, a:name)
+endfunction
+
+for s:cmd in ['cd', 'lcd', 'tcd']
+	call s:git_register_file_command(s:cmd, 'dir')
+endfor
+
+for s:cmd in ['e', 'tabe', 'sp', 'vs']
+	call s:git_register_file_command(s:cmd, 'file')
 endfor
 
 command! Gcancel call s:git_cancel()
