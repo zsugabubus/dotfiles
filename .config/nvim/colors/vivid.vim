@@ -168,7 +168,6 @@ Hi Tag guifg=NONE
 
 Hi CfgOnOff =Boolean
 
-" C/C++ {{{
 Hi cUserLabel guifg=#9d00c5 gui=underline
 Hi Label =cUserLabel
 Hi Structure =Keyword
@@ -176,41 +175,29 @@ Hi cLabel =Keyword
 Hi cConstant guifg=#009017|#1ca51c cterm=bold
 Hi Boolean =cConstant
 Hi cOctalZero guifg=#8700af cterm=bold
-" }}}
 
-" CSS {{{
 Hi cssIdentifier =Normal
 Hi cssImportant guifg=#f40000
-" }}}
 
-" Stylus {{{
 Hi cssIdentifier =Normal
 Hi stylusImportant =cssImportant
 Hi stylusSelectorClass =cssIdentifier
 Hi stylusSelectorId =cssIdentifier
 Hi stylusSelectorPseudo =Identifier
-" }}}
 
-" Vim Help {{{
 Hi helpHyperTextEntry =Tag
 Hi helpHeadline =Type
-" }}}
 
-" Makefile {{{
 Hi makeStatement =Function
 Hi makeCommands =Normal
 Hi makeIdent =PreProc
 Hi makeTarget =Identifier
 Hi makeSpecTarget =cConstant
-" }}}
 
-" Man {{{
 Hi manOptionDesc cterm=bold
 Hi manSectionHeading =Type
 Hi manSubHeading =manSectionHeading
-" }}}
 
-" Markdown {{{
 Hi mkdListItem cterm=bold
 Hi mkdHeading cterm=bold
 Hi mkdHeadingDelimiter cterm=bold
@@ -220,18 +207,14 @@ Hi mkdCodeDelimiter cterm=bold guibg=#e8e8e8
 Hi mkdURL =Underlined
 Hi mkdLink =Normal
 Hi mkdLinkDef =Identifier
-" }}}
 
-" Lua {{{
 " hi luaFunction cterm=bold guifg=#005f87
 Hi luaFunction =Keyword
 Hi luaOperator =Conditional
 Hi luaRepeat =Repeat
 Hi luaTable =Normal
 Hi luaConstant =cConstant
-" }}}
 
-" Vim {{{
 Hi vimStatement guifg=#005db2
 " hi livimFuncName guifg=#005db2
 Hi vimOper =Normal
@@ -248,44 +231,29 @@ Hi vimHiCTerm =Normal
 Hi vimHiTerm =Normal
 Hi vimHiCtermColor =Normal
 Hi vimOption =Identifier
-" }}}
 
-" JavaScript {{{
 Hi javaScriptNumber =Number
 Hi javaScriptBraces =Normal
 Hi javaScriptParens =Normal
 Hi javaScriptFunction =Keyword
-" }}}
 
-" Rust {{{
 Hi rustCommentLineDoc =rustCommentLine
-" }}}
 
-" JSON {{{
 Hi jsonTest =String
 Hi jsonKeyword =String
-" }}}
 
-" Assembly {{{
 Hi asmIdentifier =Normal
-" }}}
 
-" SQL {{{
 Hi sqlKeyword =Keyword
-" }}}
 
-" PHP {{{
 Hi phpConstant =cConstant
-" }}}
 
-" Git {{{
 Hi gitReference =diffFile
-" }}}
 
-" TermDebug {{{
 Hi debugPC guibg=#fff500
 Hi debugBreakpoint cterm=bold guibg=#f51030 guifg=#ffffff
-" }}}
+
+Hi changeLogError guifg=Normal
 
 try
 	call writefile(s:cached_cmds, s:cache)
