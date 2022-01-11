@@ -417,7 +417,7 @@ endfunction
 function! s:git_statusline_update() abort dict
 	let self.status =
 		\ (self.bare ? 'BARE:' : '').
-		\ self.head.
+		\ (self.head ==# '@' ? '(no head)' : self.head).
 		\ (g:git_symbols[0][!self.staged]).
 		\ (g:git_symbols[1][!self.modified]).
 		\ (g:git_symbols[2][!self.untracked]).
@@ -485,13 +485,13 @@ endfunction
 
 function! s:git_status_on_bootstrap(data) abort dict
 	try
-		let [self.dir, self.bare, self.inside, self.head, cdup; _] = a:data + ['']
+		let [self.dir, self.bare, self.inside, self.cdup, self.head; _] = a:data + ['']
 	catch
 		return
 	endtry
 	let self.bare = self.bare ==# 'true'
 	let self.inside = self.inside ==# 'true'
-	let self.wd = simplify(self.wd.cdup)
+	let self.wd = simplify(self.wd.self.cdup)
 
 	let self.vcs = 'git'
 
@@ -579,6 +579,7 @@ function! Git() abort
 			\  'vcs': '',
 			\  'dir': '',
 			\  'wd': dir.'/',
+			\  'cdup': '',
 			\  'inside': 0,
 			\  'staged': 0,
 			\  'modified': 0,
@@ -591,6 +592,7 @@ function! Git() abort
 			\  'total': 0,
 			\  'status': ''
 			\}
+		" NOTE: "@" must be the last because git stops on first failure.
 		call call('s:git_run', [
 			\  's:git_status_on_bootstrap',
 			\  '-C', dir,
@@ -599,8 +601,8 @@ function! Git() abort
 			\  '--absolute-git-dir',
 			\  '--is-bare-repository',
 			\  '--is-inside-git-dir',
-			\  '@',
-			\  '--show-cdup'
+			\  '--show-cdup',
+			\  '@'
 			\], s:git[dir])
 	endif
 	return s:git[dir]
