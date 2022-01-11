@@ -395,6 +395,8 @@ function! s:makeprg_magic() abort
 		setlocal makeprg=make
 	elseif filereadable('meson.build')
 		setlocal makeprg=ninja\ -C\ build
+	elseif filereadable(get(Git(), 'wd', '').'Cargo.toml')
+		compiler cargo
 	endif
 endfunction
 
@@ -402,15 +404,15 @@ function! s:make() abort
 	let start = strftime('%s')
 	echon "\U1f6a7  Building...  \U1f6a7"
 	call s:makeprg_magic()
-	make
+	make build
 	Bell
 	redraw
 	let errors = 0
 	let warnings = 0
 	for item in getqflist()
-		if item.text =~? ' error: '
+		if item.text =~? ' error:\? ' || item.type ==# 'E'
 			let errors += 1
-		elseif item.text =~? ' warning: '
+		elseif item.text =~? ' warning:\? ' || item.type ==# 'W'
 			let warnings += 1
 		endif
 	endfor
