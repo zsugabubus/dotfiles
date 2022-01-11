@@ -394,7 +394,7 @@ function! s:makeprg_magic() abort
 	if filereadable('Makefile')
 		setlocal makeprg=make
 	elseif filereadable('meson.build')
-		setlocal makeprg=ninja\ -C\ build
+		setlocal makeprg=meson\ compile\ -C\ build
 	elseif filereadable('go.mod')
 		compiler go
 	elseif filereadable(get(Git(), 'wd', '').'Cargo.toml')
