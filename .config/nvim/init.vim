@@ -395,6 +395,8 @@ function! s:makeprg_magic() abort
 		setlocal makeprg=make
 	elseif filereadable('meson.build')
 		setlocal makeprg=ninja\ -C\ build
+	elseif filereadable('go.mod')
+		compiler go
 	elseif filereadable(get(Git(), 'wd', '').'Cargo.toml')
 		compiler cargo
 	endif
