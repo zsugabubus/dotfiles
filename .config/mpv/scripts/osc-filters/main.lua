@@ -98,7 +98,7 @@ local keys = {
 	end},
 	ESC='q',
 	ENTER='q',
-	['0..9']={'select'},
+	['1..9']={'select'},
 }
 for i=1,9 do
 	keys[string.char(string.byte('0') + i)] =
