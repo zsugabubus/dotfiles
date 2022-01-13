@@ -106,27 +106,27 @@ bind C-c display-menu -T 'Kill' \
 	'CONT' c { run { ~/.config/tmux/scripts/kill '#{pane_tty}' CONT } } \
 	'KILL' K { run { ~/.config/tmux/scripts/kill '#{pane_tty}' KILL } } \
 
-bind -r h select-pane -L
-bind -r j select-pane -D
-bind -r k select-pane -U
-bind -r l select-pane -R
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
 
-bind -r H swap-pane -t '{left-of}'  \; select-pane -t '{left-of}'
-bind -r J swap-pane -t '{down-of}'  \; select-pane -t '{up-of}'
-bind -r K swap-pane -t '{up-of}'    \; select-pane -t '{down-of}'
-bind -r L swap-pane -t '{right-of}' \; select-pane -t '{right-of}'
+bind H swap-pane -t '{left-of}'  \; select-pane -t '{left-of}'
+bind J swap-pane -t '{down-of}'  \; select-pane -t '{up-of}'
+bind K swap-pane -t '{up-of}'    \; select-pane -t '{down-of}'
+bind L swap-pane -t '{right-of}' \; select-pane -t '{right-of}'
 
-bind -r n next-window
-bind -r p previous-window
+bind n next-window
+bind p previous-window
 bind '#' next-window -a
 
 bind f display-popup -E $SHELL -c ~/.config/tmux/scripts/find
 
-bind -r N swap-window -t :+1 \; next-window
-bind -r P swap-window -t :-1 \; previous-window
+bind N swap-window -t :+1 \; next-window
+bind P swap-window -t :-1 \; previous-window
 
-bind -r ) switch-client -n
-bind -r ( switch-client -p
+bind ) switch-client -n
+bind ( switch-client -p
 
 bind ! display-menu -T 'Move' \
 	'swap pane'   'p' { display-panes -d 0 { swap-pane -t -- '%%' } } \
