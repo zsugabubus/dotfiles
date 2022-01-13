@@ -19,7 +19,7 @@ mp.register_event('start-file', function()
 		addpat(pats, '[sS]0*' .. serno .. '[eE]0*' .. epno .. '.*')
 	end
 
-	for i, subdir in pairs(mp.get_property_native('sub-file-paths')) do
+	for _, subdir in ipairs(mp.get_property_native('sub-file-paths')) do
 		walk(dirname .. '/' .. subdir, pats)
 	end
 end)
@@ -29,7 +29,7 @@ function addpat(pats, pat)
 		return
 	end
 
-	for i, ext in pairs({'srt', 'lrc', 'txt'}) do
+	for _, ext in pairs({'srt', 'lrc', 'txt'}) do
 		table.insert(pats, pat .. '%.' .. ext .. '$')
 	end
 end
@@ -40,10 +40,10 @@ end
 
 function walk(path, pats)
 	local nfiles = 0
-	for i, file in pairs(utils.readdir(path, 'files') or {}) do
+	for _, file in ipairs(utils.readdir(path, 'files') or {}) do
 		nfiles = nfiles + 1
 
-		for i, pattern in pairs(pats) do
+		for _, pattern in ipairs(pats) do
 
 			if file:find(pattern) ~= nil then
 				local gen = file:find('%.txt$') ~= nil
@@ -66,7 +66,7 @@ function walk(path, pats)
 		end
 	end
 	if nfiles <= 1 then
-		for i, dir in pairs(utils.readdir(path, 'dirs') or {}) do
+		for _, dir in ipairs(utils.readdir(path, 'dirs') or {}) do
 			walk(path .. '/' .. dir, pats)
 		end
 	end
