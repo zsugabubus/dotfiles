@@ -14,16 +14,11 @@ local utils = require('mp.utils')
 local visible = false
 local current = OPTIONS[1].option
 
-local opts = {
-	font_scale = 0.9,
-}
-options.read_options(opts, nil, update)
-
 local script_opts = mp.command_native({'expand-path', '~~/script-opts'})
 local PRESETS = select(2, pcall(dofile, script_opts .. '/color-presets.lua')) or {
 	{name='(none)'},
-	{name='tv', b=2, c=3, g=3, s=3 },
-	{name='movie',  b=0, c=27, g=2, s=11 },
+	{name='tv', b=2, c=3, g=3, s=3},
+	{name='movie',  b=0, c=27, g=2, s=11},
 }
 
 local ignore_once, file_loaded = true, false
@@ -141,8 +136,7 @@ local function _update()
 	end
 
 	osd.data = {
-		('\\h\n{\\q2\\fscx%d\\fscy%d}'):format(
-			opts.font_scale * 100, opts.font_scale * 100),
+		'\\h\n{\\q2}',
 	}
 
 	for _, x in ipairs(OPTIONS) do
