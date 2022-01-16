@@ -2,7 +2,14 @@ let g:git_symbols = "SMUT"
 let g:git_symbols = "+*%$" " git-prompt
 let g:git_max_tabs = 15
 set switchbuf=useopen,usetab
-nnoremap <silent><expr> gf (0 <=# match(expand('<cfile>'), '\v^\x{4,}$') ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>" : 0 <=# match(expand('<cfile>'), '^[ab]/') ? 'viWof/lgf' : 'gf')
+nnoremap <silent><expr> gf (
+	\    0 <=# match(expand('<cfile>'), '\v^\x{4,}$')
+	\ ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>"
+	\ : 0 <=# match(expand('<cfile>'), '^[ab]/')
+	\ ? 'viWof/lgf'
+	\ : 0 <=# match(expand('%'), 'git://')
+	\ ? ':edit '.fnameescape(expand('%').(0 <= stridx(expand('%')[6:], ':') ? '' : ':').expand('<cfile>'))."\<CR>"
+	\ : 'gf')
 
 function! s:git_ignore_stderr(chan_id, data, name) abort dict
 endfunction
@@ -141,6 +148,7 @@ endfunction
 function! s:git_pager(cmdline) abort
 	nnoremap <buffer><nowait> q <C-w>c
 	nnoremap <silent><buffer><nowait><expr> gu ':edit '.fnameescape(matchstr(expand('%'), '\v^git://[^:]*:([012]:)?.{-}\ze([^/]+/?)?$'))."\<CR>"
+	nmap <silent><buffer><nowait> <CR> gf
 	nmap <silent><buffer><nowait> u gu
 	nnoremap <silent><buffer><nowait> ~ :call <SID>git_edit_rev('edit', '~'.v:count1)<CR>
 	nnoremap <silent><buffer><nowait> ^ :call <SID>git_edit_rev('edit', '^'.v:count1)<CR>
@@ -649,7 +657,7 @@ augroup vimrc_git
 		\   '--patch',
 		\   '--stat-width='.winwidth(0),
 		\   '--format=format:commit %H%nparent %P%ntree %T%nref: %D%nAuthor: %aN <%aE>%nDate:   %aD%nCommit: %cN <%cE>%n%n    %s%n%-b%n',
-		\   matchstr(expand("<amatch>"), '\v://\zs[^:/]*%(:.*)?')
+		\   matchstr(expand("<amatch>"), '\v://\zs.*')
 		\ ])
 
 	" Highlight conflict markers.
