@@ -193,6 +193,21 @@ for s:cmd in ['e', 'tabe', 'sp', 'vs']
 	call s:git_register_file_command(s:cmd, 'file')
 endfor
 
+function! s:git_grep(cmdline) abort
+	let saved = &l:grepprg
+	try
+		let &l:grepprg = 'git grep'
+		execute a:cmdline
+		redraw " Avoid hit ENTER prompt.
+	finally
+		let &l:grepprg = saved
+	endtry
+endfunction
+
+for s:cmd in ['gr', 'grep', 'lgr', 'lgrep', 'grepa', 'lgrepa']
+	execute printf("command! -nargs=* -bang G%s call s:git_grep(':%s<bang> --column '.<q-args>)", s:cmd, s:cmd)
+endfor
+
 command! Gcancel call s:git_cancel()
 command! -nargs=* Gshow execute 'edit git://'.(empty(<q-args>) ? expand('<cword>') : <q-args>)
 command! -nargs=* -range=% Glog call s:git_log(<line1>, <line2>, <f-args>)
