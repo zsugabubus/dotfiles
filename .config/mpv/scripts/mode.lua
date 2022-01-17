@@ -40,7 +40,7 @@ function Mode:get_ass_help()
 		local text = nil
 		while type(fn) ~= 'function' do
 			if type(fn) == 'table' then
-				text, fn = table.unpack(fn)
+				text, fn = unpack(fn)
 				if text then
 					break
 				end

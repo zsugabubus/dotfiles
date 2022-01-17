@@ -214,7 +214,7 @@ local function osd_append_track(track)
 	osd:append(')')
 
 	for _, flag in ipairs(TRACK_FLAGS) do
-		local key, display = table.unpack(flag)
+		local key, display = unpack(flag)
 		if track[key] then
 			osd:append(' (', display or key, ')')
 		end
