@@ -1,13 +1,10 @@
 #!/bin/dash
-for x in '-qm1' ''; do
-	! git diff --staged --stat | grep $x ' Bin ' \
-	&& break || {
-		if test -n "$x"; then
-			echo 'Committed binary files:'
-		else
-			echo '(use "git rm --cached <file>..." to unstage)'
-			echo
-		fi
-		false
-	}
-done
+if output=$(
+	git diff --staged --stat |
+	grep $x ' Bin '
+); then
+	echo 'Committed binary files:'
+	echo '  (use "git rm --cached <file>..." to unstage)'
+	printf '%s\n' "$output"
+	exit 1
+fi
