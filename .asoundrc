@@ -1,0 +1,167 @@
+# https://github.com/opensrc/alsa/blob/master/lib/md/Asoundrc.md
+# https://www.alsa-project.org/alsa-doc/alsa-lib/pcm_plugins.html
+
+#snd-aloop pcm_substreams=1
+
+# alsabat -P hw:0,0 -C plughw:0,0 -c2 -f S16_LE --roundtriplatency
+
+pcm.mux2 {
+	@args [ PCM0 PCM1 ]
+	@args.PCM0 {
+		type string
+	}
+	@args.PCM1 {
+		type string
+	}
+	type route
+	slave.pcm {
+		type multi
+		slaves {
+			a { channels 2 pcm $PCM0 }
+			b { channels 2 pcm $PCM1 }
+		}
+		bindings {
+			0 { slave a channel 0 }
+			1 { slave a channel 1 }
+			2 { slave b channel 0 }
+			3 { slave b channel 1 }
+		}
+	}
+	ttable [
+		# i   a a b b
+		# n   0 1 0 1
+		  0 [ 1 0 1 0 ]
+		  1 [ 0 1 0 1 ]
+	]
+}
+
+# https://www.volkerschatz.com/noise/alsa.html
+pcm.51to2 {
+	@args [ PCM ]
+	@args.PCM {
+		type string
+	}
+	type route
+	slave {
+		pcm $PCM
+		channels 2
+	}
+	ttable {
+		0 [ 0.3  0    ]
+		1 [ 0    0.3  ]
+		2 [ 0.3  0    ]
+		3 [ 0    0.3  ]
+		4 [ 0.18 0.18 ]
+		5 [ 0.21 0.21 ]
+	}
+}
+
+pcm.2to51 {
+	@args [ PCM ]
+	@args.PCM {
+		type string
+	}
+	type route
+	slave {
+		pcm $PCM
+		channels 6
+	}
+	ttable {
+		0 [ 1 0 -0.6  -0.39 0.5 0.5 ]
+		1 [ 0 1 -0.39 -0.6  0.5 0.5 ]
+	}
+}
+
+pcm.digital {
+	type hw
+	card PCH
+	hint {
+		description "Digital output"
+	}
+}
+
+# https://alsa.opensrc.org/Dmix
+pcm.dmix_digital {
+	type dmix
+	ipc_key 1
+	ipc_key_add_uid true
+	tstamp_type monotonic_raw
+	slave {
+		pcm digital
+		# aplay -v /usr/share/sounds/alsa/Front_Left.wav
+		period_time 200000
+	}
+	hint {
+		description "DMix digital output"
+	}
+}
+
+# ffmpeg -f alsa -channels 2 -sample_rate 44100 -i loop out.mp3
+pcm.loop {
+	type asym
+	playback.pcm {
+		type hw
+		card Loopback
+		device 0
+		subdevice 0
+		hint {
+			description "Loopback playback"
+		}
+	}
+	capture.pcm {
+		type hw
+		card Loopback
+		device 1
+		subdevice 0
+		hint {
+			show on
+			description "Loopback capture"
+		}
+	}
+}
+
+pcm.dmix_digitalloop {
+	type plug
+	slave.pcm "mux2:dmix_digital,loop"
+}
+
+pcm.!default {
+	@args [ PCM ]
+	@args.PCM {
+		type string
+		default {
+			@func getenv
+			vars [
+				ALSA
+			]
+			default dmix_digital
+		}
+	}
+	type plug
+	slave.pcm $PCM
+	hint {
+		description "Default output"
+	}
+}
+
+ctl.eq {
+	type equal
+	library /usr/lib/ladspa/caps.so
+}
+
+pcm.eq {
+	@args [ PCM ]
+	@args.PCM {
+		type string
+		default plug:digital
+	}
+	type empty
+	slave.pcm {
+		type equal
+		library /usr/lib/ladspa/caps.so
+		slave.pcm $PCM
+	}
+	hint {
+		description "Digital equalizer output"
+	}
+}
