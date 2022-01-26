@@ -20,13 +20,8 @@ map	d	scroll half-down
 map	<S-Space>	scroll full-up
 map	<Space>	scroll full-down
 
-map	f	toggle_fullscreen
-map [fullscreen]	f	toggle_fullscreen
-
 # WTF. full page scrolling is off by |page-padding| pixels. that is why we set it to zero
 set page-padding 0
-
-
 
 # set recolor "true"
 set recolor-lightcolor "#000000" #00
