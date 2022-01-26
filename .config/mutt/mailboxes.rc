@@ -34,7 +34,7 @@ for signature in */signature; do
 	echo "folder-hook $mgroup 'set signature==$signature'"
 done
 
-for maildir in */inbox */cur; do
+for maildir in */cur */inbox; do
 	maildir=${maildir%/cur}
 
 	s=$maildir
