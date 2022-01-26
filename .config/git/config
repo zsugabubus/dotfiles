@@ -1,9 +1,8 @@
-; git rebase --show-current-patch, or its equivalent git show REBASE_HEAD
 [add.interactive]
 	useBuiltin = yes
 
 [alias]
-	a = add
+	a = add --verbose
 	ae = a --edit
 	ai = a --interactive
 	ap = a --patch
@@ -20,7 +19,8 @@
 	cs = c --sign-off
 	cN = c --no-verify
 	ca = c --amend --reset-author
-	cc = c --edit -F .git/COMMIT_EDITMSG
+	cc = "!f() { exec git c --edit --file .git/COMMIT_EDITMSG \"$@\"; }; f"
+	ccrb = "!f() { exec git c --edit --file .git/rebase-merge/message \"$@\"; }; f"
 
 	co = checkout
 	co- = co @{-1}
@@ -32,24 +32,23 @@
 	# Hehe.
 	cp = cherry-pick
 
-	d = diff
-	ds = diff --staged
-	dss = ds --stat
+	d = diff --stat --patch
+	ds = d --staged
 
-	sl = stash list
+	sl = stash list --stat
 	slp = sl -p
 	st = stash push
 	sp = stash pop
-	ss = sp
 
-	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
+	log-formatted = log --no-merges --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	l = log-formatted --graph
-	lg = l --grep
+	lu = l @{upstream}
+	lud = l @...@{upstream}
+	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
 	log-vim = l
 	la = l --all --full-history
 	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
-	lp = ll --patch
-	ls = l --stat
+	lp = ll --patch --stat
 	lf = log --follow --patch
 
 	m = merge
@@ -59,34 +58,27 @@
 
 	rb = rebase
 	rbb = rb -s recursive -X diff-algorithm=minimal,ignore-all-space
-
-	re = rb --edit-todo
 	ri = rb --interactive
-	rim = ri master
+	riu = ri @{upstream}
+	rip = ri @{push}
 	riom = ri origin/master
-	rbm = rb master
-	rbom = rb origin/master
+	re = rb --edit-todo
 	rc = rb --continue
+	rs = rb --show-current-patch
+	ra = !git diff --name-only --diff-filter=U -z | xargs -0r grep -LZ '<<<<<<<' | xargs -0r git add -v
 
 	rp = reset --patch
 
-	s = status --ahead-behind --show-stash
-	su = status --short
-	ss = su --untracked-files=no
-	sun = s --untracked-files=no
+	s = status --ahead-behind --show-stash --branch
+	ss = status --short --branch
 
 	f = fetch
 
-	p = pull
-
 	push-origin = push -u origin HEAD
 
-	rl = reflog
-
-	rs = remote show
-	rso = rs origin
-
 	wt = worktree
+
+	whoami = var GIT_COMMITTER_IDENT
 
 	serve = !git daemon --port=10000 --base-path=. --export-all --reuseaddr --informative-errors --verbose
 	hub = !git daemon --port=10000 --base-path=. --export-all --enable=receive-pack --reuseaddr --informative-errors --verbose
@@ -102,7 +94,7 @@
 	lineNumber = yes
 
 [init]
-	templatedir = ~/.config/git/template
+	templateDir = ~/.config/git/template
 	defaultBranch = master
 
 [include]
@@ -114,7 +106,7 @@
 
 [merge]
 	tool = nvimdiff
-	conflictstyle = "diff3"
+	conflictStyle = diff3
 
 [mergetool "nvimdiffx"]
 	keepBackup = no
@@ -129,8 +121,10 @@
 
 [rebase]
 	missingCommitsCheck = error
-	instructionFormat = "%s (%an)"
-	autosquash = yes
+	instructionFormat = "%s (%ar) %an"
+	autoSquash = yes
+
+	stat = yes
 
 [sendemail]
 	smtpEncryption = tls
