@@ -18,7 +18,7 @@ source $my_dotdir/keys
 
 unhook *
 folder-hook .     'set index_format="%3C %Z %@date@ %-20.20L%@attach@%s (%?l?%4l&%4c?)"'
-folder-hook feeds 'set index_format="%3C %Z %@date@ %-30.30y%@attach@%s'
+folder-hook feeds 'set index_format="%3C %Z %@date@ %-30.30L%@attach@%s'
 
 index-format-hook attach "~X>"	"  "
 index-format-hook attach "~A"	"   "
