@@ -188,7 +188,11 @@ function mutt() {
 	elif [[ -d cur ]]; then
 		args+=(-f .)
 	fi
-	command mutt -n $args $@
+	local term=$TERM
+	if [[ $term != linux ]]; then
+		term=screen-256color
+	fi
+	TERM=$term command mutt -n $args $@
 }
 
 function clean() {
