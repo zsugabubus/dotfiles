@@ -8,7 +8,7 @@ function send-break() {
 	unfunction send-break
 
 	read -z BUFFER
-	BUFFER=${(j: :)${(fq)BUFFER}}
+	BUFFER=${(j: :)${(fq-)BUFFER}}
 	zle redisplay
 }
 zle -N send-break
