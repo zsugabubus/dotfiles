@@ -12,6 +12,8 @@ color sidebar_new	brightcolor34	default
 color sidebar_divider	color253	default
 color sidebar_flagged	brightcolor235	color227
 
+color header		brightcolor33	default "^Link:"
+
 color index		brightcolor34	default	"~N|~O"
 color index		brightred	default	"~D"
 color index		brightcolor235	color227	"~F"

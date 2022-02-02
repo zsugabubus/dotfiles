@@ -1,18 +1,18 @@
-color status color233 color253
+color status	color233	color253
 
 # color sidebar_indicator brightcolor233 color251
 
-color header brightcolor202 default "^Date"
-color header brightcolor220 default "^From" # brightcolor255
-color header color220 default "^To"
-color header brightcolor154 default "^Subject"
+color header	brightcolor202	default "^Date:"
+color header	brightcolor220	default "^From:" # brightcolor255
+color header	color220	default "^To:"
+color header	brightcolor154	default "^Subject:"
 
 # Inline.
-color attach_headers color234       color251 "^\\[-- .*"
-color attach_headers brightcolor234 color251 "^\\[-- Attachment .*"
+# color attach_headers color234       color251 "^\\[-- .*"
+# color attach_headers brightcolor234 color251 "^\\[-- Attachment .*"
 
-color quoted  color48 default
-color quoted1 color220 default
-color quoted2 color202 default
-color quoted3 color82 default # 113
+color quoted	color48		default
+color quoted1	color220	default
+color quoted2	color202	default
+color quoted3	color82		default # 113
 # vim: ft=muttrc

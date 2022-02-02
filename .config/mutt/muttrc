@@ -8,9 +8,9 @@ source $my_dotdir/options
 # startup-hook check-stats
 
 ignore *
-unignore Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent:
+unignore Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent: Link:
 unhdr_order *
-hdr_order Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent:
+hdr_order Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent: Link:
 
 auto_view text/html text/x-diff
 unalternative_order *
