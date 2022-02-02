@@ -902,7 +902,7 @@ augroup vimrc_newfilemagic
 
 	" Auto chmod +x.
 	autocmd BufNewFile * autocmd BufWritePost <buffer> ++once
-			\ if getline(1)[:1] ==# '#!' || '#' ==# &commentstring[0]|
+			\ if getline(1)[:1] ==# '#!'|
 			\   silent! call system(['chmod', '+x', '--', expand('<afile>:p')])|
 			\ endif
 augroup END
