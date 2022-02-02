@@ -58,8 +58,10 @@ alias pm='progress -M'
 alias readelf='readelf -W'
 alias rm='rm -dI --one-file-system'
 alias tree='tree-color'
+alias utop='top -u $USER'
 alias vlock_all='nice -20 vlock -a'
 alias yt=yt-dlp
+alias zathura='zathura --fork'
 
 alias pl='pass login'
 compdef '_files -W ~/.config/passwords' pl
@@ -78,6 +80,19 @@ alias oct='od -tu1'
 alias term='$TERMINAL >/dev/null &disown'
 alias topp='() { top -p${^$(pidof $1)} }'
 alias upnp='upnpc -u "http://router.lan:5000/rootDesc.xml"'
+
+function meson() {
+	if (( !$# )); then
+		mkbuild
+		command meson build
+	else
+		command meson "$@"
+	fi
+}
+
+function rfc() {
+	curl -LOJ https://www.rfc-editor.org/rfc/rfc${1#rfc}.txt
+}
 
 function pc() {
 	python -qic 'from math import *'
@@ -127,6 +142,7 @@ alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
 alias mp='() { ( exec mpv --input-ipc-server=/tmp/mpv$$ 2>/dev/null --player-operation-mode=pseudo-gui ${*:-.} ) &! }'
 compdef mp=mpv_hack
+alias mp.='mp *(.)'
 alias mpm='() { eval mp "*(m-${1:-1}/)" }'
 compdef mpm=mpv_hack
 alias mpn='() { eval mp "*(.om[1,${1:-100}])" }'
@@ -213,7 +229,7 @@ function pdfmerge() {
 	command gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -sOutputFile="$out" ${@:-*.pdf}
 }
 
-function md() {
+function mkcd md() {
 	mkdir -p -- $1 && cd -- $1
 }
 
@@ -282,7 +298,7 @@ function flat() {
 
 alias cdtarget='() { cd ${~1:P}; }'
 compdef '_files -g "*(@-/)"' cdtarget
-alias rcd='() { (( $# > 0 )) && cd -- $1; while cd -- * 2>/dev/null; do :; done; }'
+alias cdcd='() { (( $# > 0 )) && cd -- $1; while cd -- * 2>/dev/null; do :; done; }'
 
 function sheep_pacman() {
 	# --noconfirm does ask confirmation for conflicting packages.
