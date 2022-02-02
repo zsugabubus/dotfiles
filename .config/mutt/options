@@ -44,4 +44,11 @@ set use_from
 set wait_key=no
 set display_filter="sed '/\\\[-- Autoview/d'"
 
+set my_reset_user='set realname=nobody from=nobody signature='
+# "sent" uses last configuration.
+folder-hook !sent $my_reset_user
+
+set my_reset_sendmail='set sendmail="/usr/bin/torsocks /usr/bin/msmtp"'
+folder-hook . $my_reset_sendmail
+
 # vim: ft=muttrc

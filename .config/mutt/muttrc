@@ -1,6 +1,8 @@
 # http://www.mutt.org/doc/manual/
 set my_dotdir=~/.config/mutt
 
+unhook *
+
 source $my_dotdir/options
 
 # startup-hook check-stats
@@ -16,7 +18,6 @@ alternative_order text/enriched text/plain text/html
 
 source $my_dotdir/keys
 
-unhook *
 folder-hook .     'set index_format="%3C %Z %@date@ %-20.20L%@attach@%s (%?l?%4l&%4c?)"'
 folder-hook feeds 'set index_format="%3C %Z %@date@ %-30.30L%@attach@%s'
 
@@ -30,13 +31,6 @@ index-format-hook date "~d<4d"	"%[3 days]"
 index-format-hook date "~d<1w"	"%[%a %H]"
 index-format-hook date "~d<y"	"%[%b %d]"
 index-format-hook date "~A"	"%[%y %b]"
-
-set my_reset_user='set realname=nobody from=nobody signature='
-# "sent" uses last configuration.
-folder-hook !sent $my_reset_user
-
-set my_reset_sendmail='set sendmail="/usr/bin/torsocks /usr/bin/msmtp"'
-folder-hook . $my_reset_sendmail
 
 source $my_dotdir/mailboxes.rc|
 source $my_dotdir/editor.rc|
