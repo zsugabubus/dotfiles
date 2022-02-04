@@ -74,7 +74,7 @@ augroup vimrc_statusline
 	autocmd VimEnter,WinEnter,BufWinEnter,FocusGained *
 		\ setlocal statusline=%(%#StatusLineModeTerm#%{'t'==mode()?'\ \ T\ ':''}%#StatusLineModeTermEnd#%{'t'==mode()?'\ ':''}%#StatusLine#%)|
 		\ setlocal statusline+=%(\ %{DebuggerDebugging()?'🦋🐛🐝🐞🐧🦠':''}\ %)|
-		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{Git().status}\ %)\ %)|
+		\ setlocal statusline+=%(%(\ %{!&diff&&argc()>#1?(argidx()+1).'\ of\ '.argc():''}\ %)%(\ \ %{GitBuffer().status}\ %)\ %)|
 		\ setlocal statusline+=%n:%f%h%w%{exists('b:gzflag')?'[GZ]':''}%r%(\ %m%)%k|
 		\ setlocal statusline+=%9*%<%(\ %{StatusLineRecentBuffers()}%)%#StatusLine#|
 		\ setlocal statusline+=%<%=|

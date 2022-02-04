@@ -620,12 +620,11 @@ function! s:git_status_on_bootstrap(data) abort dict
 endfunction
 
 " /usr/share/git/git-prompt.sh
-function! Git() abort
-	let bufname = bufname()
-	if 0 <=# match(bufname, '\v^[a-z]+://')
+function! Git(...) abort
+	let dir = get(a:000, 0, getcwd())
+	if 0 <=# match(dir, '\v^[a-z]+://')
 		return { 'status': '' }
 	endif
-	let dir = fnamemodify(bufname, ':p:h')
 	if !has_key(s:git, dir)
 		let s:git[dir] = {
 			\  'vcs': '',
@@ -660,6 +659,10 @@ function! Git() abort
 			\], s:git[dir])
 	endif
 	return s:git[dir]
+endfunction
+
+function! GitBuffer() abort
+	return Git(expand('%:h'))
 endfunction
 
 augroup vimrc_git
