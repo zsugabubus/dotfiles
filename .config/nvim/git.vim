@@ -532,12 +532,17 @@ endfunction
 
 function! s:git_status_on_bootstrap(data) abort dict
 	try
-		let [self.dir, self.bare, self.inside, self.cdup, self.head; _] = a:data + ['']
+		let [
+		\  self.dir, self.bare, self.inside, self.cdup, cdup2, self.head;
+		\_] = a:data + ['']
 	catch
 		return
 	endtry
 	let self.bare = self.bare ==# 'true'
 	let self.inside = self.inside ==# 'true'
+	if self.inside
+		let [self.cdup, self.head] = [simplify(self.cdup.'/..').'/', cdup2]
+	endif
 	let self.wd = simplify(self.wd.self.cdup)
 
 	let self.vcs = 'git'
@@ -644,11 +649,13 @@ function! Git() abort
 			\  's:git_status_on_bootstrap',
 			\  '-C', dir,
 			\  'rev-parse',
+			\  '--path-format=relative',
 			\  '--abbrev-ref',
 			\  '--absolute-git-dir',
 			\  '--is-bare-repository',
 			\  '--is-inside-git-dir',
 			\  '--show-cdup',
+			\  '--git-dir',
 			\  '@'
 			\], s:git[dir])
 	endif
