@@ -6,6 +6,7 @@ user_pref('accessibility.blockautorefresh', true);
 user_pref('accessibility.browsewithcaret_shortcut.enabled', false);
 user_pref('accessibility.warn_on_browsewithcaret', false);
 user_pref('app.normandy.enabled', false);
+user_pref('block_download_insecure', false);
 user_pref('browser.aboutHomeSnippets.updateUrl', '');
 user_pref('browser.cache.disk.enable', false);
 user_pref('browser.cache.memory.max_entry_size', 51200);
