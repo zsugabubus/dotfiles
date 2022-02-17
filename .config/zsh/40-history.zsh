@@ -23,7 +23,8 @@ function zshaddhistory() {
 	# 2: Internal history only.
 
 	typeset -a words=( ${(zA)1} )
-	if (( $#words == 1 )); then
+	# ( cmd ';' )
+	if (( $#words == 2 )); then
 		return 2
 	fi
 
