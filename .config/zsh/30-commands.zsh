@@ -504,38 +504,5 @@ function files() {
 }
 alias	files='noglob files'
 
-autoload -Uz ${:-$ZDOTDIR/Misc/*(.:t)}
-
-function command_not_found_handler() {
-	print -u2 -r "zsh: command not found: ${(q)1}.  This incident will be reported."
-	return 127
-}
-
-TIMEFMT='%J  %U user %S system %P cpu %*E total %MkB max %R faults'
-REPORTTIME=1
-
-alias -g There='~[here]'
-alias -g Tmux='~[tmux-pane]'
-
-typeset -g _ZSH_HERE_FILE=$XDG_RUNTIME_DIR/.zhere
-function here() {
-	print >$_ZSH_HERE_FILE -- $PWD
-	printf 'There=%q\n' There
-}
-
-add-zsh-hook -Uz zsh_directory_name tmux_directory_name
-add-zsh-hook -Uz zsh_directory_name here_directory_name
-
-DIRSTACKSIZE=10
-
-local function __zle-chpwd() {
-	(( __zfiles_active )) && return
-	dirs -v
-
-	# Auto-ls small directories only.
-	local -A stat
-	zstat -sNH stat -F '' -- . 2>/dev/null &&
-	(( ${stat[size]} <= 4096 )) &&
-	l
-}
-add-zsh-hook chpwd __zle-chpwd
+autoload -Uz ${:-$ZDOTDIR/Misc/*(N.:t)}
+source ${:-$ZDOTDIR/Plugins/*(N)}

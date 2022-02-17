@@ -71,6 +71,7 @@
 
 	s = status --ahead-behind --show-stash --branch
 	ss = status --short --branch
+	zsh-status = s --untracked=no
 
 	f = fetch
 
