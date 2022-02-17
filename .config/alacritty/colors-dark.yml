@@ -1,0 +1,17 @@
+import:
+  - ~/.config/alacritty/colors-light.yml
+
+colors:
+  primary:
+    background: '0x202230'
+    foreground: '0xcfcfcf'
+
+  normal:
+    green:   '0x2edd2e'
+    cyan:    '0x5ef0f1'
+    white:   '0xeaebef'
+
+  bright:
+    green:   '0x2edd2e'
+    cyan:    '0x5ef0f1'
+    white:   '0xfefeff'
