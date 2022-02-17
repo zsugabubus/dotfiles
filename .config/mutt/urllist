@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+from itertools import chain
+from urllib.parse import parse_qs, urlparse, urlencode
+import collections
+import email.policy
+import re
+import signal
+import sys
+
+URL_RE = r'(https?:)?//(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&/=]*)'
+URL_BLACKLIST_RE = '|'.join([
+	r'^http://(schemas\.|www\.w3\.org/|schema\.org/)',
+	r'//(preview|fonts|ssl|www\.gstatic)\.',
+	r'mailman/listinfo$',
+	r'/thumbnail/',
+	r'//[^/]*preview\.',
+	r'//[^/]*static\.[^/]*/',
+	r'/[a-z]*static/',
+])
+QPARAM_BLACKLIST = [
+	'amp',
+	'usp',
+	'utm_source',
+	'utm_medium',
+	'utm_campaign',
+	'at_medium',
+	'at_campaign',
+]
+
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+mail = email.message_from_binary_file(
+	sys.stdin.buffer,
+	policy=email.policy.default,
+)
+
+urls = collections.OrderedDict()
+
+for url in [
+	*(mail.get_all('Link') or []),
+	*[url.group(0) for url in re.finditer(URL_RE, mail.get_body(('html', 'plain')).get_content())]
+]:
+	url = urlparse(url, scheme='https')
+	query = parse_qs(
+		url.query,
+		keep_blank_values=True,
+	)
+
+	# Remove redirection.
+	for value in chain(*query.values()):
+		if value.startswith('http:') or value.startswith('https:'):
+			url = value
+			break
+	else:
+		for par in QPARAM_BLACKLIST:
+			try: del query[par]
+			except: pass
+		url = url._replace(query=urlencode(query, doseq=True))
+		url = url.geturl()
+		url = url.rstrip('.')
+
+	if re.search(URL_BLACKLIST_RE, url):
+		continue
+
+	if url not in urls:
+		urls[url] = True
+		print(url)

@@ -1,0 +1,8 @@
+#!/usr/bin/dash
+if url=$(
+	${0%/*}/urllist |
+	fzf --select-1 --bind 'space:jump-accept,+:accept'
+); then
+	printf %s "$url" |
+	xclip -i -selection clipboard
+fi
