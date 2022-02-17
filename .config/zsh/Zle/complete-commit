@@ -7,8 +7,8 @@ setopt err_return pipe_fail
 local commit
 
 commit=$(
-	git log-formatted --color=always |
-	fzf --ansi |
+	git log-formatted --reflog --color=always |
+	fzf --no-sort --ansi |
 	cut -d' ' -f1
 )
 
