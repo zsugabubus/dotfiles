@@ -37,13 +37,13 @@ set -g window-status-bell-style bold,fg=color196,bg=color221
 set -g window-status-separator ''
 
 set -g pane-border-style fg=color248
-set -g pane-border-format "#{pane_index} #W:#T"
+set -g pane-border-format "#{pane_index} #W:#T @ #{pane_tty}"
 set -g pane-active-border fg=color220
 set -g pane-active-border-style '#{@highlight}'
 
 set -g message-command-style bg=color254,fg=color250
-set -g message-style bg=color220,fg=color0
-set -g mode-style bg=color235,fg=color254
+set -g message-style bg=color220,fg=color236
+set -g mode-style bg=color220,fg=color236
 
 set -g copy-mode-match-style bg=#fdef39
 set -g copy-mode-current-match-style bg=#fdef39
@@ -79,22 +79,23 @@ set -ga terminal-overrides ",*:Tc" # True color.
 set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q' # Cursor shape.
 
 # 1}}}
+# Hooks {{{1
+set-hook -g after-split-window[1] { select-layout tiled }
+set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{window_panes},1},off,bottom}' }
+# 1}}}
 # Bindings {{{1
 unbind -a
 
 bind : command-prompt
+bind B set -g status
+bind d detach-client
 
 bind c new-window -a -t : -c "#{pane_current_path}"
-bind C-m new-window -a -t : -c "#{pane_current_path}"
 bind s split-window -c "#{pane_current_path}"
 bind C command-prompt -p '(new-session)' { new-session -s '%%' }
 
 bind C-p display-popup -E progress -M
 bind C-s display-popup -E ~/.config/heawm/quickstart
-
-bind t last-pane
-bind C-t last-window
-bind T switch-client -l
 
 bind $ command-prompt -I '#S' -p '(rename-session)' { rename-session -- '%%' }
 bind , command-prompt -I '#W' -p '(rename-window)' { rename-window -- '%%' }
@@ -106,33 +107,14 @@ bind C-c display-menu -T 'Kill' \
 	'CONT' c { run { ~/.config/tmux/scripts/kill '#{pane_tty}' CONT } } \
 	'KILL' K { run { ~/.config/tmux/scripts/kill '#{pane_tty}' KILL } } \
 
+bind t last-pane
+bind C-t last-window
+bind T switch-client -l
+
 bind h select-pane -L
 bind j select-pane -D
 bind k select-pane -U
 bind l select-pane -R
-
-bind H swap-pane -t '{left-of}'  \; select-pane -t '{left-of}'
-bind J swap-pane -t '{down-of}'  \; select-pane -t '{up-of}'
-bind K swap-pane -t '{up-of}'    \; select-pane -t '{down-of}'
-bind L swap-pane -t '{right-of}' \; select-pane -t '{right-of}'
-
-bind n next-window
-bind p previous-window
-bind '#' next-window -a
-
-bind f display-popup -E $SHELL -c ~/.config/tmux/scripts/find
-
-bind N swap-window -t :+1 \; next-window
-bind P swap-window -t :-1 \; previous-window
-
-bind ) switch-client -n
-bind ( switch-client -p
-
-bind ! display-menu -T 'Move' \
-	'swap pane'   'p' { display-panes -d 0 { swap-pane -t -- '%%' } } \
-	'break pane'  'b' { break-pane } \
-	'swap window' 'w' { command-prompt -1 -N -p 'swap-pane -t' { swap-pane -t ':=%%' ; select-pane -t ':=%%' } } \
-	'move'        'm' { command-prompt -T -p target { move-window -t '%%' } } \
 
 bind 0 select-window -t:=0
 bind 1 select-window -t:=1
@@ -145,23 +127,41 @@ bind 7 select-window -t:=7
 bind 8 select-window -t:=8
 bind 9 select-window -t:=9
 
-bind m select-pane -m
-bind z resize-pane -Z
+bind n next-window
+bind p previous-window
 
-bind w choose-tree -Zs
+bind H swap-pane -dt '{left-of}'
+bind J swap-pane -dt '{down-of}'
+bind K swap-pane -dt '{up-of}'
+bind L swap-pane -dt '{right-of}'
+
+bind N swap-window -dt :+1
+bind P swap-window -dt :-1
+
+bind ) switch-client -n
+bind ( switch-client -p
+
+bind f display-popup -E $SHELL -c ~/.config/tmux/scripts/find
+bind F choose-tree -Zs
+
+bind g display-menu -T 'Grab' \
+	'swap pane'   's' { display-panes -d 0 { swap-pane -dt '%%' } } \
+	'break pane'  'b' { break-pane } \
+	'move pane'   'j' { command-prompt -T -p target { move-pane -t '%%' } } \
+	'move window' 'm' { command-prompt -T -p target { move-window -t '%%' } } \
+
+bind "'" select-pane -m
+bind z resize-pane -Z
 
 bind ' ' next-layout
 
-set-hook -g after-split-window[1] { select-layout tiled }
-set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{window_panes},1},off,bottom}' }
-
 bind W if -F '#{@title}' \
-             'set -wu @title   ; set -w window-status-format "#{E:@window-status-format}"' \
-             'set -w  @title 1 ; set -w window-status-format "#{E:@window-status-format}#T"' \;\
-       set -w window-status-current-format "#{E:window-status-format}"
+	{ set -wu @title   ; set -w window-status-format "#{E:@window-status-format}" } \
+	{ set -w  @title 1 ; set -w window-status-format "#{E:@window-status-format}#T" } \;\
+	set -w window-status-current-format "#{E:window-status-format}"
 
-bind > send-keys -t home:muck C-m
-bind . send-keys -t home:muck c
+bind > send-keys -t :muck C-m
+bind . send-keys -t :muck c
 
 bind M if -F '#{!=:#{window_name},muck}' {
 	set -F @last_session "#{session_name}" ;
@@ -172,20 +172,34 @@ bind M if -F '#{!=:#{window_name},muck}' {
 	run-shell "tmux switch-client -t #{@last_session}"
 }
 
-bind b set -g status
-
 bind r source-file ~/.tmux.conf
 
-bind -T copy-mode-vi Escape send-keys -X cancel
+bind y copy-mode
+# bind Y choose-buffer { run-shell -b "tmux show-buffer -b '%%' | xclip -i" }
+bind / copy-mode \; send-keys ?
+bind C-u copy-mode \; send-keys -X halfpage-up
+bind v copy-mode \; send-keys -X begin-selection
+bind V copy-mode \; send-keys -X select-line
+bind e capture-pane -S - \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
 
-bind C-u copy-mode \; send-keys -X page-up
-bind / copy-mode \; send-key ?
-bind v capture-pane -S - \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
+bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+bind -T copy-mode-vi C-v send-keys -X rectangle-toggle
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi + \
+	send-keys -X copy-selection-and-cancel \;\
+	delete-buffer -b xclip_paste \;\
+	set-buffer -n xclip_paste \;\
+	run-shell -b "tmux show-buffer -b xclip_paste | xclip -silent -i -selection clipboard"
+
+bind a paste-buffer
+bind b choose-buffer
+bind C-l clear-history \; display-message "History cleared."
+
+bind * set -s @xclip_selection primary   \; source ~/.config/tmux/functions/xclip
+bind + set -s @xclip_selection clipboard \; source ~/.config/tmux/functions/xclip
 
 bind '~' set -w synchronize-panes
-bind a set -w monitor-activity \; if -F '#{monitor-activity}' 'last-window'
+bind m set -w monitor-activity \; if -F '#{monitor-activity}' 'last-window'
 
-bind d detach-client
 # 1}}}
-
 # vim: ft=tmux fdm=marker
