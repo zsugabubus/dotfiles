@@ -622,7 +622,7 @@ endfunction
 " /usr/share/git/git-prompt.sh
 function! Git(...) abort
 	let dir = get(a:000, 0, getcwd())
-	if 0 <=# match(dir, '\v^[a-z]+://')
+	if 0 <=# match(dir, '\v^[a-z]+://') || get(environ(), 'TMPDIR', '/tmp') ==# dir
 		return { 'status': '' }
 	endif
 	if !has_key(s:git, dir)
