@@ -10,24 +10,13 @@ enum layers {
   FUNC,
 };
 
-/* enum custom_keycodes {
-#ifdef ORYX_CONFIGURATOR
-  EPRM = EZ_SAFE_RANGE,
-#else
-  EPRM = SAFE_RANGE,
-#endif
-}; */
-
-// const uint16_t PROGMEM test_combo[] = {KC_A, KC_B, COMBO_END};
-// combo_t key_combos[COMBO_COUNT] = {COMBO(test_combo, KC_ESC)};
-
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [BASE] = LAYOUT_ergodox(
   KC_1,                 KC_2,         KC_3,           KC_4,           KC_5,         KC_6,          KC_NO,
   KC_GRV,               KC_Q,         KC_W,           LT(EXTN, KC_E), KC_R,         KC_T,          KC_NO,
   KC_ESC,               LCTL_T(KC_A), LALT_T(KC_S),   LGUI_T(KC_D),   LSFT_T(KC_F), LT(NUMP, KC_G),
-  KC_LSFT,              KC_Z,         KC_X,           LT(FUNC, KC_C), KC_V,         KC_B,          TG(EXTN),
-  KC_CAPS,              KC_NO,        KC_NO,          KC_RALT,        S(KC_Q),
+  KC_LSFT,              KC_Z,         KC_X,           LT(FUNC, KC_C), KC_V,         KC_B,          KC_NO,
+  KC_CAPS,              KC_NO,        KC_NO,          C(KC_K),        S(KC_Q),
                                                                    KC_APP, KC_LGUI,
                                                                              KC_NO,
                                                          KC_SPC, KC_NO, LGUI(KC_Z),
@@ -35,7 +24,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_NO,        KC_7, KC_8,         KC_9,              KC_0,         KC_MINS,         KC_EQL,
   KC_NO,        KC_Y, KC_U,         LT(EXTN, KC_I),    KC_O,         KC_P,            KC_LBRC,
                 KC_H, RSFT_T(KC_J), RGUI_T(KC_K),      LALT_T(KC_L), RCTL_T(KC_SCLN), KC_QUOT,
-  TG(MOUS),     KC_N, KC_M,         LT(MOUS, KC_COMM),           KC_DOT,       CTL_T(KC_SLSH),  KC_RSFT,
+  KC_NO,        KC_N, KC_M,         LT(MOUS, KC_COMM), KC_DOT,       CTL_T(KC_SLSH),  KC_RSFT,
                       KC_TAB,       KC_RALT,           KC_RBRC,      KC_NUHS,         KC_CAPS,
   KC_NO, KC_NO,
   KC_NO,
@@ -123,12 +112,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 };
 
-/* bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
-  }
-  return true;
-} */
-
 // Runs just one time when the keyboard initializes.
 void matrix_init_user(void) {
 };
@@ -150,26 +133,11 @@ layer_state_t layer_state_set_user(layer_state_t state) {
         break;
       case NUMP:
         ergodox_right_led_2_on();
-      // break;
-      // ergodox_right_led_3_on();
         break;
       case FUNC:
         ergodox_right_led_1_on();
         ergodox_right_led_2_on();
         break;
-//      case 5:
-//        ergodox_right_led_1_on();
-//        ergodox_right_led_3_on();
-//        break;
-//      case 6:
-//        ergodox_right_led_2_on();
-//        ergodox_right_led_3_on();
-//        break;
-//      case 7:
-//        ergodox_right_led_1_on();
-//        ergodox_right_led_2_on();
-//        ergodox_right_led_3_on();
-//        break;
       default:
         break;
     }
