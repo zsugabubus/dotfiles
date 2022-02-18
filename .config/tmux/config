@@ -59,7 +59,7 @@ set -g @prefix 'C-t'
 %endif
 
 set -g aggressive-resize on
-set -g bell-action other
+set -g bell-action server-other
 set -g clock-mode-style 24
 set -g default-command "$SHELL" # Disable login shells.
 set -g default-terminal "$TERM"
@@ -101,11 +101,11 @@ bind $ command-prompt -I '#S' -p '(rename-session)' { rename-session -- '%%' }
 bind , command-prompt -I '#W' -p '(rename-window)' { rename-window -- '%%' }
 
 bind C-c display-menu -T 'Kill' \
-	'INT'  i { run { ~/.config/tmux/scripts/kill '#{pane_tty}' INT  } } \
-	'STOP' s { run { ~/.config/tmux/scripts/kill '#{pane_tty}' TSTP } } \
-	'TERM' t { run { ~/.config/tmux/scripts/kill '#{pane_tty}' TERM } } \
-	'CONT' c { run { ~/.config/tmux/scripts/kill '#{pane_tty}' CONT } } \
-	'KILL' K { run { ~/.config/tmux/scripts/kill '#{pane_tty}' KILL } } \
+	'INT'  i { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' INT " } \
+	'STOP' s { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' TSTP" } \
+	'TERM' t { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' TERM" } \
+	'CONT' c { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' CONT" } \
+	'KILL' K { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' KILL" } \
 
 bind t last-pane
 bind C-t last-window
@@ -147,8 +147,8 @@ bind F choose-tree -Zs
 bind g display-menu -T 'Grab' \
 	'swap pane'   's' { display-panes -d 0 { swap-pane -dt '%%' } } \
 	'break pane'  'b' { break-pane } \
-	'move pane'   'j' { command-prompt -T -p target { move-pane -t '%%' } } \
-	'move window' 'm' { command-prompt -T -p target { move-window -t '%%' } } \
+	'move pane'   'j' { command-prompt -p target { move-pane -t '%%' } } \
+	'move window' 'm' { command-prompt -p target { move-window -t '%%' } } \
 
 bind "'" select-pane -m
 bind z resize-pane -Z
