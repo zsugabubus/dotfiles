@@ -41,7 +41,7 @@ function scroll(e)
 		end
 	elseif tile == 1 then
 		if scroll then
-			mp.commandv(up and 'playlist-next' or 'playlist-prev')
+			mp.commandv('script-message', up and 'playlist-next' or 'playlist-prev')
 		end
 		mp.commandv('script-message-to', 'osd_playlist', 'peek')
 	elseif tile == 2 or tile == 5 then

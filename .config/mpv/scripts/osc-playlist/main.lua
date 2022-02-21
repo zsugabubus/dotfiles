@@ -176,9 +176,7 @@ end
 function half_scroll(dir)
 	local nlines = get_height()
 	local pos = dir * math.floor((nlines + 1) / 2) + mp.get_property_number('playlist-pos')
-	pos = math.max(0, pos)
-	pos = math.min(mp.get_property_number('playlist-count') - 1, pos)
-	mp.set_property_number('playlist-pos', pos)
+	mp.commandv('script-message', 'playlist-pos', pos)
 end
 
 mp.add_key_binding('Ctrl+d', 'half-down', function() half_scroll(1) end)

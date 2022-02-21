@@ -17,6 +17,6 @@ mp.add_key_binding('Ctrl+o', 'playlist-older', function()
 		-- Pop current.
 		jumplist[#jumplist] = nil
 		local prev = jumplist[#jumplist]
-		mp.set_property_number('playlist-pos', prev)
+		mp.commandv('script-message', 'playlist-pos', prev)
 	end
 end)
