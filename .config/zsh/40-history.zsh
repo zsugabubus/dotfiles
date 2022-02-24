@@ -33,6 +33,15 @@ function zshaddhistory() {
 		return 1 ;;
 	man|zathura|where|which|license)
 		return 2 ;;
+	git)
+		# ( cmd [ git ] ';' )
+		if (( $#words <= 3 )); then
+			return 2
+		fi
+		case $words[2] in
+		show) return 2 ;;
+		esac
+		;;
 	esac
 
 	return 0
