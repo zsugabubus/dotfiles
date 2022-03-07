@@ -18,8 +18,8 @@ alternative_order text/enriched text/plain text/html
 
 source $my_dotdir/keys
 
-folder-hook .     'set index_format="%3C %Z %@date@ %-20.20L%@attach@%s (%?l?%4l&%4c?)"'
-folder-hook feeds 'set index_format="%3C %Z %@date@ %-30.30L%@attach@%s'
+folder-hook .     'set index_format="%3C %Z %@date@ %-20.20L%@attach@%s (%?l?%4l&%4c?)%@label@"'
+folder-hook feeds 'set index_format="%3C %Z %@date@ %-20.20L%@attach@%s%@label@"'
 
 index-format-hook attach "~X>"	"  "
 index-format-hook attach "~A"	"   "
@@ -31,6 +31,8 @@ index-format-hook date "~d<4d"	"%[3 days]"
 index-format-hook date "~d<1w"	"%[%a %H]"
 index-format-hook date "~d<y"	"%[%b %d]"
 index-format-hook date "~A"	"%[%y %b]"
+
+index-format-hook label "~A"	"%?Y? {%Y}?"
 
 source $my_dotdir/mailboxes.rc|
 source $my_dotdir/editor.rc|
