@@ -1,31 +1,16 @@
 local Mode = require('mode')
 local utils = require('mp.utils')
 
-function cycle_values(property, values)
+local script_opts = mp.command_native({'expand-path', '~~/script-opts'})
+local scripts = mp.command_native({'expand-path', '~~/scripts'})
+
+function cycle_values(property, opts_file)
 	local options = require('mp.options')
 	local osd = require('osd')
 
+	local mode
+	local values
 	local visible = false
-
-	local keys = {
-		q={'quit', function()
-			visible = false
-			update_menu()
-		end},
-		ESC='q',
-		['other']={'select'},
-	}
-	for _, x in ipairs(values) do
-		local key, value = unpack(x)
-		keys[key] =
-			function()
-				mp.commandv('osd-msg-bar', 'set', property, value)
-				visible = false
-				update_menu()
-			end
-	end
-
-	local mode = Mode(keys)
 
 	local function _update()
 		mp.unregister_idle(_update)
@@ -67,10 +52,33 @@ function cycle_values(property, values)
 		mp.unobserve_property(update)
 
 		if visible then
+			values  = dofile(script_opts .. '/' .. opts_file)
+
+			local keys = {
+				q={'quit', function()
+					visible = false
+					update_menu()
+				end},
+				ESC='q',
+				['other']={'select'},
+			}
+			for _, x in ipairs(values) do
+				local key, value = unpack(x)
+				keys[key] =
+					function()
+						mp.commandv('osd-msg-bar', 'set', property, value)
+						visible = false
+						update_menu()
+					end
+			end
+
+			mode = Mode(keys)
 			mp.observe_property(property, nil, update)
 			mode:add_key_bindings()
 		else
 			mode:remove_key_bindings()
+			mode = nil
+			values = nil
 			osd:remove()
 		end
 	end
@@ -81,14 +89,10 @@ function cycle_values(property, values)
 	end)
 end
 
-local script_opts = mp.command_native({'expand-path', '~~/script-opts'})
-local scripts = mp.command_native({'expand-path', '~~/scripts'})
-
 for _, file in pairs(utils.readdir(script_opts, 'files')) do
 	local property, a, b = file:match('^prop%-(.*)%.lua$')
 	if property ~= nil then
-		local values = dofile(script_opts .. '/' .. file)
-		cycle_values(property, values)
+		cycle_values(property, file)
 	end
 end
 
