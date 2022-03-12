@@ -47,21 +47,6 @@ mouse_bindings:
 
 # showkeys
 key_bindings:
-  - { key: Tab, mods: Control, chars: "\x14\x14" } # ^Tab -> ^T^T
-  - { key: 16, mods: Control | Shift, chars: "\x14" } # ^: -> ^T
-
   - { key: Equals, mods: Control, action: ResetFontSize }
 
-  - { key: 183, mods: Control, chars: "\x1b[25;5~" }
-  - { key: 184, mods: Control, chars: "\x1b[11;6~" }
-
-  # http://aperiodic.net/phil/archives/Geekery/term-function-keys.html
-  - { key: 183, chars: "\x1b[25~" }
-  - { key: 184, chars: "\x1b[26~" }
-  - { key: 185, chars: "\x1b[28~" }
-  - { key: 186, chars: "\x1b[29~" }
-  - { key: 187, chars: "\x1b[31~" }
-  - { key: 188, chars: "\x1b[32~" }
-  - { key: 189, chars: "\x1b[33~" }
-  - { key: 190, chars: "\x1b[34~" }
-  # - { key: Return, mods: Shift, action: SpawnNewInstance }
+  - { key: Tab, mods: Control, chars: "\x14\x14" } # ^Tab -> ^T^T
