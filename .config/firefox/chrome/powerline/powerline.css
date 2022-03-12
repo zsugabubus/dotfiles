@@ -16,12 +16,13 @@
 	--focus-outline-width: 0 !important;
 }
 
-#window-controls {
-	display: none;
+.titlebar-buttonbox-container {
+	display: none !important;
 }
 
 .tab-label-container {
 	mask-image: linear-gradient(to left, transparent, #000 1em) !important;
+	height: unset !important;
 }
 
 .tab-close-button,
@@ -80,17 +81,13 @@
 	border-top: 0 !important;
 	box-shadow: none !important;
 	margin: 0 !important;
+	border: none !important;
 }
 
 #TabsToolbar .tab-background > .tab-bottom-line {
 	position: absolute;
 	width: 100%;
 	bottom: 0;
-}
-
-#TabsToolbar .tab-background::before {
-	display: inline-block !important;
-	transform: translate(0, -1.5px);
 }
 
 #TabsToolbar .tab-stack {
@@ -352,6 +349,10 @@ toolbarbutton:hover > .toolbarbutton-badge-stack {
 	min-height: unset !important;
 }
 
+#urlbar-input {
+	mask-image: none !important;
+}
+
 #urlbar-go-button,
 #search-go-button {
 	display: none !important;
@@ -449,7 +450,7 @@ moz-input-box *::selection {
 	color: var(--bar-badge-background) !important;
 	content: '';
 	line-height: 0;
-	transform: translate(100%, -0.5px);
+	transform: translate(calc(100% - .5px), 0px);
 	top: 50%;
 	right: 0;
 }
