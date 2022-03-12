@@ -36,16 +36,14 @@ fi
 if [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
 	content=${match[1]}
 
-	if [[ $content =~ '^https?://.*\.patch$' ]]; then
-		if [[ -z $BUFFER ]]; then
-			# Patch.
-			LBUFFER="curl -L ${(q-)content} | git apply"
-			return
-		fi
-	elif [[ -z $BUFFER && $content =~ '^https?://(((www.)?youtube.com|youtu.be)/|.*\.(mp[0-9]|gifv?|webm|m3u8|og[av])(\?.*)?$)' ]]; then
-		if [[ -z $BUFFER ]]; then
-			LBUFFER="mp"
-		fi
+	if [[ -z $BUFFER && $content =~ '^https?://.*\.patch$' ]]; then
+		LBUFFER="curl -L ${(q-)content} | git apply"
+		return
+	elif [[ -z $BUFFER && $content =~ '^https?://((www.)?youtube.com|youtu.be)/' ]]; then
+		[[ $PWD = ~ ]] && cd -- ~m
+		LBUFFER=" yt-dlp"
+	elif [[ -z $BUFFER && $content =~ '^https?://.*\.(mp[0-9]|gifv?|webm|m3u8|og[av])(\?.*)?$' ]]; then
+		LBUFFER=" mp"
 	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
 		content="https://raw.githubusercontent.com/${match[1]}/${match[2]}"
 		if [[ -z $BUFFER ]]; then
