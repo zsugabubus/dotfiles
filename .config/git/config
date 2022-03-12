@@ -40,14 +40,15 @@
 	st = stash push
 	sp = stash pop
 
-	log-formatted = log --no-merges --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
-	l = log-formatted --graph
+	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
+	l = log-formatted
+	lg = log-formatted --graph
 	lu = l @{upstream}
 	lud = l @...@{upstream}
 	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
 	log-vim = l
 	la = l --all --full-history
-	ll = log --date=relative --graph --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
+	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
 	lp = ll --patch --stat
 	lf = log --follow --patch
 
