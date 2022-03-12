@@ -21,9 +21,11 @@ for i ({0..9}) alias -- -$i=cd\ -$i
 alias a=aria2t
 alias abduco='ABDUCO_SOCKET_DIR=$XDG_RUNTIME_DIR abduco'
 alias am='alsamixer'
+alias ca='remind -mc+3 -@2,1 ~c/remind/cal.rem'
 alias cal='cal -m'
 alias cp='cp -i'
 alias curl='noglob curl --compressed'
+alias curltor='curl -x socks5h://127.1:9050'
 alias d='dirs -v'
 alias df='df -h'
 alias diff='diff --color=auto'
@@ -90,6 +92,11 @@ function meson() {
 	fi
 }
 
+function ping() {
+	(( !$# )) && set 1.1.1.1
+	command ping "$@"
+}
+
 function rfc() {
 	curl -LOJ https://www.rfc-editor.org/rfc/rfc${1#rfc}.txt
 }
@@ -104,7 +111,8 @@ function oz() {
 }
 
 function mktarget() {
-	mkdir -p -- $@:P
+	local args=( ${@:-*(-@)} )
+	mkdir -p -- $args:P
 }
 
 function mkbuild() {
@@ -298,7 +306,14 @@ function flat() {
 
 alias cdtarget='() { cd ${~1:P}; }'
 compdef '_files -g "*(@-/)"' cdtarget
-alias cdcd='() { (( $# > 0 )) && cd -- $1; while cd -- * 2>/dev/null; do :; done; }'
+
+compdef '_files -g "*(/)"' Cd
+function Cd() {
+	(( $# )) && cd -- $1
+	while cd -- *(/) 2>/dev/null; do
+		:
+	done
+}
 
 function sheep_pacman() {
 	# --noconfirm does ask confirmation for conflicting packages.
@@ -412,6 +427,65 @@ function M() {
 	bwsh
 }
 
+local function unshare-all() {
+	bwrap \
+		--unshare-all \
+		--new-session \
+		--clearenv \
+		--die-with-parent \
+		--as-pid-1 \
+		--tmpfs / \
+		--hostname host \
+		--ro-bind /bin /bin \
+		--ro-bind /lib /lib \
+		--ro-bind /lib64 /lib64 \
+		--ro-bind /usr /usr \
+		--ro-bind /etc/ssl /etc/ssl \
+		--ro-bind /etc/ca-certificates /etc/ca-certificates \
+		--ro-bind /etc/hosts /etc/hosts \
+		--ro-bind /etc/host.conf /etc/host.conf \
+		--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
+		--ro-bind /etc/resolv.conf /etc/resolv.conf \
+		--tmpfs /tmp \
+		--dir /home/user \
+		--chdir /home/user \
+		--setenv HOME /home/user \
+		"$@"
+}
+
+function npm_global_bin() {
+	emulate -L zsh
+	setopt err_return
+
+	local npm_home=~/.cache/npm_global_bin
+	local pkg_name=$1 pkg_bin=$2
+	shift 2
+
+	if [[ ! -d $npm_home ]]; then
+		mkdir -- $npm_home
+	fi
+
+	if [[ ! -e $npm_home/node_modules/.bin/$pkg_bin ]]; then
+		unshare-all <&- >/dev/null \
+			--share-net \
+			--bind $npm_home /home/user \
+			npm install $pkg_name
+	fi
+
+	unshare-all \
+		--ro-bind $npm_home /home/user \
+		node_modules/.bin/$pkg_bin $@
+}
+
+function npm_js-beautify() {
+	npm_global_bin js-beautify js-beautify $@
+}
+function js-beautify() {
+	local out=${1:r}.beautified.${1:e}
+	npm_js-beautify -t --type $1:e -w 120 - <$1 >$out &&
+	rm -i -- $1
+}
+
 function print_composekeys() {
 	less "/usr/share/X11/locale/$(grep --max-count=1 "${LANG%.*}.UTF-8\$" /usr/share/X11/locale/locale.dir | cut -d/ -f1)/Compose"
 }
@@ -422,8 +496,24 @@ function rs() {
 	redshift -b 0.$1 -o
 }
 
-alias t="tmux attach"
-alias tn="tmux new -s \$PWD:t"
+alias t='tmux attach'
+function tn() {
+	local session=$PWD:t
+	[[ $PWD == $HOME ]] && session=home
+	tmux new -s "$session"
+}
+
+function oom_adj() {
+	(
+		case $1 in
+		[0-9]*) ;;
+		*) set -- 1000 "$@" ;;
+		esac
+		printf %d "$1" >/proc/$$/oom_score_adj
+		shift
+		exec "$@"
+	)
+}
 
 alias pub=publish
 function publish() {
