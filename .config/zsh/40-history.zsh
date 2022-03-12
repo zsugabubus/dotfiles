@@ -28,10 +28,10 @@ function zshaddhistory() {
 		return 2
 	fi
 
-	case ${words[1]} in
+	case $words[1] in
 	rm|rmdir|poweroff|reboot|exit|run-help)
 		return 1 ;;
-	man|zathura|where|which|license)
+	man|zathura|where|which|license|emv|eln|sdir|vidir)
 		return 2 ;;
 	git)
 		# ( cmd [ git ] ';' )
