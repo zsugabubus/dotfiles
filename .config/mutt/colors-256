@@ -2,7 +2,7 @@
 
 color indicator		brightcolor233	color214
 # color progress		color235	color112
-color search		color227	color227
+color search		color232	color226
 color signature		white		default
 color tilde		color250	default
 color tree		color197	default
@@ -13,6 +13,7 @@ color sidebar_divider	color253	default
 color sidebar_flagged	brightcolor235	color227
 
 color header		brightcolor33	default "^Link:"
+color header		brightcolor214	default "^X-Category:"
 
 color index		brightcolor34	default	"~N|~O"
 color index		brightred	default	"~D"
