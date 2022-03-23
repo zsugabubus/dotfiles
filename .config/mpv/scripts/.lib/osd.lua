@@ -52,6 +52,23 @@ function Osd:draw_rect_wh(x, y, width, height)
 	self:draw_rect(x, y, x + width, y + height)
 end
 
+local function deg2rad(angle)
+	return angle / 180 * math.pi
+end
+
+local function xy_offset(x, y, angle, length)
+	angle = deg2rad(angle)
+	return
+		x + math.cos(angle) * length,
+		y - math.sin(angle) * length
+end
+
+function Osd:draw_triangle(x, y, a0, l0, a1, l1)
+	self:draw_move(x, y)
+	self:draw_line(xy_offset(x, y, a0, l0))
+	self:draw_line(xy_offset(x, y, a1, l1))
+end
+
 function Osd:update()
 	self.data = table.concat(self.data)
 	return getmetatable(Osd).update(self)
