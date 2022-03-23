@@ -9,7 +9,7 @@ local TRACK_FLAGS = {
 
 local Mode = require('mode')
 local options = require('mp.options')
-local osd = require('osd')
+local osd = require('osd').new()
 
 local visible = false
 local current = 'video'

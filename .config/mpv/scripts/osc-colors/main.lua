@@ -8,7 +8,7 @@ local OPTIONS = {
 
 local Mode = require('mode')
 local options = require('mp.options')
-local osd = require('osd')
+local osd = require('osd').new()
 local utils = require('mp.utils')
 
 local visible = false

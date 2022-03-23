@@ -6,7 +6,7 @@ local scripts = mp.command_native({'expand-path', '~~/scripts'})
 
 function cycle_values(property, opts_file)
 	local options = require('mp.options')
-	local osd = require('osd')
+	local osd = require('osd').new()
 
 	local mode
 	local values

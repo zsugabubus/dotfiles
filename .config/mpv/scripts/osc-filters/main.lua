@@ -1,6 +1,6 @@
 local Mode = require('mode')
 local options = require('mp.options')
-local osd = require('osd')
+local osd = require('osd').new()
 local utils = require('mp.utils')
 
 local script_opts = mp.command_native({'expand-path', '~~/script-opts'})

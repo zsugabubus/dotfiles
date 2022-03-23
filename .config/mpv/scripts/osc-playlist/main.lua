@@ -1,7 +1,7 @@
 local HORIZONTAL_ELLIPSIS = '\226\128\166'
 
 local options = require('mp.options')
-local osd = require('osd')
+local osd = require('osd').new()
 
 local visible = false
 local title_cache = {}

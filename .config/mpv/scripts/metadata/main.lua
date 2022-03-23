@@ -1,5 +1,5 @@
 local options = require('mp.options')
-local osd = require('osd')
+local osd = require('osd').new()
 
 local opts = {
 	font_scale = 0.65,

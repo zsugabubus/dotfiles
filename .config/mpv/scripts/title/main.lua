@@ -1,4 +1,4 @@
-local osd = require('osd')
+local osd = require('osd').new()
 local visible = false
 
 osd.z = 10
