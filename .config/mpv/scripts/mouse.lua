@@ -1,19 +1,4 @@
---[[ local opts = {
-	max_speed = 3
-}
-
-local change_speed = false
-function speedway()
-	if change_speed then
-		return
-	end
-	local pos = mp.get_property_native('mouse-pos')
-	local w = mp.get_osd_size()
-	local speed = 1 + opts.max_speed * pos.x / w
-	mp.set_property_number('speed', speed)
-end ]]
-
-function get_tile()
+local function get_tile()
 	local pos = mp.get_property_native('mouse-pos')
 	local w, h = mp.get_osd_size()
 	-- 0 1 2
@@ -24,7 +9,7 @@ function get_tile()
 		math.floor(pos.x * 3 / w)
 end
 
-function scroll(e)
+local function scroll(e)
 	local scroll = e.key_name:find('WHEEL_') ~= nil
 
 	-- "down" on X, "press" on Wayland.
@@ -51,10 +36,22 @@ function scroll(e)
 			mp.commandv('osd-msg-bar', 'set', 'volume', 100)
 		end
 	elseif scroll and tile == 6 then
-		mp.commandv('seek', (up and 1 or -2) * (small and 1 or 3), 'exact')
+		mp.commandv(
+			'script-message-to',
+			'osc_bar',
+			'seek',
+			(up and 1 or -2) * (small and 1 or 3),
+			'exact'
+		)
 	else
 		if scroll then
-			mp.commandv('osd-msg-bar', 'seek', (up and 2 or -1) * (small and 5 or 15), 'exact')
+			mp.commandv(
+				'script-message-to',
+				'osc_bar',
+				'seek',
+				(up and 2 or -1) * (small and 5 or 15),
+				'exact'
+			)
 		end
 	end
 end
