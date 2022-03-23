@@ -25,6 +25,33 @@ function Osd:append(...)
 	end
 end
 
+function Osd:draw_begin()
+	self:append('{\\p1}')
+end
+
+function Osd:draw_end()
+	self:append('{\\p0}')
+end
+
+function Osd:draw_move(x, y)
+	self:append('m ', x, ' ', y, ' ')
+end
+
+function Osd:draw_line(x, y)
+	self:append('l ', x, ' ', y, ' ')
+end
+
+function Osd:draw_rect(x0, y0, x1, y1)
+	self:draw_move(x0, y0)
+	self:draw_line(x1, y0)
+	self:draw_line(x1, y1)
+	self:draw_line(x0, y1)
+end
+
+function Osd:draw_rect_wh(x, y, width, height)
+	self:draw_rect(x, y, x + width, y + height)
+end
+
 function Osd:update()
 	self.data = table.concat(self.data)
 	return getmetatable(Osd).update(self)
