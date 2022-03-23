@@ -1,4 +1,5 @@
 return {
+	{'n', 'null'},
 	{'a', 'auto'},
 	{'b', 'alsa/bt'},
 	{'d', 'alsa/default'},
