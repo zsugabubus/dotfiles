@@ -1,4 +1,5 @@
 local osd = require('osd').new()
+local title = require('title')
 local visible = false
 
 osd.z = 10
@@ -10,23 +11,8 @@ function _update()
 	osd.data = {}
 
 	osd:append('\n{\\an2', style)
-	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
-	local title = mp.get_property_native('metadata/by-key/Title', nil) or
-	              mp.get_property_native('media-title', nil)
 
-	if artist and title then
-		local version = mp.get_property_native('metadata/by-key/Version', nil)
-
-		osd:append(osd.ass_escape(artist), ' - ', '{\\b1}', osd.ass_escape(title), '{\\b0}')
-
-		if version then
-			osd:append(' (', osd.ass_escape(version), ')')
-		end
-	elseif title then
-		osd:append(osd.ass_escape(title))
-	else
-		osd:append(osd.ass_escape(mp.get_property_native('path')))
-	end
+	osd:append(title.get_current(osd))
 
 	for _, track in ipairs(mp.get_property_native('track-list')) do
 		if not track.selected then
@@ -77,6 +63,7 @@ mp.add_key_binding('T', 'show-title', function()
 		mp.observe_property('video-params', nil, update)
 		mp.observe_property('audio-params', nil, update)
 	else
+		title.flush_cache()
 		mp.unregister_event(update)
 		osd:remove()
 	end

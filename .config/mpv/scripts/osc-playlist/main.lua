@@ -1,10 +1,8 @@
-local HORIZONTAL_ELLIPSIS = '\226\128\166'
-
 local options = require('mp.options')
+local title = require('title')
 local osd = require('osd').new()
 
 local visible = false
-local title_cache = {}
 
 local opts = {
 	font_scale = 0.65,
@@ -30,55 +28,6 @@ local function get_height()
 	local nlines = math.floor(playlist_y / scaled_font_size) - 1
 
 	return nlines, font_size + (playlist_y - nlines * scaled_font_size) / 2
-end
-
-local function sub_hex2str(x)
-	return string.char(tonumber(x, 16))
-end
-
-local function get_display_title(item)
-	local s = item.title
-	if not s then
-		s = title_cache[item.filename]
-		if s ~= nil then
-			return s
-		end
-
-		s = item.filename:gsub('^./', '')
-
-		if 80 < #s then
-			s = s:gsub('/.*/', '/' .. HORIZONTAL_ELLIPSIS .. '/')
-		end
-
-		local orig = s
-		-- Encodes a multi-byte character.
-		if s:match('_%x%x_%x%x') then
-			s = s:gsub('_(%x%x)', sub_hex2str)
-		end
-		if s == orig then
-			-- Find potential space replacement.
-			local space, space_count = ' ', 0
-			if not s:find(space) then
-				for _, fake_space in pairs({'%.', '-', '%_'}) do
-					local count = select(2, s:gsub(fake_space, ''))
-					if space_count < count then
-						space, space_count = fake_space, count
-					end
-				end
-			end
-			s = s:gsub(space, ' ')
-		end
-
-		s = s
-			-- Hehh.
-			:gsub(' [0-9]+p[^/]*', '')
-			:gsub(' [1-9][0-9][0-9][0-9] [A-Za-z0-9][^/]', '')
-			-- Trim extension.
-			:gsub('([^/])%.[0-9A-Za-z]+$', '%1')
-
-		title_cache[item.filename] = s
-	end
-	return s
 end
 
 local function _update()
@@ -125,7 +74,7 @@ local function _update()
 
 	for i=from,to do
 		local item = playlist[i]
-		local display = osd.ass_escape(get_display_title(item))
+		local display = title.get_playlist_entry(item)
 		osd:append(ass_style[item.current or false], display)
 	end
 
@@ -163,7 +112,7 @@ function handle_message(action)
 		mp.observe_property('playlist', nil, update)
 		mp.observe_property('playlist-pos', nil, update)
 	else
-		title_cache = {}
+		title.flush_cache()
 		mp.unobserve_property(update)
 		osd:remove()
 	end

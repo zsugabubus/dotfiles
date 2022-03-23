@@ -1,1 +1,1 @@
-../osd.lua
+../.lib/osd.lua

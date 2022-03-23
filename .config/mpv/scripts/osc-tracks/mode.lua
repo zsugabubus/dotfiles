@@ -1,1 +1,1 @@
-../mode.lua
+../.lib/mode.lua
