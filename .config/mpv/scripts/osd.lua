@@ -58,8 +58,12 @@ function Osd:update()
 end
 
 function Osd.ass_escape(s)
-	-- ASS' escape handling is WTF, so we just place ZWJ after RSs.
-	local x = s:gsub('\n', ' '):gsub('\\', '\\\239\187\191')
+	local x = s
+		-- ASS' escape handling is WTF: RS cannot be escaped with RS so we trick it
+		-- by using ZWJ.
+		:gsub('\\', '\\\239\187\191')
+		:gsub('{', '\\{')
+		:gsub('\n', '\\N')
 	return x
 end
 
