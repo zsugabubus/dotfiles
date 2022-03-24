@@ -57,3 +57,16 @@
 		display: none !important;
 	}
 }
+
+@-moz-document domain('translate.yandex.com') {
+	#themePromo {
+		display: none;
+	}
+}
+
+@-moz-document domain('www.startpage.com') {
+	/* Much better. */
+	[class*=-banner] {
+		display: none !important;
+	}
+}
