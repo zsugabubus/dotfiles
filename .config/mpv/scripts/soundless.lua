@@ -14,6 +14,7 @@ end
 
 function update()
 	osd.data = {}
+	osd.z = 100
 
 	if mp.get_property_bool('pause') then
 		table.insert(osd.data, icon('10', 4, '\238\128\130'))
