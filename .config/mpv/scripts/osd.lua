@@ -67,10 +67,4 @@ function Osd.ass_escape(s)
 	return x
 end
 
-function Osd.ass_escape_lines(s)
-	return s:gsub('([^\n]*)\n', function(m)
-		return Osd.ass_escape(m) .. '\\N'
-	end)
-end
-
 return Osd

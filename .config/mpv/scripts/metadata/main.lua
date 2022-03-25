@@ -33,7 +33,7 @@ local function _update()
 
 	local any = false
 	for _, x in pairs(o) do
-		osd:append('{\\b1}', osd.ass_escape(x[1]), '{\\b0}: ', osd.ass_escape_lines(x[2]), '\\N')
+		osd:append('{\\b1}', osd.ass_escape(x[1]), '{\\b0}: ', osd.ass_escape(x[2]), '\\N')
 		any = true
 	end
 
