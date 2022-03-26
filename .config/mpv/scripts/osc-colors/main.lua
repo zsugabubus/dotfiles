@@ -17,8 +17,6 @@ local current = OPTIONS[1].option
 local script_opts = mp.command_native({'expand-path', '~~/script-opts'})
 local PRESETS = select(2, pcall(dofile, script_opts .. '/color-presets.lua')) or {
 	{name='(none)'},
-	{name='tv', b=2, c=3, g=3, s=3},
-	{name='movie',  b=0, c=27, g=2, s=11},
 }
 
 local ignore_once, file_loaded = true, false
