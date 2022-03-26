@@ -84,12 +84,16 @@ function get_current()
 			'playlist/' .. mp.get_property_native('playlist-pos')
 		)
 		if
-			current and
-			title == current.filename:gsub('^.*/', '')
+			current and (
+				not title or
+				title == current.filename:gsub('^.*/', '')
+			)
 		then
 			return get_playlist_entry(current)
-		else
+		elseif title then
 			return Osd.ass_escape(title)
+		else
+			return
 		end
 	end
 end
