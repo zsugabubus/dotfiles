@@ -116,18 +116,16 @@ local keys = {
 	end},
 	j='DOWN',
 	k='UP',
-	['Shift+UP']={'select type', function()
-		current = ({video='sub', audio='video', sub='audio'})[current]
-		update()
-	end},
 	['Shift+DOWN']={'select type', function()
 		current = ({video='audio', audio='sub', sub='video'})[current]
 		update()
 	end},
-	LEFT='Shift+UP',
-	RIGHT='Shift+DOWN',
-	h='LEFT',
-	l='RIGHT',
+	['Shift+UP']={'select type', function()
+		current = ({video='sub', audio='video', sub='audio'})[current]
+		update()
+	end},
+	J='Shift+DOWN',
+	K='Shift+UP',
 	TAB='Shift+DOWN',
 	['Shift+TAB']='Shift+UP',
 	q={'quit', function()
