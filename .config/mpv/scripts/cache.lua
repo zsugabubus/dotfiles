@@ -16,7 +16,6 @@ end)
 -- Ensure that we have at least as much bytes available forward than as
 -- backward, so seeking back in a live stream does not accidentally stop
 -- reading it.
-mp.observe_property('demuxer-max-back-bytes', nil, function()
-	mp.set_property_number('demuxer-max-bytes',
-		2 * mp.get_property_number('demuxer-max-back-bytes'))
+mp.observe_property('demuxer-max-back-bytes', 'number', function(_, value)
+	mp.set_property_number('demuxer-max-bytes', 2 * value)
 end)
