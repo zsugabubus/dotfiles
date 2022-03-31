@@ -85,9 +85,12 @@ function update()
 	mp.register_idle(_update)
 end
 
-local timeout = mp.add_timeout(mp.get_property_number('osd-duration') / 1000, function()
-	handle_message('toggle')
-end)
+local timeout = mp.add_timeout(
+	mp.get_property_number('osd-duration') / 1000,
+	function()
+		handle_message('toggle')
+	end
+)
 timeout:kill()
 
 function handle_message(action)
@@ -95,11 +98,17 @@ function handle_message(action)
 
 	local temporary = false
 	if action == 'show' or action == 'peek' then
-		temporary = action == 'peek' and (not visible or timeout:is_enabled())
+		temporary = action == 'peek' and (
+			not visible or
+			timeout:is_enabled()
+		)
 		visible = true
 	elseif action == 'hide' then
 		visible = false
-	elseif action == 'toggle' or action == 'blink' then
+	elseif
+		action == 'toggle' or
+		action == 'blink'
+	then
 		visible = not visible
 		temporary = action == 'blink'
 	end
@@ -119,12 +128,15 @@ function handle_message(action)
 end
 
 for _, action in pairs({'show', 'peek', 'hide', 'toggle', 'blink'}) do
-	mp.register_script_message(action, function() handle_message(action) end)
+	mp.register_script_message(action, function()
+		handle_message(action)
+	end)
 end
 
 function half_scroll(dir)
 	local nlines = get_height()
-	local pos = dir * math.floor((nlines + 1) / 2) + mp.get_property_number('playlist-pos')
+	local pos = mp.get_property_number('playlist-pos')
+	pos = pos + dir * math.floor((nlines + 1) / 2)
 	mp.commandv('script-message', 'playlist-pos', pos)
 end
 
