@@ -1,39 +1,32 @@
 local Mode = {}
 
-function Mode:add_key_bindings()
-	for key, fn in pairs(self.key_bindings) do
-		while type(fn) ~= 'function' do
-			if not fn then
-				-- May have help text only.
-				goto no_binding
-			elseif type(fn) == 'table' then
-				fn = fn[2]
-			else
-				fn = self.key_bindings[fn]
-			end
+local COMPLEX = {complex=true}
+local HELP_KEY_BINDINGS = {'?', 'F1'}
+
+local function add_key_binding(self, key, fn)
+	while type(fn) ~= 'function' do
+		if not fn then
+			-- May have help text only.
+			return
+		elseif type(fn) == 'table' then
+			fn = fn[2]
+		else
+			fn = self.key_bindings[fn]
 		end
-
-		mp.add_forced_key_binding(key, 'mode/' .. key, function(e)
-			if e.event == 'down' or e.event == 'repeat' then
-				fn()
-			end
-		end, {complex=true})
-
-		::no_binding::
 	end
+
+	mp.add_forced_key_binding(key, 'mode/' .. key, function(e)
+		if e.event == 'down' or e.event == 'repeat' then
+			fn()
+		end
+	end, COMPLEX)
 end
 
-function Mode:remove_key_bindings()
-	for key, _ in pairs(self.key_bindings) do
-		mp.remove_key_binding('mode/' .. key)
-	end
+local function remove_key_binding(self, key)
+	mp.remove_key_binding('mode/' .. key)
 end
 
-function Mode:get_ass_help()
-	if self.cached_ass_help then
-		return self.cached_ass_help
-	end
-
+local function update_osd_data(self)
 	local help = {}
 
 	for key, fn in pairs(self.key_bindings) do
@@ -67,7 +60,7 @@ function Mode:get_ass_help()
 	table.sort(order)
 
 	local data = {
-		'\n{\\r\\a2\\bord2\\alpha&H50\\q1\\fscx50\\fscy50}',
+		'{\\r\\a2\\bord2\\alpha&H20\\q1\\fscx50\\fscy50}',
 	}
 
 	for _, text in ipairs(order) do
@@ -92,8 +85,54 @@ function Mode:get_ass_help()
 
 	data[#data + 1] = '\\N'
 
-	self.cached_ass_help = table.concat(data)
-	return self.cached_ass_help
+	self.osd.data = table.concat(data)
+end
+
+local function update_osd(self)
+	if self.added and self.show_help then
+		if not self.osd then
+			self.osd = mp.create_osd_overlay('ass-events')
+			self.osd.z = 1
+			update_osd_data(self, o)
+		end
+
+		self.osd:update()
+	elseif self.osd then
+		self.osd:remove()
+	end
+end
+
+function Mode:toggle()
+	self.show_help = not self.show_help
+	update_osd(self)
+end
+
+function Mode:add_key_bindings()
+	local self_toggle = function()
+		self:toggle()
+	end
+	for _, key in ipairs(HELP_KEY_BINDINGS) do
+		add_key_binding(self, key, self_toggle)
+	end
+
+	for key, fn in pairs(self.key_bindings) do
+		add_key_binding(self, key, fn)
+	end
+
+	self.added = true
+	update_osd(self)
+end
+
+function Mode:remove_key_bindings()
+	for _, key in ipairs(HELP_KEY_BINDINGS) do
+		remove_key_binding(self, key)
+	end
+	for key, _ in pairs(self.key_bindings) do
+		remove_key_binding(self, key)
+	end
+
+	self.added = false
+	update_osd(self)
 end
 
 Mode.__index = Mode
@@ -101,6 +140,7 @@ Mode.__index = Mode
 return function(key_bindings)
 	local o = {
 		key_bindings=key_bindings,
+		show_help=(mp.get_opt('mode-help') == 'on')
 	}
 	setmetatable(o, Mode)
 	return o

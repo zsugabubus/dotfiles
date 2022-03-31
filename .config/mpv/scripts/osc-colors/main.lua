@@ -158,8 +158,6 @@ local function _update()
 		for i, preset in ipairs(PRESETS) do
 			osd:append('\\N', i - 1, ': ', preset.name)
 		end
-
-		osd:append(mode:get_ass_help())
 	end
 
 	osd:update()

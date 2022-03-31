@@ -179,8 +179,6 @@ local function _update()
 	osd:append('\\N')
 	osd_append_filters('Audio', 'af')
 
-	osd:append(mode:get_ass_help())
-
 	osd:update()
 end
 function update()

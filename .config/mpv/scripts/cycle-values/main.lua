@@ -39,8 +39,6 @@ function cycle_values(property, opts_file)
 			osd:append('\\N{\\b1}_: ', current)
 		end
 
-		osd:append(mode:get_ass_help())
-
 		osd:update()
 	end
 	function update()
