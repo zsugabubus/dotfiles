@@ -2,7 +2,7 @@
 Description=Filesystem synchronization
 
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=sync
 
 [Install]
