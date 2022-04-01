@@ -704,7 +704,12 @@ function! Git(...) abort
 endfunction
 
 function! GitBuffer() abort
-	return Git(expand('%:h'))
+	let name = expand('%:h')
+	if !empty(name)
+		return Git(name)
+	else
+		return Git()
+	endif
 endfunction
 
 augroup vimrc_git
