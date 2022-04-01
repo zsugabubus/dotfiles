@@ -1,0 +1,11 @@
+[Unit]
+Description=IMAP IDLE Daemon via Tor
+Requires=mbsync-profile@darknet.service
+After=mbsync-profile@darknet.service
+
+[Service]
+Type=simple
+ExecStart=torsocks mbidled -c "%t/mbsyncrc.darknet"
+
+[Install]
+WantedBy=default.target
