@@ -1,3 +1,5 @@
+let s:GIT_EMPTY = { 'status': '' }
+
 let g:git_symbols = "SMUT"
 let g:git_symbols = "+*%$" " git-prompt
 let g:git_max_tabs = 15
@@ -622,8 +624,9 @@ endfunction
 " /usr/share/git/git-prompt.sh
 function! Git(...) abort
 	let dir = get(a:000, 0, getcwd())
-	if 0 <=# match(dir, '\v^[a-z]+://') || get(environ(), 'TMPDIR', '/tmp') ==# dir
-		return { 'status': '' }
+	if 0 <=# match(dir, '\v^[a-z]+://') ||
+	\  get(environ(), 'TMPDIR', '/tmp') ==# dir
+		return s:GIT_EMPTY
 	endif
 	if !has_key(s:git, dir)
 		let s:git[dir] = {
