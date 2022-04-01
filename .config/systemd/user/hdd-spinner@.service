@@ -1,5 +1,6 @@
 [Unit]
 Description=Poke %I
+ConditionPathIsMountPoint=/media/%I
 
 [Service]
 Type=oneshot
