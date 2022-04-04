@@ -316,6 +316,16 @@ function flat() {
 alias cdtarget='() { cd ${~1:P}; }'
 compdef '_files -g "*(@-/)"' cdtarget
 
+function cd() {
+	if (( $# == 1 )) && [[ -f $1 ]]; then
+		local tmp
+		printf -v tmp 'e %q' $1:t
+		print -z -- $tmp
+		set -- $1:h
+	fi
+	builtin cd "$@"
+}
+
 compdef '_files -g "*(/)"' ccd
 function ccd() {
 	(( $# )) && cd -- $1
