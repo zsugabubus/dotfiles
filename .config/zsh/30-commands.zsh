@@ -316,8 +316,8 @@ function flat() {
 alias cdtarget='() { cd ${~1:P}; }'
 compdef '_files -g "*(@-/)"' cdtarget
 
-compdef '_files -g "*(/)"' Cd
-function Cd() {
+compdef '_files -g "*(/)"' ccd
+function ccd() {
 	(( $# )) && cd -- $1
 	while cd -- *(/) 2>/dev/null; do
 		:
