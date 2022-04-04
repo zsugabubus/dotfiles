@@ -1,0 +1,40 @@
+#autoload
+
+emulate -L zsh
+setopt err_return
+
+local npx_home=~/.cache/npx
+
+if [[ ! -d $npx_home ]]; then
+	mkdir -- $npx_home
+fi
+
+case $1 in
+-y) args=( --share-net ) ;;
+esac
+
+bwrap \
+	--unshare-all \
+	--clearenv \
+	--new-session \
+	--die-with-parent \
+	--as-pid-1 \
+	--tmpfs / \
+	--hostname host \
+	--ro-bind /bin /bin \
+	--ro-bind /lib /lib \
+	--ro-bind /lib64 /lib64 \
+	--ro-bind /usr /usr \
+	--ro-bind /etc/ssl /etc/ssl \
+	--ro-bind /etc/ca-certificates /etc/ca-certificates \
+	--ro-bind /etc/hosts /etc/hosts \
+	--ro-bind /etc/host.conf /etc/host.conf \
+	--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
+	--ro-bind /etc/resolv.conf /etc/resolv.conf \
+	--tmpfs /tmp \
+	--dir /home/user \
+	--chdir /home/user \
+	--setenv HOME /home/user \
+	--bind $npx_home /home/user \
+	$args \
+	dash -c 'export PATH; exec npx "$@"' npx "$@"

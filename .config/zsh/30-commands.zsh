@@ -446,62 +446,11 @@ function M() {
 	bwsh
 }
 
-local function unshare-all() {
-	bwrap \
-		--unshare-all \
-		--new-session \
-		--clearenv \
-		--die-with-parent \
-		--as-pid-1 \
-		--tmpfs / \
-		--hostname host \
-		--ro-bind /bin /bin \
-		--ro-bind /lib /lib \
-		--ro-bind /lib64 /lib64 \
-		--ro-bind /usr /usr \
-		--ro-bind /etc/ssl /etc/ssl \
-		--ro-bind /etc/ca-certificates /etc/ca-certificates \
-		--ro-bind /etc/hosts /etc/hosts \
-		--ro-bind /etc/host.conf /etc/host.conf \
-		--ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
-		--ro-bind /etc/resolv.conf /etc/resolv.conf \
-		--tmpfs /tmp \
-		--dir /home/user \
-		--chdir /home/user \
-		--setenv HOME /home/user \
-		"$@"
-}
-
-function npm_global_bin() {
-	emulate -L zsh
-	setopt err_return
-
-	local npm_home=~/.cache/npm_global_bin
-	local pkg_name=$1 pkg_bin=$2
-	shift 2
-
-	if [[ ! -d $npm_home ]]; then
-		mkdir -- $npm_home
-	fi
-
-	if [[ ! -e $npm_home/node_modules/.bin/$pkg_bin ]]; then
-		unshare-all <&- >/dev/null \
-			--share-net \
-			--bind $npm_home /home/user \
-			npm install $pkg_name
-	fi
-
-	unshare-all \
-		--ro-bind $npm_home /home/user \
-		node_modules/.bin/$pkg_bin $@
-}
-
-function npm_js-beautify() {
-	npm_global_bin js-beautify js-beautify $@
-}
 function js-beautify() {
+	emulate -L zsh
 	local out=${1:r}.beautified.${1:e}
-	npm_js-beautify -t --type $1:e -w 120 - <$1 >$out &&
+	echo | npx -y js-beautify
+	npx js-beautify -t --type $1:e -w 120 - <$1 >$out &&
 	rm -i -- $1
 }
 
