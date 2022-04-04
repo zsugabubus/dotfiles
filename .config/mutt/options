@@ -1,12 +1,10 @@
 reset all
 
-# set abort_backspace=no
-# set abort_key=<Esc>
 set abort_noattach=ask-yes
 set alias_file=~/.aliases
-# set attach_save_without_prompting # attach_save_dir="`zsh -c '. $ZDOTDIR/??-hashes.zsh; print ~m'`"
 set beep_new
 set delete=ask-no
+set display_filter="sed '/\\\[-- Autoview/d'"
 set edit_headers
 set envelope_from
 set fast_reply
@@ -41,7 +39,6 @@ set timeout=0
 set use_domain=no
 set use_from
 set wait_key=no
-set display_filter="sed '/\\\[-- Autoview/d'"
 
 set my_reset='set realname=nobody from=nobody record="=sent" sendmail="/usr/bin/torsocks /usr/bin/msmtp" signature=""'
 # "sent" uses last configuration.
