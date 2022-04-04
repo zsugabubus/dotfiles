@@ -7,7 +7,6 @@ set alias_file=~/.aliases
 # set attach_save_without_prompting # attach_save_dir="`zsh -c '. $ZDOTDIR/??-hashes.zsh; print ~m'`"
 set beep_new
 set delete=ask-no
-set dsn_notify="failure,delay"
 set edit_headers
 set envelope_from
 set fast_reply
