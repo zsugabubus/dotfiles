@@ -34,8 +34,7 @@ index-format-hook date "~A"	"%[%y %b]"
 
 index-format-hook label "~A"	"%?Y? {%Y}?"
 
-source $my_dotdir/mailboxes.rc|
-source $my_dotdir/editor.rc|
+source $my_dotdir/muttrc.sh|
 
 # To fire folder-hook on startup.
 push <sidebar-open>

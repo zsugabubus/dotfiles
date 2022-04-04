@@ -1,4 +1,13 @@
 #!/bin/dash -e
+
+# Options {{{
+if test -n "$TMUX"; then
+	echo 'set editor="$my_dotdir/bged" background_edit=yes'
+else
+	echo 'set editor="$EDITOR"'
+fi
+# }}}
+# Mailboxes {{{
 cd -- "$MAIL"
 
 echo 'unmailboxes *'
@@ -55,5 +64,6 @@ for maildir in */cur */inbox; do
 		eval KEY_$key=1
 	fi
 done
+# }}}
 
 # vim: ft=sh
