@@ -18,6 +18,7 @@ bind attach,browser,compose,index G last-entry
 bind pager g top
 bind pager G bottom
 
+bind index,pager <Tab> next-new-then-unread
 bind index,pager [ previous-thread
 bind index,pager ] next-thread
 
@@ -35,9 +36,8 @@ bind pager j next-line
 bind index o sort-mailbox
 bind index O sort-reverse
 
-macro index = <limit>=
-macro index % <limit>%
 macro index ~ <limit>~
+macro index = <limit>~s<space>
 bind index l limit
 macro index L "<limit>all<return>"
 
@@ -76,18 +76,17 @@ macro index D <delete-pattern>~T
 
 bind index N toggle-new
 
-bind index,pager M resend-message
-bind index,pager m mail
-
+bind index,pager b bounce-message
+bind index,pager e edit
+bind index,pager E edit
 bind index,pager f forward-message
+bind index,pager m mail
+bind index,pager M resend-message
 bind index,pager r reply
 bind index,pager R group-reply
-# bind index,pager R list-reply
 
-bind index,pager b bounce-message
 bind index,pager ! flag-message
-
-macro index / l~
+bind index,pager l edit-label
 
 bind attach,browser,pager,postpone / search
 bind attach,browser,pager,postpone n search-next
@@ -95,9 +94,6 @@ bind attach,browser,pager,postpone N search-opposite
 
 bind index,pager p purge-message
 # bind index,pager P purge-thread
-
-bind index,pager e edit
-bind index,pager E edit-label
 
 bind index,pager w display-address
 
@@ -132,7 +128,11 @@ macro index,pager } <check-stats><sidebar-next-new><sidebar-open>
 
 macro index \eL <check-new><refresh>
 
-bind index za collapse-all
+bind index - collapse-thread
+bind index za collapse-thread
+bind index zM collapse-all
+bind index zR collapse-all
+macro index zU "<enter-command>set nocollapse_unread<return><collapse-all><enter-command>set collapse_unread<return>"
 
 macro index,pager c <change-folder>?<toggle-mailboxes>
 
@@ -152,7 +152,7 @@ bind compose b edit-bcc
 bind compose c edit-cc
 bind compose d detach-file
 bind compose e edit-headers
-bind compose f edit-from
+bind compose f edit-fcc
 bind compose g pgp-menu
 bind compose i toggle-disposition
 bind compose m edit-message
