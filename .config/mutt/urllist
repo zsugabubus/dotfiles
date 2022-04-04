@@ -16,6 +16,7 @@ URL_BLACKLIST_RE = '|'.join([
 	r'//[^/]*preview\.',
 	r'//[^/]*static\.[^/]*/',
 	r'/[a-z]*static/',
+	r'/assets/',
 ])
 QPARAM_BLACKLIST = [
 	'amp',
