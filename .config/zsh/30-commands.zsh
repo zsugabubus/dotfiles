@@ -83,6 +83,15 @@ alias term='$TERMINAL >/dev/null &disown'
 alias topp='() { top -p${^$(pidof $1)} }'
 alias upnp='upnpc -u "http://router.lan:5000/rootDesc.xml"'
 
+function catrm() {
+	local f
+	for f; do
+		echo
+		cat $f
+		rm -i $f
+	done
+}
+
 function meson() {
 	if (( !$# )); then
 		mkbuild
