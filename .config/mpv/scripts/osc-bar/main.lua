@@ -27,7 +27,14 @@ local function seek(e)
 	mp.commandv('no-osd', 'seek', mouse_time, 'absolute+exact')
 	if e.event ~= 'up' then
 		mp.add_forced_key_binding('MOUSE_MOVE', 'MOUSE_MOVE', function(e)
-			mp.commandv('no-osd', 'seek', mouse_time, 'absolute+keyframes')
+			mp.commandv(
+				'no-osd',
+				'seek',
+				mouse_time,
+				props['duration'] < 10 * 60
+					and 'absolute+exact'
+					or 'absolute+keyframes'
+			)
 		end, COMPLEX)
 	else
 		mp.remove_key_binding('MOUSE_MOVE')
