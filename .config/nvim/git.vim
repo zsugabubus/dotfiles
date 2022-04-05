@@ -466,7 +466,7 @@ endfunction
 function! s:git_statusline_update() abort dict
 	let self.status =
 		\ (self.bare ? 'BARE:' : '').
-		\ self.head.
+		\ (self.detached ? 'detached ' : '').self.head.
 		\ (g:git_symbols[0][!self.staged]).
 		\ (g:git_symbols[1][!self.modified]).
 		\ (g:git_symbols[2][!self.untracked]).
@@ -507,12 +507,17 @@ function! s:git_status_on_stashed(data) abort dict
 endfunction
 
 function! s:git_status_resolve_detached_head() abort dict
+	if self.head[:8] == 'detached '
+		let self.detached = 1
+		let self.head = self.head[9:]
+	endif
+
 	call call('s:git_run', [
 	\  's:git_status_on_detached_head',
 	\  '-C', self.wd,
 	\  'name-rev',
 	\  '--name-only',
-	\  'HEAD'
+	\  self.head
 	\], self)
 endfunction
 
@@ -540,7 +545,7 @@ function! s:git_status_on_detached_head(data) abort dict
 		return
 	end
 
-	let self.head = 'detached '.a:data[0]
+	let self.head = a:data[0]
 	call call('s:git_statusline_update', [], self)
 endfunction
 
@@ -643,17 +648,17 @@ function! s:git_status_on_bootstrap(data) abort dict
 		let self.operation = ''
 	endif
 
-	" HEAD is symbolic but could not resolve to a revision.
+	" HEAD is symbolic but could not resolve to a revision,
 	if self.head ==# 'HEAD'
 		call call('s:git_run', [
 		\  's:git_status_on_symbolic_head',
 		\  '-C', self.wd,
 		\  'symbolic-ref',
 		\  '--short',
-		\  'HEAD'
+		\  self.head
 		\], self)
-	" Name used by rebase-merge/head-name.
-	elseif self.head ==# 'detached HEAD'
+	" */head-name.
+	elseif self.head =~# '\v^detached HEAD$|^refs/'
 		call call('s:git_status_resolve_detached_head', [], self)
 	endif
 
@@ -683,7 +688,9 @@ function! Git(...) abort
 			\  'operation': '',
 			\  'step': 0,
 			\  'total': 0,
-			\  'status': ''
+			\  'status': '',
+			\  'head': 'undefined',
+			\  'detached': 0
 			\}
 		" NOTE: "@" must be the last because git stops on first failure.
 		call call('s:git_run', [
