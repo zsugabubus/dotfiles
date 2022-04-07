@@ -3,6 +3,8 @@ local SORT_OPTS = {
 	alpha=true,
 	strict=true,
 }
+-- Random magic number, very likely hardware dependent. See explanation below.
+local N = 20000
 
 local sort = mp.get_opt('sort') or 'alpha'
 if not SORT_OPTS[sort] then
@@ -24,13 +26,7 @@ if sort ~= 'none' then
 	mp.msg.info('Use --script-opts=sort=none to disable.')
 end
 
-local function do_filter()
-	local playlist = mp.get_property_native('playlist')
-
-	if #playlist <= 1 then
-		return
-	end
-
+local function filter_playlist(playlist)
 	local match = string.match
 	for i=#playlist, 1, -1 do
 		local entry = playlist[i]
@@ -50,33 +46,17 @@ local function do_filter()
 			match(s, '%.txt$') or
 			false
 		then
-			mp.msg.info('Removing', s)
+			mp.msg.info('Remove', s)
 			mp.commandv('playlist-remove', i - 1)
+			table.remove(playlist, i)
 		end
 	end
 end
 
-local function playlist_swap(playlist, i1, i2)
-	if i1 < i2 then
-		mp.commandv('playlist-move', (i1)     - 1, (i2 + 1) - 1)
-		mp.commandv('playlist-move', (i2 - 1) - 1, (i1)     - 1)
-	elseif i1 > i2 then
-		mp.commandv('playlist-move', (i1)     - 1, (i2)     - 1)
-		mp.commandv('playlist-move', (i2 + 1) - 1, (i1 + 1) - 1)
-	else
-		return false
-	end
-
-	playlist[i2], playlist[i1] = playlist[i1], playlist[i2]
-	return true
-end
-
-local function do_sort()
+local function sort_playlist(playlist)
 	if sort == 'none' then
 		return
 	end
-
-	local playlist = mp.get_property_native('playlist')
 
 	local order = {}
 
@@ -105,36 +85,92 @@ local function do_sort()
 		end
 	end)
 
-	for i=1, #playlist do
-		playlist[order[i]].new_pos = i
-	end
+	-- Swapping entries requires two playlist-move commands per entry, however
+	-- for <N entries the second playlist-move has such high (communication)
+	-- overhead[0] that it worths doing somewhat more computation
+	-- instead.
+	-- For >=N entries quadric blowup hits in so we fall back to the linear
+	-- version.
+	--
+	-- [0]: We have to wait for the result. And using async is not an option
+	-- since they can be executed in any order.
+	if N <= #playlist then
+		for i=1, #playlist do
+			playlist[order[i]].new_pos = i
+		end
 
-	for i=1, #playlist do
-		while playlist_swap(playlist, i, playlist[i].new_pos) do
+		for i=1, #playlist do
+			while true do
+				local j = playlist[i].new_pos
+				if i == j then
+					break
+				end
+				mp.commandv('playlist-move', (i)     - 1, (j + 1) - 1)
+				mp.commandv('playlist-move', (j - 1) - 1, (i)     - 1)
+				playlist[j], playlist[i] = playlist[i], playlist[j]
+			end
+		end
+	else
+		for i=1, #playlist do
+			playlist[i].index = i - 1
+			playlist[i].next = playlist[i + 1]
+			playlist[order[i]].next_ord = playlist[order[i + 1] or 0]
+		end
+
+		local cur = playlist[1]
+		local cur_ord = playlist[order[1]]
+		while cur do
+			if cur ~= cur_ord then
+				local index = cur.index
+
+				-- cur -> [next ->]... cur_ord
+				mp.commandv('playlist-move', cur_ord.index, index)
+
+				cur_ord.index = index
+
+				local last
+				local entry = cur
+				while entry ~= cur_ord do
+					index = index + 1
+					entry.index = index
+					last = entry
+					entry = entry.next
+				end
+				last.next = cur_ord.next
+
+				cur_ord.next = cur
+				-- cur_ord -> cur -> [next ->]... last -> cur_ord.next
+			end
+
+			cur_ord, cur = cur_ord.next_ord, cur_ord.next
 		end
 	end
 end
 
 local old = 0
-function update()
-	local current = mp.get_property_number('playlist-count')
-	if old < current then
+function update(_, playlist_count)
+	-- MPV scripts are executed in parallel, so routines that modify playlist
+	-- have to reside inside the same script to ensure sequential execution.
+	--
+	-- Because of this, it can be assumed that no other script touches playlist,
+	-- so sorting (and filtering) have to be redone only when playlist-count
+	-- increases.
+	if old < playlist_count then
 		local start = mp.get_time()
 
-		-- Since different mpv scripts are executed on different (OS) threads it is
-		-- possible that a different playlist item will be deleted at a given index
-		-- because sort thread has moved it. TOCTOU, simply.
-		--
-		-- To avoid this, every script that modifies playlist must be executed
-		-- sequentially.
-		do_filter()
-		do_sort()
+		local playlist = mp.get_property_native('playlist')
+
+		if 1 < #playlist then
+			filter_playlist(playlist)
+			sort_playlist(playlist)
+		end
 
 		local elapsed = mp.get_time() - start
 
 		mp.msg.info('Completed in', elapsed, 'seconds')
+		playlist_count = #playlist
 	end
-	old = current
+	old = playlist_count
 end
 
-mp.observe_property('playlist-count', nil, update)
+mp.observe_property('playlist-count', 'number', update)
