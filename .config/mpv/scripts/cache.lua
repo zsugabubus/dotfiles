@@ -1,4 +1,6 @@
-mp.register_event('start-file', function()
+local function update()
+	mp.unregister_event(update)
+
 	-- event.playlist_entry_id may differ if playlist item has been moved.
 	local url = mp.get_property_native(
 		('playlist/%d/filename')
@@ -6,12 +8,13 @@ mp.register_event('start-file', function()
 
 	local bytes
 	if url:find('://') then
-		bytes = '500M'
+		bytes = '512M'
 	else
 		bytes = '125M'
 	end
 	mp.set_property_native('demuxer-max-back-bytes', bytes)
-end)
+end
+mp.register_event('start-file', update)
 
 -- Ensure that we have at least as much bytes available forward than as
 -- backward, so seeking back in a live stream does not accidentally stop
