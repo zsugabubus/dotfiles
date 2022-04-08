@@ -1,0 +1,5 @@
+mp.add_hook('on_load', 50, function()
+	local path = mp.get_property_native('path')
+	local bad = path:match('1080i') or path:match('720i')
+	mp.set_property_native('hwdec', bad and 'no' or 'auto')
+end)
