@@ -41,16 +41,16 @@ function cycle_values(property, opts_file)
 
 		osd:update()
 	end
-	function update()
+	local function update()
 		mp.unregister_idle(_update)
 		mp.register_idle(_update)
 	end
 
-	function update_menu()
+	local function update_menu()
 		mp.unobserve_property(update)
 
 		if visible then
-			values  = dofile(script_opts .. '/' .. opts_file)
+			values  = dofile(('%s/%s'):format(script_opts, opts_file))
 
 			local keys = {
 				q={'quit', function()
