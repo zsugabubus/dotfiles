@@ -26,12 +26,12 @@ function cycle_values(property, opts_file)
 		local current = mp.get_property_native(property)
 		local any_selected = false
 		for _, x in pairs(values) do
-			local key, value = unpack(x)
+			local key, value, display = unpack(x)
 			local selected = current == value
 			any_selected = any_selected or selected
 			osd:append(
 				'\\N{\\b', selected and '1' or '0', '}',
-				key, ': ', value
+				key, ': ', display or value
 			)
 		end
 
