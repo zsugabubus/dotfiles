@@ -2,4 +2,4 @@
 env PYTHONDONTWRITEBYTECODE=1 ESCDELAY=1 $(awk -F= '
 $1=="rpc-secret" { printf " ARIA_RPC_SECRET=" $2 }
 $1=="rpc-listen-port" { printf " ARIA_RPC_PORT=" $2 }
-' ~/.config/aria2/aria2cd.conf) /usr/bin/aria2t ${1+--select} $*:a
+' ~/.config/aria2/aria2cd.conf) /usr/local/bin/aria2t ${1+--select} $*:a
