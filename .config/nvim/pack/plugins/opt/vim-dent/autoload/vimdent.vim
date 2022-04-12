@@ -11,6 +11,8 @@ function! vimdent#Detect(...) abort
 
 	let context = 0
 
+	let start = reltime()
+
 	let bufnr = bufnr()
 	let dirname = fnamemodify(bufname(bufnr), ':h')
 	for other in range(1, bufnr('$'))
@@ -45,7 +47,7 @@ function! vimdent#Detect(...) abort
 		endif
 	endfor
 
-	let ts = &tabstop
+	let saved_ts = &tabstop
 	try
 		noautocmd setlocal ts=100
 
@@ -72,33 +74,43 @@ let S=s
 			let indents = I
 		endif
 	finally
-		noautocmd let &tabstop = ts
+		noautocmd let &tabstop = saved_ts
 	endtry
 
-	" Filter out:
-	" - No changes.
-	" - Multiple tab changes.
-	" - Single space changes.
-	call filter(indents, {d,n->
-		\ d !=# '0,0' &&
-		\ abs(matchstr(d, '.*\ze,')) <=# 1 &&
-		\ abs(matchstr(d, ',\zs.*')) !=# 1
-		\})
+	echomsg 'raw indents:' indents
 
-	" Find out most common kind change. Tab or space?
+	" Find out most common kind of change. Tab or space?
 	let tabs = 0
 	let spaces = {}
-	for [d, n] in items(indents)
+	let items = items(indents)
+	let indents = {}
+	for [d, n] in items
+		let [tab, space] = split(d, ',')
+		let [tab, space] = [+tab, +space]
+
+		" Filter out:
+		" - No changes.
+		" - Multiple tab changes.
+		" - Single space changes.
+		if
+			\ (tab ==# 0 && space ==# 0) ||
+			\ 1 <# abs(tab) ||
+			\ abs(space) ==# 1
+			continue
+		end
+
 		" Count spaces when there is no tab change.
-		if d[:1] == '0,'
-			let space = abs(+matchstr(d, ',\zs.*'))
-			let spaces[space] = get(spaces, space, 0) + n
+		if tab ==# 0
+			let spaces[abs(space)] = get(spaces, abs(space), 0) + n
 		endif
 
 		" Count tabs when there is no space change.
-		if d[-2:] == ',0'
+		if space ==# 0
 			let tabs += n
 		endif
+
+		let key = tab.','.space
+		let indents[key] = get(indents, key, 0) + n
 	endfor
 
 	echomsg 'indents:' indents
@@ -124,12 +136,13 @@ let S=s
 
 		" &sw is known, now found out whether tabs were used.
 
-		" Summarize cases when tab becomes space and vica versa.
+		" Summarize cases when tab becomes space and vice versa.
 		let spaces = {}
 		let ts_minus_sw = 0
-		let max = -1
+		let max = 0
 		for [d, n] in items(indents)
-			let space = +matchstr(d, '.*\ze,') * -matchstr(d, ',\zs.*')
+			let [tab, space] = split(d, ',')
+			let space = +tab * -space
 			if 0 <# space
 				let n += get(spaces, space, 0)
 				let spaces[space] = n
@@ -148,7 +161,7 @@ let S=s
 		" when a file found with set and compatible &sw and &ts we can use those
 		" values.
 		if context ==# 2 && !(&tabstop % &shiftwidth)
-			echomsg printf('sw=%d ts=%d sts=%d (inherited)', &sw, &ts, &sts)
+			echomsg printf('sw=%d', &sw)
 		" Other &sw, &ts pairings are (likely) junk.
 		elseif
 			\ &shiftwidth * 2 == ts ||
@@ -166,4 +179,5 @@ let S=s
 	else
 		echomsg 'all=default'
 	endif
+	echomsg 'total' (reltimefloat(reltime(start)) * 1000) 'ms'
 endfunction
