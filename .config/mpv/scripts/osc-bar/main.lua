@@ -293,7 +293,7 @@ local function _update()
 		elseif mouse_prog_hit then
 			osd:append(human_time(-(duration - mouse_time)))
 		else
-			osd:append(human_time(-(props['time-remaining'] or 0)))
+			osd:append(human_time(-(props['playtime-remaining'] or 0)))
 		end
 		osd:append(
 			prog_small and '\\h' or '',
@@ -513,7 +513,7 @@ local function update_property(name, value)
 		-- Drop changes with too much precision.
 		if
 			name == 'time-pos' or
-			name == 'time-remaining'
+			name == 'playtime-remaining'
 		then
 			if math.floor(old) == math.floor(props[name]) then
 				return
@@ -571,7 +571,7 @@ update_mode = function()
 			'playlist-count',
 			'playlist-pos',
 			'time-pos',
-			'time-remaining'
+			'playtime-remaining'
 		})
 
 		observe_properties(nil, {
