@@ -578,6 +578,7 @@ update_mode = function()
 			'chapter-list',
 			'demuxer-cache-state',
 			'duration',
+			'pause', -- To show exact values on pause.
 			'percent-pos',
 			'playlist-count',
 			'playlist-pos',
