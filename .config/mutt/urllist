@@ -9,7 +9,7 @@ import sys
 
 URL_RE = r'(https?:)?//(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&/=]*)'
 URL_BLACKLIST_RE = '|'.join([
-	r'^http://(schemas\.|www\.w3\.org/|schema\.org/)',
+	r'^http://(schemas\.|www\.w3\.org|schema\.org)',
 	r'//(preview|fonts|ssl|www\.gstatic)\.',
 	r'mailman/listinfo$',
 	r'/thumbnail/',
