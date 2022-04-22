@@ -7,6 +7,8 @@ color header	brightcolor92	default "^From:"
 color header	color92		default "^To:"
 color header	brightcolor162	default "^Subject:"
 
+color index	brightcolor202	default	"~F"
+
 # Inline.
 # color attach_headers default       color254 "^\\[-- .*"
 # color attach_headers brightdefault color254 "^\\[-- Attachment .*"

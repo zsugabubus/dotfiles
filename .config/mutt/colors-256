@@ -15,13 +15,6 @@ color sidebar_flagged	brightcolor235	color227
 color header		brightcolor33	default "^Link:"
 color header		brightcolor214	default "^X-Category:"
 
-color index		brightcolor34	default	"~N|~O"
-color index		brightred	default	"~D"
-color index		brightcolor235	color227	"~F"
-color index		color235	color222	"~T"
-
-# color index_collapsed	brightcolor197	default
-
 # Diff.
 color body		red		default	"^- \\s.*"
 color body		green		default	"^\\+ \\s.*"
@@ -36,4 +29,11 @@ color body		color148	default	"^Good signature.*"
 color body		brightcolor160	default	"^Problem signature.*"
 
 source $my_dotdir/colors-256.theme
+
+# After theme to ensure correct ordering.
+color index		brightcolor34	default		"~N|~O"
+color index		brightred	default		"~D"
+color index		brightcolor233	brightred	"~D~F"
+color index		color235	color117	"~T"
+
 # vim: noet ts=8 ft=muttrc
