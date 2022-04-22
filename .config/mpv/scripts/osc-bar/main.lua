@@ -509,13 +509,24 @@ local function update_property(name, value)
 
 	local old = props[name]
 	props[name] = value
-	if old and props[name] then
+	if old and value then
 		-- Drop changes with too much precision.
 		if
 			name == 'time-pos' or
-			name == 'playtime-remaining'
+			name == 'playtime-remaining' or
+			name == 'duration'
 		then
-			if math.floor(old) == math.floor(props[name]) then
+			if math.floor(old) == math.floor(value) then
+				return
+			end
+		elseif
+			name == 'demuxer-cache-state'
+		then
+			-- "seekable-ranges" are not worth frequent updates.
+			if
+				math.floor(old['cache-duration']) ==
+				math.floor(value['cache-duration'])
+			then
 				return
 			end
 		elseif
@@ -525,7 +536,7 @@ local function update_property(name, value)
 			-- implementation that much regarding how long the progress bar is.
 			if
 				math.floor(osd.res_x * old / 100) ==
-				math.floor(osd.res_x * props['percent-pos'] / 100)
+				math.floor(osd.res_x * value / 100)
 			then
 				return
 			end
