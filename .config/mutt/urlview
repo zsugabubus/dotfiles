@@ -4,5 +4,8 @@ if url=$(
 	fzf --select-1 --bind 'space:jump-accept,+:accept'
 ); then
 	printf %s "$url" |
-	xclip -i -selection clipboard
+	{
+		xclip -i -selection clipboard ||
+		tmux load-buffer -
+	}
 fi
