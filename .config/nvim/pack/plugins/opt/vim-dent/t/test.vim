@@ -90,27 +90,6 @@ call s:detect()
 call assert_equal({'et': 0, 'ts': 4, 'sts': 4, 'sw': 4}, s:got())
 
 let s:input =<< EOF
-				x
-	            x
-					x
-				x
-	        x
-		x
-EOF
-call s:detect()
-call assert_equal({'et': 0, 'ts': 4, 'sts': 4, 'sw': 4}, s:got())
-
-let s:input =<< EOF
-				x
-				x
-			x
-	        x
-		x
-EOF
-call s:detect()
-call assert_equal({'et': 0, 'ts': 4, 'sts': 4, 'sw': 4}, s:got())
-
-let s:input =<< EOF
 x
   x
   x
@@ -170,6 +149,38 @@ let s:input =<< EOF
 EOF
 call s:detect()
 call assert_equal({'et': 0, 'ts': 42, 'sts': -1, 'sw': 0}, s:got())
+let s:input =<< EOF
+	x
+	x
+			x
+	    x
+			x
+	    x
+			x
+		x
+EOF
+call s:detect()
+call assert_equal({'et': 0, 'ts': 42, 'sts': -1, 'sw': 0}, s:got())
+let s:input =<< EOF
+				x
+	            x
+					x
+				x
+	        x
+		x
+EOF
+call s:detect()
+call assert_equal({'et': 0, 'ts': 42, 'sts': -1, 'sw': 0}, s:got())
+let s:input =<< EOF
+				x
+				x
+			x
+	        x
+		x
+EOF
+call s:detect()
+call assert_equal({'et': 0, 'ts': 42, 'sts': -1, 'sw': 0}, s:got())
+
 
 if empty(v:errors)
 	cquit 0

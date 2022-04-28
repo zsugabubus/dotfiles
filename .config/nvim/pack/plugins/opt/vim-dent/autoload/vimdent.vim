@@ -1,7 +1,3 @@
-if has('nvim')
-	lua require 'vimdent'
-endif
-
 function! s:dictmax(dict) abort
 	let max = max(a:dict)
 	for [k, v] in items(a:dict)
@@ -59,11 +55,14 @@ function! vimdent#Detect(...) abort
 
 	let saved_ts = &tabstop
 	try
+		" Instead of playing with costly getline() and match*(), indent() is used
+		" to find tab and space counts used for indentation. The only trick is
+		" that &ts must be set to a big enough number.
 		noautocmd setlocal ts=100
 
 		let max_lines = 5000
 		if has('nvim')
-			let indents = luaeval("_VimdentGetIndents(_A)", max_lines)
+			let indents = luaeval("require'vimdent'(_A)", max_lines)
 		else
 			" Welcome to VimL that carefully reads even your comments. This loop is
 			" so hot that compressing names results in ms of speedup. And for
@@ -79,7 +78,7 @@ function! vimdent#Detect(...) abort
 let i=indent(l)
 let t=i/100
 let s=0<t&&t==T&&(!S||!(i%100))?0:i%100
-let d=(t-T).','.(s-S)
+let d=(!t||!T?'1,':'0,').(t-T).','.(s-S)
 let I[d]=get(I,d,0)+1
 let T=t
 let S=s
@@ -90,15 +89,16 @@ let S=s
 		noautocmd let &tabstop = saved_ts
 	endtry
 
-	echomsg 'raw indents:' indents
+	let raw_indents = indents
+	echomsg 'raw indents:' raw_indents
 
 	" Find out most common kind of change. Tab or space?
 	let ntabs = 0
 	let spaces = {}
-	let items = items(indents)
+	let items = items(raw_indents)
 	let indents = {}
 	for [d, n] in items
-		let [tab, space] = split(d, ',')
+		let [_, tab, space] = split(d, ',')
 		let [tab, space] = [+tab, +space]
 
 		" Filter out:
@@ -129,28 +129,34 @@ let S=s
 
 	if max_nspaces <=# ntabs && 0 <# ntabs
 		" No subsequent lines have space changes thus &sw cannot not be determined
-		" for sure. However we can try guess it in cases when tabs became space
-		" (e.g. incorrectly set &et) so we can use this formula to attempt to fix
-		" it: `tabs (+-1 indentation) == spaces`.
-		if max_nspaces ==# 0
-			let spaces = { '2': 0, '4': 0, '8': 0 }
-			for [d, n] in items(indents)
-				let [tab, space] = split(d, ',')
-				if 1 <# abs(tab) && 0 <# space
-					for sw in keys(spaces)
-						if
-							\ -space == (tab - 1) * sw ||
-							\ -space == (tab    ) * sw ||
-							\ -space == (tab + 1) * sw
-							let spaces[sw] += n
-						end
-					endfor
-				endif
-			endfor
+		" for sure (that will be == &ts).
+		" However it is common that some editors faulty set &et, so tabs will
+		" appear as spaces in the file. Using formula
+		" `tabs (+-1 indentation) == spaces` we can find its actual size.
 
-			let [max_dspace, max_nspaces] = s:dictmax(spaces)
-			echomsg 'tab spaces:' spaces '->' [max_dspace, max_nspaces]
-		endif
+		" Care about common configurations only to avoid crazy detections.
+		let spaces = { '2': 0, '4': 0, '8': 0 }
+		for [d, n] in items(raw_indents)
+			let [abs, tab, space] = split(d, ',')
+			if !abs
+				continue
+			endif
+			let [tab, space] = [+tab, +space]
+			if !space
+				continue
+			endif
+			for sw in keys(spaces)
+				if
+					\ -space ==# (tab - 1) * sw ||
+					\ -space ==# (tab    ) * sw ||
+					\ -space ==# (tab + 1) * sw
+					let spaces[sw] += n
+				end
+			endfor
+		endfor
+
+		let [max_dspace, max_nspaces] = s:dictmax(spaces)
+		echomsg 'tab spaces:' spaces '->' [max_dspace, max_nspaces]
 
 		" Use tabs.
 		setlocal noexpandtab
