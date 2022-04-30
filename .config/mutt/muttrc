@@ -18,8 +18,7 @@ alternative_order text/enriched text/plain text/html
 
 source $my_dotdir/keys
 
-folder-hook .     'set index_format="%3C %Z %@date@ %-20.20L%@attach@%?M?(%M) ?%s (%?l?%4l&%4c?)%@label@"'
-folder-hook feeds 'set index_format="%3C %Z %@date@ %-15.15L%@attach@%?M?(%M) ?%s%@label@"'
+folder-hook . 'set index_format="%3C %Z %@date@ %-20.20L%@attach@%?M?(%M) ?%s (%?l?%4l&%4c?)%@label@"'
 
 index-format-hook attach "~X>"	"  "
 index-format-hook attach "~A"	"   "
