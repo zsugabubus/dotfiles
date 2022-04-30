@@ -17,25 +17,26 @@ echo 'unmailboxes *'
 
 echo 'set spoolfile=+'"$(readlink .spool)"
 
-for maildir in */*/cur */cur; do
-	maildir=${maildir%/cur}
-	group=${maildir%/*}
+# Indentation have to be manually crafted since Mutt's method works only
+# if we inserted a dummy x mailbox that is simply a waste of space. This
+# way heading line serves as the inbox.
+for dir in */inbox */cur; do
+	maildir=${dir%/*}
 
-	# Is grouped?
-	if test -d "$group/inbox"; then
-		# Indentation have to be manually crafted since Mutt's method works only
-		# if we inserted a dummy x mailbox that is simply a waste of space. This
-		# way heading line serves as the inbox.
-		echo "mailboxes -label $group =$group/inbox"
-		case $maildir in
-		*/inbox) ;;
-		*) echo "mailboxes -label '  ${maildir#*/}' =$maildir" ;;
+	case $dir in
+	*/cur) echo "mailboxes =$maildir" ;;
+	*) echo "mailboxes -label $maildir =$maildir/inbox" ;;
+	esac
+
+	for subdir in "$maildir/"*/; do
+		subdir=${subdir%/}
+		case $subdir in
+		*/cur|*/new|*/tmp|*/inbox) ;;
+		*) echo "mailboxes -label '  ${subdir#*/}' =$subdir" ;;
 		esac
-	else
-		echo "mailboxes =$maildir"
-	fi
+	done
 
-	muttrc=$group/muttrc
+	muttrc=$maildir/muttrc
 	if test -f "$muttrc"; then
 		echo "folder-hook $maildir 'source =$muttrc'"
 	fi
