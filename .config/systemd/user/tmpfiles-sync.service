@@ -1,5 +1,5 @@
 [Unit]
-Description=Temporary Files Sync
+Description=Persist Temporary Files Created by systemd-tmpfiles
 RequiresMountsFor=/home
 
 [Service]
