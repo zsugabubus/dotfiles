@@ -3,5 +3,5 @@ Description=RSS to Mailbox
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/mrss --config "%E/mrss/config"
+ExecStart=mrss --config "%E/mrss/config"
 ExecStopPost=%E/mrss/post
