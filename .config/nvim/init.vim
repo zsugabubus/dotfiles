@@ -1004,8 +1004,6 @@ augroup vimrc_autoresize
 	autocmd! VimResized * wincmd =
 augroup END
 
-Source statusline.vim
-
 function! s:wincmd_magic(win_cmd, tmux_cmd)
 	let cur = winnr()
 	execute 'wincmd' a:win_cmd
