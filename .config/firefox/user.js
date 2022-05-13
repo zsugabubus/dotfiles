@@ -2,6 +2,10 @@ user_pref('gfx.webrender.enabled', false);
 user_pref('layers.acceleration.force-enabled', false);
 user_pref('webgl.force-enabled', false);
 
+user_pref('dom.ipc.processPrelaunch.fission.number', 1);
+user_pref('fission.webContentIsolationStrategy', 2); // 0:no 1:all 2:valuable only
+user_pref('dom.ipc.processCount.webIsolated', 999); // 1
+
 user_pref('accessibility.blockautorefresh', true);
 user_pref('accessibility.browsewithcaret_shortcut.enabled', false);
 user_pref('accessibility.warn_on_browsewithcaret', false);
