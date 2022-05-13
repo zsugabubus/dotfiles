@@ -53,7 +53,9 @@
 		font-family: unset !important;
 	}
 
-	div.js-cookie-consent-banner {
+	.dashboard-changelog,
+	div.js-cookie-consent-banner
+	{
 		display: none !important;
 	}
 }
