@@ -1,5 +1,3 @@
-Source git.vim
-
 augroup vimrc_statusline
 	autocmd!
 	set noshowmode laststatus=2
