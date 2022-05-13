@@ -57,8 +57,6 @@ else
 	command! -nargs=+ IfSandbox <args>
 endif
 
-command! -nargs=1 Source execute 'source' fnameescape((has('nvim') ? stdpath('config') : '~/.vim').'/'.<q-args>)
-
 " PackCommand {pack} {cmd}...
 " Auto packadd {pack} on first {cmd} invocation.
 function s:pack_command(pack, ...)
@@ -1247,7 +1245,6 @@ let @p = "i\<C-R>+\<CR>\<Esc>"
 let @s = "0ldt;h%hPpa;\<Esc>v0y{O\<Esc>jpjdwf ;dEO\<Esc>"
 let @n = "dd*\<C-w>\<C-w>nzz\<C-w>\<C-w>"
 
-delcommand Source
 delcommand PackCommand
 
 delcommand Ccabbrev
