@@ -38,6 +38,7 @@ augroup vimrc_statusline
 
 	let g:recent_buffers = []
 	function! StatusLineRecentBuffers() abort
+		return ''
 		let s = ''
 		let altbufnr = bufnr('#')
 		for bufnr in g:recent_buffers
