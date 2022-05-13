@@ -796,7 +796,6 @@ augroup vimrc_autopackadd
 	IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 augroup END
 
-IfLocal packadd vim-mbsyncrc
 IfLocal packadd vim-gnupg
 
 packadd cfilter
@@ -1009,14 +1008,6 @@ command! -nargs=+ Match call matchadd(s:matchcolors[s:nmatchcolors], <q-args>)|l
 " Delay loading of vim-jumpmotion.
 IfLocal noremap <silent> <Space> :<C-U>unmap <lt>Space><CR>:packadd vim-jumpmotion<CR>:call feedkeys(' ', 'i')<CR>
 
-IfLocal packadd vim-paperplane
-IfLocal packadd vim-pets
-IfLocal packadd vim-mall
-IfLocal packadd vim-vnicode
-IfLocal packadd vim-dent
-IfLocal packadd vim-fuzzysearch
-" IfLocal packadd showempty.nvim
-" IfLocal packadd showindent.nvim
 
 command! -nargs=* Termdebug delcommand Termdebug<bar>packadd termdebug<bar>Termdebug <args>
 
