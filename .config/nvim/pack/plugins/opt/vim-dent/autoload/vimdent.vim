@@ -17,8 +17,6 @@ function! vimdent#Detect(...) abort
 
 	let context = 0
 
-	let start = reltime()
-
 	let bufnr = bufnr()
 	let dirname = fnamemodify(bufname(bufnr), ':h')
 	for other in range(1, bufnr('$'))
@@ -222,5 +220,4 @@ let S=s
 	else
 		echomsg 'all=default'
 	endif
-	echomsg 'total' (reltimefloat(reltime(start)) * 1000) 'ms'
 endfunction
