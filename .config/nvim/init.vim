@@ -1052,6 +1052,17 @@ function! s:capture(cmd) abort
 endfunction
 command! -nargs=+ -complete=command Capture call s:capture(<q-args>)
 
+function! s:time(cmd) abort
+	let start = reltime()
+	try
+		execute a:cmd
+	finally
+		echomsg 'time' reltimestr(reltime(start)) 's'
+	endtry
+endfunction
+command! -nargs=* -complete=command Time call s:time(<q-args>)
+
+
 let completecontacts_hide_nicks=1
 let completecontacts_query_cmd=
 	\ "/usr/bin/abook --mutt-query ''|
