@@ -1050,7 +1050,7 @@ function! s:capture(cmd) abort
 		put! =l:output
 	endif
 endfunction
-command! -nargs=+ -complete=command Capture call s:capture(<q-args>)
+command! -nargs=* -complete=command Capture call s:capture(<q-args> || 'messages')
 
 function! s:time(cmd) abort
 	let start = reltime()
