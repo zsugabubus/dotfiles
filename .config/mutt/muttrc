@@ -28,7 +28,7 @@ index-format-hook date "~d<2d"	"%[Ytd %H]"
 index-format-hook date "~d<3d"	"%[2 days]"
 index-format-hook date "~d<4d"	"%[3 days]"
 index-format-hook date "~d<1w"	"%[%a %H]"
-index-format-hook date "~d<y"	"%[%b %d]"
+index-format-hook date "~d<1y"	"%[%b %d]"
 index-format-hook date "~A"	"%[%y %b]"
 
 index-format-hook label "~A"	"%?Y? {%Y}?"
