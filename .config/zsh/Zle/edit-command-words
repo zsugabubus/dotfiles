@@ -2,13 +2,15 @@
 
 emulate -L zsh
 
-BUFFER=${(FQ)${(z)BUFFER}}
+[[ $BUFFER =~ '^( *)' ]]
+BUFFER=${match[1]}${(FQ)${(z)BUFFER}}
 function send-break() {
 	zle -D send-break
 	unfunction send-break
 
-	read -z BUFFER
-	BUFFER=${(j: :)${(fq-)BUFFER}}
+	IFS='' read -z BUFFER
+	[[ $BUFFER =~ '^( *)(.*)' ]]
+	BUFFER=${match[1]}${(j: :)${(fq-)${match[2]}}}
 	zle redisplay
 }
 zle -N send-break
