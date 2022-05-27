@@ -1,0 +1,3 @@
+#compdef sheep_pacman
+words[1]=pacman
+_normal
