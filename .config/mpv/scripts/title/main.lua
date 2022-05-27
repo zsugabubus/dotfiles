@@ -54,6 +54,7 @@ end
 
 mp.add_key_binding('T', 'show-title', function()
 	mp.unobserve_property(update)
+	mp.unregister_event(update)
 
 	visible = not visible
 	if visible then
@@ -64,7 +65,6 @@ mp.add_key_binding('T', 'show-title', function()
 		mp.observe_property('audio-params', nil, update)
 	else
 		title.flush_cache()
-		mp.unregister_event(update)
 		osd:remove()
 	end
 end, {repeatable=false})
