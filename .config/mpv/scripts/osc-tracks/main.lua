@@ -280,7 +280,6 @@ end
 
 function update_menu()
 	mp.unobserve_property(update)
-	mp.unregister_event(update)
 
 	if visible then
 		mode:add_key_bindings()
