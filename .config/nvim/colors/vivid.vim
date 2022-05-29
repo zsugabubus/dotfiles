@@ -1,7 +1,6 @@
-let s:colors_name = fnamemodify(expand('<sfile>'), ':t:r')
-let s:cache = (has('nvim') ? stdpath('cache') : '/tmp').'/'.s:colors_name.'-'.&background.(has('nvim') ? '-nvim' : '').'.vim'
-if getftime(expand('<sfile>')) <=# getftime(s:cache)
-	execute 'source' fnameescape(s:cache)
+packadd vim-cccache
+
+if CCCacheTest(expand('<sfile>'))
 	finish
 endif
 
@@ -23,64 +22,6 @@ endif
 " #0f2f21 guibg=#7afb70|#1f362a #fdce67
 " #372230 043617 44212f
 " guibg=#faeaf4|#4e0d16
-
-let s:cached_cmds = []
-" Cache Input... And... Output it.
-command! -nargs=* Ciao call add(s:cached_cmds, <q-args>)|<args>
-
-function! s:hi(name, ...)
-	let name = a:name
-	if name[0] ==# '!'
-		let name = name[1:]
-		execute 'Ciao hi! clear' name
-	elseif name[0] ==# '.'
-		let name = name[1:]
-		execute 'Ciao hi ' name 'NONE'
-	endif
-	if get(a:000, 0, '')[0] ==# '='
-		execute 'Ciao hi! link ' name a:000[0][1:]
-		return
-	endif
-	let cmd = 'Ciao hi '.name
-	let attrs = {}
-	for attr in a:000
-		let [_, key, value; _] = matchlist(attr, '\v%(([a-z]+)\=)?(.*)')
-		if !empty(key)
-			" Choose value according to &background.
-			let value = split(value, '\V|', 1)
-			let value = get(value, len(value) ==# 2 && &background ==# 'dark', '')
-
-			" Resolve highlight["." { attribute | name }].
-			if value =~# '\m\C^[A-Z][a-z]'
-				let [name, arg; _] = split(value, '\V.') + [key]
-				redir => output
-				silent! execute 'hi' name
-				redir END
-				let value = matchstr(output, ' '.arg.'=\zs[^ \n]*')
-			endif
-
-			if empty(value)
-				continue
-			endif
-
-			let attrs[key] = value
-
-			" Really. Fuck your diverging shit.
-			if has('nvim') && key ==# 'cterm' && value =~# 'bold'
-				let attrs['gui'] = get(attrs, 'gui', '').(!empty(get(attrs, 'gui', '')) ? ',' : '').value
-			endif
-		else
-			let attrs[''] = value
-		endif
-	endfor
-	let cmd = join([cmd] + map(filter(items(attrs), {_,x-> !empty(x[1])}), {_,x-> (!empty(x[0]) ? x[0].'=' : '').(type(x[1]) ==# v:t_list ? join(x[1], ',') : x[1])}), ' ')
-	execute cmd
-endfunction
-command! -nargs=+ Hi call s:hi(<f-args>)
-
-Ciao hi clear
-execute "Ciao let colors_name = '".s:colors_name."'"
-Ciao if exists("syntax_on")|syntax reset|endif
 
 Hi Normal guifg=#2f323f|#eeede9 guibg=#eeeeee|#222432
 Hi Visual guibg=#accdfe|#5c4dbd gui=NONE ctermbg=4
@@ -239,10 +180,4 @@ Hi debugBreakpoint cterm=bold guibg=#f51030 guifg=#ffffff
 
 Hi changeLogError guifg=Normal
 
-try
-	call writefile(s:cached_cmds, s:cache)
-catch
-endtry
-
-delcommand Hi
-delcommand Ciao
+call CCCacheFinish()
