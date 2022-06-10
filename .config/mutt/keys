@@ -140,13 +140,14 @@ macro index C <enter-command>cd<space>
 
 bind browser c change-dir
 macro browser h "<change-dir>..<return>"
+macro browser M "<change-dir>\cu~/mem<return>"
 bind browser l descend-directory
 
-macro compose <return> m
 bind compose - toggle-unlink
 bind compose A attach-message
 bind compose J move-down
 bind compose K move-up
+bind compose T get-attachment
 bind compose a attach-file
 bind compose b edit-bcc
 bind compose c edit-cc
@@ -156,7 +157,7 @@ bind compose f edit-fcc
 bind compose g pgp-menu
 bind compose i toggle-disposition
 bind compose m edit-message
-bind compose n rename-file
+bind compose n rename-attachment
 bind compose o edit-description
 bind compose p postpone-message
 bind compose r edit-reply-to
@@ -165,6 +166,7 @@ bind compose t edit-to
 bind compose v view-attach
 bind compose w copy-file
 bind compose y send-message
+macro compose <return> m
 
 bind postpone d delete-entry
 bind postpone u undelete-entry
