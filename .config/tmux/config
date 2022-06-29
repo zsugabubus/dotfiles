@@ -27,7 +27,7 @@ set -g status-right "%a, %b %d %R"
 
 # Really... making this fucking colon fucking optional is FUCKING IMPOSSIBLE.
 # WHY? THE FUCK? LITTLE SHITS. Why the fuck string interpolation is so fucking hard.
-set -g @window-status-format " #[fg=color245]#[default]#I#[fg=color245]:#[fg=default]#W#[fg=color245]:#[fg=default]#{?synchronize-panes,~,}#{window_flags}#{?window_zoomed_flag,Z,}#{?monitor-activity,A,} "
+set -g @window-status-format " #[fg=color245]#[default]#I#[fg=color245]:#[fg=default]#W#[fg=color245]:#[fg=default]#{?synchronize-panes,~,}#{window_flags}#{?monitor-activity,A,} "
 set -g window-status-format "#{E:@window-status-format}"
 set -g window-status-current-format "#{E:@window-status-format}"
 
