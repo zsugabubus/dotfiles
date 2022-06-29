@@ -169,27 +169,39 @@ compdef mpc=mpv_hack
 
 alias mpctl=mpvctl
 function mpvctl() {
-	local server servers=()
-	for server in  /tmp/mpv*(omN=); do
-		if ! echo -n | socat - $server 2>/dev/null; then
-			unlink $server
-		else
-			servers+=$server
-		fi
-	done
+	local server=${1:-}
 
-	if (( 1 < $#servers )); then
-		select server in $servers; do break; done
-	else
-		server=${servers[1]}
+	if [[ -z $server ]]; then
+		local servers=()
+		for server in /tmp/mpv*(omN=); do
+			if ! echo -n | socat - $server 2>/dev/null; then
+				unlink $server
+			else
+				servers+=$server
+			fi
+		done
+
+		if (( !$#servers )); then
+			printf >&2 'No mpv sockets found.  Is mpv running?'
+			return
+		elif (( 1 < $#servers )); then
+			select server in $servers; do break; done
+		else
+			server=${servers[1]}
+		fi
 	fi
 
 	printf 'Controlling %s\n' $server
-	printf 'Press C-c to exit\r'
+	printf 'Press C-c to exit.\r'
+
+	readonly -A keymap=(
+		$'\t' TAB
+		$'\n' ENTER
+		$'\e' ESC
+	)
+
 	while read -srk1; do
-		if [[ $REPLY == $'\e' ]]; then
-			REPLY=ESC
-		fi
+		REPLY=${keymap[$REPLY]:-$REPLY}
 		printf '{"command":["%s", "%s"]}\n' keydown $REPLY keyup $REPLY
 	done |
 	socat - $server |
