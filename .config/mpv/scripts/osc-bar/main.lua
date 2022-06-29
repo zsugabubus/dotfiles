@@ -154,8 +154,6 @@ local function _update()
 	mouse_time = duration * mouse_percent
 
 	if mode == 'auto' then
-		local want_visible = osd.res_y * 2 / 3 <= mouse.y
-
 		if mouse_hit then
 			timeout:kill()
 			if not visible then
@@ -163,9 +161,16 @@ local function _update()
 				update_mode()
 				return
 			end
+		-- Blink when cursor is moved close to the bar.
 		elseif
-			not want_visible and
-			-- Blinking.
+			old_mouse_y ~= mouse.y and
+			mouse.hover and
+			osd.res_y * 2 / 3 <= mouse.y
+		then
+			old_mouse_y = mouse.y
+			visibility('blink')
+		-- Blinking is over.
+		elseif
 			not timeout:is_enabled()
 		then
 			if visible then
@@ -173,9 +178,6 @@ local function _update()
 				update_mode()
 				return
 			end
-		elseif mouse.y ~= old_mouse_y then
-			old_mouse_y = mouse.y
-			visibility('blink')
 		end
 	end
 
