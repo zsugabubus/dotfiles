@@ -348,7 +348,7 @@ function ccd() {
 
 function sheep_pacman() {
 	# --noconfirm does ask confirmation for conflicting packages.
-	sheep 'yes | pacman -S '$*' && su $USER'
+	sheep 'yes | pacman '$*' && su $USER'
 }
 
 function sheep_black() {
