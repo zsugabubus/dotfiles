@@ -161,7 +161,7 @@ local function osd_append_track(track)
 		osd.RIGHT_ARROW,
 		'{\\alpha&H00} ',
 		(enabled and '●' or '○'), ' ',
-		track.id, ': ')
+		track.type:sub(1, 1):upper(), ': ', track.id, ': ')
 
 	osd:append('[', track.lang or 'und', '] ')
 
@@ -233,7 +233,7 @@ local function osd_append_track_list(name, track_type, tracks)
 		osd.RIGHT_ARROW,
 		'{\\alpha&H00} ',
 		'○', ' ',
-		'0: none')
+		track_type:sub(1, 1):upper(), ': 0: none')
 
 	for i=1,#tracks do
 		osd_append_track(tracks[i])
