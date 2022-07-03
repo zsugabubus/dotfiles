@@ -23,7 +23,7 @@ local function __powerline-chpwd() {
 
 	if [[ ! -w . ]]; then
 		# %{%G%}
-		__powerline_writeable=' %F{249}[RO]%F{$POWERLINE_DIR_FG}'
+		__powerline_writeable=" %F{249}[RO]%F{$POWERLINE_DIR_FG}"
 	else
 		__powerline_writeable=
 	fi
@@ -90,7 +90,7 @@ local function prompt_powerline_setup() {
 	*)
 		# It just works.
 		ZLE_RPROMPT_INDENT=$(( 1 - $+TMUX ))
-		PS1='$(__powerline-command)$__powerline_where%K{$POWERLINE_DIR_FG}%F{236} ${${vcs_info_msg_0_:-"$__powerline_path%F{$POWERLINE_DIR_FG}$__powerline_writeable"}//\$__powerline_writeable/$__powerline_writeable} %k%{%G%}%f '
+		PS1='$__powerline_context$__powerline_where%K{$POWERLINE_DIR_FG}%F{236} ${${vcs_info_msg_0_:-"$__powerline_path%F{$POWERLINE_DIR_FG}$__powerline_writeable"}//\$__powerline_writeable/$__powerline_writeable} %k%{%G%}%f '
 		RPS1='%F{250}%(1j. %%%j.)$__powerline_keymap%b$__powerline_status%(2L. %F{254}%{%G%}%K{254}%F{244} %L.)'$([[ -n $TMUX ]] && print -n ' ' || print -n '%{ %}')
 		PS2='%K{254}%F{247} %_ %k%F{254}%f '
 		;;
@@ -123,7 +123,7 @@ local function prompt_powerline_setup() {
 
 	local useratdomain=${${${:-$USER@$HOST}/#$default_user@/@}/%@$default_host/@}
 	if [[ $useratdomain != @ ]]; then
-		__powerline_where='%K{234}%F{214}%B '$useratdomain' %b%K{$POWERLINE_DIR_FG}%F{234}%{%G%}'
+		__powerline_where="%K{234}%F{214}%B $useratdomain %b%K{$POWERLINE_DIR_FG}%F{234}%{%G%}"
 	else
 		__powerline_where=
 	fi
@@ -161,8 +161,8 @@ local function prompt_powerline_setup() {
 		;;
 
 	*)
-		zstyle ':vcs_info:git*' formats '%{%G%} %r/%S$__powerline_writeable %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b%m%u%c%F{$POWERLINE_VCS_FG}'
-		zstyle ':vcs_info:git*' formats '%r/%S$__powerline_writeable %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b%m%u%c%F{$POWERLINE_VCS_FG}'
+		zstyle ':vcs_info:git*' formats "%{%G%} %r/%S\$__powerline_writeable %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b%m%u%c%F{$POWERLINE_VCS_FG}"
+		zstyle ':vcs_info:git*' formats "%r/%S\$__powerline_writeable %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b%m%u%c%F{$POWERLINE_VCS_FG}"
 		zstyle ':vcs_info:git*' actionformats "%{%G%} %r/%S %K{$POWERLINE_VCS_FG}%F{$POWERLINE_DIR_FG}%{%G%}%K{$POWERLINE_VCS_FG}%F{239} %{%G%} %b [%a%u]%F{$POWERLINE_VCS_FG}"
 		zstyle ':vcs_info:*' branchformat "%{%G%} %b:%r"
 		# Will be replaced in PS1.
