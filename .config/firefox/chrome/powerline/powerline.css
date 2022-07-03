@@ -94,15 +94,35 @@
 	position: relative;
 }
 
-.tab-stack::after {
+.tabbrowser-tab::after {
 	content: '';
 	display: inline-block;
 	position: absolute;
 	top: 0;
 	right: 0;
 	width: 0;
+	left: 0;
 	font-size: calc(1rem + 1px);
 	transform: translate(0, -1px);
+	color: transparent;
+}
+
+.tabbrowser-tab * {
+	outline: none !important;
+}
+
+.tabbrowser-tab:not([selected]):not([multiselected]) + .tabbrowser-tab::after {
+	color: var(--tab-background) !important;
+}
+
+.tabbrowser-tab[selected] + .tabbrowser-tab::after,
+.tabbrowser-tab[multiselected] + .tabbrowser-tab::after {
+	color: var(--tab-selected-background) !important;
+}
+
+.tabbrowser-tab[selected] + .tabbrowser-tab:-moz-window-inactive::after,
+.tabbrowser-tab[multiselected] + .tabbrowser-tab:-moz-window-inactive::after {
+	color: var(--tab-inactive-background) !important;
 }
 
 .tab-content {
@@ -119,10 +139,6 @@
 	background: var(--tab-background) !important;
 }
 
-.tabbrowser-tab:not([selected]):not([multiselected]) > .tab-stack::after {
-	color: var(--tab-background) !important;
-}
-
 .tabbrowser-tab:not([selected]):not([multiselected]):nth-child(-n+9) .tab-label::before {
 	color: var(--tab-number-color);
 }
@@ -135,6 +151,7 @@
 
 .tabbrowser-tab:not([selected]):not([multiselected]) + .tabbrowser-tab:not([selected]):not([multiselected]) .tab-background::before {
 	content: '';
+	margin-left: 1px;
 }
 
 .tabbrowser-tab[selected],
@@ -147,19 +164,9 @@
 	background: var(--tab-selected-background) !important;
 }
 
-.tabbrowser-tab[selected] > .tab-stack::after,
-.tabbrowser-tab[multiselected] > .tab-stack::after {
-	color: var(--tab-selected-background) !important;
-}
-
 .tabbrowser-tab[selected] .tab-background:-moz-window-inactive,
 .tabbrowser-tab[multiselected] .tab-background:-moz-window-inactive {
 	background: var(--tab-inactive-background) !important;
-}
-
-.tabbrowser-tab[selected] > .tab-stack:-moz-window-inactive::after,
-.tabbrowser-tab[multiselected] > .tab-stack:-moz-window-inactive::after {
-	color: var(--tab-inactive-background) !important;
 }
 
 .tabbrowser-tab[selected]:nth-child(-n+9) .tab-label::before,
@@ -173,7 +180,7 @@
 	color: var(--tab-selected-color) !important;
 }
 
-.tabbrowser-tab:nth-child(-n+9) .tab-label::before {
+.tabbrowser-tab .tab-label::before {
 	counter-increment: index;
 	content: counter(index) ':';
 }
