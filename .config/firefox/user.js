@@ -166,3 +166,5 @@ user_pref('toolkit.telemetry.shutdownPingSender.enabled', false);
 user_pref('toolkit.telemetry.updatePing.enabled', false);
 user_pref('tridactyl.unfixedamo', true);
 user_pref('ui.prefersReducedMotion', 1);
+user_pref('widget.disable-dark-scrollbar', true);
+user_pref('widget.gtk.overlay-scrollbars.enabled', false);
