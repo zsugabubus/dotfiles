@@ -4,15 +4,9 @@ emulate -L zsh
 
 [[ $BUFFER =~ '^( *)' ]]
 BUFFER=${match[1]}${(FQ)${(z)BUFFER}}
-function send-break() {
-	zle -D send-break
-	unfunction send-break
-
-	IFS='' read -z BUFFER
-	[[ $BUFFER =~ '^( *)(.*)' ]]
-	BUFFER=${match[1]}${(j: :)${(fq-)${match[2]}}}
-	zle redisplay
-}
-zle -N send-break
 
 zle edit-command-line
+
+[[ $BUFFER =~ '^( *)(.*)' ]]
+BUFFER=${match[1]}${(j: :)${(fq-)${match[2]}}}
+zle redisplay
