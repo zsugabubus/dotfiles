@@ -1,10 +1,11 @@
 let s:pattern = ''
 let s:job = -1
 
-function! s:tdout(job, lines, event) abort
+function! s:on_stdout(job, lines, event) abort
 	try
 		let lines = map(a:lines[:-2], 'str2nr(v:val)')
-		let @/ = empty(lines) ? '' : '\v^%('.join(map(lines, {_,lnum-> '%'.lnum.'l'}), '|').')'
+		let lines = lines[:999]
+		let @/ = empty(lines) ? '' : '\v^%('.join(map(lines, {_,lnum-> '%'.(lnum + 1).'l'}), '|').')'
 		execute printf('silent! normal! %dGNn', s:origlnum)
 		redraw!
 	catch
@@ -14,12 +15,12 @@ function! s:tdout(job, lines, event) abort
 	endtry
 endfunction
 
-function! s:top(job, exitcode, event) abort
+function! s:on_exit(job, exitcode, event) abort
 	let s:pattern = ''
 	let s:lines = ''
 endfunction
 
-function! s:earch(pattern, final) abort
+function! s:do_search(pattern, final) abort
 	if !a:final && !&hlsearch
 		return
 	endif
@@ -28,7 +29,13 @@ function! s:earch(pattern, final) abort
 
 		if empty(s:pattern)
 			let s:origlnum = line('.')
-			let s:lines = map(getline(1, '$'), {idx,line-> (idx + 1)."\t".line})
+			if s:engine ==# 'fzf'
+				let s:lines = map(getline(1, '$'), {lnum,line-> lnum."\t".line})
+			elseif s:engine ==# 'fizzy'
+				let s:lines = getline(1, '$')
+			else
+				throw 'unknown engine' s:engine
+			endif
 		endif
 
 		let s:pattern = a:pattern
@@ -36,19 +43,25 @@ function! s:earch(pattern, final) abort
 			return
 		endif
 
-		let lines = []
+		if s:engine ==# 'fzf'
+			let cmdline = ['fzf', '--no-sort', "--delimiter=\t", '--nth=2..', '-f', s:pattern]
+		elseif s:engine ==# 'fizzy'
+			let cmdline = ['fizzy', '-isfq', s:pattern]
+		endif
 
-		let s:job = jobstart(['fzf', '--no-sort', "--delimiter=\t", '--nth=2..', '-f', s:pattern], {
-		\  'on_exit': function('s:top'),
-		\  'stdout_buffered': 1,
-		\  'on_stdout': function('s:tdout')
+		let s:job = jobstart(cmdline, {
+		\  'on_exit': function('s:on_exit'),
+		\  'on_stdout': function('s:on_stdout'),
+		\  'stdout_buffered': 1
 		\})
+
 		call chansend(s:job, s:lines)
 		call chanclose(s:job, 'stdin')
 	else
 		let @/ = ''
 		nohlsearch
 	endif
+
 	if a:final
 		try
 			if jobwait([s:job])[0] <# 0
@@ -62,6 +75,9 @@ endfunction
 
 function! fuzzysearch#search(...) abort
 	let s:engine = get(a:000, 0, 'fzf')
-	let pat = input({'prompt': 'z/', 'highlight': {pat-> [s:earch(pat, 0), []][1]}})
-	call s:earch(pat, 1)
+	let pattern = input({
+	\  'prompt': 'z/',
+	\  'highlight': {pattern-> [s:do_search(pattern, 0), []][1]}
+	\})
+	call s:do_search(pattern, 1)
 endfunction
