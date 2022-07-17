@@ -14,8 +14,10 @@ local function get_playlist_entry(item)
 	s = cache[item.title]
 	if s ~= nil then
 		return s
-	elseif item.title ~= nil then
-		s = Osd.ass_escape(item.title)
+	end
+
+	if item.title ~= nil then
+		s = Osd.ass_escape_nl(item.title)
 		cache[item.title] = s
 		return s
 	end
@@ -57,7 +59,7 @@ local function get_playlist_entry(item)
 		-- Trim extension.
 		:gsub('([^/])%.[0-9A-Za-z]+$', '%1')
 
-	s = Osd.ass_escape(s)
+	s = Osd.ass_escape_nl(s)
 	cache[item.filename] = s
 	return s
 end
@@ -70,13 +72,13 @@ function get_current()
 	if artist and title then
 		local version = mp.get_property_native('metadata/by-key/Version', nil)
 		return table.concat({
-			Osd.ass_escape(artist),
+			Osd.ass_escape_nl(artist),
 			' - ',
 			'{\\b1}',
-			Osd.ass_escape(title),
+			Osd.ass_escape_nl(title),
 			'{\\b0}',
 			version and ' (',
-			version and Osd.ass_escape(version),
+			version and Osd.ass_escape_nl(version),
 			version and ')',
 		})
 	else
@@ -91,7 +93,7 @@ function get_current()
 		then
 			return get_playlist_entry(current)
 		elseif title then
-			return Osd.ass_escape(title)
+			return Osd.ass_escape_nl(title)
 		else
 			return
 		end
