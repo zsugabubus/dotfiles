@@ -75,13 +75,16 @@ function Osd:update()
 end
 
 function Osd.ass_escape(s)
-	local x = s
+	return s
 		-- ASS' escape handling is WTF: RS cannot be escaped with RS so we trick it
 		-- by using ZWJ.
 		:gsub('\\', '\\\239\187\191')
 		:gsub('{', '\\{')
 		:gsub('\n', '\\N')
-	return x
+end
+
+function Osd.ass_escape_nl(s)
+	return Osd.ass_escape(s:gsub('\n', ' '))
 end
 
 return Osd
