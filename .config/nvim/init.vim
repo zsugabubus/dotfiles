@@ -442,6 +442,8 @@ function! s:make() abort
 	endif
 endfunction
 
+command! Ctags !test -d build && ln -sf build/tags tags; ctags -R --exclude=node_modules --exclude='*.json' --exclude='*.patch' '--map-typescript=+.tsx'
+
 nnoremap <silent> <M-m> :call <SID>make()<CR>
 nnoremap <silent> <M-r> :call <SID>make()<CR>:if !v:shell_error<bar>execute 'tabnew<bar>terminal make run'<bar>endif<CR>
 " Swap word {{{1
