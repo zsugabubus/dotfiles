@@ -23,6 +23,8 @@ endif
 " #372230 043617 44212f
 " guibg=#faeaf4|#4e0d16
 
+Hi Number guifg=#fa3422|#fa7452 cterm=bold
+
 Hi Normal guifg=#2f323f|#eeede9 guibg=#eeeeee|#222432
 Hi Visual guibg=#accdfe|#5c4dbd gui=NONE ctermbg=4
 Hi VisualNOS guifg=#d8d8dc
@@ -32,8 +34,8 @@ Hi !StatusLineTerm =Normal
 Hi !StatusLineTermNC =StatusLineTerm
 Hi !TabLine guifg=#444444|#f8fcf8 guibg=StatusLine gui=NONE
 Hi TabLineSel guifg=#414140 guibg=#eeeeee|#ffaf5f cterm=bold
-Hi CursorLineNr =Number
 Hi LineNr guifg=#b0abab|#8085a0 guibg=#ededed|Normal
+Hi CursorLineNr guifg=Number guibg=LineNr
 Hi SignColumn guifg=#444444 guibg=LineNr
 Hi FoldColumn guifg=#b0abab guibg=LineNr
 " f0e0e0
@@ -79,7 +81,6 @@ Hi Type guifg=#ed0085|#fd0069 cterm=bold
 Hi Conditional guifg=#9d00c5|#ff6de9 cterm=bold
 Hi Identifier guifg=#4d4d4f|#cacacc cterm=bold
 Hi PreProc guifg=#006dd9|#ffcd09
-Hi Number guifg=#fa3422|#fa7452 cterm=bold
 Hi Keyword guifg=#006de9|#009df9 cterm=bold
 Hi String =Constant
 Hi SpecialChar cterm=bold guifg=#df4f00
