@@ -219,8 +219,10 @@ CHR	1;40;97mﱡ \e[1;40;97
 .json	m \e[
 .js	m \e[
 .ts	m \e[
+.tsx	m \e[
 .gpg	m \e[
 .rs	m \e[
+.go	m \e[
 .spl	m暈\e[
 .vim	m \e[
 .styl	m \e[
