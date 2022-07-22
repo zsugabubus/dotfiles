@@ -73,9 +73,7 @@ augroup vim_pets_snippets
 		\]
 
 	autocmd FileType css let b:pets_snippets += [
-		\ ['\s*!', ' !important;'],
-		\ [':\ze\s*([a-z]) ', {m-> ' '.matchstr('inherit none unset', '\v<'.m[1].'.{-}>')}],
-		\ ['^\s*\ze([a-z]+) ', {m-> matchstr(' border-width border border-top border-right border-bottom border-left border-radius border-top-left-radius border-top-right-radius border-bottom-left-radius border-bottom-right-radius font font-size font-weight box-shadow position content display margin margin-top margin-right margin-bottom margin-left padding padding-top padding-right padding-bottom margin-left width height min-width min-height ', '\v \zs'.substitute(m[1], '.', '-\0\\S{-}', 'g')[1:].'\ze ').': '}]
+		\ ['\ze\s*!', ' !important;'],
 		\]
 
 	autocmd FileType c,cpp let b:pets_snippets += [
@@ -105,16 +103,15 @@ augroup vim_pets_snippets
 		\ ["^\\s*}? *\\ze<(e%[lse])>\<CR>", "else\<CR>"],
 		\ ['^%(.{-}<for>.*)@!\ze;', {m-> substitute(g:PetsUnclosedBrackets(winline()), '\m^$', ';', '')}],
 		\ ['^%(.{-}<for>.*)@!;\\ze;', "\<CR>"],
-		\ ['^\s*\zes%[truct]\s+(\k+)\s*{', {m-> 'struct '.m[1].(search('\v^\s*struct\s+\k+( +)?\{', 'bnpw') ==# 1 ? '' : ' ')."{\<CR>};\<C-O>O"}],
-		\ ["^\\s*\\zes%[truct]\\s+(\\k+)\<CR>", "struct \\1\<CR>{\<CR>};\<C-O>O"],
-		\ ['^\s*\zes%[truct]\s+(\k+);', "struct \\1;\<C-O>o"],
+		\ ['typedef.*{', "{\<CR>} ;\<Left>"],
+		\ ['\ze<s%[truct]%(\s+(\k+))?\s*{', {m-> 'struct'.(!empty(m[1]) ? ' '.m[1] : '').(search('\v^\s*struct\s+\k+( +)?\{', 'bnpw') ==# 1 ? '' : ' ')."{\<CR>};\<C-O>O"}],
+		\ ["\\ze<s%[truct]\\s+(\\k+)\<CR>", "struct \\1\<CR>{\<CR>};\<C-O>O"],
+		\ ['\ze<s%[truct]\s+(\k+);', "struct \\1;\<C-O>o"],
 		\ ["^\\s*#(\\s*)define\\s*(\\k+).*[^\\\\]\<CR>", "\<CR>#\\1undef \\2\<Esc>j$"],
 		\ ["^\\s*\\zer%[eturn];", "return;\<Left>"],
 		\ ['\S-\ze\>-', '-'],
 		\ ["^[^\"]*%(%(\"[^\"]*){2})*[^- \\t\"'[({0-9]-", '->'],
 		\ ['-\>>', ''],
-		\ ['\W\ze00', ' NULL'],
-		\ ['^\s*\zetypedef s', "typedef struct {\<CR>} ;\<Left>"],
 		\ ['%(<for>.*)@<!;;', "\<C-F>\<Esc>"],
 		\ ['^\s*memset\(([*()]*\w+[*()]*))', ', 0, sizeof *\1);'],
 		\]
@@ -162,7 +159,7 @@ augroup vim_pets_snippets
 		\]
 
 	autocmd FileType lua let b:pets_snippets += [
-		\ ["<%(else)?if>.{-}\\ze\\s*%(.*<then>.*)@<!\<CR>", {-> g:PetsUnclosedBrackets(1)." then\<CR>end\<C-O>O"}],
+		\ ["<%(else)?if>.{-}\\ze\\s*%(.*<then>.*)@<!\<CR>", {-> " then\<CR>end\<C-O>O"}],
 		\ ["<%(else)?if>.*<then>.*\\S+.{-}\\ze\s*%(<end>)@<!\<CR>", " end\<CR>"],
 		\ ["<%(do|then)>%(.*<end>.*)@<!\<CR>", "\<CR>end\<C-O>O"],
 		\ ["\\ze<%(f%[unction])>(.{-})%(<end>)@<!\<CR>", {m-> 'function'.m[1].g:PetsUnclosedBrackets(1)."\<CR>end\<C-O>O"}],
