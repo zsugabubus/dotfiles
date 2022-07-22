@@ -1206,7 +1206,7 @@ function! s:magic_tilde() abort
 	if &shell =~# 'zsh'
 		let cmd = join([
 			\  'set -eu',
-			\  '. $ZDOTDIR/??-hashes.zsh',
+			\  '. $ZDOTDIR/??-hashes*.zsh',
 			\  'path=$~0',
 			\  'unhash -dm \*',
 			\  'print -D -- $path',
