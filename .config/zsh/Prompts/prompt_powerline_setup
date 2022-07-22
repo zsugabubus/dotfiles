@@ -121,9 +121,12 @@ local function prompt_powerline_setup() {
 	}
 	zle -N zle-line-finish
 
-	local useratdomain=${${${:-$USER@$HOST}/#$default_user@/@}/%@$default_host/@}
-	if [[ $useratdomain != @ ]]; then
-		__powerline_where="%K{234}%F{214}%B $useratdomain %b%K{$POWERLINE_DIR_FG}%F{234}%{%G%}"
+	local login=$USER@$HOST
+	if [[ -z $SSH_CONNECTION ]]; then
+		login=${${login/#$default_user@/@}/%@$default_host/@}
+	fi
+	if [[ $login != @ ]]; then
+		__powerline_where="%K{234}%F{214}%B $login %b%K{$POWERLINE_DIR_FG}%F{234}%{%G%}"
 	else
 		__powerline_where=
 	fi
