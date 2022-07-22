@@ -1,11 +1,6 @@
 local options = require('mp.options')
 local osd = require('osd').new()
 
-local opts = {
-	font_scale = 0.65,
-}
-options.read_options(opts, nil, update)
-
 local visible = false
 
 local function _update()
@@ -14,7 +9,7 @@ local function _update()
 	local metadata = mp.get_property_native('metadata', {})
 	local lines = #metadata
 	local font_scale = math.min(
-		opts.font_scale,
+		.5,
 		osd:compute_font_scale(lines)
 	)
 
