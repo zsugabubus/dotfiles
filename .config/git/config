@@ -23,11 +23,9 @@
 	ccrb = "!f() { exec git c --edit --file .git/rebase-merge/message \"$@\"; }; f"
 
 	co = checkout
-	co- = co @{-1}
-	co-- = co @{-2}
 	cop = co --patch
-	cob = co -b
-	com = co master
+
+	sw = switch
 
 	# Hehe.
 	cp = cherry-pick
@@ -39,6 +37,7 @@
 	slp = sl -p
 	st = stash push
 	sp = stash pop
+	stpull = "!git st && git pull && git sp"
 
 	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	l = log-formatted
@@ -48,6 +47,7 @@
 	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
 	log-vim = l
 	la = l --all --full-history
+	lag = la --graph
 	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
 	lp = ll --patch --stat
 	lf = log --follow --patch
