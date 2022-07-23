@@ -78,7 +78,7 @@ set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{win
 unbind -a
 
 bind : command-prompt
-bind B set -g status
+bind C-b set -g status
 bind d detach-client
 
 bind c new-window -a -t : -c "#{pane_current_path}"
@@ -120,6 +120,7 @@ bind 9 select-window -t:=9
 
 bind n next-window
 bind p previous-window
+bind '!' next-window -a
 
 bind H swap-pane -dt '{left-of}'
 bind J swap-pane -dt '{down-of}'
