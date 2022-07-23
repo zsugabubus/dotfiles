@@ -164,15 +164,31 @@ function gccd() {
 }
 
 function make_install() {
-	local prefix
-	for prefix in '' sudo; do
-		$prefix make PREFIX=/usr prefix=/usr install && break
-	done
+	CFLAGS='-O3 -flto -pipe' make &&
+	sudo make install
+}
+
+function configure_install() {
+	CFLAGS='-O3 -flto -pipe' ${1?srcdir missing}/configure &&
+	make -j3 &&
+	make -n install &&
+	sudo make install
 }
 
 alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
-alias mp='() { ( exec mpv --input-ipc-server=/tmp/mpv$$ 2>/dev/null --player-operation-mode=pseudo-gui ${*:-.} ) &! }'
+# Shell... shell... shall I hang up myself? Shell was always dumb as fuck
+# because it is mostly used to start processes, but that it cannot even do a
+# getpid() (in a subshell). I could cry. If I ever will have a happy day in my
+# life, I just come back here and everything will be normal again.
+function mp() {
+	dash -c '
+		exec mpv 2>/dev/null \
+			--input-ipc-server=/tmp/mpv$$ \
+			--player-operation-mode=pseudo-gui \
+			"$@"
+	' sh "${@:-.}" &!
+}
 compdef mp=mpv_hack
 alias mp.='mp *(.)'
 alias mpm='() { eval mp "*(m-${1:-1}/)" }'
