@@ -1,4 +1,5 @@
-# Theme {{{1
+set -gF @nested "#{||:#{==:#{host},sheep},#{!=:#{SSH_CONNECTION},}}"
+
 %if #{==:#{TERM},linux}
 set -g status-fg color7
 set -g status-bg color0
@@ -36,10 +37,12 @@ set -g window-status-activity-style bold,bg=color191,fg=color0
 set -g window-status-bell-style bold,fg=color196,bg=color221
 set -g window-status-separator ''
 
+set -g pane-border-indicators arrows
+set -g pane-border-lines heavy
 set -g pane-border-style fg=color248
 set -g pane-border-format "#{pane_index} #W:#T @ #{pane_tty}"
 set -g pane-active-border fg=color220
-set -g pane-active-border-style '#{@highlight}'
+set -gF pane-active-border-style '##{@highlight},bg=#{?@nested,color215,color47}'
 
 set -g message-command-style bg=color254,fg=color250
 set -g message-style bg=color220,fg=color236
@@ -47,15 +50,6 @@ set -g mode-style bg=color220,fg=color236
 
 set -g copy-mode-match-style bg=#fdef39
 set -g copy-mode-current-match-style bg=#fdef39
-
-%endif
-# 1}}}
-# Options {{{1
-
-%if "#{||:#{==:#{host},sheep},#{!=:#{SSH_CONNECTION},}}"
-set -g @prefix 'C-b'
-%else
-set -g @prefix 'C-t'
 %endif
 
 set -g aggressive-resize on
@@ -67,7 +61,7 @@ set -g display-time 0
 set -g escape-time 0
 set -g focus-events on
 set -g history-limit 20000
-set -gF prefix "#{@prefix}"
+set -gF prefix "#{?@nested,C-b,C-t}"
 set -g renumber-windows on
 set -g repeat-time 418
 set -g set-titles on
@@ -78,12 +72,9 @@ set -g visual-bell on
 set -ga terminal-overrides ",*:Tc" # True color.
 set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q' # Cursor shape.
 
-# 1}}}
-# Hooks {{{1
 set-hook -g after-split-window[1] { select-layout tiled }
 set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{window_panes},1},off,bottom}' }
-# 1}}}
-# Bindings {{{1
+
 unbind -a
 
 bind : command-prompt
@@ -201,5 +192,4 @@ bind + set -s @xclip_selection clipboard \; source ~/.config/tmux/functions/xcli
 bind '~' set -w synchronize-panes
 bind m set -w monitor-activity \; if -F '#{monitor-activity}' 'last-window'
 
-# 1}}}
 # vim: ft=tmux fdm=marker
