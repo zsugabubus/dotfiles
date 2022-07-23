@@ -52,7 +52,7 @@ set -g copy-mode-current-match-style bg=#fdef39
 # 1}}}
 # Options {{{1
 
-%if "#{==:#{host},sheep}"
+%if "#{||:#{==:#{host},sheep},#{!=:#{SSH_CONNECTION},}}"
 set -g @prefix 'C-b'
 %else
 set -g @prefix 'C-t'
