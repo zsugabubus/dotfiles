@@ -15,7 +15,6 @@ setopt cbases
 setopt cdable_vars
 setopt check_jobs
 setopt check_running_jobs
-setopt correct dvorak
 setopt csh_null_glob
 setopt interactive_comments
 setopt ksh_option_print
