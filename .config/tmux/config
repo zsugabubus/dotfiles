@@ -74,7 +74,6 @@ set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{win
 unbind -a
 
 bind : command-prompt
-bind C-b set -g status
 bind d detach-client
 
 bind c new-window -a -t : -c "#{pane_current_path}"
@@ -129,14 +128,8 @@ bind P swap-window -dt :-1
 bind ) switch-client -n
 bind ( switch-client -p
 
-bind f display-popup -E $SHELL -c ~/.config/tmux/scripts/find
-bind F choose-tree -Zs
-
-bind g display-menu -T 'Grab' \
-	'swap pane'   's' { display-panes -d 0 { swap-pane -dt '%%' } } \
-	'break pane'  'b' { break-pane } \
-	'move pane'   'j' { command-prompt -p target { move-pane -t '%%' } } \
-	'move window' 'm' { command-prompt -p target { move-window -t '%%' } } \
+bind f display-popup -E ~/.config/tmux/scripts/find
+bind F choose-tree -Z
 
 bind "'" select-pane -m
 bind z resize-pane -Z
@@ -168,7 +161,8 @@ bind / copy-mode \; send-keys ?
 bind C-u copy-mode \; send-keys -X halfpage-up
 bind v copy-mode \; send-keys -X begin-selection
 bind V copy-mode \; send-keys -X select-line
-bind e capture-pane -S - \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
+bind e split-window -vZ "tmux capture-pane -p -t- -S- | sed 's/\\s*$//' | nvim +normal!G{}k"
+bind E split-window -vZ "tmux capture-pane -p -t- -S0 | sed 's/\\s*$//' | nvim +normal!G{}k"
 
 bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
 bind -T copy-mode-vi C-v send-keys -X rectangle-toggle
@@ -182,6 +176,7 @@ bind -T copy-mode-vi + \
 bind a paste-buffer
 bind b choose-buffer
 bind C-l clear-history \; display-message "History cleared."
+bind C-m show-messages
 
 bind * set -s @xclip_selection primary   \; source ~/.config/tmux/functions/xclip
 bind + set -s @xclip_selection clipboard \; source ~/.config/tmux/functions/xclip
