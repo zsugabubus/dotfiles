@@ -71,6 +71,8 @@ set -g status-keys emacs
 set -g visual-bell on
 set -ga terminal-overrides ",*:Tc" # True color.
 set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q' # Cursor shape.
+# SSH_AUTH_SOCK is in the global environment.
+set -g update-environment 'DISPLAY'
 
 set-hook -g after-split-window[1] { select-layout tiled }
 set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{window_panes},1},off,bottom}' }
