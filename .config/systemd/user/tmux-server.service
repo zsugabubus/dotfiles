@@ -1,0 +1,10 @@
+[Unit]
+Description=Tmux server
+
+[Service]
+Type=simple
+Environment=TERM=alacritty
+ExecStart=/usr/bin/tmux -D
+
+[Install]
+WantedBy=default.target
