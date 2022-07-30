@@ -73,6 +73,8 @@ set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{win
 
 unbind -a
 
+set -g mode-keys vi
+
 bind : command-prompt
 bind d detach-client
 
