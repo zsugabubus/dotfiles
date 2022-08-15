@@ -19,6 +19,8 @@ typeset -ga __zfiles_selection
 integer -g __zfiles_lines
 integer -g __zfiles_rendered_top __zfiles_cur __zfiles_top __zfiles_bottom
 
+typeset -gA __zfiles_dir_selection
+
 typeset -g __zfiles_last_{cmd,f,f_forward}
 
 typeset -gA __zfiles_{stat,icon,color}_cache
@@ -367,22 +369,24 @@ function __zfiles_tag() {
 }
 
 function __zfiles_update_files() {
+	__zfiles_dir_selection[$__zfiles_PWD]=$__zfiles_files[(e)$__zfiles_cur]
+
+	__zfiles_PWD=$PWD
 	if (( __zfiles_glob_dots )); then
 		setopt glob_dots
 	else
 		setopt noglob_dots
 	fi
 	__zfiles_files=( ${~${=__zfiles_glob}} )
-	__zfiles_select_scroll 1
+	integer index=${__zfiles_files[(rie)${__zfiles_dir_selection[$__zfiles_PWD]}]}
+	__zfiles_select_scroll $(( index <= $#__zfiles_files ? index : 1 ))
 }
 
 function __zfiles_chpwd() {
 	__zfiles_update_files
-
 	__zfiles_prompt=
 	__zfiles_selection=()
 	__zfiles_drop_caches
-	__zfiles_PWD=$PWD
 }
 
 function __zfiles_resize() {
