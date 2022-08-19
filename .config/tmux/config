@@ -136,7 +136,12 @@ bind F choose-tree -Z
 bind "'" select-pane -m
 bind z resize-pane -Z
 
-bind ' ' next-layout
+bind ' ' display-menu -T 'Layout' \
+	'k-master' k { select-layout main-horizontal } \
+	'h-master' h { select-layout main-vertical } \
+	'grid' g { select-layout tiled } \
+	'row' r { select-layout even-horizontal } \
+	'column' c { select-layout even-vertical } \
 
 bind W if -F '#{@title}' \
 	{ set -wu @title   ; set -w window-status-format "#{E:@window-status-format}" } \
