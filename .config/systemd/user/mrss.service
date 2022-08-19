@@ -5,3 +5,4 @@ Description=RSS to Mailbox
 Type=oneshot
 ExecStart=mrss --config "%E/mrss/config"
 ExecStopPost=%E/mrss/post
+OOMScoreAdjust=1000
