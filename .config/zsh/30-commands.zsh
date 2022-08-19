@@ -522,7 +522,7 @@ alias t='tmux attach'
 function tn() {
 	local session=$PWD:t
 	[[ $PWD == $HOME ]] && session=home
-	tmux new -s "$session"
+	tmux -N new-session -s "$session"
 }
 
 function oom_adj() {
