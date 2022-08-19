@@ -14,7 +14,7 @@ colors:
     white:   '0x44454f'
 
   bright:
-    black:   '0x264137'
+    black:   '0xbebebe'
     red:     '0xfe2e1f'
     green:   '0x00a206'
     yellow:  '0xf59335'
