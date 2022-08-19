@@ -1,41 +1,31 @@
 #!/bin/zsh
-setopt noclobber
+setopt noclobber extendedglob
 
 task() { print -rP "%B%F{blue}::%f $1%b" }
 error() { print -rP "%B%F{red}error:%f%b $1" }
 
 cd -q -- ${TMP:-/tmp}
 
-readonly FILE=$(date +snapshot-%Y%b%d%a.tar.xz)
+readonly file=$(date +snapshot-%Y%b%d%a.tar.zst)
+
+USER=${SUDO_USER:-$USER}
+HOME=/home/$USER
 
 {
-  task 'Preparing...'
-  pacman -Qqen >pkglist.txt &
-  pacman -Qqem >localpkglist.txt &
-  wait
+	task 'Preparing...'
+	pacman -Qqen >pkglist.txt &
+	pacman -Qqem >localpkglist.txt &
+	wait
 
-  task 'Collecting files...'
-  umask 077
-  tar cavPf $FILE \
-    --exclude='**/.git/'{objects,refs,logs}'/**' \
-    --exclude='**/gnupg/S.*' \
-    -T - <<FILES
-/home/${SUDO_USER:-$USER}/pix
-/home/${SUDO_USER:-$USER}/doc
-/home/${SUDO_USER:-$USER}/bin
-/home/${SUDO_USER:-$USER}/.config
-/home/${SUDO_USER:-$USER}/.mozilla
-
-/home/${SUDO_USER:-$USER}/.radare2rc
-/home/${SUDO_USER:-$USER}/.dir_colors
-/home/${SUDO_USER:-$USER}/.mailcap
-/home/${SUDO_USER:-$USER}/.mbsyncrc
-/home/${SUDO_USER:-$USER}/.passss
-/home/${SUDO_USER:-$USER}/.tmux.conf
-/home/${SUDO_USER:-$USER}/.urlview
-/home/${SUDO_USER:-$USER}/.XCompose
-/home/${SUDO_USER:-$USER}/.Xdefaults
-/home/${SUDO_USER:-$USER}/.zshenv
+	task 'Collecting files...'
+	umask 077
+	tar -cavPf $file \
+		--exclude='**/.git/'{objects,refs,logs}'/**' \
+		--exclude='**/gnupg/S.*' \
+		-T - <<FILES
+$(print -l $HOME/*~*/(mem|mus|var) $HOME/.*(^/))
+$HOME/.config
+$HOME/.mozilla
 
 pkglist.txt
 localpkglist.txt
@@ -51,12 +41,12 @@ localpkglist.txt
 $(pacman -Qii | awk '$1=="MODIFIED" {print $2}')
 FILES
 } always {
-  if ((TRY_BLOCK_ERROR==0)); then
-    task "Snapshot taken: $PWD/$FILE."
-    chown ${SUDO_USER:-$USER} $FILE
-    chmod 400 $FILE
-  else
-    error "Failed to create complete snapshot."
-  fi
-  rm -vf {local,}pkglist.txt
+	if ((TRY_BLOCK_ERROR==0)); then
+		task "Snapshot taken: $PWD/$file."
+		chown $USER $file
+		chmod 400 $file
+	else
+		error "Failed to create complete snapshot."
+	fi
+	rm -vf {local,}pkglist.txt
 }
