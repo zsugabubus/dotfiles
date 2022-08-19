@@ -565,11 +565,11 @@ update_mode = function()
 
 	if mode == 'auto' or visible then
 		observe_properties('native', {
-			'mouse-pos'
+			'mouse-pos',
 		})
 
 		observe_properties(nil, {
-			'osd-dimensions'
+			'osd-dimensions',
 		})
 	end
 
@@ -585,12 +585,12 @@ update_mode = function()
 			'playlist-count',
 			'playlist-pos',
 			'time-pos',
-			'playtime-remaining'
+			'playtime-remaining',
 		})
 
 		observe_properties(nil, {
 			'metadata',
-			'media-title'
+			'media-title',
 		})
 	else
 		timeout:kill()
