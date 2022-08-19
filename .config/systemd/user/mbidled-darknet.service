@@ -6,6 +6,7 @@ After=mbsync-profile@darknet.service
 [Service]
 Type=simple
 ExecStart=torsocks mbidled -c "%t/mbsyncrc.darknet"
+Restart=always
 
 [Install]
 WantedBy=default.target
