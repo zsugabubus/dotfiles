@@ -12,7 +12,7 @@ shift
 bye() { echo >"$status" $exitval; }
 trap bye EXIT INT QUIT
 
-$EDITOR "$@"
+${EDITOR?} "$@"
 
 exitval=$?
 '
@@ -20,12 +20,12 @@ exitval=$?
 set -- /bin/dash "$tmpdir/run" "$tmpdir/status" "$@"
 
 if test x$STY != x; then
-  screen -X screen "$@"
+	screen -X screen "$@"
 elif test x$TMUX != x; then
-  tmux new-window "$@"
+	tmux new-window "$@"
 else
-  echo >&2 "Not running inside a terminal emulator"
-  exit 1
+	echo >&2 "Not running inside a terminal emulator"
+	exit 1
 fi
 
 read exitval <"$tmpdir/status"
