@@ -41,8 +41,12 @@
 	}
 
 	body > div.js-consent-banner,
+	#launch-popover,
 	#noscript-warning,
 	#question-header,
+	/* Fucking painful. */
+	.js-vote-up-btn,
+	.js-vote-down-btn,
 	.top-bar {
 		display: none !important;
 	}
@@ -70,5 +74,10 @@
 	/* Much better. */
 	[class*=-banner] {
 		display: none !important;
+	}
+
+	input[name=query] {
+		/* WTF pointer? */
+		cursor: initial !important;
 	}
 }
