@@ -1,0 +1,15 @@
+Include config-private
+
+AddKeysToAgent confirm
+
+Host *
+	UseRoaming no
+	ControlMaster auto
+	ControlPath ~/.cache/ssh/%r@%h-%p
+	ControlPersist 60
+
+Host *.onion
+	PubkeyAuthentication yes
+	ProxyCommand socat - socks4a:localhost:%h:%p,socksport=9050
+
+# vim: ft=config
