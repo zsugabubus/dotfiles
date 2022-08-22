@@ -81,6 +81,7 @@ typeset -gA __zfiles_bindings=(
 	[p]='pushd "$PWD"'
 	[q]='return'
 	['\<C-\[\>']='return'
+	[/]='__zfiles_glob= && __zfiles_set_glob / && __zfiles_glob=$__zfiles_glob* && __zfiles_glob_letter=/ && __zfiles_update_files'
 )
 
 __zfiles_bindings[\\*g]='__zfiles_set_glob "glob"'
@@ -383,6 +384,11 @@ function __zfiles_update_files() {
 }
 
 function __zfiles_chpwd() {
+	if [[ $__zfiles_glob_letter == / ]]; then
+		__zfiles_glob_letter=$__ZFILES_DEFAULT_GLOB_LETTER
+		__zfiles_glob=$__ZFILES_DEFAULT_GLOB
+	fi
+
 	__zfiles_update_files
 	__zfiles_prompt=
 	__zfiles_selection=()
