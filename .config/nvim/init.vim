@@ -225,19 +225,6 @@ for s:letter in ['f', 'F', 't', 'T']
 endfor
 unlet s:letter s:map
 
-function! s:magic_ctrlg() abort
-	let str = matchstr(getline('.')[:col('.')-2], '\m[[{}(=*)+\]!]*$')
-	if !empty(str)
-		" shiftless Dvorak numbers
-		let str = substitute(str, '.', {m-> stridx('*()}+{][!=', m[0])}, 'g')
-		return repeat("\<C-h>", strlen(str)).str
-	else
-		" change case of current word
-		return "\<C-g>\<C-U>\<C-o>h\<C-o>g~aw\<C-o>:set ve=onemore\<CR>\<C-g>\<C-U>\<C-o>e\<C-g>\<C-U>\<C-o>l\<C-o>:set ve=".&ve."\<CR>"
-	endif
-endfunction
-inoremap <expr><C-g> <SID>magic_ctrlg()
-
 augroup vimrc_insertempty
 	autocmd!
 	autocmd InsertLeave *
