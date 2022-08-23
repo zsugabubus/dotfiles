@@ -1,10 +1,11 @@
 [Unit]
-Description=Hourly synchronization of Firefox profile %I
+Description=Firefox Profile %I Synchronization Timer
 StopWhenUnneeded=yes
 RefuseManualStart=yes
 
 [Timer]
-OnCalendar=00/2:00:00
+OnActiveSec=2h
+OnUnitActiveSec=2h
 RandomizedDelaySec=5m
 AccuracySec=5m
 
