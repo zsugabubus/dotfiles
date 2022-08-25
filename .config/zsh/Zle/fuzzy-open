@@ -18,8 +18,8 @@ while :; do
 		# exec 2>/dev/null does not work. Why?
 		rg --files -0 2>/dev/null |
 		xargs -0r ls -UbNd --color -- 2>/dev/null |
-		fzf -d $'\xa0' --height=50% --ansi --multi --bind alt-enter:select-all+accept-non-empty --bind enter:accept-non-empty --bind ')':jump-accept
-	)"}//#?[ ]#/} ) && (( $#files )) || break
+		fizzy
+	)"}} ) && (( $#files )) || break
 
 	if [[ ! zle || -z $BUFFER ]]; then
 		autoload -Uz open
