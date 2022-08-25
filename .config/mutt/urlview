@@ -1,7 +1,7 @@
 #!/usr/bin/dash
 if url=$(
 	${0%/*}/urllist |
-	fzf --select-1 --bind 'space:jump-accept,+:accept'
+	fizzy -1
 ); then
 	printf %s "$url" |
 	{
