@@ -2,23 +2,10 @@
 
 emulate -L zsh
 
-case $1 in
-n)
-	local dir
-	case $2 in
-	here)
-		read -r dir <$_ZSH_HERE_FILE ;;
-	*)
-		return 1 ;;
-	esac
-
-	typeset -ga reply
-	reply=( $dir )
-	return 0 ;;
-
-c)
-	_wanted dynamic-dirs expl 'here directory' compadd -S\] -- here
-	return ;;
-esac
-
-return 1
+if [[ $1 = n && $2 = (here|there) ]]; then
+	typeset -ga reply=( "$(<$_ZSH_HERE_FILE)" )
+elif [[ $1 = c ]]; then
+	_wanted dynamic-dirs expl 'here directory' compadd -S\] -- here there
+else
+	return 1
+fi

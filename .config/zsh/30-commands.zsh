@@ -723,4 +723,3 @@ function pyman() {
 }
 
 autoload -Uz ${:-$ZDOTDIR/Misc/*(N.:t)}
-source ${:-$ZDOTDIR/Plugins/*(N)}
