@@ -89,11 +89,11 @@ bind $ command-prompt -I '#S' -p '(rename-session)' { rename-session -- '%%' }
 bind , command-prompt -I '#W' -p '(rename-window)' { rename-window -- '%%' }
 
 bind C-c display-menu -T 'Kill' \
-	'INT'  i { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' INT " } \
-	'STOP' s { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' TSTP" } \
-	'TERM' t { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' TERM" } \
-	'CONT' c { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' CONT" } \
-	'KILL' K { run-shell "~/.config/tmux/scripts/kill '#{pane_tty}' KILL" } \
+	'INT'  i { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -INT " } \
+	'STOP' s { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -TSTP" } \
+	'TERM' t { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -TERM" } \
+	'CONT' c { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -CONT" } \
+	'KILL' K { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -KILL" } \
 
 bind t last-pane
 bind C-t last-window
