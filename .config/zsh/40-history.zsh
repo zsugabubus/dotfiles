@@ -24,7 +24,7 @@ function zshaddhistory() {
 
 	typeset -a words=( ${(zA)1} )
 	# ( cmd ';' )
-	if (( $#words == 2 )); then
+	if (( $#words == 2 && $#words[1] <= 4 )); then
 		return 2
 	fi
 
