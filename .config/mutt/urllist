@@ -13,6 +13,7 @@ URL_BLACKLIST_RE = '|'.join([
 	r'//(preview|fonts|ssl|www\.gstatic)\.',
 	r'mailman/listinfo$',
 	r'/thumbnail/',
+	r'thumbs\.',
 	r'//[^/]*preview\.',
 	r'//[^/]*static\.[^/]*/',
 	r'/[a-z]*static/',
@@ -26,6 +27,7 @@ QPARAM_BLACKLIST = [
 	'utm_campaign',
 	'at_medium',
 	'at_campaign',
+	'tracking_data',
 ]
 
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
