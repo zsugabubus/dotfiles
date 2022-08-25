@@ -58,6 +58,7 @@ macro attach <return> v
 bind attach s save-entry
 bind attach,compose | pipe-entry
 bind attach - collapse-parts
+macro attach e <pipe-message>$EDITOR||:<return>
 
 macro index T at
 bind index ap tag-pattern
@@ -84,6 +85,7 @@ bind index,pager m mail
 bind index,pager M resend-message
 bind index,pager r reply
 bind index,pager R group-reply
+bind index,pager \cR noop
 
 bind index,pager ! flag-message
 bind index,pager l edit-label
@@ -101,6 +103,8 @@ bind index,pager $ sync-mailbox
 bind index q quit
 macro index Q <enter-command>set maildir_trash<return><quit>
 # bind attach,generic,browser,pager,index Z quit
+
+macro index S "<enter-command>set index_format=\"%Z %@date@ %?M?(%M) ?%s (%?l?%4l&%4c?)%\"<return>"
 
 bind attach,generic,browser,pager,index \cu half-up
 bind attach,generic,browser,pager,index \cd half-down
@@ -134,7 +138,7 @@ bind index zM collapse-all
 bind index zR collapse-all
 macro index zU "<enter-command>set nocollapse_unread<return><collapse-all><enter-command>set collapse_unread<return>"
 
-macro index,pager c <change-folder>?<toggle-mailboxes>
+bind index,pager c browse-mailboxes
 
 macro index C <enter-command>cd<space>
 
