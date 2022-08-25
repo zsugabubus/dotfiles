@@ -36,4 +36,4 @@ __zmail-precmd() {
 	__zmail_last_check=$now
 }
 
-add-zsh-hook precmd __zmail-precmd
+# add-zsh-hook precmd __zmail-precmd

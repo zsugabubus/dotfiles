@@ -1,0 +1,5 @@
+#autoload
+
+local args=()
+[[ -t 1 ]] && args+=-O
+curl -LJ $args "https://www.rfc-editor.org/rfc/rfc${1#rfc}.txt"

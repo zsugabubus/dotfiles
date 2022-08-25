@@ -1,0 +1,73 @@
+#autoload
+
+emulate -L zsh
+setopt localtraps
+
+local server=${1:-}
+
+if [[ -z $server ]]; then
+	local servers=()
+	for server in /tmp/mpv*(omN=); do
+		if ! echo -n | socat - $server 2>/dev/null; then
+			unlink $server
+		else
+			servers+=$server
+		fi
+	done
+
+	if (( !$#servers )); then
+		printf >&2 'No mpv sockets found.  Is mpv running?'
+		return
+	elif (( 1 < $#servers )); then
+		select server in $servers; do break; done
+	else
+		server=${servers[1]}
+	fi
+fi
+
+trap 'echoti rmcup' EXIT
+echoti smcup
+
+echoti clear
+printf 'Controlling %s\n' $server
+printf 'Press C-c to exit.'
+
+local -A keymap=(
+	$'\t' TAB
+	$'\n' ENTER
+	$'\e' ESC
+	$'\e[A' Up
+	$'\e[B' Down
+	$'\e[C' Right
+	$'\e[D' Left
+)
+# Ctrl+{a..z} - Ctrl+i
+for i in {1..8} {10..26}; do
+	local key= value=
+	printf -v key '\\%03o' $i
+	printf -v key $key
+	printf -v value 'Ctrl+\\%03o' $(( i + 0x60 ))
+	printf -v value $value
+	keymap[$key]=$value
+done
+
+while read -srk1; do
+	if [[ $REPLY == $'\e' ]]; then
+		if read -srk1 -t$(( KEYTIMEOUT / 1000.0 )); then
+			if [[ $REPLY == '[' ]]; then
+				read -srk1 || break
+				REPLY=$'\e['$REPLY
+			fi
+		fi
+	fi
+	REPLY=${keymap[$REPLY]:-$REPLY}
+	{
+		echoti clear
+		printf '%s: ' $REPLY
+	} >/dev/tty
+	printf '{"command":["%s", "%s"]}\n' keydown $REPLY keyup $REPLY
+done |
+socat - $server |
+while read -r; do
+	printf '%s\n' $REPLY
+done

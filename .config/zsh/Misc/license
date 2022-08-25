@@ -1,0 +1,23 @@
+#autoload
+
+emulate -L zsh
+
+case ${1?} in
+gpl3)
+	curl -Lo COPYING 'https://www.gnu.org/licenses/gpl-3.0.txt' ;;
+
+lgpl)
+	curl \
+		-Lo COPYING 'https://www.gnu.org/licenses/gpl-3.0.txt' \
+		-o COPYING.LESSER 'https://www.gnu.org/licenses/lgpl-3.0.txt' ;;
+
+wtfpl)
+	curl -Lo COPYING 'http://www.wtfpl.net/txt/copying' ;;
+
+un)
+	curl -Lo UNLICENSE 'https://unlicense.org/UNLICENSE' ;;
+
+*)
+	printf >&2 "unknown license kind: %s\n" "$1"
+	return 1 ;;
+esac
