@@ -4,11 +4,10 @@ emulate -L zsh
 
 setopt err_return pipe_fail
 
-local commit
-
-commit=$(
+local commit=$(
 	git log-formatted --reflog --color=always |
-	fzf --no-sort --ansi |
+	uniq |
+	fizzy |
 	cut -d' ' -f1
 )
 
