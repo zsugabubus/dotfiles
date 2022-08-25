@@ -1,11 +1,30 @@
-#!/usr/bin/dash
-if url=$(
+#!/usr/bin/dash -eu
+url=$(
 	${0%/*}/urllist |
 	fizzy -1
-); then
-	printf %s "$url" |
-	{
-		xclip -i -selection clipboard ||
-		tmux load-buffer -
-	}
-fi
+)
+
+for action; do
+	case $action in
+	open)
+		if pidof firefox >/dev/null; then
+			firefox "$url" >/dev/null 2>/dev/null &
+			return
+		fi
+		;;
+
+	copy)
+		printf %s "$url" |
+		{
+			xclip -i -selection clipboard ||
+			tmux load-buffer -
+		} &&
+		return
+		;;
+
+	*)
+		printf >&2 'unknown action: %s' "$action"
+		return 1
+		;;
+	esac
+done

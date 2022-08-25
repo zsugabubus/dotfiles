@@ -47,7 +47,8 @@ bind pager t tag-message
 # bind index,pager V view-raw-message
 bind index,pager v view-attachments
 bind index,pager | pipe-message
-macro index,pager + <pipe-message>$my_dotdir/urlview<Enter>
+macro index,pager + "<pipe-message>$my_dotdir/urlview open copy<return>"
+macro index,pager y "<pipe-message>$my_dotdir/urlview copy<return>"
 
 bind attach,postpone d delete-entry
 bind attach,postpone u undelete-entry
