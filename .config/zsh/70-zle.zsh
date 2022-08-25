@@ -5,8 +5,6 @@ local function autoload_zle() {
 	zle -N "$@"
 }
 
-source /usr/share/fzf/key-bindings.zsh
-
 setopt auto_cd
 setopt auto_continue
 setopt auto_pushd
@@ -124,6 +122,17 @@ bindkey -M viins '^X^I' all-matches
 # <C-?>
 bindkey -M viins '^_' run-help
 bindkey -M vicmd '^_' run-help
+
+local function fuzzy-reverse-history-search() {
+	LBUFFER=$(
+		fc -rln 0 999999|
+		fizzy -s -q "$BUFFER"
+	)
+	RBUFFER=
+	zle redisplay
+}
+zle -N fuzzy-reverse-history-search
+bindkey -M viins '^R' fuzzy-reverse-history-search
 
 function accept-line() {
 	# r-magic
