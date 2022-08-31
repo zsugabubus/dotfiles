@@ -396,9 +396,8 @@ nnoremap <silent> <M-F> :prev<CR>
 nnoremap <silent> <M-w> :Bufdo if bufname() !=# ''<bar>update<bar>endif<CR>
 nnoremap <silent> <M-q> :quit<CR>
 
-" put the first line of the paragraph at the top of the window
-" <C-E> does not want to get executed without execute... but <C-O> does... WTF!?
-nnoremap <silent><expr> z{ ':set scrolloff=0<bar>:execute "keepjumps normal! {zt\<lt>C-O>\<lt>C-E>"<bar>:set scrolloff='.&scrolloff.'<CR>'
+" Put the first line of the paragraph at the top of the window.
+nnoremap <silent><expr> z{ '{zt'.(&scrolloff + 1)."\<lt>C-E>"
 
 nnoremap <silent> gss :setlocal spell!<CR>
 nnoremap <silent> gse :setlocal spell spelllang=en<CR>
