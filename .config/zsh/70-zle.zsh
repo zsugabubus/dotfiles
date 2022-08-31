@@ -27,49 +27,12 @@ setopt rm_star_wait
 
 WORDCHARS=${WORDCHARS//[\/.-_]}
 
-bindkey -v # Vim
-
 # Delay after mode change.
 KEYTIMEOUT=1
 
-local function bindkey-M() {
-	local keymap=$1
-	shift 1
-	while (( $# )); do
-		bindkey -M viins "$1" "$2"
-		shift 2
-	done
-}
+bindkey -v # Vim
 
-autoload_zle dot-magic
-bindkey -M viins . dot-magic
-
-autoload_zle fuzzy-open
-bindkey-M viins \
-	'^O' fuzzy-open \
-	'^F' fuzzy-open \
-
-autoload_zle complete-commit
-bindkey -M viins '^Xc' complete-commit
-
-autoload_zle edit-command-line
-bindkey -M viins '^V' edit-command-line
-bindkey -M vicmd '^V' edit-command-line
-
-autoload_zle edit-command-words
-bindkey -M viins '^[v' edit-command-words
-bindkey -M vicmd '^Xv' edit-command-words
-
-autoload_zle ctrlz-magic
-bindkey -M viins '^Z' ctrlz-magic
-bindkey -M vicmd '^Z' ctrlz-magic
-
-bindkey-M vicmd \
-	'^A' beginning-of-line \
-	'^E' end-of-line \
-
-bindkey-M viins \
-	'^[^M' autosuggest-execute \
+bindkey -M viins \
 	'^[f' forward-word \
 	'^[b' backward-word \
 	'^A' beginning-of-line \
@@ -79,7 +42,44 @@ bindkey-M viins \
 	'^N' down-history \
 	'^H' backward-delete-char \
 	"^[h" backward-char \
-	"^[l" forward-char
+	"^[l" forward-char \
+
+bindkey -M viins \
+	'^[^M' autosuggest-execute \
+	'^X^M' menu-select \
+	'^X^X' menu-select \
+	'^X*' expand-word \
+	'^Xl' menu-complete \
+
+local function dot-magic() {
+	if [[ -z $RBUFFER && $LBUFFER =~ '(^|\s|/)\.$' ]]; then
+		LBUFFER+=./
+		zle list-choices
+	else
+		zle .self-insert
+	fi
+}
+zle -N dot-magic
+bindkey -M viins . dot-magic
+
+autoload_zle fuzzy-open
+bindkey -M viins '^F' fuzzy-open
+
+autoload_zle complete-commit
+bindkey -M viins '^Xc' complete-commit
+
+autoload_zle edit-command-line
+bindkey -M viins '^V' edit-command-line
+bindkey -M vicmd '^V' edit-command-line
+
+autoload_zle edit-command-words
+bindkey -M viins \
+	'^[v' edit-command-words \
+	'^Xv' edit-command-words \
+
+autoload_zle ctrlz-magic
+bindkey -M viins '^Z' ctrlz-magic
+bindkey -M vicmd '^Z' ctrlz-magic
 
 zle -C complete-file complete-word _generic
 zstyle ':completion:complete-file::::' completer _files
@@ -94,7 +94,6 @@ function i-do-not-wish-to-see() {
 	else
 		compstate[list]='list force'
 	fi
-	# compstate[insert]=''
 }
 
 local function expand-or-complete-or-list-files() {
@@ -111,21 +110,16 @@ local function expand-or-complete-or-list-files() {
 zle -N expand-or-complete-or-list-files
 bindkey -M viins '^I' expand-or-complete-or-list-files
 
-zle -C all-matches complete-word _my_generic
-zstyle ':completion:all-matches:*' old-matches only
-zstyle ':completion:all-matches::::' completer _all_matches
-function _my_generic() {
-	_all_matches "$@"
-}
-bindkey -M viins '^X^I' all-matches
-
+autoload -Uz run-help
+unalias run-help
+autoload -Uz run-help-{git,ip,openssl,p4,sudo}
 # <C-?>
 bindkey -M viins '^_' run-help
 bindkey -M vicmd '^_' run-help
 
 local function fuzzy-reverse-history-search() {
 	LBUFFER=$(
-		fc -rln 0 999999|
+		fc -rln 0 999999 |
 		fizzy -s -q "$BUFFER"
 	)
 	RBUFFER=
@@ -134,7 +128,7 @@ local function fuzzy-reverse-history-search() {
 zle -N fuzzy-reverse-history-search
 bindkey -M viins '^R' fuzzy-reverse-history-search
 
-function accept-line() {
+local function accept-line() {
 	# r-magic
 	if [[ -v _zle_accept_line_rerun && -z $BUFFER ]]; then
 		BUFFER=r
@@ -156,39 +150,20 @@ local function zle-run-chpwd() {
 zle -N zle-run-chpwd
 bindkey -M viins '^L' zle-run-chpwd
 
-# Menuselect
 bindkey -M menuselect \
 	'=' accept-and-infer-next-history \
 	'a' accept-and-hold \
-	'^M' .accept-line
-bindkey -M menuselect -s ' ' a
+	'^M' .accept-line \
 
-# zle -C complete-menu menu-select _generic
-# complete_menu() {
-	# setopt localoptions alwayslastprompt
-#		zle menu-select
-# }
-# zle -N complete_menu
-bindkey -M viins '^X^M' menu-select
-bindkey-M viins \
-	'^Xl' list-expand \
-	'^X*' expand-word \
-	'^X^X' menu-select
-
-bindkey -s -M menuselect j $terminfo[kcud1]
-bindkey -s -M menuselect k $terminfo[kcuu1]
-bindkey -s -M menuselect l $terminfo[kcuf1]
-bindkey -s -M menuselect h $terminfo[kcub1]
-
-autoload -Uz run-help
-unalias run-help
-autoload -Uz run-help-{git,ip,openssl,p4,sudo,svk,svn}
+bindkey -M menuselect -s \
+	' ' a \
+	h $terminfo[kcub1] \
+	j $terminfo[kcud1] \
+	k $terminfo[kcuu1] \
+	l $terminfo[kcuf1] \
 
 autoload -Uz paste-magic
 zle -N bracketed-paste paste-magic
-
-ZSH_AUTOSUGGEST_MANUAL_REBIND=true
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 autoload -Uz zmail && zmail
 
@@ -204,9 +179,11 @@ local function zle-exit() {
 	fi
 
 	zle redisplay
-	return
 }
 zle -N zle-exit
 bindkey -M viins '^D' zle-exit
 
 unfunction autoload_zle
+
+ZSH_AUTOSUGGEST_MANUAL_REBIND=true
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
