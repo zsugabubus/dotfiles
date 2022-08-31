@@ -106,7 +106,7 @@ local function _update()
 
 	osd.res_x, osd.res_y = mp.get_osd_size()
 
-	local main_fs = math.max(math.min(osd.res_x, osd.res_y) / 23, 30)
+	local main_fs = math.max(math.floor(math.min(osd.res_x, osd.res_y) / 23), 30)
 
 	local top_fs = main_fs * .5
 
