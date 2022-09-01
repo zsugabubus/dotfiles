@@ -561,17 +561,17 @@ compdef mpc=mpv_hack
 alias mpctl=mpvctl
 
 function mutt n() {
-	local args=()
+	set -- -n "$@"
 	if [[ -d inbox/cur ]]; then
-		args+=(-f inbox)
+		set -- -f inbox "$@"
 	elif [[ -d cur ]]; then
-		args+=(-f .)
+		set -- -f . "$@"
 	fi
 	local term=$TERM
 	if [[ $term != linux ]]; then
 		term=screen-256color
 	fi
-	TERM=$term command mutt -n $args $@
+	TERM=$term command mutt "$@"
 }
 
 function ttycat() {
