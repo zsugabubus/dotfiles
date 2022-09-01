@@ -663,8 +663,6 @@ augroup vimrc_autopackadd
 	" IfLocal autocmd FileType mail ++nested packadd vim-completecontacts
 augroup END
 
-IfLocal packadd vim-gnupg
-
 " Automatically open quickfix and location window and make it modifiable.
 augroup vimrc_quickfixfix
 	autocmd!
