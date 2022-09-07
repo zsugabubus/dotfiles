@@ -45,11 +45,13 @@ set -g status-left "[#S#{?destroy-unattached,:T,}#{?#{||:#{==:#{session_group},}
 set -g status-left-length 0
 set -g status-right "%a, %b %d %R"
 
+# sort /[^ ]* [^ ]* \zs/
 set -g aggressive-resize on
 set -g bell-action server-other
 set -g clock-mode-style 24
 set -g default-command "$SHELL" # Disable login shells.
 set -g default-terminal "$TERM"
+set -g detach-on-destroy no-detached
 set -g display-time 0
 set -g escape-time 0
 set -g focus-events on
@@ -61,11 +63,10 @@ set -g set-titles on
 set -g set-titles-string '[#S]:#W #T'
 set -g status-interval 20
 set -g status-keys emacs
-set -g visual-bell on
 set -ga terminal-overrides ",*:Tc" # True color.
 set -ga terminal-overrides ',*:Ss=\E[%p1%d q:Se=\E[2 q' # Cursor shape.
-# SSH_AUTH_SOCK is in the global environment.
-set -g update-environment 'DISPLAY'
+set -g update-environment 'DISPLAY EDITOR TERMINAL' # SSH_AUTH_SOCK is in the global environment.
+set -g visual-bell both
 
 set-hook -g after-split-window[1] { select-layout tiled }
 set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{window_panes},1},off,bottom}' }
@@ -73,6 +74,7 @@ set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{win
 unbind -a
 
 set -g mode-keys vi
+set -g editor nvim
 
 bind : command-prompt
 bind d detach-client
@@ -80,6 +82,13 @@ bind d detach-client
 bind c new-window -a -t : -c "#{pane_current_path}"
 bind s split-window -c "#{pane_current_path}"
 bind C command-prompt -p '(new-session)' { new-session -s '%%' }
+bind G command-prompt -p '(new-session in group)' {
+	run-shell "\
+		tmux new-session -d -t #{?#{session_group},#{session_group},#{session_name}} -s '%%' \\;\
+		switch-client -t '%%'\
+	"
+}
+bind X if -F '#{>:#{session_group_size},1}' { kill-session } { confirm-before kill-session }
 
 bind C-p display-popup -E progress -M
 bind C-s display-popup -E ~/.config/heawm/quickstart
@@ -93,6 +102,7 @@ bind C-c display-menu -T 'Kill' \
 	'TERM' t { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -TERM" } \
 	'CONT' c { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -CONT" } \
 	'KILL' K { run-shell "ps ho tpgid #{pane_pid} | xargs -r kill -KILL" } \
+	'HUP'  H { kill-pane } \
 
 bind t last-pane
 bind C-t last-window
@@ -129,11 +139,12 @@ bind P swap-window -dt :-1
 bind ) switch-client -n
 bind ( switch-client -p
 
+bind g display-panes -d0
 bind f display-popup -E ~/.config/tmux/scripts/find
 bind F choose-tree -Z
 
 bind "'" select-pane -m
-bind z resize-pane -Z
+bind C-z resize-pane -Z
 
 bind ' ' display-menu -T 'Layout' \
 	'k-master' k { select-layout main-horizontal } \
@@ -159,7 +170,7 @@ bind M if -F '#{!=:#{window_name},muck}' {
 	run-shell "tmux switch-client -t #{@last_session}"
 }
 
-bind r source-file ~/.tmux.conf
+bind r source-file ~/.tmux.conf \; display-message -d250 "Reloaded."
 
 bind y copy-mode
 # bind Y choose-buffer { run-shell -b "tmux show-buffer -b '%%' | xclip -i" }
@@ -179,8 +190,10 @@ bind -T copy-mode-vi + \
 	set-buffer -n xclip_paste \;\
 	run-shell -b "tmux show-buffer -b xclip_paste | xclip -silent -i -selection clipboard"
 
-bind a paste-buffer
-bind b choose-buffer
+bind a paste-buffer -p
+bind A paste-buffer
+bind b choose-buffer { paste-buffer -b '%%' -p }
+bind B choose-buffer
 bind C-l clear-history \; display-message "History cleared."
 bind C-m show-messages
 
