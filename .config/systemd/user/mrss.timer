@@ -2,7 +2,7 @@
 Description=RSS To Mailbox Timer
 
 [Timer]
-OnBootSec=1m
+OnActiveSec=1m
 OnUnitActiveSec=15m
 RandomizedDelaySec=1m
 AccuracySec=1m
