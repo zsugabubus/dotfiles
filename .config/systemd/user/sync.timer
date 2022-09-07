@@ -1,5 +1,5 @@
 [Unit]
-Description=Hourly filesystem synchronization
+Description=Filesystem Synchronization Timer
 
 [Timer]
 OnCalendar=00/8:00:00
