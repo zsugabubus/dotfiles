@@ -21,22 +21,17 @@ set -g display-panes-active-colour color15
 %else
 source-file ~/.config/tmux/theme.conf
 
-set -g status-left "[#S]"
-set -g status-right "%a, %b %d %R"
-
-# Really... making this fucking colon fucking optional is FUCKING IMPOSSIBLE.
-# WHY? THE FUCK? LITTLE SHITS. Why the fuck string interpolation is so fucking hard.
-set -g @window-status-format " #[fg=color245]#[default]#I#[fg=color245]:#[fg=default]#W#[fg=color245]:#[fg=default]#{?synchronize-panes,~,}#{window_flags}#{?monitor-activity,A,} "
+set -g @window-status-format " #I:#[fg=default]#W:#[fg=default]#{?synchronize-panes,~,}#{window_flags}#{?monitor-activity,A,} "
 set -g window-status-format "#{E:@window-status-format}"
 set -g window-status-current-format "#{E:@window-status-format}"
 
 set -g window-status-activity-style bold,bg=color191,fg=color0
-set -g window-status-bell-style bold,fg=color196,bg=color221
+set -g window-status-bell-style bold,bg=color220,fg=color196
 set -g window-status-separator ''
 
 set -g pane-border-indicators arrows
 set -g pane-border-lines single
-set -g pane-border-format "#{pane_index} #W:#T @ #{pane_tty}"
+set -g pane-border-format " #{pane_index} #W:#T @ #{pane_tty} "
 
 set -g message-command-style bg=color254,fg=color250
 set -g message-style bg=color220,fg=color236
@@ -45,6 +40,10 @@ set -g mode-style bg=color220,fg=color236
 set -g copy-mode-match-style bg=#fdef39
 set -g copy-mode-current-match-style bg=#fdef39
 %endif
+
+set -g status-left "[#S#{?destroy-unattached,:T,}#{?#{||:#{==:#{session_group},},#{==:#{session_group},#{session_name}}},, (#{session_group})}]"
+set -g status-left-length 0
+set -g status-right "%a, %b %d %R"
 
 set -g aggressive-resize on
 set -g bell-action server-other
