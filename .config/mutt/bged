@@ -1,33 +1,7 @@
 #!/bin/dash -e
-tmpdir=$(mktemp -d mutt-compose.XXXXXX)
-trap 'rm -rf "$tmpdir"' EXIT INT QUIT
-mkfifo "$tmpdir/status"
-
-printf >"$tmpdir/run" '
-exitval=1
-
-status=$1
-shift
-
-bye() { echo >"$status" $exitval; }
-trap bye EXIT INT QUIT
-
-${EDITOR?} "$@"
-
-exitval=$?
-'
-
-set -- /bin/dash "$tmpdir/run" "$tmpdir/status" "$@"
-
-if test x$STY != x; then
-	screen -X screen "$@"
-elif test x$TMUX != x; then
-	tmux new-window "$@"
-else
-	echo >&2 "Not running inside a terminal emulator"
-	exit 1
-fi
-
-read exitval <"$tmpdir/status"
-printf '\a'
-exit "$exitval"
+f=${TMPDIR:-/tmp}/mutt-compose.$$
+trap 'rm -- "$f"' EXIT INT KILL QUIT
+mkfifo "$f"
+tmux -N new-window -a dash -c 'exec 3>$1 && shift; "$@"; echo $?>&3' sh "$f" "${EDITOR?}" "$@"
+read code <"$f"
+exit "${code:-127}"
