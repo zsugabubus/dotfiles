@@ -35,7 +35,4 @@ index-format-hook label "~A"	"%?Y? {%Y}?"
 
 source $my_dotdir/muttrc.sh|
 
-# To fire folder-hook on startup.
-push <sidebar-open>
-
 source $my_dotdir/colors-$TERM
