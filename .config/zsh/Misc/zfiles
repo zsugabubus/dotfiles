@@ -84,8 +84,8 @@ typeset -gA __zfiles_bindings=(
 	[/]='__zfiles_glob= && __zfiles_set_glob / && __zfiles_glob=$__zfiles_glob* && __zfiles_glob_letter=/ && __zfiles_update_files'
 )
 
-__zfiles_bindings[\\*g]='__zfiles_set_glob "glob"'
-__zfiles_bindings[\\*\\*]='__zfiles_files=$__zfiles_selection && __zfiles_select_scroll 0'
+__zfiles_bindings[\\*\\*]='__zfiles_glob=* && __zfiles_set_glob "glob"'
+__zfiles_bindings[\\*e]='__zfiles_set_glob "glob"'
 () {
 	while (( $# )); do
 		__zfiles_bindings[\\*${(b)1}]='__zfiles_glob='${(qq)2}' && __zfiles_glob_letter='${(qq)1}' && __zfiles_update_files'
@@ -94,12 +94,12 @@ __zfiles_bindings[\\*\\*]='__zfiles_files=$__zfiles_selection && __zfiles_select
 } \
 	"$__ZFILES_DEFAULT_GLOB_LETTER" "$__ZFILES_DEFAULT_GLOB" \
 	r '***' \
-	t '^*.(torrent|aria2|~|part)(om)' \
-	p '*.(png|jpg)(om)' \
 	d '*(-/)' \
+	D '**(-/)' \
 	f '*(^-/)' \
-	m '*(om)' \
-	M '*(Om)' \
+	F '**(^-/)' \
+	t '*(om)' \
+	T '**(om)' \
 
 alias -g AllFiles='$__zfiles_files'
 alias -g File='${__zfiles_files[(e)$__zfiles_cur]:?}'
@@ -538,7 +538,7 @@ function __zfiles_toggle() {
 # {PROMPT} {VAR}
 function __zfiles_set_glob() {
 	if __zfiles_shellout __zfiles_vared -p "${bold_color}$1${reset_color}=" -eca __zfiles_glob; then
-		__zfiles_glob_letter=g
+		__zfiles_glob_letter=*
 		__zfiles_update_files
 	fi
 }
