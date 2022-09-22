@@ -1,6 +1,0 @@
-#!/bin/zsh
-
-case $1 in
-b) exec setsid -f firefox ;;
-t) exec setsid -f telegram-desktop ;;
-esac

@@ -1,8 +1,0 @@
-#!/bin/dash
-xset s 125 125
-xset +dpms dpms 125 125 125
-magixrandr auto home laptop
-
-# xset s off
-# xset -dpms
-# aplay ~/doc/Windows_95_Startup.wav
