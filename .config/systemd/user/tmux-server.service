@@ -5,7 +5,6 @@ Description=Tmux Server
 Type=simple
 Environment=TERM=alacritty
 ExecStart=/usr/bin/tmux -D
-ExecStartPost=/usr/bin/tmux new-session -d -s home
 # Cannot be <100 though.
 OOMScoreAdjust=-1000
 OOMPolicy=continue
