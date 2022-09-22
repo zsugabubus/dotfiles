@@ -60,7 +60,7 @@ if test "$1" = "--"; then
 	usermod "$USER" -l "$NEWUSER" -d "/home/$NEWUSER"
 	groupmod "$USER" -n "$NEWUSER"
 	echo "$NEWUSER:$NEWUSER" | chpasswd >/dev/null
-	rm fstab crypttab passwd.OLD passwd- group- shadow-
+	rm -f fstab crypttab passwd.OLD passwd- group- shadow-
 
 	cd "/home/$NEWUSER/mem"
 
