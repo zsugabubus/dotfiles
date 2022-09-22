@@ -1015,7 +1015,7 @@ function! s:magic_tilde() abort
 	let cmdline = getcmdline()
 
 	" Only for file related operations.
-	if cmdline !~# '\v^%((tab)?e%[dit]|r%[ead]|w%[rite]|[lt]?cd|(tab)?new|[tl]?cd|source)>'
+	if cmdline !~# '\v^%((tab)?e%[dit]|r%[ead]|w%[rite]|[lt]?cd|(tab)?new|[tl]?cd|source|sp%[lit]|vs%[plit])>'
 		return '/'
 	endif
 
