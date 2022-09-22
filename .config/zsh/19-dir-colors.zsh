@@ -1,7 +1,7 @@
 readonly ZCACHE=~/.cache/zsh
 
 # Cache LS_COLOR-like variables.
-[[ ! -d $ZCACHE ]] && mkdir $ZCACHE
+[[ ! -d $ZCACHE ]] && mkdir -p $ZCACHE
 
 readonly dir_colors=$ZCACHE/dir_colors
 
