@@ -52,8 +52,6 @@ zstyle ':completion::complete:*' list-dirs-first true
 zstyle ':completion::complete:(cat|cp|rm|nvim):*' file-patterns \
 	'%p(^-/):other-files:files %p(-/):directories:directories'
 
-zstyle ':completion:*' recursive-files {~p,~c}/\*
-
 zstyle ':completion::complete:-tilde-::' group-order named-directories path-directories expand
 
 zstyle ':completion::complete:-command-:*' file-patterns \
