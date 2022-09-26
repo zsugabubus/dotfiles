@@ -41,6 +41,7 @@ bindkey -M viins \
 	'^P' up-history \
 	'^N' down-history \
 	'^H' backward-delete-char \
+	'^K' kill-line \
 	"^[h" backward-char \
 	"^[l" forward-char \
 
