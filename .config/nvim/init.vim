@@ -422,7 +422,7 @@ command! Bg let &background = 'light' == &background ? 'dark' : 'light'
 command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
 
 " Do command on every buffer and return to current.
-command! -bang -nargs=+ Bufdo tabnew|execute 'bufdo<bang>' <q-args>|bdelete
+command! -bang -nargs=+ Bufdo -tabnew|execute 'bufdo<bang>' <q-args>|bdelete
 
 " Sweep out untouched buffers.
 command! Sweep call s:sweep()
