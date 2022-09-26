@@ -350,15 +350,9 @@ alias vlock='nice -20 vlock'
 
 # do not PANIC!!!
 function oom pan pani panic() {
-	if pidof chromium; then
-		pkill chromium
-		sleep 3
-		pkill -9 chromium
-		sleep 5
-	fi
-	if pidof mpv; then
-		pkill mpv
-	fi
+	pkill -9 chromium
+	sleep 5
+	pkill -9 mpv
 }
 
 function sheep_pacman() {
