@@ -290,10 +290,10 @@ local function _update()
 			'\\fnmonospace\\an',
 			prog_small and '6}' or '5}'
 		)
-		if not mouse_main_hit then
-			osd:append(' ', human_time(duration))
-		elseif mouse_prog_hit then
+		if mouse_prog_hit then
 			osd:append(human_time(-(duration - mouse_time)))
+		elseif mouse_main_hit == props['demuxer-via-network'] then
+			osd:append(human_time(duration))
 		else
 			osd:append(human_time(-(props['playtime-remaining'] or 0)))
 		end
@@ -579,6 +579,7 @@ update_mode = function()
 			'ab-loop-b',
 			'chapter-list',
 			'demuxer-cache-state',
+			'demuxer-via-network',
 			'duration',
 			'pause', -- To show exact values on pause.
 			'percent-pos',
