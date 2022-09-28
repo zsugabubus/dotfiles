@@ -7,7 +7,7 @@ function icon(alpha, align, icon)
 		align,
 		'\\1a&H',
 		alpha,
-		'\\fscx225\\fscy225\\fnmpv-osd-symbols}',
+		'\\fscx200\\fscy200\\fnmpv-osd-symbols}',
 		icon,
 	}
 end
