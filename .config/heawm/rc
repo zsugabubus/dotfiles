@@ -1,17 +1,13 @@
 export DISPLAY=:0
 export TERMINAL=alacritty
 
+. ${0%/*}/theme
 xset s 125 125 &
 xset +dpms dpms 125 125 125 &
 setxkbmap pl dvp compose:ralt &
-# Used to be -grey but that has a not neglible performance impact on Xorg when
-# switching windows. (Not sure why. Maybe not a small pattern repeats but a
-# very large image is uploaded?) It contains less black, so at the end it is
-# much better.
-xsetroot -mod 2 2 -rv &
 
-if ! pidof heawm; then
-	magixrandr auto home laptop &
-	heawm
-fi
+pidof heawm >/dev/null && exit
+
+magixrandr auto home laptop &
+heawm
 # vim: ft=sh

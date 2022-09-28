@@ -1,0 +1,5 @@
+# Used to be -grey but that has a not neglible performance impact on Xorg when
+# switching windows. (Not sure why. Maybe not a small pattern repeats but a
+# very large image is uploaded?) It contains less black, so at the end it is
+# much better.
+xsetroot -mod 2 2 -rv &

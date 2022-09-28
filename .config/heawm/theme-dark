@@ -1,0 +1,1 @@
+xsetroot -solid black &
