@@ -15,7 +15,7 @@ local fsx_cache = {}
 
 local props = {
 	-- Queried just once.
-	sub_margin_y=mp.get_property_native('sub-margin-y'),
+	['sub-margin-y']=mp.get_property_native('sub-margin-y'),
 }
 local mouse_time
 local mouse_chapter
@@ -26,7 +26,7 @@ local old_sub_margin_y
 local function seek(e)
 	mp.commandv('no-osd', 'seek', mouse_time, 'absolute+exact')
 	if e.event ~= 'up' then
-		mp.add_forced_key_binding('MOUSE_MOVE', 'MOUSE_MOVE', function(e)
+		mp.add_forced_key_binding('MOUSE_MOVE', 'MOUSE_MOVE', function()
 			mp.commandv(
 				'no-osd',
 				'seek',
@@ -35,7 +35,7 @@ local function seek(e)
 					and 'absolute+exact'
 					or 'absolute+keyframes'
 			)
-		end, COMPLEX)
+		end)
 	else
 		mp.remove_key_binding('MOUSE_MOVE')
 	end
@@ -51,7 +51,7 @@ local function go_to_chapter(e)
 		mp.commandv('set', 'chapter', mouse_chapter.id .. '')
 		mp.add_forced_key_binding('MOUSE_MOVE', 'MOUSE_MOVE', function()
 			mp.commandv('set', 'chapter', mouse_chapter.id .. '')
-		end, COMPLEX)
+		end)
 	else
 		mp.remove_key_binding('MOUSE_MOVE')
 	end
@@ -485,7 +485,7 @@ local function _update()
 		local scaled_margin_bottom = osd.res_y ~= 0
 			and (osd.res_y - box_y0) / osd.res_y * 720
 			or 0
-		local sub_margin_y = props['sub_margin_y'] + math.ceil(scaled_margin_bottom)
+		local sub_margin_y = props['sub-margin-y'] + math.ceil(scaled_margin_bottom)
 		if old_sub_margin_y ~= sub_margin_y then
 			-- set_property() is handled only after window resize, commandv() applied
 			-- immediately (when subtitle changes).
@@ -585,8 +585,8 @@ update_mode = function()
 			'percent-pos',
 			'playlist-count',
 			'playlist-pos',
-			'time-pos',
 			'playtime-remaining',
+			'time-pos',
 		})
 
 		observe_properties(nil, {
@@ -600,7 +600,7 @@ update_mode = function()
 	if not visible then
 		osd:remove()
 		-- Reset.
-		mp.commandv('set', 'sub-margin-y', props['sub_margin_y'])
+		mp.commandv('set', 'sub-margin-y', props['sub-margin-y'])
 	end
 end
 
