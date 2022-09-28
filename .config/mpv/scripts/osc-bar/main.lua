@@ -24,8 +24,8 @@ local old_title
 local old_sub_margin_y
 
 local function seek(e)
-	mp.commandv('no-osd', 'seek', mouse_time, 'absolute+exact')
 	if e.event ~= 'up' then
+		mp.commandv('no-osd', 'seek', mouse_time, 'absolute+exact')
 		mp.add_forced_key_binding('MOUSE_MOVE', 'MOUSE_MOVE', function()
 			mp.commandv(
 				'no-osd',
