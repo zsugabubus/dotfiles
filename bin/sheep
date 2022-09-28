@@ -10,7 +10,7 @@ if test "$1" = "--"; then
 	}
 
 	cd /dev/shm || cd /tmp
-	mount --make-unbindable --make-private -t tmpfs tmpfs . -o noatime,size=2g,mode=755
+	mount --make-unbindable --make-private -t tmpfs tmpfs . -o noatime,size=25%,mode=755
 	cd .
 
 	mkdir --mode=755 rootfs work changes
