@@ -286,7 +286,9 @@ local function _update()
 		)
 		if mouse_prog_hit then
 			osd:append(human_time(-(duration - mouse_time)))
-		elseif mouse_main_hit == props['demuxer-via-network'] then
+		elseif
+			mouse_main_hit == (props['demuxer-via-network'] or props['speed'] ~= 1)
+		then
 			osd:append(human_time(duration))
 		else
 			osd:append(human_time(-(props['playtime-remaining'] or 0)))
@@ -580,6 +582,7 @@ update_mode = function()
 			'playlist-count',
 			'playlist-pos',
 			'playtime-remaining',
+			'speed',
 			'time-pos',
 		})
 
