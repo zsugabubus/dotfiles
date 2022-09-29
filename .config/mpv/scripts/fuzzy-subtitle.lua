@@ -48,6 +48,7 @@ function walk(path, pats)
 			if file:find(pattern) ~= nil then
 				local gen = file:find('%.txt$') ~= nil
 				if gen then
+					mp.msg.info('Generating subtitle from', file)
 					local f = io.open(file, 'r')
 					file = tmp_file .. '.lrc'
 					local t = io.open(file, 'w')
@@ -57,6 +58,7 @@ function walk(path, pats)
 					t:close()
 				end
 
+				mp.msg.info('Adding subtitle from', file)
 				mp.commandv('sub-add', file)
 
 				if gen then
