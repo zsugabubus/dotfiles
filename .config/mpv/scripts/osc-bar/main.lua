@@ -214,10 +214,7 @@ local function _update()
 	osd:append('{\\r\\pos(', main_x0, ',', main_y0, ')}')
 	osd:append('{\\bord0\\1a&HE0&\\1c&HFFFFFF&}')
 	osd:draw_begin()
-	osd:draw_rect_wh(
-		0, 0,
-		math.ceil(main_width), math.ceil(main_height)
-	)
+	osd:draw_rect_wh(0, 0, math.ceil(main_width), math.ceil(main_height))
 	osd:draw_end()
 	osd:append('\n')
 
@@ -225,10 +222,7 @@ local function _update()
 	osd:append('{\\r\\pos(', prog_x0, ',', prog_y0, ')}')
 	osd:append('{\\bord0\\1a&H10&\\1c&HFFFFFF&}')
 	osd:draw_begin()
-	osd:draw_rect_wh(
-		0, 0,
-		prog_width * percent, prog_height
-	)
+	osd:draw_rect_wh(0, 0, prog_width * percent, prog_height)
 	osd:draw_end()
 	osd:append('\n')
 
