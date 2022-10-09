@@ -416,8 +416,6 @@ xnoremap . :normal! .<CR>
 " Execute macro over visual range
 xnoremap <expr><silent> @ printf(':normal! @%s<CR>', getcharstr())
 
-command! Bg let &background = 'light' == &background ? 'dark' : 'light'
-
 " Perform glob on every lines.
 command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
 
