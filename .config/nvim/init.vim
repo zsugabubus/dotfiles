@@ -425,9 +425,9 @@ command! -bang -nargs=+ Bufdo -tabnew|execute 'bufdo<bang>' <q-args>|bdelete
 " Sweep out untouched buffers.
 command! Sweep call s:sweep()
 function! s:sweep() abort
-	for i in range(1,bufnr('$'))
-		if bufexists(i) && !getbufvar(i, '&modified')
-			execute i.'bdelete'
+	for buf in range(1, bufnr('$'))
+		if buflisted(buf)
+			silent! execute 'bdelete' buf
 		endif
 	endfor
 endfunction
