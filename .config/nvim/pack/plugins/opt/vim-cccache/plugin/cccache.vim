@@ -1,11 +1,11 @@
 " USAGE:
 "
 " packadd vim-cccache
-" if CCCacheTest(expand('<sfile>'))
+" if CCCacheBegin(expand('<sfile>'))
 "   finish
 " endif
 " [Hi ...]...
-" call CCCacheFinish()
+" call CCCacheEnd()
 
 function! s:hi(name, ...)
 	let name = a:name
@@ -64,7 +64,7 @@ function! s:hi(name, ...)
 	execute cmd
 endfunction
 
-function! CCCacheTest(sfile) abort
+function! CCCacheBegin(sfile) abort
 	let s:colors_name = fnamemodify(a:sfile, ':t:r')
 	let s:cache =
 		\ (has('nvim') ? stdpath('cache') : '/tmp').
@@ -92,7 +92,7 @@ function! CCCacheTest(sfile) abort
 	return 0
 endfunction
 
-function! CCCacheFinish() abort
+function! CCCacheEnd() abort
 	try
 		call writefile(s:cached_cmds, s:cache)
 	catch

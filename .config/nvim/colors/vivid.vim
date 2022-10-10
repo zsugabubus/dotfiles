@@ -1,6 +1,6 @@
 packadd vim-cccache
 
-if CCCacheTest(expand('<sfile>'))
+if CCCacheBegin(expand('<sfile>'))
 	finish
 endif
 
@@ -181,4 +181,4 @@ Hi debugBreakpoint cterm=bold guibg=#f51030 guifg=#ffffff
 
 Hi changeLogError guifg=Normal
 
-call CCCacheFinish()
+call CCCacheEnd()
