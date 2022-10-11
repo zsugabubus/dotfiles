@@ -1,11 +1,6 @@
 # General build directory.
 /build
 
-# Generated files from the dark ages.
-*.o
-*.so
-*.d
-
 # Vim :helptags.
 tags
 
@@ -20,8 +15,6 @@ tags
 /.gdb_history
 
 # Miscellaneous.
-/.public_site
-*.patch
 *-private*
 /node_modules
 __pycache__
