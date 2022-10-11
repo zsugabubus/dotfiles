@@ -16,12 +16,7 @@ fi
 
 case $mime_type in
 image/*)
-	if (( $#files == 1 )); then
-		open_with feh
-	else
-		open_with feh
-	fi
-	;;
+	open_with nsxiv ;;
 
 audio/*|video/*)
 	case $TERM in
