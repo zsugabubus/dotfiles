@@ -1,2 +1,2 @@
 #!/bin/dash
-feh --auto-zoom --scale-down "$MUCK_COVER" &
+nsxiv -b "$MUCK_COVER" &
