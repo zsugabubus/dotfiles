@@ -836,12 +836,12 @@ nnoremap <silent> sw :set wrap!<CR>
 nnoremap <silent> sp vip:sort /\v^(#!)@!\A*\zs/<CR>
 nnoremap <silent> s~ :set scrollbind!<bar>echo 'set scb='.&scrollbind<CR>
 
-command! -nargs=* -complete=command Capture call s:capture(<q-args> || 'messages')
+command! -nargs=* -complete=command Capture call s:capture(substitute(<q-args>, '^$', 'messages', ''))
 function! s:capture(cmd) abort
 	redir => output
-	silent! execute a:cmd
+	silent execute a:cmd
 	redir END
-	if empty(l:output)
+	if empty(output)
 		echohl WarningMsg
 		echomsg "no output"
 		echohl None
