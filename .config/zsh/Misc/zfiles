@@ -38,7 +38,7 @@ typeset -g __zfiles_glob=$__ZFILES_DEFAULT_GLOB
 typeset -g __zfiles_glob_letter=$__ZFILES_DEFAULT_GLOB_LETTER
 
 typeset -gA __zfiles_bindings=(
-	[g]='__zfiles_select_scroll 0 1'
+	[gg]='__zfiles_select_scroll 0 1'
 	[G]='__zfiles_select_scroll 0 $#__zfiles_files'
 	[k]='__zfiles_select_scroll 1 -1'
 	[j]='__zfiles_select_scroll 1 +1'
@@ -84,11 +84,11 @@ typeset -gA __zfiles_bindings=(
 	[/]='__zfiles_glob= && __zfiles_set_glob / && __zfiles_glob=$__zfiles_glob* && __zfiles_glob_letter=/ && __zfiles_update_files'
 )
 
-__zfiles_bindings[\\*\\*]='__zfiles_glob=* && __zfiles_set_glob "glob"'
-__zfiles_bindings[\\*e]='__zfiles_set_glob "glob"'
+__zfiles_bindings[g\\*]='__zfiles_glob=* && __zfiles_set_glob "glob"'
+__zfiles_bindings[ge]='__zfiles_set_glob "glob"'
 () {
 	while (( $# )); do
-		__zfiles_bindings[\\*${(b)1}]='__zfiles_glob='${(qq)2}' && __zfiles_glob_letter='${(qq)1}' && __zfiles_update_files'
+		__zfiles_bindings[g${(b)1}]='__zfiles_glob='${(qq)2}' && __zfiles_glob_letter='${(qq)1}' && __zfiles_update_files'
 		shift 2
 	done
 } \
