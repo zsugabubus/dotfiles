@@ -676,7 +676,6 @@ function zfiles-show() {
 		zcurses delwin list
 		__zfiles-leave
 
-		__zfiles_drop_caches
 		__zfiles_active=0
 	}
 }
