@@ -300,7 +300,8 @@ function __zfiles_render_prompt() {
 	__zfiles_dirty_prompt=0
 	echoti sc
 	echoti home
-	print -nP "$PS1"
+	# BANANA: Not the same as `print -P` when $PS1 contains <BS><CR> (\\\n).
+	print -n "${(%%)PS1}"
 	echoti el
 	echoti rc
 }
