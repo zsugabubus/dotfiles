@@ -98,8 +98,8 @@ __zfiles_bindings[\\*e]='__zfiles_set_glob "glob"'
 	D '**(-/)' \
 	f '*(^-/)' \
 	F '**(^-/)' \
-	t '*(om)' \
-	T '**(om)' \
+	m '*(om)' \
+	M '**(om)' \
 
 alias -g AllFiles='$__zfiles_files'
 alias -g File='${__zfiles_files[(e)$__zfiles_cur]:?}'
