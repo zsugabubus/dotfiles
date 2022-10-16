@@ -290,7 +290,7 @@ function __zfiles_render_prompt() {
 	__zfiles_dirty_prompt=0
 	echoti sc
 	echoti home
-	print -nP "${(%%)PS1}$__zfiles_cur/$#__zfiles_files g$__zfiles_glob_letter S${${:--sS}:$__zfiles_do_stat:1} *$#__zfiles_selection"
+	print -nP "$PS1"
 	echoti el
 	echoti rc
 }
