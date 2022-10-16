@@ -445,10 +445,18 @@ function __zfiles_vared() {
 
 function __zfiles_cmd() {
 	local cmd=$*
-	if __zfiles_shellout __zfiles_vared -e cmd; then
-		REPLY=$cmd
-		eval $cmd || printf 'exit status %d\r' $?
-	fi
+	{
+		__zfiles-leave
+		if __zfiles_vared -e cmd; then
+			REPLY=$cmd
+			eval $cmd || {
+				printf >&2 'exit status %d\r' $?;
+				read -k1
+			}
+		fi
+	} always {
+		__zfiles-enter
+	}
 }
 
 # {FORWARD}
