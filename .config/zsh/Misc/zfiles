@@ -14,7 +14,7 @@ integer -g __zfiles_glob_dots=0
 integer -g __zfiles_active # 0=no; 1=list; 2=vared
 
 typeset -g __zfiles_PWD
-typeset -ga __zfiles_files
+typeset -ga __zfiles_globfiles __zfiles_files
 typeset -ga __zfiles_selection
 integer -g __zfiles_lines
 integer -g __zfiles_rendered_top __zfiles_cur __zfiles_top __zfiles_bottom
@@ -32,12 +32,12 @@ typeset -grA __ZFILES_CONTROL_KEYMAP=(
 )
 
 typeset -r __ZFILES_DEFAULT_GLOB='*(N-/) *(N^-/)'
-typeset -r __ZFILES_DEFAULT_GLOB_LETTER=a
 
-typeset -g __zfiles_glob=$__ZFILES_DEFAULT_GLOB
-typeset -g __zfiles_glob_letter=$__ZFILES_DEFAULT_GLOB_LETTER
+typeset -g __zfiles_glob=$__ZFILES_DEFAULT_GLOB __zfiles_filter=
 
-typeset -gA __zfiles_bindings=(
+typeset -g __zfiles_mode=n
+
+typeset -gA __zfiles_bindings_n=(
 	[gg]='__zfiles_select_scroll 0 1'
 	[G]='__zfiles_select_scroll 0 $#__zfiles_files'
 	[k]='__zfiles_select_scroll 1 -1'
@@ -51,7 +51,7 @@ typeset -gA __zfiles_bindings=(
 	[s]='__zfiles-stat File'
 	['\<C-E\>']='__zfiles_scroll_select 1 +1'
 	['\<C-Y\>']='__zfiles_scroll_select 1 -1'
-	[h]='cd ..'
+	[h\|H]='cd ..'
 	['\<cr\>']='__zfiles_open File'
 	[l]='__zfiles_open File'
 	['\<C-L\>']='__zfiles_chpwd; zcurses refresh; __zfiles_dirty_prompt=1; __zfiles_render'
@@ -72,7 +72,6 @@ typeset -gA __zfiles_bindings=(
 	['F?']='__zfiles_f 1 0 ${__zfiles_input#F}'
 	[';']='__zfiles_f 0 $__zfiles_last_f_forward $__zfiles_last_f'
 	[',']='__zfiles_f 0 $(( __zfiles_last_f_forward^1 )) $__zfiles_last_f'
-	['.']='(( __zfiles_glob_dots^=1 )); __zfiles_update_files'
 	['+']='__zfiles_tag "+"'
 	['-']='__zfiles_tag "-"'
 	['=']='__zfiles_tag "="'
@@ -81,25 +80,35 @@ typeset -gA __zfiles_bindings=(
 	[p]='pushd "$PWD"'
 	[q]='return'
 	['\<C-\[\>']='return'
-	[/]='__zfiles_glob= && __zfiles_set_glob / && __zfiles_glob=$__zfiles_glob* && __zfiles_glob_letter=/ && __zfiles_update_files'
+	[/]='__zfiles_filter= && __zfiles_update_files f && __zfiles_set_mode t'
+	[g.]='(( __zfiles_glob_dots^=1 )); __zfiles_update_files g'
+	[g\\*]='__zfiles_glob=* && __zfiles_set_glob'
+	[ge]='__zfiles_set_glob'
+	[ga]='__zfiles_glob=$__ZFILES_DEFAULT_GLOB && __zfiles_update_files g'
+	[gr]='__zfiles_glob=*** && __zfiles_update_files g'
+	[gd]='__zfiles_glob=*(-/) && __zfiles_update_files g'
+	[gD]='__zfiles_glob=**(-/) && __zfiles_update_files g'
+	[gf]='__zfiles_glob=*(^-/) && __zfiles_update_files g'
+	[gF]='__zfiles_glob=**(^-/) && __zfiles_update_files g'
+	[gm]='__zfiles_glob=*(om) && __zfiles_update_files g'
+	[gM]='__zfiles_glob=**(om) && __zfiles_update_files g'
 )
 
-__zfiles_bindings[g\\*]='__zfiles_glob=* && __zfiles_set_glob "glob"'
-__zfiles_bindings[ge]='__zfiles_set_glob "glob"'
-() {
-	while (( $# )); do
-		__zfiles_bindings[g${(b)1}]='__zfiles_glob='${(qq)2}' && __zfiles_glob_letter='${(qq)1}' && __zfiles_update_files'
-		shift 2
-	done
-} \
-	"$__ZFILES_DEFAULT_GLOB_LETTER" "$__ZFILES_DEFAULT_GLOB" \
-	r '***' \
-	d '*(-/)' \
-	D '**(-/)' \
-	f '*(^-/)' \
-	F '**(^-/)' \
-	m '*(om)' \
-	M '**(om)' \
+typeset -gA __zfiles_bindings_t=(
+	['\<C-\[\>']='__zfiles_filter= && __zfiles_update_files f && __zfiles_set_mode n'
+	['\<C-[KU]\>']='__zfiles_filter= && __zfiles_update_files f'
+	['\<C-W\>']='__zfiles_filter=${${${:-" $__zfiles_filter"}% *}#?} && __zfiles_update_files f'
+	['\<C-H\>']='__zfiles_filter=${__zfiles_filter%?} && __zfiles_update_files f'
+	['/']='__zfiles_open File'
+	['\<cr\>|L']='__zfiles_filter= && __zfiles_set_mode n && __zfiles_open File && __zfiles_update_files f'
+	[H]='cd ..'
+	[T]='__zfiles_selection=( $__zfiles_files )'
+	['[a-z0-9*]']='__zfiles_filter+=$__zfiles_input && __zfiles_update_files f'
+	[.]='__zfiles_filter+=*$__zfiles_input* && __zfiles_update_files f'
+	['[_ -]']='__zfiles_filter+="*[_ -]*" && __zfiles_update_files f'
+	[K\|,]='__zfiles_select_scroll 1 -1'
+	['J|;|\<tab\>']='__zfiles_select_scroll 1 +1'
+)
 
 alias -g AllFiles='$__zfiles_files'
 alias -g File='${__zfiles_files[(e)$__zfiles_cur]:?}'
@@ -217,7 +226,7 @@ function __zfiles_render() {
 		fi
 
 		if (( __zfiles_do_stat )) && [[ ! -v '__zfiles_stat_cache[(e)${:-$file}]' ]]; then
-			__zfiles-stat $file
+			__zfiles-stat "$file"
 		fi
 
 		type=fi
@@ -368,24 +377,31 @@ function __zfiles_tag() {
 function __zfiles_update_files() {
 	__zfiles_dir_selection[$__zfiles_PWD]=$__zfiles_files[(e)$__zfiles_cur]
 
-	__zfiles_PWD=$PWD
-	if (( __zfiles_glob_dots )); then
-		setopt glob_dots
-	else
-		setopt noglob_dots
+	if [[ ${1?} == *g* ]]; then
+		__zfiles_PWD=$PWD
+		if (( __zfiles_glob_dots )); then
+			setopt glob_dots
+		else
+			setopt noglob_dots
+		fi
+		__zfiles_globfiles=( ${~${=__zfiles_glob}} )
 	fi
-	__zfiles_files=( ${~${=__zfiles_glob}} )
+
+	if [[ $1 == *g* || $1 == *f* ]]; then
+		__zfiles_files=(
+			${(M)__zfiles_globfiles:#(#i).#$~__zfiles_filter*}
+			${(M)__zfiles_globfiles:#(#i)*$~__zfiles_filter*}
+		)
+		__zfiles_files=( ${(u)__zfiles_files} )
+	fi
+
 	integer index=${__zfiles_files[(rie)${__zfiles_dir_selection[$__zfiles_PWD]}]}
 	__zfiles_select_scroll 0 $(( index <= $#__zfiles_files ? index : 1 ))
 }
 
 function __zfiles_chpwd() {
-	if [[ $__zfiles_glob_letter == / ]]; then
-		__zfiles_glob_letter=$__ZFILES_DEFAULT_GLOB_LETTER
-		__zfiles_glob=$__ZFILES_DEFAULT_GLOB
-	fi
-
-	__zfiles_update_files
+	__zfiles_filter=
+	__zfiles_update_files g
 	__zfiles_prompt=
 	__zfiles_selection=()
 	__zfiles_drop_caches
@@ -512,14 +528,17 @@ function __zfiles_toggle() {
 	__zfiles_select_scroll 1 +1
 }
 
-# {PROMPT} {VAR}
 function __zfiles_set_glob() {
-	if __zfiles_shellout __zfiles_vared -p "${bold_color}$1${reset_color}=" -eca __zfiles_glob; then
-		__zfiles_glob_letter=*
-		__zfiles_update_files
+	if __zfiles_shellout __zfiles_vared -p "${bold_color}glob${reset_color}=" -eca __zfiles_glob; then
+		__zfiles_update_files g
 	fi
 }
 alias __zfiles_set_glob='noglob __zfiles_set_glob'
+
+function __zfiles_set_mode() {
+	__zfiles_mode=$1
+	__zfiles_dirty_prompt=1
+}
 
 function __zfiles_open() {
 	if test -d $1; then
@@ -650,11 +669,12 @@ function zfiles-show() {
 			fi
 			__zfiles_input=$__zfiles_input$REPLY
 
-			local binding=${(v)__zfiles_bindings[(k)$__zfiles_input]}
+			local bindings="__zfiles_bindings_$__zfiles_mode"
+			local binding=${(v)${(P)bindings}[(k)$__zfiles_input]}
 			if [[ -n $binding ]]; then
 				eval $binding ||:
 				__zfiles_input=
-			elif [[ -n $__zfiles_input ]] && [[ -z "${__zfiles_bindings[(i)${(b)${(b)__zfiles_input}}*]}" ]]; then
+			elif [[ -n $__zfiles_input ]] && [[ -z "${${(P)bindings}[(i)${(b)${(b)__zfiles_input}}*]}" ]]; then
 				__zfiles_error "no binding for ${(qq)__zfiles_input}"
 				__zfiles_input=
 			fi
