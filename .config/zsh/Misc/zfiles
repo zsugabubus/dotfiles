@@ -115,6 +115,7 @@ function __zfiles-enter() {
 	zcurses init
 	zcurses clear list
 	zcurses refresh list
+	__zfiles_dirty_prompt=1
 }
 
 # {FILE}
