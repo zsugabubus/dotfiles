@@ -38,26 +38,26 @@ typeset -g __zfiles_glob=$__ZFILES_DEFAULT_GLOB
 typeset -g __zfiles_glob_letter=$__ZFILES_DEFAULT_GLOB_LETTER
 
 typeset -gA __zfiles_bindings=(
-	[g]='__zfiles_select_scroll 1'
-	[G]='__zfiles_select_scroll $#__zfiles_files'
-	[k]='__zfiles_select_scroll -1'
-	[j]='__zfiles_select_scroll +1'
-	[K]='__zfiles_select_scroll -$__zfiles_lines'
-	[J]='__zfiles_select_scroll +$__zfiles_lines'
-	['\<C-U\>']='__zfiles_scroll_half -'
-	['\<C-D\>']='__zfiles_scroll_half +'
-	[' ']='__zfiles_scroll_keep +$__zfiles_lines'
+	[g]='__zfiles_select_scroll 0 1'
+	[G]='__zfiles_select_scroll 0 $#__zfiles_files'
+	[k]='__zfiles_select_scroll 1 -1'
+	[j]='__zfiles_select_scroll 1 +1'
+	[K]='__zfiles_select_scroll 1 -$__zfiles_lines'
+	[J]='__zfiles_select_scroll 1 +$__zfiles_lines'
+	['\<C-U\>']='__zfiles_select_scroll_half -1'
+	['\<C-D\>']='__zfiles_select_scroll_half +1'
+	[' ']='__zfiles_select_scroll +2'
 	[S]='(( __zfiles_do_stat=(__zfiles_do_stat + 1) % 3 )); __zfiles_dirty_prompt=1'
 	[s]='__zfiles-stat File'
-	['\<C-E\>']='__zfiles_scroll_select -1'
-	['\<C-Y\>']='__zfiles_scroll_select +1'
+	['\<C-E\>']='__zfiles_scroll_select 1 +1'
+	['\<C-Y\>']='__zfiles_scroll_select 1 -1'
 	[h]='cd ..'
 	['\<cr\>']='__zfiles_open File'
 	[l]='__zfiles_open File'
 	['\<C-L\>']='__zfiles_chpwd; zcurses refresh; __zfiles_dirty_prompt=1; __zfiles_render'
-	# [zt]='__zfiles_scroll -5'
-	# [zz]='__zfiles_scroll $(( __zfiles_cur - __zfiles_lines / 2 ))'
-	# [zb]='__zfiles_scroll $(( __zfiles_top + __zfiles_lines ))'
+	[zt]='__zfiles_scroll_select 0 $(( __zfiles_cur - __zfiles_scrolloff ))'
+	[zz]='__zfiles_scroll_select 0 $(( __zfiles_cur - __zfiles_lines / 2 ))'
+	[zb]='__zfiles_scroll_select 0 $(( __zfiles_cur + __zfiles_scrolloff - __zfiles_lines ))'
 	[t]='__zfiles_toggle File'
 	[m]='__zfiles_cmd "mkdir "'
 	[e]='__zfiles_cmd "$EDITOR "'
@@ -295,59 +295,70 @@ function __zfiles_render_prompt() {
 	echoti rc
 }
 
-function __zfiles_adjust_scroll() {
-	if (( __zfiles_cur < __zfiles_top + __zfiles_scrolloff )); then
-		__zfiles_top=$(( __zfiles_cur - __zfiles_scrolloff ))
-	elif (( __zfiles_top + __zfiles_lines - __zfiles_scrolloff <= __zfiles_cur )); then
-		__zfiles_top=$(( __zfiles_cur - __zfiles_lines + 1 + __zfiles_scrolloff ))
+# {RELATIVE} {LINES}
+function __zfiles_select() {
+	__zfiles_cur=$(( __zfiles_cur * ${1?} + ${2?} ))
+
+	if (( __zfiles_cur < 1 )); then
+		__zfiles_cur=1
 	fi
 
-	local top=$__zfiles_top
-	if (( top < 1 )); then
-		top=1
+	if (( $#__zfiles_files < __zfiles_cur )); then
+		__zfiles_cur=$#__zfiles_files
 	fi
 
-	__zfiles_bottom=$(( top + __zfiles_lines - 1 ))
+	__zfiles_dirty_prompt=1
+}
+
+# {RELATIVE} {LINES}
+function __zfiles_scroll() {
+	__zfiles_top=$(( __zfiles_top * ${1?} + ${2?} ))
+
+	if (( __zfiles_top < 1 )); then
+		__zfiles_top=1
+	fi
+
+	(( __zfiles_bottom=__zfiles_top + __zfiles_lines - 1 ))
 	if (( $#__zfiles_files < __zfiles_bottom )); then
 		__zfiles_bottom=$#__zfiles_files
-		top=$(( __zfiles_bottom - __zfiles_lines + 1 ))
-		if (( top < 1 )); then
-			top=1
+		(( __zfiles_top=__zfiles_bottom - __zfiles_lines + 1 ))
+		if (( __zfiles_top < 1 )); then
+			__zfiles_top=1
 		fi
 	fi
 
-	__zfiles_top=$top
+	__zfiles_dirty_prompt=1
 }
 
-function __zfiles_adjust_cur() {
-	# if (( __zfiles_cur < __zfiles_top )); then
-	# 	__zfiles_cur=__zfiles_top
-	# elif ( ( __zfiles_top + $(( LINES  < __zfiles_cur )); then
-	# fi
-	# __zfiles_select $1
+# {HALF_PAGES}
+function __zfiles_select_scroll_half() {
+	__zfiles_select_scroll 1 $(( ${1?} * __zfiles_lines / 2 ))
 }
 
-# {+|-}{LINES}
-function __zfiles_scroll() {
-	__zfiles_top=$(( __zfiles_top $1 ))
+function __zfiles_adjust_scroll() {
+	if (( __zfiles_cur < __zfiles_top + __zfiles_scrolloff )); then
+		__zfiles_scroll 0 $(( __zfiles_cur - __zfiles_scrolloff ))
+	elif (( __zfiles_top + __zfiles_lines - __zfiles_scrolloff <= __zfiles_cur )); then
+		__zfiles_scroll 0 $(( __zfiles_cur - __zfiles_lines + 1 + __zfiles_scrolloff ))
+	fi
 }
 
-# {+|-}{LINES}
-function __zfiles_scroll_keep() {
-	__zfiles_select $1
-	# __zfiles_scroll $1
+function __zfiles_adjust_select() {
+	if (( __zfiles_cur < __zfiles_top + __zfiles_scrolloff )); then
+		__zfiles_select 0 $(( __zfiles_top + __zfiles_scrolloff ))
+	elif (( __zfiles_top + __zfiles_lines - __zfiles_scrolloff <= __zfiles_cur )); then
+		__zfiles_select 0 $(( __zfiles_top + __zfiles_lines - __zfiles_scrolloff - 1 ))
+	fi
+}
+
+function __zfiles_select_scroll() {
+	__zfiles_select "$@"
 	__zfiles_adjust_scroll
 }
 
-# {+|-}{LINES}
 function __zfiles_scroll_select() {
-	__zfiles_scroll $1
-	__zfiles_adjust_cur
-}
-
-# {+|-}
-function __zfiles_scroll_half() {
-	__zfiles_scroll_keep $1$(( $__zfiles_lines / 2 ))
+	__zfiles_scroll "$@"
+	__zfiles_adjust_select
 }
 
 function __zfiles_tag() {
@@ -364,7 +375,7 @@ function __zfiles_update_files() {
 	fi
 	__zfiles_files=( ${~${=__zfiles_glob}} )
 	integer index=${__zfiles_files[(rie)${__zfiles_dir_selection[$__zfiles_PWD]}]}
-	__zfiles_select_scroll $(( index <= $#__zfiles_files ? index : 1 ))
+	__zfiles_select_scroll 0 $(( index <= $#__zfiles_files ? index : 1 ))
 }
 
 function __zfiles_chpwd() {
@@ -381,29 +392,6 @@ function __zfiles_chpwd() {
 
 function __zfiles_resize() {
 	zcurses resize $LINES $COLUMNS endwin
-}
-
-function __zfiles_select_scroll() {
-	__zfiles_select $*
-	__zfiles_adjust_scroll
-}
-
-function __zfiles_select() {
-	if [[ -z ${1%[+-]*} ]]; then
-		__zfiles_cur=$(( __zfiles_cur $1 ))
-	else
-		__zfiles_cur=$1
-	fi
-
-	if (( __zfiles_cur < 1 )); then
-		__zfiles_cur=1
-	fi
-
-	if (( $#__zfiles_files < __zfiles_cur )); then
-		__zfiles_cur=$#__zfiles_files
-	fi
-
-	__zfiles_dirty_prompt=1
 }
 
 bindkey -N __zfiles-viins viins
@@ -473,7 +461,7 @@ function __zfiles_bracket() {
 			(( search_d == $? )) && break
 		fi
 	done
-	__zfiles_select_scroll $i
+	__zfiles_select_scroll 0 $i
 }
 
 # {SAVE} {FORWARD} {LETTER}
@@ -510,17 +498,17 @@ function __zfiles_f() {
 			closest_index=$index
 		}
 	done
-	(( do_scroll )) && __zfiles_select_scroll $closest_index
+	(( do_scroll )) && __zfiles_select_scroll 0 $closest_index
 }
 
 function __zfiles_toggle() {
 	if (( ${+__zfiles_selection[(re)$1]} )); then
 		__zfiles_selection[(e)${__zfiles_selection[(rie)$1]}]=()
 	else
-		__zfiles_selection+=($1)
+		__zfiles_selection+=( $1 )
 	fi
 	__zfiles_dirty_prompt=1
-	__zfiles_select_scroll +1
+	__zfiles_select_scroll 1 +1
 }
 
 # {PROMPT} {VAR}
