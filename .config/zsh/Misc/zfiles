@@ -205,15 +205,15 @@ function __zfiles_render() {
 		zcurses move list $line 0
 
 		if (( ${+__zfiles_selection[(re)$file]} )); then
-			zcurses attr list reverse
+			zcurses attr list reverse bold
 			zcurses char list '*'
 		else
 			zcurses char list ' '
 		fi
 		if (( i == __zfiles_cur )); then
-			zcurses attr list reverse
+			zcurses attr list reverse -bold
 		else
-			zcurses attr list -reverse
+			zcurses attr list -reverse -bold
 		fi
 
 		if (( __zfiles_do_stat )) && [[ ! -v '__zfiles_stat_cache[(e)${:-$file}]' ]]; then
