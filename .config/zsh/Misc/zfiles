@@ -23,7 +23,7 @@ typeset -gA __zfiles_dir_selection
 
 typeset -g __zfiles_last_{cmd,f,f_forward}
 
-typeset -gA __zfiles_{stat,icon,color}_cache
+typeset -gA __zfiles_{stat,icon,color,comment}_cache
 typeset -gA __zfiles_{icons,colors}
 
 typeset -grA __ZFILES_CONTROL_KEYMAP=(
@@ -253,6 +253,16 @@ function __zfiles_render() {
 		zcurses string list "$file"
 		zcurses attr list -bold -underline -reverse default/default
 		zcurses string list "$class"
+		if (( ! ${+__zfiles_comment_cache[(e)$file]} && $+functions[zfiles_comment] )); then
+			# Hint: Always return with false to use custom rendering logic. Use
+			# $__zfiles_comment_cache[(e)X] where X is ., .., or
+			# "/$1/{MYATTR1,MYATTR2}" (leading / is to avoid treating it as a valid
+			# path) if you would like to use caching.
+			if zfiles_comment "$file"; then
+				__zfiles_comment_cache[(e)$file]=$REPLY
+			fi
+		fi
+		zcurses string list "${__zfiles_comment_cache[(e)$file]}"
 
 		zcurses clear list eol
 	done
@@ -551,6 +561,7 @@ function __zfiles_drop_caches() {
 	__zfiles_stat_cache=()
 	__zfiles_color_cache=()
 	__zfiles_icon_cache=()
+	__zfiles_comment_cache=()
 }
 
 function __zfiles_sgr2curses() {
