@@ -275,18 +275,6 @@ function fkill() {
 	xargs -r kill -${1:-9}
 }
 
-function oom_adj() {
-	(
-		case $1 in
-		[0-9]*) ;;
-		*) set -- 1000 "$@" ;;
-		esac
-		printf %d "$1" >/proc/$$/oom_score_adj
-		shift
-		exec "$@"
-	)
-}
-
 #
 # Audio.
 #

@@ -1,0 +1,4 @@
+#!/bin/dash -eu
+printf %d "${1?Missing score}" >/proc/$$/oom_score_adj
+shift
+exec "${@?Missing program}"
