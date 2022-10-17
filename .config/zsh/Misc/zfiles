@@ -171,10 +171,6 @@ function __zfiles-stat() {
 		'%s %4s %s %s %5s ' \
 		${stat[3]} $nlink ${(r:8:)stat[5]} ${(r:8:)stat[6]} $size
 	__zfiles_stat_cache[(e)$1]=$buf
-
-	# File type is now computed.
-	__zfiles_color_cache[(e)$1]=
-	__zfiles_icon_cache[(e)$1]=
 }
 
 # {MSG}
@@ -227,14 +223,14 @@ function __zfiles_render() {
 		-*)
 			icon=$__zfiles_icon_cache[(e)$file]
 			if [[ -z $icon ]]; then
-				__zfiles_icon_cache[(e)$file]=${${__zfiles_icons[(k)$file]:-$__zfiles_icons[(e)$type]}:-??}
-				icon=$__zfiles_icon_cache[(e)$file]
+				icon=${${__zfiles_icons[(k)$file]:-$__zfiles_icons[(e)$type]}:-??}
+				__zfiles_icon_cache[(e)$file]=$icon
 			fi
 
 			color=$__zfiles_color_cache[(e)$file]
 			if [[ -z $color ]]; then
-				__zfiles_color_cache[(e)$file]=${${__zfiles_colors[(k)$file]:-$__zfiles_colors[(e)$type]}:-default/default}
-				color=$__zfiles_color_cache[(e)$file]
+				color=${${__zfiles_colors[(k)$file]:-$__zfiles_colors[(e)$type]}:-default/default}
+				__zfiles_color_cache[(e)$file]=$color
 			fi
 			;;
 		d*) type=di; class=/ ;;
