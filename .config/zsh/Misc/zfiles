@@ -188,19 +188,6 @@ function __zfiles_error() {
 
 function __zfiles_render() {
 	if (( __zfiles_rendered_top != __zfiles_top )); then
-		# Scrolling upwards makes ncurses scrolling in the prompt to the middle of
-		# the screen but assumes that it is clear so it does not update screen
-		# under it. The result is garbage.
-		#
-		# The workaround is that we clear the prompt so that it meets with the assumtions
-		# of ncurses. Though it may flickers a bit in some terminals.
-		if (( __zfiles_top < __zfiles_rendered_top )); then
-			echoti sc
-			echoti home
-			echoti el
-			echoti rc
-		fi
-
 		zcurses scroll list $(( __zfiles_top - __zfiles_rendered_top ))
 		__zfiles_dirty_prompt=1
 		__zfiles_rendered_top=__zfiles_top
@@ -292,6 +279,7 @@ function __zfiles_render() {
 	zcurses refresh list
 
 	if (( __zfiles_dirty_prompt )); then
+		zcurses refresh prompt
 		__zfiles_render_prompt
 	fi
 }
@@ -644,6 +632,18 @@ function zfiles-show() {
 			[[ stdscr = $win ]] || zcurses delwin $win
 		done
 		__zfiles_lines=$(( LINES - 1 ))
+		zcurses addwin prompt 1 $COLUMNS 0 0
+		# ncurses expects prompt window to be clear but we render into it
+		# externally. It causes issues when ncurses wants to scroll the screen
+		# downwards because this fake blank line will end up in the middle of the
+		# screen causing garbage to show up.
+		#
+		# This code is mostly the result of trial and error: no glitches and no
+		# flickering. If any occurs, try longer string or increment the position. I
+		# can only guess why it works.
+		zcurses move prompt 0 4
+		zcurses string prompt '____'
+
 		zcurses addwin list $__zfiles_lines $COLUMNS 1 0
 		zcurses scroll list off
 		zcurses clear list
