@@ -526,7 +526,7 @@ alias mpv_test='mpv --input-test --force-window --idle'
 # life, I just come back here and everything will be normal again.
 function mp() {
 	dash -c '
-		exec mpv 2>/dev/null \
+		exec oom_adj 900 mpv 2>/dev/null \
 			--input-ipc-server=/tmp/mpv$$ \
 			--player-operation-mode=pseudo-gui \
 			"$@"
