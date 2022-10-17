@@ -44,8 +44,8 @@ typeset -gA __zfiles_bindings_n=(
 	[j]='__zfiles_select_scroll 1 +1'
 	['\<C-U\>']='__zfiles_select_scroll_half -1'
 	['\<C-D\>']='__zfiles_select_scroll_half +1'
-	['\<C-B\>']='__zfiles_select_scroll_half -2'
-	['\<C-F\>']='__zfiles_select_scroll_half +2'
+	['\<C-B\>']='__zfiles_scroll_select_half -2'
+	['\<C-F\>']='__zfiles_scroll_select_half +2'
 	[S]='(( __zfiles_do_stat=(__zfiles_do_stat + 1) % 3 )); __zfiles_dirty_prompt=1'
 	[s]='__zfiles-stat File'
 	['\<C-E\>']='__zfiles_scroll_select 1 +1'
@@ -331,6 +331,11 @@ function __zfiles_scroll() {
 # {HALF_PAGES}
 function __zfiles_select_scroll_half() {
 	__zfiles_select_scroll 1 $(( ${1?} * __zfiles_lines / 2 ))
+}
+
+# {HALF_PAGES}
+function __zfiles_scroll_select_half() {
+	__zfiles_scroll_select 1 $(( ${1?} * __zfiles_lines / 2 ))
 }
 
 function __zfiles_adjust_scroll() {
