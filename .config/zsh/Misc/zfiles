@@ -351,6 +351,10 @@ function __zfiles_adjust_scroll() {
 		__zfiles_scroll 0 $(( __zfiles_cur - __zfiles_scrolloff ))
 	elif (( __zfiles_top + __zfiles_lines - __zfiles_scrolloff <= __zfiles_cur )); then
 		__zfiles_scroll 0 $(( __zfiles_cur - __zfiles_lines + 1 + __zfiles_scrolloff ))
+	else
+		# When #__zfiles_files or __zfiles_lines changes
+		# __zfiles_bottom has to be updated.
+		__zfiles_scroll 1 0
 	fi
 }
 
