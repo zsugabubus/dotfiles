@@ -1,9 +1,13 @@
 # https://stackoverflow.com/questions/24836684/file-completion-priorities-in-zsh
+function zcompile_if_modified() {
+	[[ $1.zwc -nt $1 ]] || zcompile $1
+}
 zmodload zsh/complist &&
 autoload -Uz compinit 2>/dev/null &&
 # regenerate completion file at every startup
 # -u: disable compaudit warning when using `bubblewrap`
-compinit -u -d "$XDG_RUNTIME_DIR/zcompdump" || ( ${:?"Don't fuckin' move"} )
+compinit -u -d ~/.cache/zcompdump
+zcompile_if_modified ~/.cache/zcompdump
 
 zstyle ':completion::complete:*' use-cache on
 zstyle ':completion::complete:*' cache-path ~/.cache/zcompcache
