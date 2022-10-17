@@ -161,9 +161,9 @@ function __zfiles-stat() {
 	if (( nlink < 1000 )); then
 		# Nothing.
 	elif (( nlink < 1000000 )); then
-		nlink=$(( nlink / 1000 ))K
+		nlink=$(( nlink / 1000 ))k
 	else
-		nlink=$(( nlink / 1000000 ))M
+		nlink=$(( nlink / 1000000 ))m
 	fi
 
 	# target=${stat[14]}
