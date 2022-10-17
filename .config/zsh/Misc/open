@@ -26,7 +26,7 @@ audio/*|video/*)
 	;;
 
 application/pdf|application/postscript)
-	open_with zathura ;;
+	open_with zathura --fork ;;
 
 application/vnd.openxmlforamts-*)
 	open_with libreoffice ;;
