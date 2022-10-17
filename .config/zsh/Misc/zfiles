@@ -659,7 +659,7 @@ function zfiles-show() {
 			__zfiles_render
 
 			if ! zcurses input list; then
-				if (( __zfiles_do_stat )); then
+				if (( __zfiles_do_stat && 0 < $#__zfiles_files )); then
 					__zfiles-stat $__zfiles_files[(e)$__zfiles_cur]
 				fi
 				continue
