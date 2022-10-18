@@ -727,7 +727,8 @@ augroup vimrc_git
 	autocmd VimResized * if mode(1) ==# 'n'|call feedkeys(":call g:Git_blame_do_winresize()|echo\<CR>", 'ni')|endif
 
 	let s:git = {}
-	autocmd ShellCmdPost,FileChangedShellPost,TermLeave,VimResume * let s:git = {}
+	autocmd ShellCmdPost,FileChangedShellPost,VimResume * let s:git = {}
+	autocmd TermLeave * if expand('<amatch>') =~# '\vterm:.*:.*(sh|git)>'|let s:git = {}|endif
 
 	autocmd BufReadCmd git://* ++nested
 		\ call s:git_pager([
