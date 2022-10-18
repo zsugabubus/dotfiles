@@ -838,9 +838,7 @@ nnoremap <silent> s~ :set scrollbind!<bar>echo 'set scb='.&scrollbind<CR>
 
 command! -nargs=* -complete=command Capture call s:capture(substitute(<q-args>, '^$', 'messages', ''))
 function! s:capture(cmd) abort
-	redir => output
-	silent execute a:cmd
-	redir END
+	let output = execute(a:cmd, 'silent')
 	if empty(output)
 		echohl WarningMsg
 		echomsg "no output"
