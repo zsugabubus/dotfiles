@@ -380,31 +380,24 @@ function pacman_history() {
 	expac --timefmt='%Y-%m-%d %T' '%l\t%n' | sort | tail -n ${1:-20}
 }
 
-local function check_user_files() {
+function poweroff reboot() {
 	if ! find -H ~m -mindepth 1 -name '.*' -prune -o -empty -o -type f -print -quit | awk '{exit 1}'; then
-		print -rP "%F{yellow}%Bwarning:%f%b ~m is not empty."
+		print -rP "zsh: ~m is not empty."
 		tree -C ~m | less
-	fi
-	for prog in in abduco tmux nvim firefox; do
-		if pgrep -ax $prog &>/dev/null; then
-			print -rP "%F{red}%Berror:%f%b $prog is running"
-			return 1
-		fi
-	done
-	if ! { sync && sync }; then
-		print -rP "%F{red}%Berror:%f%b sync failed."
-		return 1
-	fi
-}
-local function confirm-cmd() {
-	print -rnP "%B%F{blue}::%f Confirm? [y/N]%b " &&
-	read -srq && command "$@"
-}
-function poweroff() {
-	check_user_files && confirm-cmd $0 "$@"
-}
-function reboot() {
-	check_user_files && confirm-cmd $0 "$@"
+	fi &&
+	() {
+		local x=
+		for x in abduco tmux nvim firefox; do
+			if pgrep -ax $x &>/dev/null; then
+				print -rP "zsh: $x is running"
+				return 1
+			fi
+		done
+	} &&
+	sync &&
+	print -rnP "zsh: confirm? [y/N]%b " &&
+	read -srq &&
+	command "$0"
 }
 
 function usb_rebind() {
