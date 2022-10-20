@@ -642,7 +642,14 @@ function zfiles-show() {
 		for win in $zcurses_windows; do
 			[[ stdscr = $win ]] || zcurses delwin $win
 		done
+
 		__zfiles_lines=$(( LINES - 1 ))
+
+		zcurses addwin list $__zfiles_lines $COLUMNS 1 0
+		zcurses scroll list off
+		zcurses clear list
+		zcurses timeout list 5000
+
 		zcurses addwin prompt 1 $COLUMNS 0 0
 		# ncurses expects prompt window to be clear but we render into it
 		# externally. It causes issues when ncurses wants to scroll the screen
@@ -654,11 +661,6 @@ function zfiles-show() {
 		# can only guess why it works.
 		zcurses move prompt 0 4
 		zcurses string prompt '____'
-
-		zcurses addwin list $__zfiles_lines $COLUMNS 1 0
-		zcurses scroll list off
-		zcurses clear list
-		zcurses timeout list 5000
 
 		[[ -n $1 && $1 != $PWD ]] && cd -- "$1"
 
