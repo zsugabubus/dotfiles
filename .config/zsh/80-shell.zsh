@@ -7,21 +7,21 @@ function command_not_found_handler() {
 	return 127
 }
 
-local function auto-push() {
+function __chpwd-push() {
 	(( __zfiles_active )) && return
 	dirs -v
 }
-add-zsh-hook chpwd auto-push
+add-zsh-hook chpwd __chpwd-push
 
-local function auto-ls() {
+function __chpwd-ls() {
 	(( __zfiles_active )) && return
 	(( $(zstat +size .) <= 4096 )) && l
 }
-add-zsh-hook chpwd auto-ls
+add-zsh-hook chpwd __chpwd-ls
 
-local function auto-git() {
+function __chpwd-git() {
 	(( __zfiles_active )) && return
 	[[ $PWD == ~ ]] && return
 	test -d .git && git zsh-status
 }
-add-zsh-hook chpwd auto-git
+add-zsh-hook chpwd __chpwd-git

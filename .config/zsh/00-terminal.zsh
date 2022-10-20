@@ -6,11 +6,11 @@ fi
 
 ttyctl -f
 
-local function __terminal-preexec() {
+function __terminal-preexec() {
 	print -n "\e]0;${(q)1}\a"
 }
 
-local function __terminal-precmd() {
+function __terminal-precmd() {
 	# Set title and send bell. (Title sequence also ends with a bell.)
 	print -nP "\e]0;%n@%m: %~%(1j/ [%j job%(2j.s.)]/)\a\a"
 }

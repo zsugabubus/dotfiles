@@ -1,6 +1,6 @@
 autoload -Uz zsh/terminfo
 
-local function autoload_zle() {
+function autoload_zle() {
 	autoload -Uz "$@" &&
 	zle -N "$@"
 }
@@ -52,7 +52,7 @@ bindkey -M viins \
 	'^X*' expand-word \
 	'^Xl' menu-complete \
 
-local function dot-magic() {
+function __zle-dot-magic() {
 	if [[ -z $RBUFFER && $LBUFFER =~ '(^|\s|/)\.$' ]]; then
 		LBUFFER+=./
 		zle list-choices
@@ -60,7 +60,7 @@ local function dot-magic() {
 		zle .self-insert
 	fi
 }
-zle -N dot-magic
+zle -N {,__zle-}dot-magic
 bindkey -M viins . dot-magic
 
 autoload_zle fuzzy-open
@@ -97,7 +97,7 @@ function i-do-not-wish-to-see() {
 	fi
 }
 
-local function expand-or-complete-or-list-files() {
+function __zle-expand-or-complete-or-list-files() {
 	if [[ $#BUFFER == 0 ]]; then
 		LBUFFER=': '
 		zle list-choices
@@ -108,7 +108,7 @@ local function expand-or-complete-or-list-files() {
 		zle list-choices
 	fi
 }
-zle -N expand-or-complete-or-list-files
+zle -N {,__zle-}expand-or-complete-or-list-files
 bindkey -M viins '^I' expand-or-complete-or-list-files
 
 autoload -Uz run-help
@@ -118,20 +118,20 @@ autoload -Uz run-help-{git,ip,openssl,p4,sudo}
 bindkey -M viins '^_' run-help
 bindkey -M vicmd '^_' run-help
 
-local function fuzzy-reverse-history-search() {
+function __zle-fuzzy-reverse-history-search() {
 	LBUFFER=$(
 		fc -rln 0 999999 |
 		fizzy -s -q "$BUFFER"
 	)
 	RBUFFER=
-	zle redisplay
+	zle .redisplay
 }
-zle -N fuzzy-reverse-history-search
+zle -N {,__zle-}fuzzy-reverse-history-search
 bindkey -M viins '^R' fuzzy-reverse-history-search
 
-local function accept-line() {
+function __zle-accept-line() {
 	# r-magic
-	if [[ -v _zle_accept_line_rerun && -z $BUFFER ]]; then
+	if (( $+_zle_accept_line_rerun && ! $#BUFFER )); then
 		BUFFER=r
 	elif [[ $BUFFER = r ]]; then
 		_zle_accept_line_rerun=
@@ -140,16 +140,15 @@ local function accept-line() {
 	fi
 	zle .accept-line
 }
-zle -N accept-line
+zle -N {,__zle-}accept-line
 
-local function zle-run-chpwd() {
-	# Start new line after cursor.
-	echo
+function __zle-run-chpwd() {
+	echo # Start new line after cursor.
 	cd .
 	zle .reset-prompt
 }
-zle -N zle-run-chpwd
-bindkey -M viins '^L' zle-run-chpwd
+zle -N {,__zle-}run-chpwd
+bindkey -M viins '^L' run-chpwd
 
 bindkey -M menuselect \
 	'=' accept-and-infer-next-history \
@@ -169,7 +168,7 @@ zle -N bracketed-paste paste-magic
 autoload -Uz zmail && zmail
 
 set -o ignore_eof
-local function zle-exit() {
+function __zle-exit() {
 	zle .reset-prompt
 	if [[ -n $zsh_scheduled_events ]]; then
 		print "zsh: you have scheduled events"
@@ -179,10 +178,10 @@ local function zle-exit() {
 		exit
 	fi
 
-	zle redisplay
+	zle .redisplay
 }
-zle -N zle-exit
-bindkey -M viins '^D' zle-exit
+zle -N {,__zle-}exit
+bindkey -M viins '^D' exit
 
 unfunction autoload_zle
 

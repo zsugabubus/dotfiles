@@ -2,15 +2,15 @@
 
 emulate -L zsh
 
-local function vcs_cdup() {
+function vcs_cdup() {
 	git --no-optional-locks rev-parse --show-cdup 2>/dev/null
 }
 
-local function LBUFFER_space() {
+function LBUFFER_space() {
 	[[ $LBUFFER =~ '\S$' ]] && LBUFFER+=' '
 }
 
-local function cd_m() {
+function cd_m() {
 	if [[ $PWD = ~ ]]; then
 		cd -- ~m
 		zle .reset-prompt
