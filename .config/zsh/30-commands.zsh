@@ -588,8 +588,9 @@ function pdfmerge() {
 	command gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -sOutputFile="$out" ${@:-*.pdf}
 }
 
-function timer() {
-	( sleep ${1:-5m} && ffplay ~/doc/cuckoo-clock.mp3 ) &
+function cuckoo() {
+	tmux display-popup -T 'zsh: sched' -b 'double' -h 10 -w 40 -E \
+		sh -c 'printf "%s\n" "$*"; while ffplay -autoexit -nodisp ~/doc/cuckoo-clock.mp3 -loglevel error >/dev/null; do :; done' sh "$@"
 }
 
 function js-beautify() {
