@@ -1,0 +1,17 @@
+#autoload
+
+emulate -L zsh
+
+if [[ $LBUFFER =~ '\]/?$' ]]; then
+	# Complete (again) after dynamic directory.
+	LBUFFER=${LBUFFER%/}/
+	zle list-choices
+elif [[ $LBUFFER =~ '\~\[[^]]*$' ]]; then
+	# Fast complete dynamic directory.
+	if zle complete-word; then
+		zle .self-insert
+		zle complete-word
+	fi
+else
+	zle .self-insert
+fi

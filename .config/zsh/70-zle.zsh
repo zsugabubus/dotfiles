@@ -63,6 +63,9 @@ function __zle-dot-magic() {
 zle -N {,__zle-}dot-magic
 bindkey -M viins . dot-magic
 
+autoload_zle slash-magic
+bindkey -M viins / slash-magic
+
 autoload_zle fuzzy-open
 bindkey -M viins '^F' fuzzy-open
 
