@@ -30,9 +30,6 @@ alias rm='rm -dI --one-file-system'
 alias tree=tree-color
 alias vd=vidir
 
-alias -g L='|& '$PAGER
-alias -g V='|& '$EDITOR
-
 function mkcd md() {
 	mkdir -p -- $1 && cd -- $1
 }
