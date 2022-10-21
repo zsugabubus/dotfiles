@@ -458,8 +458,9 @@ function __zfiles_cmd() {
 		if __zfiles_vared -e cmd; then
 			REPLY=$cmd
 			eval $cmd || {
-				printf >&2 'exit status %d\r' $?;
+				printf >&2 'zsh: exit %d' $?
 				read -k1
+				echo
 			}
 		fi
 	} always {
