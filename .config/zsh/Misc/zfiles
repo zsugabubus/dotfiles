@@ -414,22 +414,13 @@ function __zfiles_resize() {
 	zcurses resize $LINES $COLUMNS endwin
 }
 
-bindkey -N __zfiles-viins viins
-function __zfiles-zle-append-files() {
-	if [[ $LBUFFER =~ '\S$' ]]; then
-		LBUFFER+=' '
-	fi
-	LBUFFER+='ZFiles'
-}
-zle -N __zfiles-zle-append-files
-bindkey -M __zfiles-viins '^F' __zfiles-zle-append-files
-
-function __zfiles-zle-append-files-and-accept() {
-	LBUFFER+=' ZFiles'
+bindkey -N zfiles+viins viins
+function __zfiles-insert-zfiles-and-accept() {
+	LBUFFER+=' -- ZFiles '
 	zle .accept-line
 }
-zle -N __zfiles-zle-append-files-and-accept
-bindkey -M __zfiles-viins '^[^M' __zfiles-zle-append-files-and-accept
+zle -N {,__zfiles-}insert-zfiles-and-accept
+bindkey -M zfiles+viins '^[^M' insert-zfiles-and-accept
 
 function __zfiles_shellout() {
 	{
@@ -444,7 +435,7 @@ function __zfiles_vared() {
 	{
 		__zfiles_active=2
 		echoti home
-		vared -M __zfiles-viins -p "$PS1" "$@"
+		vared -M zfiles+viins -p "$PS1" "$@"
 	} always {
 		__zfiles_prompt=
 		__zfiles_active=1
@@ -455,6 +446,7 @@ function __zfiles_cmd() {
 	local cmd=$*
 	{
 		__zfiles-leave
+		alias -g \$='ZFiles'
 		if __zfiles_vared -e cmd; then
 			REPLY=$cmd
 			eval $cmd || {
@@ -464,6 +456,7 @@ function __zfiles_cmd() {
 			}
 		fi
 	} always {
+		unalias \$
 		__zfiles-enter
 	}
 }
