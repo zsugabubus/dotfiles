@@ -486,36 +486,6 @@ augroup vimrc_autodiffoff
 		\ endif
 augroup END
 
-command! -nargs=? Diff call s:diff(<q-args>)
-function! s:diff(spec) abort
-	let ft = &ft
-
-	vertical new
-
-	setlocal bufhidden=wipe buftype=nofile nobuflisted noswapfile
-	let l:filetype = ft
-	if !len(a:spec)
-		let cmd = '++edit #'
-		let name = fnameescape(expand('#').'.orig')
-	elseif len(a:spec) ==# 1 && filereadable(a:spec[0])
-		let name = a:spec[0]
-		let cmd = '++edit '.name
-	else
-		let cmd = '!git show '.shellescape(a:spec, 1).':#'
-		let name = fnameescape(a:spec).':'.fnameescape(expand('#'))
-	endif
-
-	silent execute 'read' cmd
-	silent execute 'keepalt file' name
-	silent 1delete _
-	setlocal readonly
-	diffthis
-	nnoremap <silent><buffer> q :close<CR>
-
-	wincmd p
-	diffthis
-endfunction
-
 nnoremap <expr> + (!&diff ? 'g+' : ":diffput\<CR>")
 nnoremap <expr> - (!&diff ? 'g-' : ":diffget\<CR>")
 
