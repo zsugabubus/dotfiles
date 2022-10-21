@@ -4,7 +4,7 @@ emulate -L zsh
 
 if [[ $1 = n && $2 = tmux-pane ]]; then
 	typeset -ga reply=( "$(
-		tmux display-message -p -F '#{pane_current_path}' -t!
+		tmux display-message -p -F'#{pane_current_path}' -t'!'
 	)" )
 elif [[ $1 = c ]]; then
 	_wanted dynamic-dirs expl 'tmux directory' compadd -S\] -- tmux-pane
