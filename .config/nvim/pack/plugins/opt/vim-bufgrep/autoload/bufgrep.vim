@@ -16,6 +16,9 @@ function! bufgrep#BufGrep(pattern, add) abort
 				call writefile(getbufline(buf.bufnr, 1, '$'), grepfile)
 			else
 				let grepfile = bufname(buf.bufnr)
+				if grepfile ==# ''
+					continue
+				endif
 			endif
 			try
 				noautocmd silent execute 'vimgrepadd' '/'.escape(a:pattern, '/').'/j' fnameescape(grepfile)
