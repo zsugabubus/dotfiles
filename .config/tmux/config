@@ -31,7 +31,7 @@ set -g window-status-separator ''
 
 set -g pane-border-indicators arrows
 set -g pane-border-lines single
-set -g pane-border-format " #{pane_index} #W:#T @ #{pane_tty} "
+set -g pane-border-format " #{pane_index}:#{?pane_last,-,} #W:#T @ #{pane_tty} "
 
 set -g message-command-style bg=color254,fg=color250
 set -g message-style bg=color220,fg=color236
