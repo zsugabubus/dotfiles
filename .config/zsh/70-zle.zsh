@@ -52,15 +52,7 @@ bindkey -M viins \
 	'^X*' expand-word \
 	'^Xl' menu-complete \
 
-function __zle-dot-magic() {
-	if [[ -z $RBUFFER && $LBUFFER =~ '(^|\s|/)\.$' ]]; then
-		LBUFFER+=./
-		zle list-choices
-	else
-		zle .self-insert
-	fi
-}
-zle -N {,__zle-}dot-magic
+autoload_zle dot-magic
 bindkey -M viins . dot-magic
 
 autoload_zle slash-magic

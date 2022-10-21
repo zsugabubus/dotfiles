@@ -1,0 +1,10 @@
+#autoload
+
+emulate -L zsh
+
+if [[ -z $RBUFFER && $LBUFFER =~ '(^|\s|/)\.$' ]]; then
+	LBUFFER+=./
+	zle list-choices
+else
+	zle .self-insert
+fi
