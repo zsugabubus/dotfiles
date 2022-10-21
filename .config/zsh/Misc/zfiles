@@ -47,17 +47,17 @@ typeset -gA __zfiles_bindings_n=(
 	['\<C-B\>']='__zfiles_scroll_select_half -2'
 	['\<C-F\>']='__zfiles_scroll_select_half +2'
 	[S]='(( __zfiles_do_stat=(__zfiles_do_stat + 1) % 3 )); __zfiles_dirty_prompt=1'
-	[s]='__zfiles-stat File'
+	[s]='__zfiles-stat ZFile'
 	['\<C-E\>']='__zfiles_scroll_select 1 +1'
 	['\<C-Y\>']='__zfiles_scroll_select 1 -1'
 	[h\|H]='cd ..'
-	['\<cr\>']='__zfiles_open File'
-	[l]='__zfiles_open File'
+	['\<cr\>']='__zfiles_open ZFile'
+	[l]='__zfiles_open ZFile'
 	['\<C-L\>']='__zfiles_chpwd; zcurses refresh; __zfiles_dirty_prompt=1; __zfiles_render'
 	[zt]='__zfiles_scroll_select 0 $(( __zfiles_cur - __zfiles_scrolloff ))'
 	[zz]='__zfiles_scroll_select 0 $(( __zfiles_cur - __zfiles_lines / 2 ))'
 	[zb]='__zfiles_scroll_select 0 $(( __zfiles_cur + __zfiles_scrolloff - __zfiles_lines ))'
-	[t]='__zfiles_toggle File'
+	[t]='__zfiles_toggle ZFile'
 	[m]='__zfiles_cmd "mkdir "'
 	[e]='__zfiles_cmd "$EDITOR "'
 	['~']='__zfiles_cmd cd "~"'
@@ -74,8 +74,8 @@ typeset -gA __zfiles_bindings_n=(
 	['+']='__zfiles_tag "+"'
 	['-']='__zfiles_tag "-"'
 	['=']='__zfiles_tag "="'
-	[v]='__zfiles_shellout vidir Files'
-	[V]='__zfiles_shellout vidir AllFiles'
+	[v]='__zfiles_shellout vidir ZFiles'
+	[V]='__zfiles_shellout vidir ZAllFiles'
 	[p]='pushd "$PWD"'
 	[q]='return'
 	['\<C-\[\>']='return'
@@ -98,8 +98,8 @@ typeset -gA __zfiles_bindings_t=(
 	['\<C-[KU]\>']='__zfiles_filter= && __zfiles_update_files f'
 	['\<C-W\>']='__zfiles_filter=${${${:-" $__zfiles_filter"}% *}#?} && __zfiles_update_files f'
 	['\<C-H\>']='__zfiles_filter=${__zfiles_filter%?} && __zfiles_update_files f'
-	['/']='__zfiles_open File'
-	['\<cr\>|L']='__zfiles_filter= && __zfiles_set_mode n && __zfiles_open File && __zfiles_update_files f'
+	['/']='__zfiles_open ZFile'
+	['\<cr\>|L']='__zfiles_filter= && __zfiles_set_mode n && __zfiles_open ZFile && __zfiles_update_files f'
 	[H]='cd ..'
 	[T]='__zfiles_selection=( $__zfiles_files )'
 	['[a-z0-9*]']='__zfiles_filter+=$__zfiles_input && __zfiles_update_files f'
@@ -109,9 +109,9 @@ typeset -gA __zfiles_bindings_t=(
 	['J|;|\<tab\>']='__zfiles_select_scroll 1 +1'
 )
 
-alias -g AllFiles='$__zfiles_files'
-alias -g File='${__zfiles_files[(e)$__zfiles_cur]:?}'
-alias -g Files='${${__zfiles_selection:-$__zfiles_files[(e)$__zfiles_cur]}:?}'
+alias -g ZAllFiles='$__zfiles_files'
+alias -g ZFile='${__zfiles_files[(e)$__zfiles_cur]:?}'
+alias -g ZFiles='${__zfiles_selection:-${__zfiles_files[(e)$__zfiles_cur]:?}}'
 
 function __zfiles-leave() {
 	zcurses end
@@ -419,13 +419,13 @@ function __zfiles-zle-append-files() {
 	if [[ $LBUFFER =~ '\S$' ]]; then
 		LBUFFER+=' '
 	fi
-	LBUFFER+='Files'
+	LBUFFER+='ZFiles'
 }
 zle -N __zfiles-zle-append-files
 bindkey -M __zfiles-viins '^F' __zfiles-zle-append-files
 
 function __zfiles-zle-append-files-and-accept() {
-	LBUFFER+=' Files'
+	LBUFFER+=' ZFiles'
 	zle .accept-line
 }
 zle -N __zfiles-zle-append-files-and-accept
