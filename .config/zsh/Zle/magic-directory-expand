@@ -1,0 +1,36 @@
+#autoload
+
+emulate -L zsh
+
+function __zle-insert-array() {
+	if (( 1 < $# )); then
+		LBUFFER=${LBUFFER%?}
+		LBUFFER+='{'${(qj:,:)@}'}'
+	elif (( 1 == $# )); then
+		LBUFFER=${LBUFFER%?}
+		LBUFFER+=${(q)1}
+	else
+		return 1
+	fi
+	zle list-choices
+	:
+}
+
+function __zle-insert-dynamic-dir() {
+	LBUFFER=${LBUFFER%?}
+	LBUFFER+="~[$1]/"
+	zle list-choices
+	:
+}
+
+[[ $LBUFFER =~ '\b([A-Z])$' ]] &&
+case ${match[1]} in
+(F)
+	[[ -v __zfiles_cur ]] &&
+	__zle-insert-array ${__zfiles_selection:-${__zfiles_files[(e)$__zfiles_cur]}} ;;
+(P|T) __zle-insert-dynamic-dir tmux-pane ;;
+(H) __zle-insert-dynamic-dir here ;;
+esac &&
+return
+
+zle .self-insert
