@@ -49,6 +49,7 @@ if [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
 	elif [[ -z $BUFFER && $content =~ '^https?://((www.)?youtube.com|youtu.be)/' ]]; then
 		cd_m
 		LBUFFER=' yt-dlp'
+		RBUFFER=' -f22'
 	elif [[ -z $BUFFER && $content =~ '^https?://.*\.(mp[0-9]|gifv?|webm|m3u8|og[av])(\?.*)?$' ]]; then
 		LBUFFER=' mp'
 	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
