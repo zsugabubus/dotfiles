@@ -84,29 +84,7 @@ zle -C complete-file complete-word _generic
 zstyle ':completion:complete-file::::' completer _files
 bindkey -M viins '^Xf' complete-file
 
-# Stolen from functions/Zle/predict-on.
-function i-do-not-wish-to-see() {
-	# Do not care about how many matches we have. Lines are the only thing that count.
-	compstate[list_max]=100000
-	if (( compstate[list_lines]+BUFFERLINES > LINES )); then
-		compstate[list]=''
-	else
-		compstate[list]='list force'
-	fi
-}
-
-function __zle-expand-or-complete-or-list-files() {
-	if [[ $#BUFFER == 0 ]]; then
-		LBUFFER=': '
-		zle list-choices
-		zle backward-kill-word
-	else
-		zle expand-or-complete
-		comppostfuncs+=( i-do-not-wish-to-see )
-		zle list-choices
-	fi
-}
-zle -N {,__zle-}expand-or-complete-or-list-files
+autoload_zle expand-or-complete-or-list-files
 bindkey -M viins '^I' expand-or-complete-or-list-files
 
 autoload -Uz run-help

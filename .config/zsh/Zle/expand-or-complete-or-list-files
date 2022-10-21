@@ -1,0 +1,24 @@
+#autoload
+
+emulate -L zsh
+
+# Stolen from functions/Zle/predict-on.
+function i-do-not-wish-to-see() {
+	# Do not care about how many matches we have. Lines are the only thing that count.
+	compstate[list_max]=100000
+	if (( compstate[list_lines]+BUFFERLINES > LINES )); then
+		compstate[list]=''
+	else
+		compstate[list]='list force'
+	fi
+}
+
+if [[ -z $BUFFER ]]; then
+	LBUFFER=': '
+	zle list-choices
+	BUFFER=
+else
+	zle expand-or-complete
+	comppostfuncs+=( i-do-not-wish-to-see )
+	zle list-choices
+fi
