@@ -19,7 +19,7 @@ if [[ -o interactive ]]; then
 			date +%F
 			echo
 			cal -mw --color=always
-			ca
+			(( $+aliases[ca] )) && ca
 		} | less
 	fi
 fi

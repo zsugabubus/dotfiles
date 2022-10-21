@@ -481,7 +481,7 @@ function rabbit() {
 #
 
 alias a=aria2t
-alias ca='remind -mc+3 -@2,1 ~c/remind/cal.rem'
+(( $+commands[remind] )) && alias ca='remind -mc+3 -@2,1 ~c/remind/cal.rem'
 alias cal='cal -m'
 alias dn='DOTNET_CLI_TELEMETRY_OPTOUT=1 ht dotnet'
 alias info='info --vi-keys'
