@@ -1,0 +1,15 @@
+#autoload
+
+# muttrc is dynamically generated so it cannot take mailboxes from that.
+
+case "${curcontext}:" in
+(*:mutt:*) _tags mailboxes ;;
+esac
+
+while _tags; do
+	if _requested mailboxes; then
+		local mboxes=( ${:-$MAIL/**/cur} )
+		_all_labels mailboxes expl 'mailbox specification' \
+			compadd - '='${${mboxes#$MAIL/}%/cur}
+	fi
+done
