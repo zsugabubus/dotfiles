@@ -2,7 +2,7 @@
 local osd = mp.create_osd_overlay('ass-events')
 
 function icon(alpha, align, icon)
-	return table.concat{
+	return table.concat {
 		'{\\an',
 		align,
 		'\\1a&H',

@@ -61,7 +61,7 @@ local function _update()
 
 	local ass_style = {}
 	for _, current in ipairs({false, true}) do
-		ass_style[current] = table.concat{
+		ass_style[current] = table.concat {
 			'\\N',
 			'{\\alpha&H00}\\h',
 			'{\\b1}',
