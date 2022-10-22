@@ -67,7 +67,7 @@ mp.add_key_binding('T', 'show-title', function()
 		title.flush_cache()
 		osd:remove()
 	end
-end, {repeatable=false})
+end, {repeatable = false})
 
 --- Yank
 local function shesc(s)
@@ -82,4 +82,4 @@ mp.add_key_binding('y', 'yank-title', function()
 	local title = ('%s%s%s%s'):format(artist or '', artist and ' - ' or '', title, version and (' (%s)'):format(version) or '')
 	os.execute(('printf %%s %s | xclip -l 1 -selection clipboard &'):format(shesc(title)))
 	mp.osd_message('Yanked: ' .. title)
-end, {repeatable=false})
+end, {repeatable = false})

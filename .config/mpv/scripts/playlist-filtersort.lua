@@ -1,7 +1,7 @@
 local SORT_OPTS = {
-	none=true,
-	alpha=true,
-	strict=true,
+	none = true,
+	alpha = true,
+	strict = true,
 }
 -- Random magic number, very likely hardware dependent. See explanation below.
 local N = 20000

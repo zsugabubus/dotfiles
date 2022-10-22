@@ -6,7 +6,7 @@ local utils = require('mp.utils')
 local script_opts = mp.command_native({'expand-path', '~~/script-opts'})
 local visible = false
 local tab
-local current = {vf=1, af=1}
+local current = {vf = 1, af = 1}
 local filters = {}
 
 local opts = {
@@ -46,60 +46,60 @@ local function select_rel(n)
 end
 
 local keys = {
-	HOME={'select', function() select_abs(1) end},
-	END={'select', function() select_abs(999) end},
-	g='HOME',
-	G='END',
-	DOWN={'select', function() select_rel(1) end},
-	UP={'select', function() select_rel(-1) end},
-	j='DOWN',
-	k='UP',
-	['Shift+DOWN']={'move', function() move_rel(1) end},
-	['Shift+UP']={'move', function() move_rel(-1) end},
-	J='Shift+DOWN',
-	K='Shift+UP',
-	TAB={'select type', function()
+	HOME = {'select', function() select_abs(1) end},
+	END = {'select', function() select_abs(999) end},
+	g = 'HOME',
+	G = 'END',
+	DOWN = {'select', function() select_rel(1) end},
+	UP = {'select', function() select_rel(-1) end},
+	j = 'DOWN',
+	k = 'UP',
+	['Shift+DOWN'] = {'move', function() move_rel(1) end},
+	['Shift+UP'] = {'move', function() move_rel(-1) end},
+	J = 'Shift+DOWN',
+	K = 'Shift+UP',
+	TAB = {'select type', function()
 		tab = tab == 'af' and 'vf' or 'af'
 		update()
 	end},
-	SPACE={'toggle enabled', function()
+	SPACE = {'toggle enabled', function()
 		local f, i = filters[tab], current[tab]
 		if f[i] ~= nil then
 			f[i].enabled = not f[i].enabled
 			mp.set_property_native(tab, f)
 		end
 	end},
-	DEL={'delete', function()
+	DEL = {'delete', function()
 		local f, i = filters[tab], current[tab]
 		table.remove(f, i)
 		mp.set_property_native(tab, f)
 	end},
-	D='DEL',
-	r={'reset type', function()
+	D = 'DEL',
+	r = {'reset type', function()
 		mp.set_property(tab, table.concat(get_default_filters()[tab], ','))
 	end},
-	R={'reset all', function()
+	R = {'reset all', function()
 		local defaults = get_default_filters()
 		for t in pairs(current) do
 			mp.set_property(t, table.concat(defaults[t], ','))
 		end
 	end},
-	['Ctrl+l']='R',
-	a={'audio', function()
+	['Ctrl+l'] = 'R',
+	a = {'audio', function()
 		tab = 'af'
 		update()
 	end},
-	v={'video', function()
+	v = {'video', function()
 		tab = 'vf'
 		update()
 	end},
-	q={'quit', function()
+	q = {'quit', function()
 		visible = false
 		update_menu()
 	end},
-	ESC='q',
-	ENTER='q',
-	['1..9']={'select'},
+	ESC = 'q',
+	ENTER = 'q',
+	['1..9'] = {'select'},
 }
 for i = 1, 9 do
 	keys[string.char(string.byte('0') + i)] =

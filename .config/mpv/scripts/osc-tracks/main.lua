@@ -67,75 +67,75 @@ local function cycle_track(prop, up)
 end
 
 local keys = {
-	a={'audios', function()
+	a = {'audios', function()
 		current = 'audio'
 		update()
 	end},
-	v={'videos', function()
+	v = {'videos', function()
 		current = 'video'
 		update()
 	end},
-	s={'subs', function()
+	s = {'subs', function()
 		current = 'sub'
 		update()
 	end},
-	n={'none', function()
+	n = {'none', function()
 		mp.set_property_number(current, 0)
 	end},
-	d={'default', function()
+	d = {'default', function()
 		switch_track('default', false)
 	end},
-	D={'default', function()
+	D = {'default', function()
 		switch_track('default', true)
 	end},
-	f={'forced', function()
+	f = {'forced', function()
 		switch_track('forced', false)
 	end},
-	F={'forced', function()
+	F = {'forced', function()
 		switch_track('forced', true)
 	end},
 	-- Other.
-	o={'same language', function()
+	o = {'same language', function()
 		cycle_track('lang', true)
 	end},
-	O={'same language', function()
+	O = {'same language', function()
 		cycle_track('lang', false)
 	end},
-	SPACE={'toggle enabled', function()
+	SPACE = {'toggle enabled', function()
 		if current == 'audio' then
 			mp.commandv('no-osd', 'cycle', 'mute')
 		elseif current == 'sub' then
 			mp.commandv('no-osd', 'cycle', 'sub-visibility')
 		end
 	end},
-	UP={'switch track', function()
+	UP = {'switch track', function()
 		mp.commandv('no-osd', 'cycle', current, 'down')
 	end},
-	DOWN={'switch track', function()
+	DOWN = {'switch track', function()
 		mp.commandv('no-osd', 'cycle', current, 'up')
 	end},
-	j='DOWN',
-	k='UP',
-	['Shift+DOWN']={'select type', function()
-		current = ({video='audio', audio='sub', sub='video'})[current]
+	j = 'DOWN',
+	k = 'UP',
+	['Shift+DOWN'] = {'select type', function()
+		current = ({video = 'audio', audio = 'sub', sub = 'video'})[current]
 		update()
 	end},
-	['Shift+UP']={'select type', function()
-		current = ({video='sub', audio='video', sub='audio'})[current]
+	['Shift+UP'] = {'select type', function()
+		current = ({video = 'sub', audio = 'video', sub = 'audio'})[current]
 		update()
 	end},
-	J='Shift+DOWN',
-	K='Shift+UP',
-	TAB='Shift+DOWN',
-	['Shift+TAB']='Shift+UP',
-	q={'quit', function()
+	J = 'Shift+DOWN',
+	K = 'Shift+UP',
+	TAB = 'Shift+DOWN',
+	['Shift+TAB'] = 'Shift+UP',
+	q = {'quit', function()
 		visible = false
 		update_menu()
 	end},
-	['0..9']={'switch track'},
-	t='q',
-	ESC='q',
-	ENTER='q',
+	['0..9'] = {'switch track'},
+	t = 'q',
+	ESC = 'q',
+	ENTER = 'q',
 }
 for i = 0, 9 do
 	keys[string.char(string.byte('0') + i)] =
@@ -245,9 +245,9 @@ local function _update()
 	mp.unregister_idle(_update)
 
 	local tracks = {
-		video={},
-		audio={},
-		sub={}
+		video = {},
+		audio = {},
+		sub = {}
 	}
 	local lines = 3 * 3 -- Available + none + separator
 	for _, track in ipairs(mp.get_property_native('track-list')) do

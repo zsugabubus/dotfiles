@@ -53,12 +53,12 @@ function cycle_values(property, opts_file)
 			values  = dofile(('%s/%s'):format(script_opts, opts_file))
 
 			local keys = {
-				q={'quit', function()
+				q = {'quit', function()
 					visible = false
 					update_menu()
 				end},
-				ESC='q',
-				['other']={'select'},
+				ESC = 'q',
+				['other'] = {'select'},
 			}
 			for _, x in ipairs(values) do
 				local key, value = unpack(x)

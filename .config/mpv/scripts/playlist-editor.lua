@@ -16,9 +16,9 @@ mp.add_key_binding('Ctrl+w', 'playlist-edit', function()
 
 	local visual = os.getenv('VISUAL')
 	local p = mp.command_native({
-		name='subprocess',
-		playback_only=false,
-		args=
+		name = 'subprocess',
+		playback_only = false,
+		args =
 			visual
 				and {
 					visual,
@@ -52,4 +52,4 @@ mp.add_key_binding('Ctrl+w', 'playlist-edit', function()
 		f:close()
 		os.remove(tmp)
 	end
-end, {repeatable=false})
+end, {repeatable = false})

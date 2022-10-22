@@ -14,4 +14,4 @@ mp.add_key_binding('F', 'speedup', function(t)
 		mp.set_property_number('speed', opts.speed)
 		mp.osd_message(('▶▶ x%.2f'):format(opts.speed), 999)
 	end
-end, {complex=true})
+end, {complex = true})

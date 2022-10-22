@@ -28,4 +28,4 @@ mp.add_key_binding('Shift+DEL', 'delete-file', function()
 			mp.osd_message('Failed to delete')
 		end
 	end
-end, {repeatable=false})
+end, {repeatable = false})

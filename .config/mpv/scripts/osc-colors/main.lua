@@ -1,9 +1,9 @@
 local OPTIONS = {
-	{option='brightness', icon=0xa},
-	{option='contrast',   icon=0x7},
-	{option='gamma',      icon=0xa},
-	{option='saturation', icon=0x8},
-	{option='hue',        icon=0xb},
+	{option = 'brightness', icon = 0xa},
+	{option = 'contrast',   icon = 0x7},
+	{option = 'gamma',      icon = 0xa},
+	{option = 'saturation', icon = 0x8},
+	{option = 'hue',        icon = 0xb},
 }
 
 local Mode = require('mode')
@@ -59,42 +59,42 @@ local function select_rel(n)
 end
 
 local keys = {
-	q={'quit', function()
+	q = {'quit', function()
 		visible = false
 		update_menu()
 	end},
-	ESC='q',
-	ENTER='q',
-	n={'switch preset', function() select_rel(1) end},
-	p={'switch preset', function() select_rel(-1) end},
-	r={'reset', function() mp.commandv('osd-bar', 'set', current, 0) end},
-	R={'reset all', function()
+	ESC = 'q',
+	ENTER = 'q',
+	n = {'switch preset', function() select_rel(1) end},
+	p = {'switch preset', function() select_rel(-1) end},
+	r = {'reset', function() mp.commandv('osd-bar', 'set', current, 0) end},
+	R = {'reset all', function()
 		for _, x in ipairs(OPTIONS) do
 			mp.commandv('osd-bar', 'set', x.option, 0)
 		end
 	end},
 
-	x={'change', function() mp.commandv('osd-bar', 'add', current, -1) end},
-	a={'change', function() mp.commandv('osd-bar', 'add', current,  1) end},
-	LEFT='x',
-	RIGHT='a',
-	DOWN='LEFT',
-	UP='RIGHT',
-	j='x',
-	k='a',
-	['-']='x',
-	['+']='a',
+	x = {'change', function() mp.commandv('osd-bar', 'add', current, -1) end},
+	a = {'change', function() mp.commandv('osd-bar', 'add', current,  1) end},
+	LEFT = 'x',
+	RIGHT = 'a',
+	DOWN = 'LEFT',
+	UP = 'RIGHT',
+	j = 'x',
+	k = 'a',
+	['-'] = 'x',
+	['+'] = 'a',
 
-	X={'change big', function() mp.commandv('osd-bar', 'add', current, -3) end},
-	A={'change big', function() mp.commandv('osd-bar', 'add', current,  3) end},
-	['Shift+LEFT']='X',
-	['Shift+RIGHT']='A',
-	['Shift+DOWN']='Shift+LEFT',
-	['Shift+UP']='Shift+RIGHT',
-	J='X',
-	K='A',
+	X = {'change big', function() mp.commandv('osd-bar', 'add', current, -3) end},
+	A = {'change big', function() mp.commandv('osd-bar', 'add', current,  3) end},
+	['Shift+LEFT'] = 'X',
+	['Shift+RIGHT'] = 'A',
+	['Shift+DOWN'] = 'Shift+LEFT',
+	['Shift+UP'] = 'Shift+RIGHT',
+	J = 'X',
+	K = 'A',
 
-	['0..9']={'switch preset'},
+	['0..9'] = {'switch preset'},
 }
 for _, x in ipairs(OPTIONS) do
 	keys[x.option:sub(1, 1)] = {

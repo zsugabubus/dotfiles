@@ -7,4 +7,4 @@ mp.add_key_binding('R', 'reload-file', function()
 			'start=' .. mp.get_property_number('time-pos')
 		)
 	end
-end, {repeatable=false})
+end, {repeatable = false})

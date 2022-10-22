@@ -1,13 +1,13 @@
 -- Emulate [profile].
 local PROPERTY_MT = {
-	__index=function(self, property)
+	__index = function(self, property)
 		property = property:gsub('_', '-')
 		return mp.get_property_native(property)
 	end
 }
 
 local ENV = {
-	p={}
+	p = {}
 }
 setmetatable(ENV.p, PROPERTY_MT)
 setmetatable(ENV, PROPERTY_MT)
@@ -29,12 +29,12 @@ local function confirm_if(cond, ...)
 	end
 
 	BINDINGS = {
-		y=yes,
-		Y=yes,
-		Enter=yes,
-		n=no,
-		N=no,
-		Esc=no,
+		y = yes,
+		Y = yes,
+		Enter = yes,
+		n = no,
+		N = no,
+		Esc = no,
 	}
 
 	local f = load('return (' .. cond .. ')')

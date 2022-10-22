@@ -2,7 +2,7 @@ local title = require('title')
 local Osd = require('osd')
 local osd = Osd.new()
 
-local COMPLEX = {complex=true}
+local COMPLEX = {complex = true}
 
 local mode = 'auto'
 local visible = false
@@ -15,7 +15,7 @@ local fsx_cache = {}
 
 local props = {
 	-- Queried just once.
-	['sub-margin-y']=mp.get_property_native('sub-margin-y'),
+	['sub-margin-y'] = mp.get_property_native('sub-margin-y'),
 }
 local mouse_time
 local mouse_chapter

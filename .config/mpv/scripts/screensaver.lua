@@ -1,6 +1,6 @@
 local HAS_MOTION = {
-	h264=true,
-	mjpeg=false
+	h264 = true,
+	mjpeg = false
 }
 
 function update()
