@@ -41,6 +41,7 @@ set splitright
 set cinoptions+=t0,:0,l1
 set lazyredraw
 set matchpairs+=‘:’,“:”
+set mouse=
 set timeoutlen=600
 set noswapfile
 set autowrite
