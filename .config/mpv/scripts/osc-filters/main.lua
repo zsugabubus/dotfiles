@@ -84,6 +84,7 @@ local keys = {
 			mp.set_property(t, table.concat(defaults[t], ','))
 		end
 	end},
+	['Ctrl+l']='R',
 	a={'audio', function()
 		tab = 'af'
 		update()
