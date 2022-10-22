@@ -112,7 +112,7 @@ for _, x in ipairs(OPTIONS) do
 		end,
 	}
 end
-for i=0,9 do
+for i = 0, 9 do
 	keys[string.char(string.byte('0') + i)] =
 		function()
 			ignore_once, visible = true, false

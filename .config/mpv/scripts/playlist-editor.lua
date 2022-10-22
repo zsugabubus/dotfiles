@@ -7,7 +7,7 @@ mp.add_key_binding('Ctrl+w', 'playlist-edit', function()
 
 	local pos = mp.get_property_native('playlist-pos-1')
 	local playlist = mp.get_property_native('playlist')
-	for i=1,#playlist do
+	for i = 1, #playlist do
 		local entry = playlist[i]
 		f:write(entry.filename, '\n')
 	end

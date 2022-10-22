@@ -3,7 +3,7 @@ local jumplist = {}
 mp.observe_property('playlist-pos', 'number', function(_, pos)
 	if pos and 0 <= pos and pos ~= jumplist[#jumplist] then
 		if 5 <= #jumplist then
-			for i=1,#jumplist-1 do
+			for i = 1, #jumplist-1 do
 				jumplist[i] = jumplist[i + 1]
 			end
 			jumplist[#jumplist] = nil

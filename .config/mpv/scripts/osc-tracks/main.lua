@@ -21,7 +21,7 @@ options.read_options(opts, nil, update)
 
 local function switch_track(prop, all)
 	local tracks = mp.get_property_native('track-list')
-	for i=#tracks,1,-1 do
+	for i = #tracks, 1, -1 do
 		local track = tracks[i]
 		if (all or track.type == current) and track[prop] then
 			mp.set_property_number(track.type, track.id)
@@ -38,7 +38,7 @@ local function cycle_track(prop, up)
 		from, to, step = #tracks, 1, -1
 	end
 
-	for i=from, to, step do
+	for i = from, to, step do
 		local track = tracks[i]
 		if track.type == current then
 			if track.selected then
@@ -57,7 +57,7 @@ local function cycle_track(prop, up)
 		return
 	end
 
-	for i=from, to, step do
+	for i = from, to, step do
 		local track = tracks[i]
 		if track.type == current and track[prop] == data then
 			mp.set_property_number(current, track.id)
@@ -137,7 +137,7 @@ local keys = {
 	ESC='q',
 	ENTER='q',
 }
-for i=0,9 do
+for i = 0, 9 do
 	keys[string.char(string.byte('0') + i)] =
 		function()
 			mp.commandv('no-osd', 'set', current, i)
@@ -223,7 +223,7 @@ local function osd_append_track_list(name, track_type, tracks)
 	osd:append('Available ', name, ' Tracks:')
 
 	local any_selected = false
-	for i=1,#tracks do
+	for i = 1, #tracks do
 		any_selected = any_selected or tracks[i].selected
 	end
 
@@ -235,7 +235,7 @@ local function osd_append_track_list(name, track_type, tracks)
 		'○', ' ',
 		track_type:sub(1, 1):upper(), ': 0: none')
 
-	for i=1,#tracks do
+	for i = 1, #tracks do
 		osd_append_track(tracks[i])
 	end
 	osd:append('\\N')

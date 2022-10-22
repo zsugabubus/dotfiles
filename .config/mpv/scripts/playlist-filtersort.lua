@@ -28,7 +28,7 @@ end
 
 local function filter_playlist(playlist)
 	local match = string.match
-	for i=#playlist, 1, -1 do
+	for i = #playlist, 1, -1 do
 		local entry = playlist[i]
 		local s = entry.filename:lower()
 		if
@@ -60,7 +60,7 @@ local function sort_playlist(playlist)
 
 	local order = {}
 
-	for i=1, #playlist do
+	for i = 1, #playlist do
 		local entry = playlist[i]
 		order[i] = i
 
@@ -95,11 +95,11 @@ local function sort_playlist(playlist)
 	-- [0]: We have to wait for the result. And using async is not an option
 	-- since they can be executed in any order.
 	if N <= #playlist then
-		for i=1, #playlist do
+		for i = 1, #playlist do
 			playlist[order[i]].new_pos = i
 		end
 
-		for i=1, #playlist do
+		for i = 1, #playlist do
 			while true do
 				local j = playlist[i].new_pos
 				if i == j then
@@ -111,7 +111,7 @@ local function sort_playlist(playlist)
 			end
 		end
 	else
-		for i=1, #playlist do
+		for i = 1, #playlist do
 			playlist[i].index = i - 1
 			playlist[i].next = playlist[i + 1]
 			playlist[order[i]].next_ord = playlist[order[i + 1] or 0]

@@ -101,7 +101,7 @@ local keys = {
 	ENTER='q',
 	['1..9']={'select'},
 }
-for i=1,9 do
+for i = 1, 9 do
 	keys[string.char(string.byte('0') + i)] =
 		function() select_abs(i) end
 end
@@ -133,7 +133,7 @@ local function osd_append_filters(name, t)
 	if #f == 0 then
 		osd:append((t == tab and '{\\b1}' or ''), ' none')
 	end
-	for i=1,#f do
+	for i = 1, #f do
 		local pars = f[i].params
 		local enabled = f[i].enabled
 		local selected = t == tab and i == current[t]

@@ -72,7 +72,7 @@ local function _update()
 		}
 	end
 
-	for i=from,to do
+	for i = from, to do
 		local item = playlist[i]
 		local display = title.get_playlist_entry(item)
 		osd:append(ass_style[item.current or false], display)
