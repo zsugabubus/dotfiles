@@ -7,7 +7,7 @@ let s:GIT_EMPTY = { 'status': '' }
 let g:git_symbols = "SMUT"
 let g:git_symbols = "+*%$" " git-prompt
 let g:git_max_tabs = 15
-set switchbuf=useopen,usetab
+
 nnoremap <silent><expr> gf (
 	\    0 <=# match(expand('<cfile>'), '\v^\x{4,}$')
 	\ ? ':pedit git://'.fnameescape(expand('<cfile>'))."\<CR>"
