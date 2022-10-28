@@ -24,5 +24,9 @@ function! qf#file(globs, bang) abort
 endfunction
 
 function! qf#global(pat, bang) abort
-	call setqflist(getqflist()->filter({_, item-> !item.valid || (item.text =~ a:pat) !=# a:bang}))
+	let pat = a:pat
+	if pat ==# ''
+		let pat = @/
+	endif
+	call setqflist(getqflist()->filter({_, item-> !item.valid || (item.text =~ pat) !=# a:bang}))
 endfunction
