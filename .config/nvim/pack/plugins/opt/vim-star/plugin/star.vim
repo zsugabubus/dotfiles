@@ -1,3 +1,8 @@
+if exists('loaded_star')
+	finish
+endif
+let loaded_star = 1
+
 function! s:normal_star(wordbounds) abort
 	let m = matchlist(getline('.'), '\v(\k*)%'.col('.').'c(\k+)|%'.col('.').'c[^[:keyword:]]*(\k+)')
 	if empty(m)
@@ -13,6 +18,7 @@ function! s:normal_star(wordbounds) abort
 				\: 'e-'.(strlen(m[2].m[3]) - 1))
 			\: '')."\<CR>"
 endfunction
+
 nnoremap <expr> *  <SID>normal_star(1)
 nnoremap <expr> #  <SID>normal_star(1).'NN'
 nnoremap <expr> g* <SID>normal_star(0)

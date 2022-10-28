@@ -1,3 +1,7 @@
+if exists('*Git')
+	finish
+endif
+
 let s:GIT_EMPTY = { 'status': '' }
 
 let g:git_symbols = "SMUT"
@@ -719,7 +723,7 @@ function! GitBuffer() abort
 	endif
 endfunction
 
-augroup vimrc_git
+augroup git
 	autocmd!
 
 	" Defer window resizing since nvim crashes if it is done as part of the
