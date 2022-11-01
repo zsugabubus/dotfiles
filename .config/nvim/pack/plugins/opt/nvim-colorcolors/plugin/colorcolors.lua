@@ -1,1 +1,1 @@
-require 'colorcolors'
+require 'colorcolors'.setup()
