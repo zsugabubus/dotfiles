@@ -91,6 +91,8 @@ typeset -gA __zfiles_bindings_n=(
 	[gF]='__zfiles_glob=**(^-/) && __zfiles_update_files g'
 	[gm]='__zfiles_glob=*(om) && __zfiles_update_files g'
 	[gM]='__zfiles_glob=**(om) && __zfiles_update_files g'
+	[gs]='__zfiles_glob="*(-/) *(^-/oL)" && __zfiles_update_files g'
+	[gS]='__zfiles_glob="**(-/) **(^-/oL)" && __zfiles_update_files g'
 )
 
 typeset -gA __zfiles_bindings_t=(
