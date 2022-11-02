@@ -1,5 +1,5 @@
 function! newfile#shebang() abort
-	if changenr() !=# 0 || empty(&filetype)
+	if changenr() !=# 0 || empty(&filetype) || !&modifiable
 		return
 	endif
 
