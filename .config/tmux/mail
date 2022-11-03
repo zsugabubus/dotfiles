@@ -1,0 +1,31 @@
+#!/usr/bin/zsh -eu
+
+zmodload zsh/datetime
+
+function update() {
+	local s=
+	for dir in */inbox */new; do
+		maildir=${dir%/new}
+		for new in $maildir/new $maildir/*/new(N); do
+			local new_mails=( $new/*(N) )
+			if (( $#new_mails )) then
+				s+="${s:+ }${${new%/new}%/inbox}:$#new_mails"
+			fi
+		done
+	done
+
+	tmux set -gF @status-mail "[$s]"
+}
+
+cd $MAIL
+
+exec < <(inotifywait -qmr --include 'new' -e CREATE -e DELETE -e MOVE --format '%n' .)
+
+update
+
+while read -r; do
+	float deadline=$(( EPOCHREALTIME + 1 ))
+	while read -rt $(( deadline - EPOCHREALTIME )) 2>/dev/null
+	do :; done
+	update
+done

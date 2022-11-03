@@ -43,7 +43,8 @@ set -g copy-mode-current-match-style bg=#fdef39
 
 set -g status-left "[#S#{?destroy-unattached,:T,}#{?#{||:#{==:#{session_group},},#{==:#{session_group},#{session_name}}},, (#{session_group})}]"
 set -g status-left-length 0
-set -g status-right "%a, %b %d %R"
+set -g status-right "#[fg=color34,bold]#{@status-mail}#[default] %a, %b %d %R"
+set -g status-right-length 0
 
 # sort /[^ ]* [^ ]* \zs/
 set -g aggressive-resize on
