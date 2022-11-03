@@ -2,6 +2,7 @@ reset all
 
 set abort_noattach=ask-yes
 set alias_file=~/.aliases
+set auto_tag
 set beep_new
 set delete=ask-no
 set display_autoview=no # display_filter="sed '/\\\[-- Autoview/d'"
