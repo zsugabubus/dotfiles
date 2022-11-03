@@ -140,7 +140,7 @@ bind ) switch-client -n
 bind ( switch-client -p
 
 bind g display-panes -d0
-bind f display-popup -E ~/.config/tmux/scripts/find
+bind f display-popup -E ~/.config/tmux/find
 bind F choose-tree -Z
 
 bind "'" select-pane -m
@@ -197,8 +197,8 @@ bind B choose-buffer
 bind C-l clear-history \; display-message "History cleared."
 bind C-m show-messages
 
-bind * set -s @xclip_selection primary   \; source ~/.config/tmux/functions/xclip
-bind + set -s @xclip_selection clipboard \; source ~/.config/tmux/functions/xclip
+bind * set -s @xclip_selection primary   \; source ~/.config/tmux/xclip.tmux
+bind + set -s @xclip_selection clipboard \; source ~/.config/tmux/xclip.tmux
 
 bind '~' set -w synchronize-panes
 bind m set -w monitor-activity \; if -F '#{monitor-activity}' 'last-window'
