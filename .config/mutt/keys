@@ -37,9 +37,7 @@ bind index o sort-mailbox
 bind index O sort-reverse
 
 macro index ~ <limit>~
-macro index = <limit>~s<space>
 bind index l limit
-macro index L "<limit>all<return>"
 
 bind generic t tag-entry
 bind pager t tag-message
@@ -89,7 +87,7 @@ bind index,pager R group-reply
 bind index,pager \cR noop
 
 bind index,pager ! flag-message
-bind index,pager l edit-label
+bind index,pager L edit-label
 
 bind attach,browser,pager,postpone / search
 bind attach,browser,pager,postpone n search-next
