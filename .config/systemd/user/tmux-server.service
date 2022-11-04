@@ -1,5 +1,6 @@
 [Unit]
 Description=Tmux Server
+RefuseManualStop=true
 
 [Service]
 Type=simple
