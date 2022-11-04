@@ -4,7 +4,6 @@ export TERMINAL=alacritty
 . ${0%/*}/theme
 xset s 125 125 &
 xset +dpms dpms 125 125 125 &
-setxkbmap pl dvp compose:ralt &
 
 pidof heawm >/dev/null && exit
 

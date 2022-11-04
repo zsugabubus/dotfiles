@@ -1,0 +1,7 @@
+#!/bin/dash
+setxkbmap pl dvp compose:ralt
+
+xinput list --name-only |
+while read -r device; do
+	xinput set-prop "pointer:$device" 'libinput Left Handed Enabled' 1
+done 2>/dev/null
