@@ -22,6 +22,10 @@ enum type {
 	T_LAB_FN,
 	T_LCH_FN,
 	T_COLOR,
+	T_SGR_8,
+	T_SGR_BRIGHT_8,
+	T_SGR_256,
+	T_SGR_RGB,
 };
 
 struct rgb24 {
@@ -68,6 +72,12 @@ size_t match(char const *, size_t, struct highlight *, size_t);
 		table.insert(spec, {"lch(", ffi.C.T_LCH_FN})
 		table.insert(spec, {'color[0-9]', ffi.C.T_COLOR})
 		table.insert(spec, {'colour[0-9]', ffi.C.T_COLOR})
+		table.insert(spec, {'[[;]3[0-7][;m]', ffi.C.T_SGR_8})
+		table.insert(spec, {'[[;]4[0-7][;m]', ffi.C.T_SGR_8})
+		table.insert(spec, {'[[;]9[0-7][;m]', ffi.C.T_SGR_BRIGHT_8})
+		table.insert(spec, {'[[;]10[0-7][;m]', ffi.C.T_SGR_BRIGHT_8})
+		table.insert(spec, {'[[;][34]8;5;[0-9]', ffi.C.T_SGR_256})
+		table.insert(spec, {'[[;][34]8;2;[0-9]', ffi.C.T_SGR_RGB})
 
 		local Matcher = require('colorcolors.matcher')
 		m = Matcher:new({
@@ -742,6 +752,10 @@ match(char const *sbj, size_t len, struct highlight *hls, size_t nhls)
 			}
 				break;
 
+			case T_SGR_256:
+				hl->first += 1;
+				backtrack -= 1;
+				/* FALLTHROUGH */
 			case T_COLOR:
 			{
 				p -= 1 /* [0-9] */;
@@ -751,6 +765,38 @@ match(char const *sbj, size_t len, struct highlight *hls, size_t nhls)
 					goto invalid;
 				tcolor_to_rgb24((uint8_t)n, &hl->color);
 				hl->last = (size_t)(end - sbj);
+			}
+				break;
+
+			case T_SGR_8:
+			case T_SGR_BRIGHT_8:
+				tcolor_to_rgb24((uint8_t)(p[-2] - '0' + (T_SGR_BRIGHT_8 == ty ? 8 : 0)), &hl->color);
+				hl->first += 1;
+				hl->last -= 1;
+				backtrack -= 1;
+				break;
+
+			case T_SGR_RGB:
+			{
+				hl->first += 1;
+				p -= 1;
+				struct rgb24 rgb;
+				char *end;
+				rgb.r = (uint8_t)strtoul(p, &end, 10);
+				if (';' != *end)
+					goto invalid;
+				p = end + 1;
+				rgb.g = (uint8_t)strtoul(p, &end, 10);
+				if (';' != *end)
+					goto invalid;
+				p = end + 1;
+				rgb.b = (uint8_t)strtoul(p, &end, 10);
+				if (';' != *end && 'm' != *end)
+					goto invalid;
+				p = end;
+				hl->color = rgb;
+				hl->last = (size_t)(p - sbj);
+				backtrack = hl->last;
 			}
 				break;
 
