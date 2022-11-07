@@ -828,6 +828,7 @@ match(char const *sbj, size_t len, struct highlight *hls, size_t nhls)
 		obj,
 		src
 	))
+	os.remove(src)
 
 	return ffi.load(obj)
 end
