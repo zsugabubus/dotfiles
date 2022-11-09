@@ -2,7 +2,6 @@ local api = vim.api
 local ns = api.nvim_create_namespace('colorcolors')
 local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 local has_hl_group = {}
-local obj = string.format('%s/%s', vim.fn.stdpath('cache'), 'colorcolors.so')
 local lib
 local matcher
 local attached = {}
@@ -41,6 +40,10 @@ int rgb24_is_bright(struct rgb24 const *rgb24);
 size_t match(char const *, size_t, struct highlight *, size_t);
 ]]
 	ffi.cdef(hdr)
+
+	local objdir = vim.fn.stdpath('cache')
+	vim.fn.mkdir(objdir, 'p')
+	local obj = string.format('%s/%s', objdir, 'colorcolors.so')
 
 	local ok, lib = pcall(ffi.load, obj)
 	if ok then
