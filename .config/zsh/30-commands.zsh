@@ -192,7 +192,7 @@ alias make='nice -n15 make -j2'
 function meson() {
 	if (( !$# )); then
 		mkbuild
-		command meson build
+		command meson setup build
 	else
 		command meson "$@"
 	fi
