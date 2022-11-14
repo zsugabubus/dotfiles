@@ -161,7 +161,7 @@ nnoremap <silent> dar :.argdelete<bar>argument<CR>
 nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), {_,nr-> nr2char(nr)}), {_,mark-> (getpos("'".mark)[1] ==# 0 ? mark : ' ')}), '').'"<CR>m'
 
 " Jump to parent indention.
-nnoremap <silent><expr> <C-q> '?\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S?s-1<CR>:noh\|call histdel("search", -1)\|let @/ = histget("search", -1)<CR>'
+nnoremap <silent> <C-q> :call search('\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S', 'b')<CR>
 
 nnoremap <silent> <M-m> :Make<CR>
 
