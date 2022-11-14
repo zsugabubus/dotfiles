@@ -47,6 +47,7 @@
 	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
 	log-vim = l
 	la = l --all --full-history
+	ls = l --stat
 	lag = la --graph
 	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
 	lp = ll --patch --stat
@@ -71,10 +72,12 @@
 	rp = reset --patch
 
 	s = status --ahead-behind --show-stash --branch
+	sun = s --untracked=no
 	ss = status --short --branch
 	zsh-status = s --untracked=no
 
 	f = fetch
+	fun = fetch --unshallow
 
 	push-origin = push -u origin HEAD
 
