@@ -1,0 +1,23 @@
+set editing-mode emacs
+set meta-flag on
+set input-meta on
+set convert-meta off
+set echo-control-characters on
+set bind-tty-special-chars off
+
+$if term=linux
+$else
+	set show-mode-in-prompt on
+	# Non-blinking I-beam cursor.
+	set emacs-mode-string \1\e[6 q\r\2
+$endif
+
+$if Fizzy
+	set disable-completion on
+	"\e\C-M": fizzy-accept-all
+	"+": fizzy-emit-one
+	"[": fizzy-filter-reset
+	"]": fizzy-filter-matched
+	"\C-v": fizzy-edit
+	"\ev": fizzy-edit
+$endif
