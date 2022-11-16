@@ -1,3 +1,5 @@
 #!/usr/bin/dash
 ln -nrsf theme-$1 theme
 . ./theme
+ln -nrsf Xtheme-$1 Xtheme
+pkill -HUP heawm
