@@ -184,8 +184,8 @@ function prompt_powerline_setup() {
 		RPS1=\
 '%(1j.%F{yellow}%B%%%j%b%f .)'\
 '${__prompt_keymap:+"%F{white}($__prompt_keymap)%f"}${${__prompt_keymap:+ }:-"%F{250}%*%f "}'\
-'${__prompt_status:+"%F{197}%{%G%}%K{197}%F{227} %B$__prompt_status%b %f%k"}'\
-'%(2L.%F{254}%{%G%}%K{254}%F{244} %L %f%k.)'
+'${__prompt_status:+"%F{197}%{%G%}%K{197}%F{227} %B$__prompt_status%b %f"}'\
+'%(2L.%F{254}%{%G%}%K{254}%F{244} %L %f.)%k'
 		PS2='%K{254}%F{247} %_ %k%F{254}%{%G%}%f '
 		;;
 	esac
