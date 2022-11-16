@@ -1,4 +1,6 @@
 #!/usr/bin/dash -eu
+trap 'exit 0' INT TERM QUIT
+
 url=$(
 	${0%/*}/urllist |
 	fizzy -1
