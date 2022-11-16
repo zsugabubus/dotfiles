@@ -36,9 +36,6 @@ set -g pane-border-format " #{pane_index}:#{?pane_last,-,} #W:#T @ #{pane_tty} "
 set -g message-command-style bg=color254,fg=color250
 set -g message-style bg=color220,fg=color236
 set -g mode-style bg=color220,fg=color236
-
-set -g copy-mode-match-style bg=#fdef39
-set -g copy-mode-current-match-style bg=#fdef39
 %endif
 
 set -g status-left "[#S#{?destroy-unattached,:T,}#{?#{||:#{==:#{session_group},},#{==:#{session_group},#{session_name}}},, (#{session_group})}]"
@@ -173,23 +170,14 @@ bind M if -F '#{!=:#{window_name},muck}' {
 
 bind r source-file ~/.tmux.conf \; display-message -d250 "Reloaded."
 
-bind y copy-mode
+bind y set -s @copy_visible 1 \; set -su @copy_feedkeys \; source ~/.config/tmux/editor-copy.tmux
+bind Y set -s @copy_visible 0 \; set -su @copy_feedkeys \; source ~/.config/tmux/editor-copy.tmux
 # bind Y choose-buffer { run-shell -b "tmux show-buffer -b '%%' | xclip -i" }
-bind / copy-mode \; send-keys ?
-bind C-u copy-mode \; send-keys -X halfpage-up
-bind v copy-mode \; send-keys -X begin-selection
-bind V copy-mode \; send-keys -X select-line
+bind / set -s @copy_visible 1 \; set -s @copy_feedkeys '?' \; source ~/.config/tmux/editor-copy.tmux
+bind C-u set -s @copy_visible 0 \; set -s @copy_feedkeys 'H\<C-u>' \; source ~/.config/tmux/editor-copy.tmux
+bind v set -s @copy_visible 1 \; set -s @copy_feedkeys ":call search('\\\\\\S', 'cb')\\<CR>v" \; source ~/.config/tmux/editor-copy.tmux
 bind e capture-pane -S- \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
 bind E capture-pane -S0 \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
-
-bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
-bind -T copy-mode-vi C-v send-keys -X rectangle-toggle
-bind -T copy-mode-vi v send-keys -X begin-selection
-bind -T copy-mode-vi + \
-	send-keys -X copy-selection-and-cancel \;\
-	delete-buffer -b xclip_paste \;\
-	set-buffer -n xclip_paste \;\
-	run-shell -b "tmux show-buffer -b xclip_paste | xclip -silent -i -selection clipboard"
 
 bind a paste-buffer -p
 bind A paste-buffer
