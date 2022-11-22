@@ -1,7 +1,8 @@
+local M = {}
 local api = vim.api
 local ns = api.nvim_create_namespace('colorcolors')
 local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
-local has_hl_group = {}
+local hl_cache = {}
 local lib
 local matcher
 local attached = {}
@@ -853,25 +854,42 @@ local function load_matcher()
 	end
 end
 
-local function rgb_highlight(rgb)
+local function rgb2hl(rgb)
 	local u888 = bor(lshift(rgb.r, 16), lshift(rgb.g, 8), rgb.b)
 	local hl_group = '_' .. u888
-	if not has_hl_group[u888] then
-		has_hl_group[u888] = true
-		local color = string.format('%02x%02x%02x', rgb.r, rgb.g, rgb.b)
-		local other = lib.rgb24_is_bright(rgb) ~= 0 and '000000' or 'ffffff'
+	if hl_cache[u888] == nil then
+		local color = string.format('#%06x', u888)
+		local other = lib.rgb24_is_bright(rgb) ~= 0 and '#000000' or '#ffffff'
+		hl_cache[u888] = other
 		api.nvim_set_hl(0, hl_group, {
-			bg = '#' .. color,
-			fg = '#' .. other,
+			bg = color,
+			fg = other,
 		})
 	end
 	return hl_group
 end
 
+function M._reset_hls()
+	for u888, other in pairs(hl_cache) do
+		local hl_group = '_' .. u888
+		local color = string.format('#%06x', u888)
+		api.nvim_set_hl(0, hl_group, {
+			bg = color,
+			fg = other,
+		})
+	end
+end
+
 local function highlight_line(buffer, lnum, line)
 	for _, hl in matcher(line) do
-		local hl_group = rgb_highlight(hl.color)
-		api.nvim_buf_add_highlight(buffer, ns, hl_group, lnum, bit.tobit(hl.first), bit.tobit(hl.last))
+		api.nvim_buf_add_highlight(
+			buffer,
+			ns,
+			rgb2hl(hl.color),
+			lnum,
+			bit.tobit(hl.first),
+			bit.tobit(hl.last)
+		)
 	end
 end
 
@@ -904,6 +922,7 @@ local function highlight_lines(buffer, start_lnum, end_lnum)
 end
 
 local function detach_from_buffer(buffer)
+	assert(0 < buffer)
 	attached[buffer] = nil
 	-- Maybe there is a pending highlight_lines() so we must make sure
 	-- that we clear highlights after it finishes.
@@ -913,7 +932,7 @@ local function detach_from_buffer(buffer)
 end
 
 local function attach_to_buffer(buffer)
-	-- Already attached.
+	assert(0 < buffer)
 	if attached[buffer] then
 		return
 	end
@@ -942,33 +961,21 @@ local function attach_to_buffer(buffer)
 	)
 end
 
-local function toggle_buffer(buffer, toggle)
+function M.is_attached(buffer)
+	assert(0 < buffer)
+	return attached[buffer]
+end
+
+function M.toggle_buffer(buffer, attach)
 	buffer = buffer or api.nvim_get_current_buf()
-	if toggle == nil then
-		toggle = not attached[buffer]
+	if attach == nil then
+		attach = not M.is_attached(buffer)
 	end
-	if toggle then
+	if attach then
 		attach_to_buffer(buffer)
 	else
 		detach_from_buffer(buffer)
 	end
 end
 
-local function setup()
-	api.nvim_create_autocmd(
-		{'BufWinEnter'},
-		{
-			buffer = buffer,
-			callback = function()
-				attach_to_buffer(api.nvim_get_current_buf())
-			end
-		}
-	)
-end
-
-return {
-	setup = setup,
-	toggle_buffer = toggle_buffer,
-	attach_to_buffer = attach_to_buffer,
-	detach_from_buffer = detach_from_buffer,
-}
+return M
