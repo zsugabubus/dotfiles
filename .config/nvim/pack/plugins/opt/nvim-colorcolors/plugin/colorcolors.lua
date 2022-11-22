@@ -26,3 +26,27 @@ api.nvim_create_autocmd(
 		end
 	}
 )
+
+api.nvim_create_user_command(
+	'ColorColorsAttachToBuffer',
+	function()
+		M.toggle_buffer(nil, true)
+	end,
+	{}
+)
+
+api.nvim_create_user_command(
+	'ColorColorsDetachFromBuffer',
+	function()
+		M.toggle_buffer(nil, false)
+	end,
+	{}
+)
+
+api.nvim_create_user_command(
+	'ColorColorsToggleBuffer',
+	function()
+		M.toggle_buffer()
+	end,
+	{}
+)
