@@ -508,6 +508,22 @@ local function update_property(name, value)
 	local old = props[name]
 	props[name] = value
 	if old and value then
+		if
+			-- May be unsupported, exlicitly check
+			-- for false.
+			props['focused'] == false and
+			not props['paused'] and
+			not props['mouse-pos']['hover']
+		then
+			if name ~= 'time-pos' then
+				return
+			end
+
+			if math.floor(old) == math.floor(value) then
+				return
+			end
+		end
+
 		-- Drop changes with too much precision.
 		if
 			name == 'time-pos' or
@@ -577,6 +593,7 @@ update_mode = function()
 			'demuxer-cache-state',
 			'demuxer-via-network',
 			'duration',
+			'focused',
 			'pause', -- To show exact values on pause.
 			'percent-pos',
 			'playlist-count',
