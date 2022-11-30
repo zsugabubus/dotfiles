@@ -6,6 +6,7 @@ packadd vim-elephant
 packadd vim-newfile
 
 packadd! ansiesc.nvim
+packadd! cword.nvim
 packadd! nvim-colorcolors
 packadd! vim-acid
 packadd! vim-betterm
