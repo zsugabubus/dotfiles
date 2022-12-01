@@ -37,7 +37,6 @@ set sidebar_next_new_wrap
 set sidebar_sort_method=unsorted
 set sidebar_visible
 set sleep_time=0
-set sort=threads sort_aux=last-date sort_thread_groups=last-unread
 set sort_browser=date
 set tilde
 set timeout=0
@@ -51,6 +50,7 @@ from=nobody \
 record="=sent" \
 sendmail="/usr/bin/torsocks /usr/bin/msmtp" \
 signature="" \
+sort=threads sort_aux=last-date sort_thread_groups=last-unread \
 '
 # "sent" uses last configuration.
 folder-hook !sent $my_reset
