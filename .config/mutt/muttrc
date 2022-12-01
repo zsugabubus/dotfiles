@@ -79,6 +79,9 @@ auto_view text/html text/x-diff
 unalternative_order *
 alternative_order text/enriched text/plain text/html
 
+unattachments *
+attachments +A */.*
+
 source $my_dotdir/keys
 source $my_dotdir/muttrc.sh|
 source $my_dotdir/colors-$TERM
