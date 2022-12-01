@@ -2,21 +2,58 @@
 set my_dotdir=~/.config/mutt
 
 unhook *
+reset all
 
-source $my_dotdir/options
+set abort_noattach=ask-yes
+set alias_file=~/.aliases
+set auto_tag
+set beep_new
+set delete=ask-no
+set display_autoview=no # display_filter="sed '/\\\[-- Autoview/d'"
+set edit_headers
+set envelope_from
+set fast_reply
+set folder="$MAIL"
+set help=no
+set hide_missing=no
+set hostname=localhost
+set include
+set mail_check=10
+set mail_check_recent=no
+set mail_check_stats mail_check_stats_interval=600
+set maildir_check_cur
+set mark_old=no
+set mbox_type=Maildir
+set menu_scroll menu_context=3 nomenu_move_off
+set narrow_tree
+set pager_index_lines=7
+set pager_stop
+set postponed=+postponed
+set quit
+set record=+sent
+set reply_to
+set sidebar_format="%D%* %?F?!?%?N?%N/?%S" sidebar_format="%B%* %?N?%N/?%!%S" sidebar_width=22
+set sidebar_next_new_wrap
+set sidebar_sort_method=unsorted
+set sidebar_visible
+set sleep_time=0
+set sort=threads sort_aux=last-date sort_thread_groups=last-unread
+set sort_browser=date
+set tilde
+set timeout=0
+set use_domain=no
+set use_from
+set wait_key=no
 
-# startup-hook check-stats
-
-ignore *
-unignore Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent: Link:
-unhdr_order *
-hdr_order Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent: Link:
-
-auto_view text/html text/x-diff
-unalternative_order *
-alternative_order text/enriched text/plain text/html
-
-source $my_dotdir/keys
+set my_reset='set \
+realname=nobody \
+from=nobody \
+record="=sent" \
+sendmail="/usr/bin/torsocks /usr/bin/msmtp" \
+signature="" \
+'
+# "sent" uses last configuration.
+folder-hook !sent $my_reset
 
 folder-hook . 'set index_format="%3C %Z %@date@ %-20.20L%@attach@%?M?(%M) ?%s (%?l?%4l&%4c?)%@label@"'
 
@@ -33,6 +70,15 @@ index-format-hook date "~A"	"%[%y %b]"
 
 index-format-hook label "~A"	"%?Y? {%Y}?"
 
-source $my_dotdir/muttrc.sh|
+ignore *
+unignore Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent: Link:
+unhdr_order *
+hdr_order Date: From: X-Mailing-List: To: Cc: Subject: Reply-To: User-Agent: Link:
 
+auto_view text/html text/x-diff
+unalternative_order *
+alternative_order text/enriched text/plain text/html
+
+source $my_dotdir/keys
+source $my_dotdir/muttrc.sh|
 source $my_dotdir/colors-$TERM
