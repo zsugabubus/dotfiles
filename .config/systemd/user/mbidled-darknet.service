@@ -7,6 +7,7 @@ After=mbsync-profile@darknet.service
 Type=simple
 ExecStart=torsocks mbidled -c "%t/mbsyncrc.darknet"
 Restart=always
+SyslogIdentifier=mbidled
 
 [Install]
 WantedBy=default.target
