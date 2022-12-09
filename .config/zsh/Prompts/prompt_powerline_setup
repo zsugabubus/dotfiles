@@ -206,7 +206,7 @@ function prompt_powerline_setup() {
 		viins|main) printf '\e[6 q\r' ;; # Non-blinking I-beam cursor.
 		*)          printf '\e[2 q\r' ;; # Non-blinking block cursor.
 		esac
-		typeset -g __prompt_keymap=$KEYMAP
+		typeset -g __prompt_keymap=
 		zle .reset-prompt
 	}
 	zle -N zle-line-init
