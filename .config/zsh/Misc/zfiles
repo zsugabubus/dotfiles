@@ -223,16 +223,17 @@ function __zfiles_render() {
 			type=ex; class='*'
 			;&
 		-*)
-			icon=$__zfiles_icon_cache[(e)$file]
+			key=${file:l}
+			icon=$__zfiles_icon_cache[(e)$key]
 			if [[ -z $icon ]]; then
-				icon=${${__zfiles_icons[(k)$file]:-$__zfiles_icons[(e)$type]}:-??}
-				__zfiles_icon_cache[(e)$file]=$icon
+				icon=${${__zfiles_icons[(k)$key]:-$__zfiles_icons[(e)$type]}:-??}
+				__zfiles_icon_cache[(e)$key]=$icon
 			fi
 
-			color=$__zfiles_color_cache[(e)$file]
+			color=$__zfiles_color_cache[(e)$key]
 			if [[ -z $color ]]; then
-				color=${${__zfiles_colors[(k)$file]:-$__zfiles_colors[(e)$type]}:-default/default}
-				__zfiles_color_cache[(e)$file]=$color
+				color=${${__zfiles_colors[(k)$key]:-$__zfiles_colors[(e)$type]}:-default/default}
+				__zfiles_color_cache[(e)$key]=$color
 			fi
 			;;
 		d*) type=di; class=/ ;;
@@ -605,10 +606,10 @@ function __zfiles_sgr2curses() {
 }
 
 function __zfiles_update_ls_colors() {
-	__zfiles_icons=( ${=${${(s.:.)LS_ICONS}//=/ }} )
+	__zfiles_icons=( ${=${${(s.:.)${LS_ICONS:l}}//=/ }} )
 	__zfiles_colors=()
 	typeset pat color
-	for pat color in ${(kv)${=${${(s.:.)LS_COLORS}//=/ }}}; do
+	for pat color in ${(kv)${=${${(s.:.)${LS_COLORS:l}}//=/ }}}; do
 		local sgr=${color%%m*}
 		if [[ $sgr != $color ]]; then
 			__zfiles_sgr2curses $sgr
