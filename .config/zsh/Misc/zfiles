@@ -585,14 +585,14 @@ function __zfiles_sgr2curses() {
 				fg=$(( $params[++i] ))
 			fi
 			;;
-		4[0-7]) fg=$(( n - 30 )) ;;
+		4[0-7]) bg=$(( n - 40 )) ;;
 		48)
 			if (( $params[++i] == 5 )); then
 				bg=$(( $params[++i] ))
 			fi
 			;;
-		9[0-7]) fg=$(( n + 8 )) ;;
-		10[0-7]) bg=$(( n + 8 )) ;;
+		9[0-7]) fg=$(( n - 90 + 8 )) ;;
+		10[0-7]) bg=$(( n - 100 + 8 )) ;;
 		*) printf >&2 'unknown attribute (%d) in LS_COLOR: %s\n' "$n" "$params" ;;
 		esac
 	done
