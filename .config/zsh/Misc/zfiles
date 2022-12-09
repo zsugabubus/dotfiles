@@ -83,7 +83,7 @@ typeset -gA __zfiles_bindings_n=(
 	[g.]='(( __zfiles_glob_dots^=1 )); __zfiles_update_files g'
 	[g\\*]='__zfiles_glob=* && __zfiles_set_glob'
 	[ge]='__zfiles_set_glob'
-	[ga]='__zfiles_glob=$__ZFILES_DEFAULT_GLOB && __zfiles_update_files g'
+	[ga]="__zfiles_glob=${(q)__ZFILES_DEFAULT_GLOB} && __zfiles_update_files g"
 	[gr]='__zfiles_glob=*** && __zfiles_update_files g'
 	[gd]='__zfiles_glob=*(-/) && __zfiles_update_files g'
 	[gD]='__zfiles_glob=**(-/) && __zfiles_update_files g'
