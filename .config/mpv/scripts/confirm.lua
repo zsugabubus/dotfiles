@@ -1,16 +1,20 @@
 -- Emulate [profile].
-local PROPERTY_MT = {
-	__index = function(self, property)
-		property = property:gsub('_', '-')
-		return mp.get_property_native(property)
-	end
-}
+local ENV
+do
+	local MAGIC = {
+		__index = function(self, name)
+			name = string.gsub(name, '_', '-')
+			return mp.get_property_native(name)
+		end,
+	}
 
-local ENV = {
-	p = {}
-}
-setmetatable(ENV.p, PROPERTY_MT)
-setmetatable(ENV, PROPERTY_MT)
+	ENV = setmetatable({
+		p = setmetatable({}, MAGIC),
+		get = function(name, def)
+			return mp.get_property_native(name, def)
+		end,
+	}, MAGIC)
+end
 
 local function confirm_if(cond, ...)
 	local argv = {...}
@@ -42,9 +46,7 @@ local function confirm_if(cond, ...)
 	local show_confirm = f()
 
 	if show_confirm then
-		mp.osd_message(('Confirm %s? [Y/n]'):format(
-			argv[1]
-		), 999999)
+		mp.osd_message(string.format('Confirm %s? [Y/n]', argv[1]), 999999)
 		for key, fn in pairs(BINDINGS) do
 			mp.add_forced_key_binding(key, key, fn)
 		end
