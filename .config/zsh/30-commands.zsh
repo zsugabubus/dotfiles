@@ -26,7 +26,6 @@ alias l='ls-color -ohtrvF --group-directories-first --color=tty --quoting-style=
 alias la='l -A'
 alias mv='mv -i'
 alias pm='progress -M'
-alias rm='rm -dI --one-file-system'
 alias tree=tree-color
 alias vd=vidir
 
@@ -42,6 +41,14 @@ function mktarget() {
 function mkbuild() {
 	ln -sT ${TMPDIR:-/tmp}/build-${${:-.}:a:t} build
 	mkdir -p -- ${${:-build}:P}
+}
+
+function rm() {
+	if (( ! ${@[(I)-*]} )) && [[ ! -e ${@[-1]} || -d ${@[-1]} ]]; then
+		read 2>&1 -q '?zsh: rm: does not seem like an rm; surely continue? [y/N] ' ||
+		return 100
+	fi
+	command rm -dI --one-file-system $@
 }
 
 function rmdir() {
