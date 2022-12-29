@@ -21,7 +21,7 @@ function! bufgrep#BufGrep(pattern, add) abort
 				endif
 			endif
 			try
-				noautocmd silent execute 'vimgrepadd' '/'.escape(a:pattern, '/').'/j' fnameescape(grepfile)
+				noautocmd silent execute 'vimgrepadd' '/'.escape(a:pattern, '/').'/jg' fnameescape(grepfile)
 			catch 'No match:'
 				continue
 			endtry
