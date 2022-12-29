@@ -30,3 +30,21 @@ function! qf#global(pat, bang) abort
 	endif
 	call setqflist(getqflist()->filter({_, item-> !item.valid || (item.text =~ pat) !=# a:bang}))
 endfunction
+
+function! qf#n(nth, bang) abort
+	let nth = str2nr(a:nth)
+	if nth == 0
+		let nth = 1
+	endif
+	let items = []
+	let keys = {}
+	for item in getqflist()
+		let key = bufname(item.bufnr) . ':' . item.lnum
+		let keys[key] = get(keys, key, 0) + 1
+		let ok = !item.valid || (keys[key] == nth) != a:bang
+		if ok
+			call add(items, item)
+		endif
+	endfor
+	call setqflist(items)
+endfunction
