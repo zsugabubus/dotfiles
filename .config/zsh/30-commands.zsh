@@ -167,8 +167,8 @@ function unar un() {
 		{
 			[[ -f $f ]] && rm -i $f
 			if (($# == 1)); then
-				cd ${f:r} &&
-				while cd *; do :; done 2>/dev/null
+				builtin cd -- ${f:r} &&
+				while builtin cd -- *; do :; done 2>/dev/null
 				:
 			fi
 		}
