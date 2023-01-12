@@ -1,89 +1,91 @@
 [add.interactive]
 	useBuiltin = yes
 
+[advice]
+	detachedHead = no
+
 [alias]
 	a = add --verbose
+	a3 = apply --3way
 	ae = a --edit
 	ai = a --interactive
 	ap = a --patch
-	au = a --update
-
-	a3 = apply --3way
 	arej = apply --reject
+	au = a --update
 
 	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:50)%(refname:short)%(color:bold normal)%(push:trackshort)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)%(color:reset) %(color:nobold dim white)%(push:short)'
 	br = b -r
 
 	c = commit --allow-empty --verbose
-	cf = c --fixup
-	cs = c --sign-off
 	cN = c --no-verify
 	ca = c --amend --reset-author
 	cc = "!f() { exec git c --edit --file .git/COMMIT_EDITMSG \"$@\"; }; f"
 	ccrb = "!f() { exec git c --edit --file .git/rebase-merge/message \"$@\"; }; f"
+	cf = c --fixup
+	cs = c --sign-off
 
 	co = checkout
 	cop = co --patch
 
-	sw = switch
-
-	# Hehe.
 	cp = cherry-pick
 
 	d = diff --stat --patch
 	ds = d --staged
 
-	sl = stash list --stat
-	slp = sl -p
-	st = stash push
-	sp = stash pop
-	stpull = "!git st && git pull && git sp"
+	f = fetch
+	fun = fetch --unshallow
 
-	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	l = log-formatted
+	la = l --all --full-history
+	lag = la --graph
+	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
+	lf = log --follow --patch
 	lg = log-formatted --graph
+	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset brightblack) %as%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
+	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
+	log-vim = l
+	lp = ll --patch --stat
+	ls = l --stat
 	lu = l @{upstream}
 	lud = l @...@{upstream}
-	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
-	log-vim = l
-	la = l --all --full-history
-	ls = l --stat
-	lag = la --graph
-	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
-	lp = ll --patch --stat
-	lf = log --follow --patch
 
 	m = merge
 	mc = m --continue
 
 	mt = mergetool
 
+	push-origin = push -u origin HEAD
+
+	ra = !git diff --name-only --diff-filter=U -z | xargs -0r grep -LZ '<<<<<<<' | xargs -0r git add -v
 	rb = rebase
 	rbb = rb -s recursive -X diff-algorithm=minimal,ignore-all-space
-	ri = rb --interactive
-	riu = ri @{upstream}
-	rip = ri @{push}
-	riom = ri origin/master
-	re = rb --edit-todo
+	rbp = rb --show-current-patch
 	rc = rb --continue
-	rs = rb --show-current-patch
-	ra = !git diff --name-only --diff-filter=U -z | xargs -0r grep -LZ '<<<<<<<' | xargs -0r git add -v
+	re = rb --edit-todo
+	ri = rb --interactive
+	riom = ri origin/master
+	rip = ri @{push}
+	riu = ri @{upstream}
 
 	rp = reset --patch
+	rso = remote show origin
 
 	s = status --ahead-behind --show-stash --branch
 	sun = s --untracked=no
-	ss = status --short --branch
 	zsh-status = s --untracked=no
 
-	f = fetch
-	fun = fetch --unshallow
+	sl = stash list --stat
+	slp = sl -p
+	sp = stash pop
+	ss = status --short --branch
+	st = stash push
+	stpull = "!git st && git pull && git sp"
 
-	push-origin = push -u origin HEAD
-
-	wt = worktree
+	sw = switch
 
 	whoami = var GIT_COMMITTER_IDENT
+
+	wt = worktree
 
 	serve = !git daemon --port=10000 --base-path=. --export-all --reuseaddr --informative-errors --verbose
 	hub = !git daemon --port=10000 --base-path=. --export-all --enable=receive-pack --reuseaddr --informative-errors --verbose
@@ -91,20 +93,31 @@
 [am]
 	threeWay = yes
 
+[browser "echo"]
+	cmd = echo
+
+
 [difftool]
 	prompt = no
 	trustExitCode = yes
 
+[fetch]
+	prune = yes
+
 [grep]
 	lineNumber = yes
+
+[include]
+	path = config.user
+	path = config.credential
 
 [init]
 	templateDir = ~/.config/git/template
 	defaultBranch = master
 
-[include]
-	path = config.user
-	path = config.credential
+[instaweb]
+	httpd = webrick
+	browser = echo
 
 [interactive]
 	singleKey = yes
@@ -118,9 +131,6 @@
 	trustExitCode = yes
 	cmd = nvim -d "$MERGED" "$BASE" "$LOCAL" "$REMOTE" +"wincmd J"
 
-[fetch]
-	prune = yes
-
 [pull]
 	rebase = yes
 
@@ -128,7 +138,6 @@
 	missingCommitsCheck = error
 	instructionFormat = "%s (%ar) %an"
 	autoSquash = yes
-
 	stat = yes
 
 [sendemail]
@@ -136,10 +145,3 @@
 	annotate = yes
 	assume8bitEncoding = yes
 	xmailer = no
-
-[instaweb]
-	httpd = webrick
-	browser = echo
-
-[browser "echo"]
-	cmd = echo
