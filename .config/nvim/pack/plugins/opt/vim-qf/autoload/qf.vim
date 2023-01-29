@@ -48,3 +48,11 @@ function! qf#n(nth, bang) abort
 	endfor
 	call setqflist(items)
 endfunction
+
+function! qf#buflisted() abort
+	for item in getqflist()
+		if 0 < item.bufnr
+			call setbufvar(item.bufnr, '&buflisted', 1)
+		endif
+	endfor
+endfunction
