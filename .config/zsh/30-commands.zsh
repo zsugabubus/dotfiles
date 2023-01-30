@@ -416,6 +416,7 @@ function usb_rebind() {
 alias curl='noglob curl --compressed'
 alias curltor='curl -x socks5h://127.1:9050'
 alias iftop='sudo -E iftop'
+alias ip='ip -c'
 alias ipt='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
 alias upnp='upnpc -u "http://router.lan:5000/rootDesc.xml"'
 
