@@ -13,9 +13,9 @@
 #define MOUSEKEY_TIME_TO_MAX 20
 
 #undef MANUFACTURER
-#define MANUFACTURER Dunno
+#define MANUFACTURER "Dunno"
 #undef DESCRIPTION
-#define DESCRIPTION Mechanical keyboard
+#define DESCRIPTION "Mechanical keyboard"
 
 #define FORCE_NKRO
 // #define COMBO_COUNT 1
