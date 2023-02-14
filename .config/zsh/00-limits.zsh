@@ -1,1 +1,1 @@
-ulimit -u 700
+ulimit -u 1024
