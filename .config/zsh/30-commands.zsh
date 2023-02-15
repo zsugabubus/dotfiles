@@ -44,7 +44,7 @@ function mkbuild() {
 }
 
 function rm() {
-	if (( ! ${@[(I)-*]} )) && [[ ! -e ${@[-1]} || -d ${@[-1]} ]]; then
+	if (( ! ${@[(I)-*]} && 2 <= $# )) && [[ ! -e ${@[-1]} || -d ${@[-1]} ]]; then
 		read 2>&1 -q '?zsh: rm: does not seem like an rm; surely continue? [y/N] ' ||
 		return 100
 	fi
