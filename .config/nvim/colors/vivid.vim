@@ -25,7 +25,7 @@ endif
 
 Hi Number guifg=#fa3422|#fa7452 cterm=bold
 
-Hi Normal guifg=#2f323f|#eeede9 guibg=#eeeeee|#222432
+Hi Normal guifg=#2f323f|#eeede9 guibg=#eeeeee|#222432 guibg=NONE
 Hi Visual guibg=#accdfe|#5c4dbd gui=NONE ctermbg=4
 Hi VisualNOS guifg=#d8d8dc
 Hi !StatusLine guifg=#313140|#f8ece8 guibg=#e8e8e8|#363a46 cterm=bold
