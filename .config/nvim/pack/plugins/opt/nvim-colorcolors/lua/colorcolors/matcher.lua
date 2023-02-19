@@ -49,12 +49,12 @@ local function expand(cc)
 		end
 		return ''
 	end)
-	--                               _
-	--                             /`x`\
-	--                \ /          \xXx/
+	--                              _
+	--                            /`x`\
+	--               \ /          \xXx/
 	string.gsub(cc, '(.)', function(c)
-		--        .####/ y             |   o
-		--          /\  \              A  /`\o
+		--        .####/ y            |   o
+		--         /\  \              A  /`\o
 		ret[#ret + 1] = c
 	end)
 	return ret
