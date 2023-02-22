@@ -518,17 +518,8 @@ alias ffprobe='ffprobe -hide_banner'
 
 alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
-# Shell... shell... shall I hang up myself? Shell was always dumb as fuck
-# because it is mostly used to start processes, but that it cannot even do a
-# getpid() (in a subshell). I could cry. If I ever will have a happy day in my
-# life, I just come back here and everything will be normal again.
 function mp() {
-	dash -c '
-		exec oom_adj 900 mpv 2>/dev/null \
-			--input-ipc-server=/tmp/mpv$$ \
-			--player-operation-mode=pseudo-gui \
-			"$@"
-	' sh "${@:-.}" &!
+	mpv 2>/dev/null --player-operation-mode=pseudo-gui ${@:-.} &!
 }
 compdef mp=mpv_hack
 alias mp.='mp *(.)'
@@ -539,6 +530,7 @@ compdef mpn=mpv_hack
 alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
 alias mpctl=mpvctl
+alias mpom='mp --script-opts=sort=none *(om)'
 
 function mutt n() {
 	set -- -n "$@"
