@@ -1,10 +1,7 @@
 local function update()
 	mp.unregister_event(update)
 
-	-- event.playlist_entry_id may differ if playlist item has been moved.
-	local url = mp.get_property_native(
-		('playlist/%d/filename')
-			:format(mp.get_property_native('playlist-pos')))
+	local url = mp.get_property_native('path')
 
 	local bytes
 	if url:find('://') then
