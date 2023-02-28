@@ -3,6 +3,7 @@
 
 # Vim :helptags.
 tags
+.nvimlog
 
 # Vim.
 /Session.vim
