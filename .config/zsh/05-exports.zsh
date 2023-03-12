@@ -8,8 +8,8 @@ export PYTHONPATH=~s/python
 export EDITOR=nvim
 export MANPAGER=$EDITOR\ +Man!
 
-export RIPGREP_CONFIG_PATH=$HOME/.config/ripgrep/ripgreprc
+export RIPGREP_CONFIG_PATH=~c/ripgrep/ripgreprc
 
 export GPG_TTY=$TTY
 
-export MAIL=~/mail
+export MAIL=~l
