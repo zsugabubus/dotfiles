@@ -14,8 +14,8 @@ text_osd.compute_bounds = true
 local fsx_cache = {}
 
 local props = {}
-local curr_sub_margin_y = mp.get_property_native('sub-margin-y')
-local user_sub_margin_y = curr_sub_margin_y
+local cur_sub_margin_y = mp.get_property_native('sub-margin-y')
+local user_sub_margin_y = cur_sub_margin_y
 local mouse_time
 local mouse_chapter
 local old_mouse_y
@@ -96,6 +96,15 @@ local function human_duration(duration)
 			sec < 10 and '0' or '', sec, 's'
 	else
 		return sec < 10 and ' ' or '', sec, 's'
+	end
+end
+
+local function set_sub_margin_y(value)
+	if cur_sub_margin_y ~= value then
+		cur_sub_margin_y = value
+		-- set_property() is handled only after window resize, commandv() applied
+		-- immediately (when subtitle changes).
+		mp.commandv('set', 'sub-margin-y', value)
 	end
 end
 
@@ -480,13 +489,7 @@ local function _update()
 		local scaled_margin_bottom = osd.res_y ~= 0
 			and (osd.res_y - box_y0) / osd.res_y * 720
 			or 0
-		local sub_margin_y = user_sub_margin_y + math.ceil(scaled_margin_bottom)
-		if curr_sub_margin_y ~= sub_margin_y then
-			curr_sub_margin_y = sub_margin_y
-			-- set_property() is handled only after window resize, commandv() applied
-			-- immediately (when subtitle changes).
-			mp.commandv('set', 'sub-margin-y', curr_sub_margin_y)
-		end
+		set_sub_margin_y(user_sub_margin_y + math.ceil(scaled_margin_bottom))
 	end
 
 	osd:update()
@@ -613,9 +616,7 @@ update_mode = function()
 
 	if not visible then
 		osd:remove()
-		-- Reset.
-		curr_sub_margin_y = user_sub_margin_y
-		mp.commandv('set', 'sub-margin-y', curr_sub_margin_y)
+		set_sub_margin_y(user_sub_margin_y)
 	end
 end
 
