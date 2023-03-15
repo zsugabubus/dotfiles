@@ -21,6 +21,7 @@ local mouse_chapter
 local old_mouse_y
 local old_title
 local old_sub_margin_y
+local key_bindings_added = false
 
 local function seek(e)
 	if e.event ~= 'up' then
@@ -105,6 +106,24 @@ local function set_sub_margin_y(value)
 		-- set_property() is handled only after window resize, commandv() applied
 		-- immediately (when subtitle changes).
 		mp.commandv('set', 'sub-margin-y', value)
+	end
+end
+
+local function add_key_bindings(b)
+	if key_bindings_added ~= b then
+		key_bindings_added = b
+		if b then
+			-- Okay. Fuck my life. MBTN_LEFT (but only this) sends "up" event as soon
+			-- as MOUSE_MOVEs.
+			mp.add_forced_key_binding('MBTN_RIGHT', 'MBTN_RIGHT', go_to_chapter, COMPLEX)
+			mp.add_forced_key_binding('MBTN_LEFT', 'MBTN_LEFT', seek, COMPLEX)
+			mp.add_forced_key_binding('MBTN_MID', 'MBTN_MID', seek, COMPLEX)
+		else
+			mp.remove_key_binding('MBTN_LEFT')
+			mp.remove_key_binding('MBTN_MID')
+			mp.remove_key_binding('MBTN_RIGHT')
+			mp.remove_key_binding('MOUSE_MOVE')
+		end
 	end
 end
 
@@ -472,25 +491,14 @@ local function _update()
 		end
 	end
 
-	if mouse_prog_hit then
-		-- Okay. Fuck my life. MBTN_LEFT (but only this) sends "up" event as soon
-		-- as MOUSE_MOVEs.
-		mp.add_forced_key_binding('MBTN_RIGHT', 'MBTN_RIGHT', go_to_chapter, COMPLEX)
-		mp.add_forced_key_binding('MBTN_LEFT', 'MBTN_LEFT', seek, COMPLEX)
-		mp.add_forced_key_binding('MBTN_MID', 'MBTN_MID', seek, COMPLEX)
-	else
-		mp.remove_key_binding('MBTN_LEFT')
-		mp.remove_key_binding('MBTN_MID')
-		mp.remove_key_binding('MBTN_RIGHT')
-		mp.remove_key_binding('MOUSE_MOVE')
-	end
-
 	do
 		local scaled_margin_bottom = osd.res_y ~= 0
 			and (osd.res_y - box_y0) / osd.res_y * 720
 			or 0
 		set_sub_margin_y(user_sub_margin_y + math.ceil(scaled_margin_bottom))
 	end
+
+	add_key_bindings(mouse_prog_hit)
 
 	osd:update()
 end
@@ -617,6 +625,7 @@ update_mode = function()
 	if not visible then
 		osd:remove()
 		set_sub_margin_y(user_sub_margin_y)
+		add_key_bindings(false)
 	end
 end
 
