@@ -18,40 +18,50 @@ end
 
 local function confirm_if(cond, ...)
 	local argv = {...}
-	local BINDINGS
-
-	local function no()
-		mp.osd_message('')
-		for key in pairs(BINDINGS) do
-			mp.remove_key_binding(key)
-		end
-	end
-
-	local function yes()
-		mp.commandv(unpack(argv))
-		no()
-	end
-
-	BINDINGS = {
-		y = yes,
-		Y = yes,
-		Enter = yes,
-		n = no,
-		N = no,
-		Esc = no,
-	}
 
 	local f = load('return (' .. cond .. ')')
 	setfenv(f, ENV)
-	local show_confirm = f()
+
+	local ok, show_confirm = pcall(f)
+	if not ok then
+		mp.msg.error(show_confirm)
+		return
+	end
+
+	local function exec()
+		mp.commandv(unpack(argv))
+	end
 
 	if show_confirm then
+		local BINDINGS
+
+		local function no()
+			mp.osd_message('')
+			for key in pairs(BINDINGS) do
+				mp.remove_key_binding(key)
+			end
+		end
+
+		local function yes()
+			exec()
+			no()
+		end
+
+		BINDINGS = {
+			y = yes,
+			Y = yes,
+			Enter = yes,
+			n = no,
+			N = no,
+			Esc = no,
+		}
+
 		mp.osd_message(string.format('Confirm %s? [Y/n]', argv[1]), 999999)
 		for key, fn in pairs(BINDINGS) do
 			mp.add_forced_key_binding(key, key, fn)
 		end
 	else
-		yes()
+		exec()
 	end
 end
 
