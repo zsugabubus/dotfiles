@@ -98,3 +98,5 @@ mp.register_event('start-file', function()
 		search(utils.join_path(base_dir, subdir), patterns)
 	end
 end)
+
+mp.set_property_native('sub-auto', false)
