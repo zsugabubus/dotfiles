@@ -4,6 +4,10 @@ local M = setmetatable({}, {
 	end,
 })
 
+vim.api.nvim_create_user_command('Cword', function(opts)
+	M.toggle(not opts.bang)
+end, {bang = true})
+
 vim.api.nvim_create_user_command('CwordEnable', function()
 	M.toggle(true)
 end, {})
