@@ -3,6 +3,7 @@ Description=RSS to Mailbox
 
 [Service]
 Type=oneshot
-ExecStart=mrss --config "%E/mrss/config"
+ExecStart=/bin/python -B %E/mrss
 ExecStopPost=%E/mrss/post
 OOMScoreAdjust=1000
+SyslogIdentifier=mrss
