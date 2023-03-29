@@ -675,3 +675,5 @@ mp.register_script_message('seek', function(...)
 end)
 
 update_mode()
+
+mp.set_property_native('osc', false)
