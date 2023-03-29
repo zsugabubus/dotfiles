@@ -38,7 +38,7 @@ local function scroll(e)
 	elseif scroll and tile == 6 then
 		mp.commandv(
 			'script-message-to',
-			'osc_bar',
+			'osd_bar',
 			'seek',
 			(up and 1 or -2) * (small and 1 or 3),
 			'exact'
@@ -47,7 +47,7 @@ local function scroll(e)
 		if scroll then
 			mp.commandv(
 				'script-message-to',
-				'osc_bar',
+				'osd_bar',
 				'seek',
 				(up and 2 or -1) * (small and 5 or 15),
 				'exact'
