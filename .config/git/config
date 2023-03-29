@@ -13,7 +13,7 @@
 	arej = apply --reject
 	au = a --update
 
-	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:50)%(refname:short)%(color:bold normal)%(push:trackshort)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)%(color:reset) %(color:nobold dim white)%(push:short)'
+	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:25)%(refname:short)%(color:bold normal)%(push:trackshort)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)%(color:reset) %(color:nobold dim white)%(push:short)'
 	br = b -r
 
 	c = commit --allow-empty --verbose
@@ -30,7 +30,9 @@
 	cp = cherry-pick
 
 	d = diff --stat --patch
+	dc = d --word-diff --word-diff-regex=.
 	ds = d --staged
+	dsc = ds --word-diff --word-diff-regex=.
 
 	f = fetch
 	fun = fetch --unshallow
@@ -41,7 +43,7 @@
 	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
 	lf = log --follow --patch
 	lg = log-formatted --graph
-	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)%cs%C(reset brightblack) %as%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
+	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)(%ch)%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
 	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	log-vim = l
 	lp = ll --patch --stat
@@ -88,7 +90,7 @@
 	wt = worktree
 
 	serve = !git daemon --port=10000 --base-path=. --export-all --reuseaddr --informative-errors --verbose
-	hub = !git daemon --port=10000 --base-path=. --export-all --enable=receive-pack --reuseaddr --informative-errors --verbose
+	hub = !git serve --enable=receive-pack
 
 [am]
 	threeWay = yes
