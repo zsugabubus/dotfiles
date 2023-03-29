@@ -1,7 +1,7 @@
 -- For dumpass people who do not get why they cannot hear anything.
 local osd = mp.create_osd_overlay('ass-events')
 
-function icon(alpha, align, icon)
+local function icon(alpha, align, icon)
 	return table.concat {
 		'{\\an',
 		align,
@@ -12,7 +12,7 @@ function icon(alpha, align, icon)
 	}
 end
 
-function update()
+local function update()
 	osd.data = {}
 	osd.z = 100
 
@@ -24,7 +24,7 @@ function update()
 		table.insert(osd.data, icon('50', 6, '\238\132\138'))
 	end
 
-	if 0 < #osd.data then
+	if #osd.data > 0 then
 		osd.data = table.concat(osd.data, '\n')
 		osd:update()
 	else
