@@ -88,14 +88,12 @@ end
 local timeout = mp.add_timeout(
 	mp.get_property_number('osd-duration') / 1000,
 	function()
-		handle_message('toggle')
+		handle_message('hide')
 	end
 )
 timeout:kill()
 
 function handle_message(action)
-	timeout:kill()
-
 	local temporary = false
 	if action == 'show' or action == 'peek' then
 		temporary = action == 'peek' and (
@@ -113,6 +111,7 @@ function handle_message(action)
 		temporary = action == 'blink'
 	end
 
+	timeout:kill()
 	if temporary then
 		timeout:resume()
 	end
