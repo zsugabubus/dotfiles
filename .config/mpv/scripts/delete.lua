@@ -18,8 +18,13 @@ mp.add_key_binding('Shift+DEL', 'delete-file', function()
 	end
 
 	local dirname, _ = utils.split_path(path)
-	local new_path = utils.join_path(dirname, '.deleted')
 
+	local log_path = utils.join_path(dirname, '.deleted.log')
+	local f = io.open(log_path, 'a')
+	f:write(path .. '\n')
+	f:close()
+
+	local new_path = utils.join_path(dirname, '.deleted')
 	if os.rename(path, new_path) then
 		mp.msg.info(('Moved: %s -> %s'):format(path, new_path))
 		mp.osd_message('File deleted')
