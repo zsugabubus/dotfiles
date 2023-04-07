@@ -71,6 +71,7 @@ local function filter_playlist(playlist)
 	end
 end
 
+local can_playlist_clear = true
 local function sort_playlist(playlist)
 	local by = sort_options.by
 	if by == 'none' then
@@ -78,6 +79,7 @@ local function sort_playlist(playlist)
 	end
 
 	local order = {}
+	local has_title = false
 
 	-- Ignore leading numbers (mostly track numbers).
 	local function sub_leading_number(n, s)
@@ -107,6 +109,8 @@ local function sort_playlist(playlist)
 		elseif by == 'path' then
 			entry.key = entry.filename
 		end
+
+		has_title = has_title or entry.title
 	end
 
 	table.sort(order, function(a, b)
@@ -117,6 +121,22 @@ local function sort_playlist(playlist)
 			return a < b
 		end
 	end)
+
+	if can_playlist_clear and not has_title then
+		-- TODO: Maybe we could use loadlist to preserve titles.
+		mp.commandv('playlist-clear')
+		for i = 1, #playlist do
+			local entry = playlist[order[i]]
+			-- playlist-clear leaves the currently playing entry, if any, at the 0th
+			-- index.
+			if entry.current then
+				mp.commandv('playlist-move', 0, i)
+			else
+				mp.commandv('loadfile', entry.filename, 'append')
+			end
+		end
+		return
+	end
 
 	-- Random magic number, very likely hardware dependent.
 	local N = 20000
@@ -205,7 +225,13 @@ local function update_playlist()
 
 		if 1 < #playlist then
 			filter_playlist(playlist)
-			sort_playlist(playlist, sort_by)
+			sort_playlist(playlist)
+			-- Issuing a random playlist-clear is unsafe since other scripts may
+			-- modify playlist in parallel. As a heuristics, playlist-clear is only
+			-- ever allowed to run once, when other scripts surely do not can about
+			-- playlist. In practice it means "on startup" or after initial directory
+			-- has been expanded.
+			can_playlist_clear = false
 		end
 
 		local elapsed = mp.get_time() - start
