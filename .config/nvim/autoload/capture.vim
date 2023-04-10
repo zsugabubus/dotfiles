@@ -6,7 +6,7 @@ function! capture#Capture(arg) abort
 		echohl None
 	else
 		new
-		setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted
+		setlocal buftype=nofile noswapfile
 		let output = trim(l:output)
 		put! =l:output
 	endif
