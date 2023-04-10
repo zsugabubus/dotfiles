@@ -11,7 +11,6 @@ packadd! nvim-colorcolors
 packadd! vim-acid
 packadd! vim-betterm
 packadd! vim-bufgrep
-packadd! vim-dent
 packadd! vim-difficooler
 packadd! vim-fizzy
 packadd! vim-fuzzysearch
@@ -34,6 +33,7 @@ packadd! vim-vnicode
 packadd! vim-woman
 packadd! vim-wtc7
 packadd! vim-wtf
+packadd! vimdent.nvim
 
 set shortmess+=mrFI
 set nowrap
