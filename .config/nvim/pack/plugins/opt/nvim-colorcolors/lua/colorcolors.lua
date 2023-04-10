@@ -1,6 +1,5 @@
 local M = {}
-local api = vim.api
-local ns = api.nvim_create_namespace('colorcolors')
+local ns = vim.api.nvim_create_namespace('colorcolors')
 local band, bor, lshift, rshift = bit.band, bit.bor, bit.lshift, bit.rshift
 local hl_cache = {}
 local lib
@@ -55,7 +54,7 @@ size_t match(char const *, size_t, struct highlight *, size_t);
 	do
 		local spec = {}
 
-		for name, u888 in pairs(api.nvim_get_color_map()) do
+		for name, u888 in pairs(vim.api.nvim_get_color_map()) do
 			table.insert(spec, {name, bit.bor(bit.lshift(u888, 8), ffi.C.T_NAMED)})
 		end
 		for name, hex in pairs(require 'colorcolors.tailwind') do
@@ -162,7 +161,7 @@ local function rgb2hl(rgb)
 		local color = string.format('#%06x', u888)
 		local other = lib.rgb24_is_bright(rgb) ~= 0 and '#000000' or '#ffffff'
 		hl_cache[u888] = other
-		api.nvim_set_hl(0, hl_group, {
+		vim.api.nvim_set_hl(0, hl_group, {
 			bg = color,
 			fg = other,
 		})
@@ -174,7 +173,7 @@ function M._reset_hls()
 	for u888, other in pairs(hl_cache) do
 		local hl_group = '_' .. u888
 		local color = string.format('#%06x', u888)
-		api.nvim_set_hl(0, hl_group, {
+		vim.api.nvim_set_hl(0, hl_group, {
 			bg = color,
 			fg = other,
 		})
@@ -182,8 +181,9 @@ function M._reset_hls()
 end
 
 local function highlight_line(buffer, lnum, line)
+	local nvim_buf_add_highlight = vim.api.nvim_buf_add_highlight
 	for _, hl in matcher(line) do
-		api.nvim_buf_add_highlight(
+		nvim_buf_add_highlight(
 			buffer,
 			ns,
 			rgb2hl(hl.color),
@@ -211,13 +211,13 @@ local function highlight_lines(buffer, start_lnum, end_lnum)
 	-- obviously. Thus we must make sure highlight updating happens after (2) so
 	-- it does not interfere with it.
 	vim.schedule(function()
-		if not pcall(api.nvim_buf_clear_namespace, buffer, ns, start_lnum, end_lnum) then
+		if not pcall(vim.api.nvim_buf_clear_namespace, buffer, ns, start_lnum, end_lnum) then
 			-- Buffer got deleted.
 			return
 		end
-		local lines = api.nvim_buf_get_lines(buffer, start_lnum, end_lnum, false)
+		local lines = vim.api.nvim_buf_get_lines(buffer, start_lnum, end_lnum, false)
 		for i, line in ipairs(lines) do
-				highlight_line(buffer, start_lnum + i - 1, line)
+			highlight_line(buffer, start_lnum + i - 1, line)
 		end
 	end)
 end
@@ -228,7 +228,7 @@ local function detach_from_buffer(buffer)
 	-- Maybe there is a pending highlight_lines() so we must make sure
 	-- that we clear highlights after it finishes.
 	vim.schedule(function()
-		pcall(api.nvim_buf_clear_namespace, buffer, ns, 0, -1)
+		pcall(vim.api.nvim_buf_clear_namespace, buffer, ns, 0, -1)
 	end)
 end
 
@@ -241,7 +241,7 @@ local function attach_to_buffer(buffer)
 	matcher = matcher or load_matcher()
 	highlight_lines(buffer, 0, -1)
 
-	api.nvim_buf_attach(
+	vim.api.nvim_buf_attach(
 		buffer,
 		false,
 		{
@@ -268,7 +268,7 @@ function M.is_attached(buffer)
 end
 
 function M.toggle_buffer(buffer, attach)
-	buffer = buffer or api.nvim_get_current_buf()
+	buffer = buffer or vim.api.nvim_get_current_buf()
 	if attach == nil then
 		attach = not M.is_attached(buffer)
 	end
