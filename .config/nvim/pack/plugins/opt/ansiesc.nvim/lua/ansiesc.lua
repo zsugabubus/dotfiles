@@ -185,28 +185,25 @@ function M.highlight_buffer(buffer)
 	end
 end
 
-api.nvim_create_autocmd(
-	{'Colorscheme'},
-	{
-		callback = function()
-			for hl_group in pairs(hl_cache) do
-				local _, _, fg, bg, sp, b, i, u, r = string.find(
-					hl_group,
-					'_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)'
-				)
-				local hl = {
-					fg = fg ~= '' and '#' .. fg or nil,
-					bg = bg ~= '' and '#' .. bg or nil,
-					sp = sp ~= '' and '#' .. sp or nil,
-					bold = b ~= '',
-					italic = i ~= '',
-					underline = u ~= '',
-					reverse = r ~= '',
-				}
-				api.nvim_set_hl(0, hl_group, hl)
-			end
+api.nvim_create_autocmd('Colorscheme', {
+	callback = function()
+		for hl_group in pairs(hl_cache) do
+			local _, _, fg, bg, sp, b, i, u, r = string.find(
+				hl_group,
+				'_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)'
+			)
+			local hl = {
+				fg = fg ~= '' and '#' .. fg or nil,
+				bg = bg ~= '' and '#' .. bg or nil,
+				sp = sp ~= '' and '#' .. sp or nil,
+				bold = b ~= '',
+				italic = i ~= '',
+				underline = u ~= '',
+				reverse = r ~= '',
+			}
+			api.nvim_set_hl(0, hl_group, hl)
 		end
-	}
-)
+	end,
+})
 
 return M
