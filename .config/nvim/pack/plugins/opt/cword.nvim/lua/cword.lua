@@ -70,7 +70,7 @@ function M.toggle(enable)
 		return
 	end
 
-	vim.api.nvim_create_autocmd({'CursorMoved'}, {
+	vim.api.nvim_create_autocmd('CursorMoved', {
 		group = group,
 		callback = function()
 			if vim.fn.reg_executing() ~= '' then
@@ -97,7 +97,7 @@ function M.toggle(enable)
 		end,
 	})
 
-	vim.api.nvim_create_autocmd({'Colorscheme'}, {
+	vim.api.nvim_create_autocmd('Colorscheme', {
 		group = group,
 		callback = setup_highlight,
 	})
