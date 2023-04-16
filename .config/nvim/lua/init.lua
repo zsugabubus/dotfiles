@@ -1,108 +1,95 @@
-" nvim -u NONE --cmd 'profile start profile|profile file *|source ~/.config/nvim/init.vim|profile stop'
-" :so $VIMRUNTIME/syntax/hitest.vim
+local o, opt = vim.o, vim.opt
 
-" Before filetype plugin.
-packadd vim-elephant
-packadd vim-newfile
+o.autoindent = true
+o.autowrite = true
+o.copyindent = true
+o.cursorline = true
+o.cursorlineopt = 'number'
+o.expandtab = false
+o.fileignorecase = true
+o.hidden = true
+o.ignorecase = true
+o.joinspaces = false -- No double space.
+o.lazyredraw = true
+o.more = false
+o.mouse = ''
+o.number = true
+o.relativenumber = true
+o.scrolloff = 5
+o.shiftwidth = 0
+o.sidescrolloff = 23
+o.smartcase = true
+o.splitright = true
+o.swapfile = false
+o.switchbuf = 'useopen'
+o.tab = 8
+o.timeoutlen = 600
+o.title = true
+o.wildcharm = '<C-Z>'
+o.wildignorecase = true
+o.wildmenu = true
+o.wrap = false
+opt.cinoptions:append { 't0', ':0', 'l1' }
+opt.completeopt = { 'menu', 'longest', 'noselect', 'preview' }
+opt.diffopt = { 'filler', 'vertical', 'algorithm:patience' }
+opt.matchpairs:append { '‘:’', '“:”' }
+opt.nrformats:remove { 'octal' }
+opt.path:append { 'src/**', 'include/**' }
+opt.shortmess:append 'mrFI'
+opt.suffixes:append { '' } -- Rank files lower with no suffix.
+opt.wildignore:append { '.git', '*.lock', '*~', 'node_modules' }
+opt.wildmode = { 'list:longest', 'full' }
 
-packadd! ansiesc.nvim
-packadd! cword.nvim
-packadd! nvim-colorcolors
-packadd! vim-acid
-packadd! vim-betterm
-packadd! vim-bufgrep
-packadd! vim-difficooler
-packadd! vim-fizzy
-packadd! vim-fuzzysearch
-packadd! vim-git
-packadd! vim-japan
-packadd! vim-make
-packadd! vim-mall
-packadd! vim-mankey
-packadd! vim-pastereindent
-packadd! vim-pets
-packadd! vim-qf
-packadd! vim-reload
-packadd! vim-star
-packadd! vim-stdin
-packadd! vim-surround
-packadd! vim-textobjects
-packadd! vim-themember
-packadd! vim-tilde
-packadd! vim-vnicode
-packadd! vim-woman
-packadd! vim-wtc7
-packadd! vim-wtf
-packadd! vimdent.nvim
-
-set shortmess+=mrFI
-set nowrap
-setglobal ts=8 sw=0 sts=0 noet
-set ignorecase fileignorecase wildignorecase smartcase
-set scrolloff=5 sidescrolloff=23
-set nrformats-=octal
-set splitright
-set cinoptions+=t0,:0,l1
-set autoindent
-set copyindent
-set lazyredraw
-set matchpairs+=‘:’,“:”
-set mouse=
-set timeoutlen=600
-set noswapfile
-set autowrite
-set hidden
-set switchbuf=useopen
-set path+=src/**,include/**
-augroup vimrc_autopath
-	autocmd! VimEnter,DirChanged *
-		\ if isdirectory('node_modules')|
-		\   set path-=**|
-		\ else|
-		\   set path+=**|
-		\ endif
-augroup END
-set suffixes+=, " Rank files lower with no suffix.
-set wildcharm=<C-Z>
-set wildmenu
-set wildmode=list:longest,full
-set wildignore+=.git
-set wildignore+=*.lock,*~,node_modules
-set completeopt=menu,longest,noselect,preview
-set diffopt=filler,vertical,algorithm:patience
-set nomore
-set nojoinspaces " No double space.
-if filewritable(stdpath('config').'/init.vim')
-	set undofile undodir=$HOME/.cache/nvim/undo
+if vim.fn.filewritable(vim.fn.stdpath('config')) then
+	o.undofile = true
+	o.undodir = vim.fn.stdpath('cache') .. '/undo'
 else
-	set noundofile shada="NONE"
-endif
-set list
-set showbreak=\\
-if $TERM ==# 'linux'
-	set listchars=eol:$,tab:>\ ,trail:+,extends::,precedes::,nbsp:_
-else
-	set termguicolors
-	set listchars=eol:$,tab:│\ ,tab:›\ ,trail:•,extends:⟩,precedes:⟨,space:·,nbsp:␣
+	o.undofile = false
+	o.shada = 'NONE'
 end
-set title
-set cursorline cursorlineopt=number
-set number relativenumber
 
-" themember sets 'background' that reloads colorscheme. We fake it to avoid
-" loading dark colorscheme first unconditionally.
-let colors_name = 'vivid'
+o.list = true
+o.showbreak = '\\'
+if vim.env.TERM == 'linux' then
+	opt.listchars = {
+		eol = '$',
+		tab = '> ',
+		trail = '+',
+		extends = ':',
+		precedes = ':',
+		nbsp = '_',
+	}
+else
+	o.termguicolors = true
+	opt.listchars = {
+		eol = '$',
+		tab = '│ ',
+		tab = '› ',
+		trail = '•',
+		extends = '⟩',
+		precedes = '⟨',
+		space = '·',
+		nbsp = '␣',
+	}
+end
 
-" Get rid of bloat.
-let loaded_tutor_mode_plugin = 1
+-- themember sets 'background' that reloads colorscheme. We fake it to
+-- avoid loading dark colorscheme first unconditionally.
+vim.g.colors_name = 'vivid'
 
+-- Disable providers.
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_node_provider = 0
+
+vim.cmd [=[
 command! -nargs=* Termdebug delcommand Termdebug<bar>packadd termdebug<bar>Termdebug <args>
 
 " Create a command abbrevation.
 command! -nargs=+ Ccabbrev let s:_ = [<f-args>][0]|execute(printf("cnoreabbrev <expr> %s getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s", s:_, len(s:_) + 1, <q-args>[len(s:_) + 1:], string(s:_)))
 
-" Sweep out untouched buffers.
-command! Sweep call sweep#Sweep()
+command! Sweep silent! %bdelete
 
 command! SynShow echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
 
@@ -165,16 +152,14 @@ nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + 
 " Jump to parent indention.
 nnoremap <silent> <C-q> :call search('\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S', 'b')<CR>
 
+nnoremap <expr> <M-!> ':edit '.fnameescape(expand('%:h')).'/<C-z>'
 nnoremap <silent> <M-m> :Make<CR>
-
-nnoremap <silent> <M-w> :Bufdo if bufname() !=# ''<bar>update<bar>endif<CR>
-
+nnoremap <silent> <M-o> :buffer #<CR>
 nnoremap <silent> <M-q> :quit<CR>
+nnoremap <silent> <M-w> :silent! wa<CR>
 
 " Put the first line of the paragraph at the top of the window.
 nnoremap <silent><expr> z{ '{zt'.(&scrolloff + 1)."\<lt>C-E>"
-
-nnoremap <silent> gp :set paste!<CR>
 
 nnoremap <silent> gss :setlocal spell!<CR>
 nnoremap <silent> gse :setlocal spell spelllang=en<CR>
@@ -188,10 +173,6 @@ nmap <C-w>! :split<CR>!
 
 nnoremap g/ <Cmd>FizzyFiles<CR>
 
-nnoremap <silent> <M-o> :buffer #<CR>
-
-nnoremap <expr> <M-!> ':edit '.fnameescape(expand('%:h')).'/<C-z>'
-
 nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
 
 nnoremap <C-w>T <C-w>s<C-w>T
@@ -204,7 +185,6 @@ nnoremap s<C-g> :! stat %<CR>
 nnoremap <silent> sw :set wrap!<CR>
 
 nnoremap <silent> sb :execute 'windo let &scrollbind = ' . !&scrollbind<CR>
-
 nnoremap <silent> sp vip:sort /\v^(#!)@!\A*\zs/<CR>
 
 nnoremap Q :normal n.<CR>zz
@@ -212,11 +192,10 @@ nnoremap Q :normal n.<CR>zz
 " Repeat last action over visual block.
 xnoremap . :normal! .<CR>
 
-Ccabbrev . '@:'
-
 " Execute macro over visual range
 xnoremap <expr><silent> @ printf(':normal! @%s<CR>', getcharstr())
 
+Ccabbrev m 'Man'
 Ccabbrev man 'Man'
 
 Ccabbrev f 'find'.(' ' !=# v:char ? ' ' : '')
@@ -224,6 +203,9 @@ Ccabbrev f 'find'.(' ' !=# v:char ? ' ' : '')
 " Reindent inner % lines.
 nmap >i >%<<$%<<$%
 nmap <i <%>>$%>>$%
+
+vnoremap > >gv
+vnoremap < <gv
 
 " Delete surrounding lines.
 nmap d< $<%%dd<C-O>dd
@@ -294,6 +276,51 @@ augroup vimrc_syntax
 	autocmd!
 	autocmd BufReadPre *.toml ++once packadd vim-toml
 	autocmd BufReadPre *.glsl ++once packadd vim-glsl
-	autocmd BufReadPre *.zig ++once packadd zig.vim
 	autocmd BufReadPre *.rs ++once packadd rust.vim
 augroup END
+]=]
+
+require 'pack'.setup({
+	'ansiesc.nvim',
+	'cword.nvim',
+	'nvim-colorcolors',
+	'vim-acid',
+	'vim-betterm',
+	'vim-bufgrep',
+	'vim-difficooler',
+	'vim-elephant',
+	'vim-fizzy',
+	'vim-fuzzysearch',
+	'vim-git',
+	'vim-japan',
+	'vim-make',
+	'vim-mall',
+	'vim-mankey',
+	'vim-newfile',
+	'vim-pastereindent',
+	'vim-pets',
+	'vim-qf',
+	'vim-star',
+	'vim-stdin',
+	'vim-surround',
+	'vim-textobjects',
+	{
+		'vim-themember',
+		on = true,
+	},
+	'vim-tilde',
+	'vim-vnicode',
+	'vim-woman',
+	'vim-wtc7',
+	'vim-wtf',
+	'vimdent.nvim',
+}, {
+	source_blacklist = {
+		'/runtime/plugin/netrwPlugin.vim',
+		'/runtime/plugin/rplugin.vim',
+		'/runtime/plugin/tohtml.vim',
+		'/runtime/plugin/tutor.vim',
+		'/vimfiles/plugin/black.vim',
+		'/vimfiles/plugin/fzf.vim',
+	},
+})
