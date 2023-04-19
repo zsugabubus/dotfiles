@@ -137,7 +137,7 @@ size_t match(char const *, size_t, struct highlight *, size_t);
 	return ffi.load(obj)
 end
 
-function hls_iter(hls, i)
+local function hls_iter(hls, i)
 	if 0 < i then
 		i = i - 1
 		return i, hls[i]
