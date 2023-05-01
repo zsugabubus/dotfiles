@@ -1,0 +1,7 @@
+#!/bin/dash -xu
+for f in *; do
+	(
+		cd "$f" &&
+		${0%-recursive}
+	)
+done

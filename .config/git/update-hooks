@@ -1,0 +1,3 @@
+#!/bin/dash -xeu
+cd .git/hooks
+rsync -aivn --exclude '*.d/x-*' --delete-after ~/.config/git/template/hooks/ .
