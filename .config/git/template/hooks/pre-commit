@@ -1,4 +1,4 @@
-#!/bin/dash
+#!/bin/dash -eu
 for f in $0.d/*; do
 	! test -x "$f" || "$f"
 done
