@@ -1,5 +1,0 @@
-#!/bin/dash
-if grep -nHP '^[<|=>]{7} '; then
-	echo >&2 Leftover conflict markers
-	exit 1
-fi
