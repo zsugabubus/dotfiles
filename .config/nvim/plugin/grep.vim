@@ -1,7 +1,7 @@
 set grepprg=noglob\ rg\ --vimgrep\ --smart-case
 set grepformat=%f:%l:%c:%m
 
-command! -nargs=* GREP execute 'grep ' substitute(<q-args> =~ '\v(^| )-[a-z]' ? <q-args> : shellescape(<q-args>, 1), '[<bar>#]', '\\\0', 'g')|redraw
+command! -nargs=* GREP execute 'grep ' escape(<q-args> =~ '\v(^| )-[a-z]|[''''"]$' ? <q-args> : shellescape(<q-args>, 1), '<bar>#')|redraw
 Ccabbrev gr 'GREP'
 
 command! TODO GREP \b(TODO|FIXME|BUG|WTF)\b.*:
