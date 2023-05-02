@@ -1,23 +1,29 @@
-local utils = require('mp.utils')
 local COVERS = {'cover.jpg', 'cover.png'}
 
-mp.observe_property('track-list', 'native', function()
+local utils = require 'mp.utils'
+
+local skip_dir
+
+mp.observe_property('track-list', 'native', function(_, tracks)
 	local path = mp.get_property('path')
 	if not path then
 		return
 	end
 
 	local dirname, _ = utils.split_path(path)
+	if dirname == skip_dir then
+		return
+	end
 
-	local tracks = mp.get_property_native('track-list')
 	local has_audio = false
-	for _, track in ipairs(tracks) do
-		if track.selected == 'yes' then
-			if track.type == 'video' then
-				return
-			end
 
-			has_audio = has_audio or (track.type == 'audio')
+	for _, track in ipairs(tracks) do
+		if track.type == 'video' then
+			return
+		end
+
+		if track.type == 'audio' then
+			has_audio = true
 		end
 	end
 
@@ -25,12 +31,14 @@ mp.observe_property('track-list', 'native', function()
 		return
 	end
 
-	for _, covername in ipairs(COVERS) do
-		local coverpath = dirname .. covername
-		local coverinfo = utils.file_info(coverpath)
-		if coverinfo and coverinfo.is_file then
-			mp.commandv('video-add', coverpath)
-			break
+	for _, name in ipairs(COVERS) do
+		local cover_path = utils.join_path(dirname, name)
+		local stat = utils.file_info(cover_path)
+		if stat and stat.is_file then
+			mp.commandv('video-add', cover_path)
+			return
 		end
 	end
+
+	skip_dir = dirname
 end)
