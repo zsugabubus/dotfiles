@@ -17,7 +17,6 @@ local function handle(e)
 
 	local tile = get_tile()
 	local up = string.find(e.key_name, 'UP')
-	local small = not string.find(e.key_name, 'Shift+')
 	local scroll = string.find(e.key_name, 'WHEEL_') ~= nil
 
 	if tile == 0 or tile == 3 then
@@ -38,7 +37,7 @@ local function handle(e)
 				'osd-msg-bar',
 				'add',
 				'volume',
-				(up and 1 or -2) * (small and 1 or 3)
+				up and 1 or -2
 			)
 		else
 			mp.commandv('osd-msg-bar', 'set', 'volume', 100)
@@ -49,7 +48,7 @@ local function handle(e)
 				'script-message',
 				'osd-bar',
 				'seek',
-				(up and 1 or -2) * (small and 1 or 3),
+				up and 1 or -1,
 				'exact'
 			)
 		end
@@ -59,15 +58,13 @@ local function handle(e)
 				'script-message',
 				'osd-bar',
 				'seek',
-				(up and 2 or -1) * (small and 5 or 15),
+				up and 5 or -5,
 				'exact'
 			)
 		end
 	end
 end
 
-for _, mod in ipairs({'', 'Shift+'}) do
-	for _, key in ipairs({'WHEEL_UP', 'WHEEL_DOWN', 'MBTN_MID'}) do
-		mp.add_forced_key_binding(mod .. key, handle, {complex = true})
-	end
+for _, key in ipairs({'WHEEL_UP', 'WHEEL_DOWN', 'MBTN_MID'}) do
+	mp.add_forced_key_binding(key, handle, {complex = true})
 end
