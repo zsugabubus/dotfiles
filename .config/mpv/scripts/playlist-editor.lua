@@ -1,4 +1,4 @@
-mp.add_key_binding('Ctrl+w', 'playlist-edit', function()
+mp.register_script_message('edit-playlist', function()
 	local tmp = os.tmpname()
 	local f = io.open(tmp, 'w')
 	if f == nil then
