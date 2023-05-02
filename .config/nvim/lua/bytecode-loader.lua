@@ -6,35 +6,32 @@ do
 	local v = vim.version()
 	version_key = string.format('%d_%d_%d', v.major, v.minor, v.patch)
 end
+local EMPTY_STAT = { size = 0, mtime = { sec = 0, nsec = 0 } }
 
 function _G.loadfile(path)
 	local trace = Trace.trace
-
 	local span = trace(path)
 
 	local uv = vim.loop
-	local cache_path
-	local path_key = string.gsub(path, '/', '%%')
-	if string.find(path, '/share/nvim/runtime/') then
-		cache_path = string.format(
-			'%s/%s%%%%V=%s',
-			cache_dir,
-			path_key,
-			version_key
-		)
-	else
+
+	local stat = EMPTY_STAT
+	-- Skip stat() of site files, they are static per version.
+	if not string.find(path, '/share/nvim/runtime/') then
 		local span = trace('stat')
-		local stat = uv.fs_stat(path)
+		stat = uv.fs_stat(path)
 		trace(span)
-		cache_path = string.format(
-			'%s/%s%%%%S=%s,M=%s_%s',
-			cache_dir,
-			path_key,
-			stat.size,
-			stat.mtime.sec,
-			stat.mtime.nsec
-		)
 	end
+
+	local path_key = string.gsub(path, '/', '%%')
+	local cache_path = string.format(
+		'%s/%s%%V=%s,M=%s_%s,S=%s',
+		cache_dir,
+		path_key,
+		version_key,
+		stat.mtime.sec,
+		stat.mtime.nsec,
+		stat.size
+	)
 
 	if Trace.verbose > 5 then
 		local diff = trace('')
