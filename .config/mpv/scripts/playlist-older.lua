@@ -1,22 +1,24 @@
-local jumplist = {}
+local MAX_HISTORY = 10
 
-mp.observe_property('playlist-pos', 'number', function(_, pos)
-	if pos and 0 <= pos and pos ~= jumplist[#jumplist] then
-		if 5 <= #jumplist then
-			for i = 1, #jumplist-1 do
-				jumplist[i] = jumplist[i + 1]
-			end
-			jumplist[#jumplist] = nil
+local history = {}
+
+mp.observe_property('playlist-pos', 'native', function(_, current)
+	if
+		current >= 0 and
+		current ~= history[#history]
+	then
+		if #history >= MAX_HISTORY then
+			table.remove(history, 1)
 		end
-		jumplist[#jumplist + 1] = pos
+		table.insert(history, current)
 	end
 end)
 
 mp.add_key_binding('Ctrl+o', 'playlist-older', function()
-	if 2 <= #jumplist then
+	if #history >= 2 then
 		-- Pop current.
-		jumplist[#jumplist] = nil
-		local prev = jumplist[#jumplist]
+		history[#history] = nil
+		local prev = history[#history]
 		mp.commandv('script-message', 'playlist-pos', prev)
 	end
 end)
