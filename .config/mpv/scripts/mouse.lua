@@ -31,7 +31,7 @@ local function handle(e)
 				up and 'playlist-next' or 'playlist-prev'
 			)
 		end
-		mp.commandv('script-message-to', 'osd_playlist', 'peek')
+		mp.commandv('script-message', 'osd-playlist', 'visibility', 'peek')
 	elseif tile == 2 or tile == 5 then
 		if scroll then
 			mp.commandv(
@@ -46,8 +46,8 @@ local function handle(e)
 	elseif tile == 6 then
 		if scroll then
 			mp.commandv(
-				'script-message-to',
-				'osd_bar',
+				'script-message',
+				'osd-bar',
 				'seek',
 				(up and 1 or -2) * (small and 1 or 3),
 				'exact'
@@ -56,8 +56,8 @@ local function handle(e)
 	else
 		if scroll then
 			mp.commandv(
-				'script-message-to',
-				'osd_bar',
+				'script-message',
+				'osd-bar',
 				'seek',
 				(up and 2 or -1) * (small and 5 or 15),
 				'exact'

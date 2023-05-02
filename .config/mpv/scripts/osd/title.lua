@@ -1,8 +1,9 @@
-local HORIZONTAL_ELLIPSIS = '\226\128\166'
+local M = {}
+local Osd = require 'osd'
+
+local HORIZONTAL_ELLIPSIS = '\u{2026}'
 local SP_PATS = {'%.', '-', '%_'}
 local HE_PATH = '/' .. HORIZONTAL_ELLIPSIS .. '/'
-
-local Osd = require('osd')
 
 local cache = {}
 
@@ -10,8 +11,8 @@ local function sub_hex2str(x)
 	return string.char(tonumber(x, 16))
 end
 
-local function get_playlist_entry(item)
-	s = cache[item.title]
+function M.get_playlist_entry(item)
+	local s = cache[item.title]
 	if s ~= nil then
 		return s
 	end
@@ -22,7 +23,7 @@ local function get_playlist_entry(item)
 		return s
 	end
 
-	local s = cache[item.filename]
+	s = cache[item.filename]
 	if s ~= nil then
 		return s
 	end
@@ -33,12 +34,14 @@ local function get_playlist_entry(item)
 		s = s:gsub('/.*/', HE_PATH)
 	end
 
-	local orig = s
+	local original = s
+
 	-- Encodes a multi-byte character.
 	if s:match('_%x%x_%x%x') then
 		s = s:gsub('_(%x%x)', sub_hex2str)
 	end
-	if s == orig then
+
+	if s == original then
 		-- Find potential space replacement.
 		local space, space_count = ' ', 0
 		if not s:find(space) then
@@ -60,11 +63,12 @@ local function get_playlist_entry(item)
 		:gsub('([^/])%.[0-9A-Za-z]+$', '%1')
 
 	s = Osd.ass_escape_nl(s)
+
 	cache[item.filename] = s
 	return s
 end
 
-function get_current()
+function M.get_current()
 	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
 	local title =
 		mp.get_property_native('metadata/by-key/Title', nil) or
@@ -85,13 +89,15 @@ function get_current()
 		local current = mp.get_property_native(
 			'playlist/' .. mp.get_property_native('playlist-pos')
 		)
-		if
-			current and (
+		if (
+			current and
+			(
 				not title or
 				title == current.filename:gsub('^.*/', '')
 			)
+		)
 		then
-			return get_playlist_entry(current)
+			return M.get_playlist_entry(current)
 		elseif title then
 			return Osd.ass_escape_nl(title)
 		else
@@ -100,12 +106,8 @@ function get_current()
 	end
 end
 
-local function flush_cache()
+function M.flush_cache()
 	cache = {}
 end
 
-return {
-	get_playlist_entry=get_playlist_entry,
-	get_current=get_current,
-	flush_cache=flush_cache,
-}
+return M
