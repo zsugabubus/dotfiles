@@ -75,9 +75,43 @@ function _G.loadfile(path)
 				uv.fs_close(fd, function(err, success)
 					assert(not err, err)
 					assert(success)
-					uv.fs_rename(tmp_path, cache_path, function(err, success)
+
+					uv.fs_opendir(cache_dir, function(err, dir)
 						assert(not err, err)
-						assert(success)
+
+						local function read_next(err, entries)
+							assert(not err, err)
+							if not entries then
+								uv.fs_closedir(dir, function(err, success)
+									assert(not err, err)
+									assert(success)
+								end)
+
+								uv.fs_rename(tmp_path, cache_path, function(err, success)
+									assert(not err, err)
+									assert(success)
+								end)
+								return
+							end
+
+							-- Clean up old entries.
+							for _, entry in ipairs(entries) do
+								local name = string.match(entry.name, '(.*)%%.*[^~]$')
+								if name == path_key then
+									uv.fs_unlink(cache_dir .. '/' .. entry.name, function(err)
+										if err and string.find(err, '^ENOENT:') then
+											return
+										end
+										assert(not err, err)
+										assert(success)
+									end)
+								end
+							end
+
+							uv.fs_readdir(dir, read_next)
+						end
+
+						uv.fs_readdir(dir, read_next)
 					end)
 				end)
 			end)
