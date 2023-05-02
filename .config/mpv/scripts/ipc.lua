@@ -1,5 +1,3 @@
-local mp = require 'mp'
-
 if (
 	mp.get_property_native('input-ipc-server') == '' and
 	mp.get_property_native('input-ipc-client') == ''
