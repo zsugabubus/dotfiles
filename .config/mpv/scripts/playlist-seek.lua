@@ -6,7 +6,7 @@ local function seek(pos, whence, wrap)
 		pos = cur + pos
 	end
 
-	if wrap and 0 < count then
+	if wrap and count > 0 then
 		pos = ((pos % count) + count) % count
 	else
 		pos = math.min(math.max(0, pos), count - 1)
