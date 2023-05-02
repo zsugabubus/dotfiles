@@ -1,20 +1,22 @@
-local SUBTITLE_EXTENSIONS = {
-	'srt',
-	'lrc',
-	'txt',
+local utils = require 'mp.utils'
+
+local SUBTITLE_EXTENSIONS = { 'srt', 'lrc', 'txt' }
+
+local CODEC_BLACKLIST = {
+	mp3 = true,
+	flac = true,
 }
 
-local utils = require('mp.utils')
-local xdg_cache_dir = (
+local XDG_CACHE_DIR = (
 	os.getenv('XDG_CACHE_DIR') or
 	utils.join_path(os.getenv('HOME'), '.cache')
 )
-local tmp_prefix = utils.join_path(
-	xdg_cache_dir,
+local TMP_PREFIX = utils.join_path(
+	XDG_CACHE_DIR,
 	'mpv-' .. mp.get_script_name()
 )
 
-mp.msg.debug('Temporary file prefix', tmp_prefix)
+mp.msg.debug('Temporary file prefix', TMP_PREFIX)
 
 local function str2pattern(s)
 	return string.gsub(s, '([^%w])', '%%%1')
@@ -27,7 +29,7 @@ local function add_subtitle(file)
 	if string.find(file, '%.txt$') then
 		mp.msg.debug('Convert TXT to LRC')
 
-		tmp_file = tmp_prefix .. '.lrc'
+		tmp_file = TMP_PREFIX .. '.lrc'
 		mp.msg.debug('Using temporary file', tmp_file)
 
 		local f = io.open(file, 'r')
@@ -70,7 +72,14 @@ mp.register_event('start-file', function()
 	if not path then
 		return
 	end
-	local base_dir, filename = utils.split_path(path)
+
+	for _, track in ipairs(mp.get_property_native('track-list')) do
+		if CODEC_BLACKLIST[track.codec] then
+			return
+		end
+	end
+
+	local dirname, filename = utils.split_path(path)
 
 	local patterns = {}
 
@@ -95,7 +104,7 @@ mp.register_event('start-file', function()
 	end
 
 	for _, subdir in ipairs(mp.get_property_native('sub-file-paths')) do
-		search(utils.join_path(base_dir, subdir), patterns)
+		search(utils.join_path(dirname, subdir), patterns)
 	end
 end)
 
