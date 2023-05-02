@@ -1,29 +1,39 @@
-local HAS_MOTION = {
-	h264 = true,
-	mjpeg = false
-}
+local props = {}
 
-function update()
-	mp.set_property_bool('stop-screensaver',
-		not mp.get_property_bool('pause') and
-		not mp.get_property_bool('mute') and
-		(function()
-			local ret = HAS_MOTION[mp.get_property_native('video-format')]
-			if ret ~= nil then
-				return ret
-			end
+local function should_stop_screensaver()
+	if props['pause'] then
+		return false
+	end
 
-			local tracks = mp.get_property_native('track-list')
-			for _, track in ipairs(tracks) do
-				if track.selected and 0 < (track['demux-fps'] or 0) then
-					return true
-				end
-			end
-			return false
-		end)())
+	if props['mute'] then
+		return false
+	end
+
+	for _, track in ipairs(props['track-list'] or {}) do
+		if (
+			track.selected and
+			track.type == 'video' and
+			not track.image and
+			not track.albumart and
+			(track['demux-fps'] or 0) > 1
+		) then
+			return true
+		end
+	end
+
+	return false
 end
 
-mp.observe_property('pause', nil, update);
-mp.observe_property('mute', nil, update);
-mp.observe_property('file-loaded', nil, update);
-mp.observe_property('current-tracks', nil, update);
+local function update_property(name, value)
+	props[name] = value
+
+	local stop_screensaver = should_stop_screensaver()
+	if props['stop-screensaver'] ~= stop_screensaver then
+		mp.set_property_native('stop-screensaver', stop_screensaver)
+	end
+end
+
+mp.observe_property('mute', 'native', update_property);
+mp.observe_property('pause', 'native', update_property);
+mp.observe_property('stop-screensaver', 'native', update_property);
+mp.observe_property('track-list', 'native', update_property);
