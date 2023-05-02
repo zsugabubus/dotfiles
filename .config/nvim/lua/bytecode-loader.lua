@@ -67,7 +67,16 @@ function _G.loadfile(path)
 				return
 			end
 			assert(not err, err)
-			uv.fs_write(fd, string.dump(code), -1, function(err)
+			-- LuaJIT accepts a second argument "strip". When set, the produced
+			-- bytecode will be free from debug information that results in smaller
+			-- size and faster loading.
+			--
+			-- Important: The so produced bytecode is not that much portable so
+			-- version of Nvim (that hopefully identifies version of LuaJIT) must
+			-- always be present in cache key.
+			--
+			-- See: https://luajit.org/extensions.html.
+			uv.fs_write(fd, string.dump(code, true), -1, function(err)
 				assert(not err, err)
 				uv.fs_close(fd, function(err, success)
 					assert(not err, err)
