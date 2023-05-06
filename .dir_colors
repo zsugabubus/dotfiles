@@ -175,6 +175,7 @@ CHR	1;95mﱡ \e[1;95
 .template	mזּ \e[
 *Makefile	m \e[
 *CMakeLists.txt	m \e[
+*PKGBUILD	m \e[
 *tags	m狀\e[
 .key	m \e[
 .pub	m \e[
