@@ -1,9 +1,8 @@
 local M = {}
-local api = vim.api
-local ns = api.nvim_create_namespace('ansiesc')
+local ns = vim.api.nvim_create_namespace('ansiesc')
 local hl_cache = {}
 
-local function termcolor(i)
+local function index2hex(i)
 	local r, g, b
 	if i < 16 then
 		if i == 7 then
@@ -13,7 +12,7 @@ local function termcolor(i)
 		else
 			local c = i < 8 and 0x80 or 0xff
 
-			function f(a)
+			local function f(a)
 				return bit.band(i, a) ~= 0 and c or 0
 			end
 
@@ -22,7 +21,7 @@ local function termcolor(i)
 	elseif i < 16 + 6 * 6 * 6 then
 		i = i - 16
 
-		function f(a)
+		local function f(a)
 			local k = math.floor(i / a) % 6
 			if k == 0 then
 				return 0
@@ -40,152 +39,164 @@ local function termcolor(i)
 	return string.format('#%02x%02x%02x', r, g, b)
 end
 
-local function apply_sgr(hl, Ps)
+local function parse_sgr(s)
+	local params = {}
+
+	string.gsub(s, '%d+', function(n)
+		table.insert(params, tonumber(n))
+	end)
+
+	-- Default.
+	if #params == 0 then
+		params[1] = 0
+	end
+
+	return params
+end
+
+local function apply_sgr(pen, params)
 	local i = 1
 
 	local function parse_color()
 		local color
-		if Ps[i] == 2 then
+		if params[i] == 2 then
 			color = string.format(
 				'#%02x%02x%02x',
-				Ps[i + 1],
-				Ps[i + 2],
-				Ps[i + 3]
+				params[i + 1],
+				params[i + 2],
+				params[i + 3]
 			)
 			i = i + 4
-		elseif Ps[i] == 5 then
-			color = termcolor(Ps[i + 1])
+		elseif params[i] == 5 then
+			color = index2hex(params[i + 1])
 			i = i + 2
 		end
 		return color
 	end
 
-	while i <= #Ps do
-		local attr = Ps[i]
+	while i <= #params do
+		local Ps = params[i]
 		i = i + 1
-		if attr == 0 then
-			hl = {}
-		elseif attr == 1 then
-			hl.bold = true
-		elseif attr == 3 then
-			hl.italic = true
-		elseif attr == 4 then
-			hl.underline = true
-		elseif attr == 7 then
-			hl.reverse = true
-		elseif attr == 9 then
-			hl.strikethrough = true
-		elseif attr == 21 then
-			hl.bold = nil
-		elseif attr == 22 then
-			hl.bold = nil
-		elseif attr == 23 then
-			hl.italic = nil
-		elseif attr == 24 then
-			hl.underline = nil
-		elseif attr == 27 then
-			hl.reverse = nil
-		elseif 30 <= attr and attr <= 37 then
-			hl.fg = termcolor(attr - 30)
-		elseif attr == 38 then
-			hl.fg = parse_color()
-		elseif attr == 39 then
-			hl.fg = nil
-		elseif 40 <= attr and attr <= 47 then
-			hl.bg = termcolor(attr - 40)
-		elseif attr == 48 then
-			hl.bg = parse_color()
-		elseif attr == 49 then
-			hl.bg = nil
-		elseif attr == 58 then
-			hl.sp = parse_color()
-		elseif 90 <= attr and attr <= 97 then
-			hl.bg = termcolor(8 + (attr - 90))
-		elseif 100 <= attr and attr <= 107 then
-			hl.bg = termcolor(8 + (attr - 100))
+		if Ps == 0 then
+			pen = {}
+		elseif Ps == 1 then
+			pen.bold = true
+		elseif Ps == 3 then
+			pen.italic = true
+		elseif Ps == 4 then
+			pen.underline = true
+		elseif Ps == 7 then
+			pen.reverse = true
+		elseif Ps == 9 then
+			pen.strikethrough = true
+		elseif Ps == 21 then
+			pen.bold = nil
+		elseif Ps == 22 then
+			pen.bold = nil
+		elseif Ps == 23 then
+			pen.italic = nil
+		elseif Ps == 24 then
+			pen.underline = nil
+		elseif Ps == 27 then
+			pen.reverse = nil
+		elseif 30 <= Ps and Ps <= 37 then
+			pen.fg = index2hex(Ps - 30)
+		elseif Ps == 38 then
+			pen.fg = parse_color()
+		elseif Ps == 39 then
+			pen.fg = nil
+		elseif 40 <= Ps and Ps <= 47 then
+			pen.bg = index2hex(Ps - 40)
+		elseif Ps == 48 then
+			pen.bg = parse_color()
+		elseif Ps == 49 then
+			pen.bg = nil
+		elseif Ps == 58 then
+			pen.sp = parse_color()
+		elseif 90 <= Ps and Ps <= 97 then
+			pen.bg = index2hex(8 + (Ps - 90))
+		elseif 100 <= Ps and Ps <= 107 then
+			pen.bg = index2hex(8 + (Ps - 100))
 		end
 	end
 
-	return hl
+	return pen
 end
 
-local function apply_highlight(buffer, lnum, start, stop, hl)
-	if start == stop or vim.tbl_isempty(hl) then
+local function add_highlight(buffer, lnum, col_start, col_end, pen)
+	if col_start == col_end or vim.tbl_isempty(pen) then
 		return
 	end
 
 	local hl_group = string.format(
 		'_ansiesc_%s_%s_%s_%s%s%s%s',
-		hl.fg and string.sub(hl.fg, 2) or '',
-		hl.bg and string.sub(hl.bg, 2) or '',
-		hl.sp and string.sub(hl.sp, 2) or '',
-		hl.bold and 'b' or '',
-		hl.italic and 'i' or '',
-		hl.underline and 'u' or '',
-		hl.reverse and 'r' or ''
+		pen.fg and string.sub(pen.fg, 2) or '',
+		pen.bg and string.sub(pen.bg, 2) or '',
+		pen.sp and string.sub(pen.sp, 2) or '',
+		pen.bold and 'b' or '',
+		pen.italic and 'i' or '',
+		pen.underline and 'u' or '',
+		pen.reverse and 'r' or ''
 	)
 	if not hl_cache[hl_group] then
 		hl_cache[hl_group] = true
-		api.nvim_set_hl(0, hl_group, hl)
+		vim.api.nvim_set_hl(0, hl_group, pen)
 	end
-	api.nvim_buf_add_highlight(buffer, ns, hl_group, lnum, start, stop)
-end
 
-local function parse_sgr(s)
-	local t = {}
-	string.gsub(s, '%d+', function(attr)
-		t[#t + 1] = tonumber(attr)
-	end)
-	-- Default.
-	if #t == 0 then
-		t[1] = 0
-	end
-	return t
+	vim.api.nvim_buf_add_highlight(buffer, ns, hl_group, lnum, col_start, col_end)
 end
 
 function M.highlight_buffer(buffer)
-	local hl = {}
+	local pen = {}
 
-	local lines = api.nvim_buf_get_lines(buffer, 0, -1, false)
+	local lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
 	for lnum, line in ipairs(lines) do
-		local t = {}
-		local text = line
+		local starts = {}
+		local sgrs = {}
+		local original = line
 
 		do
 			local start = 1
+
 			while true do
-				local i, j, str = string.find(text, '\x1b%[([0-9;:]*)m', start)
-				if i == nil then
+				local i, j, s = string.find(line, '\x1b%[([0-9;:]*)m', start)
+				if s == nil then
 					break
 				end
 
-				t[#t + 1] = i
-				t[#t + 1] = str
+				-- Make it 0-based.
+				table.insert(starts, i - 1)
+				table.insert(sgrs, s)
 
-				text = string.sub(text, 1, i - 1) .. string.sub(text, j + 1)
+				line = (
+					string.sub(line, 1, i - 1) ..
+					string.sub(line, j + 1)
+				)
 				start = i
 			end
-			if text ~= line then
-				api.nvim_buf_set_lines(buffer, lnum - 1, lnum, true, {text})
+
+			if line ~= original then
+				vim.api.nvim_buf_set_lines(buffer, lnum - 1, lnum, true, {line})
 			end
 		end
 
 		do
 			local start = 0
-			for i = 0, #t / 2 - 1 do
-				local stop = t[i * 2 + 1] - 1
-				apply_highlight(buffer, lnum - 1, start, stop, hl)
+
+			for i, stop in ipairs(starts) do
+				add_highlight(buffer, lnum - 1, start, stop, pen)
 				start = stop
 
-				local Ps = parse_sgr(t[i * 2 + 2])
-				hl = apply_sgr(hl, Ps)
+				local params = parse_sgr(sgrs[i])
+				pen = apply_sgr(pen, params)
 			end
-			apply_highlight(buffer, lnum - 1, start, #text, hl)
+
+			add_highlight(buffer, lnum - 1, start, -1, pen)
 		end
 	end
 end
 
-api.nvim_create_autocmd('Colorscheme', {
+vim.api.nvim_create_autocmd('Colorscheme', {
 	callback = function()
 		for hl_group in pairs(hl_cache) do
 			local _, _, fg, bg, sp, b, i, u, r = string.find(
@@ -201,7 +212,7 @@ api.nvim_create_autocmd('Colorscheme', {
 				underline = u ~= '',
 				reverse = r ~= '',
 			}
-			api.nvim_set_hl(0, hl_group, hl)
+			vim.api.nvim_set_hl(0, hl_group, hl)
 		end
 	end,
 })
