@@ -9,6 +9,11 @@ local function should_stop_screensaver()
 		return false
 	end
 
+	-- nil means unsupported.
+	if props['focused'] == false then
+		return false
+	end
+
 	for _, track in ipairs(props['track-list'] or {}) do
 		if (
 			track.selected and
@@ -33,6 +38,7 @@ local function update_property(name, value)
 	end
 end
 
+mp.observe_property('focused', 'native', update_property);
 mp.observe_property('mute', 'native', update_property);
 mp.observe_property('pause', 'native', update_property);
 mp.observe_property('stop-screensaver', 'native', update_property);
