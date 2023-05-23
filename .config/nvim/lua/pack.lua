@@ -7,10 +7,12 @@ local autoload_path = vim.fn.stdpath('cache') .. '/autoload.lua'
 local autoload
 local autoload_aux = {}
 local generate_autoload
+local did_baseline_analyze = false
 local seen_commands = {}
 local seen_keymap = {}
 local seen_autocmds = {}
 local seen_abbrevs = {}
+local seen_options = {}
 
 local source_blacklist
 
@@ -239,10 +241,6 @@ local function autoload_analyze(file)
 	local span = Trace.trace('analyze ' .. (file or '<vim>'))
 
 	local new_commands = {}
-	local new_keymap = {}
-	local new_autocmds = {}
-	local new_abbrevs = {}
-
 	for _, def in pairs(vim.api.nvim_get_commands({})) do
 		local key = def.name
 		if not seen_commands[key] and file then
@@ -255,6 +253,7 @@ local function autoload_analyze(file)
 		seen_commands[key] = true
 	end
 
+	local new_keymap = {}
 	local NVO = {'n', 'v', 'o'}
 	for _, mode in ipairs({'c', 'i', 'l', 'n', 'o', 't', 'v'}) do
 		for _, def in ipairs(vim.api.nvim_get_keymap(mode)) do
@@ -273,9 +272,15 @@ local function autoload_analyze(file)
 		end
 	end
 
+	local new_autocmds = {}
 	for _, def in ipairs(vim.api.nvim_get_autocmds({})) do
 		-- FIXME: Key may not unique.
-		local key = string.format('%s,%s,%s', def.group_name or '', def.event, def.pattern)
+		local key = string.format(
+			'%s,%s,%s',
+			def.group_name or '',
+			def.event,
+			def.pattern
+		)
 		if not seen_autocmds[key] and file then
 			table.insert(new_autocmds, {
 				group_name = def.group_name,
@@ -286,6 +291,7 @@ local function autoload_analyze(file)
 		seen_autocmds[key] = true
 	end
 
+	local new_abbrevs = {}
 	for mode, lhs, noremap in string.gmatch(
 		vim.api.nvim_exec('abbrev', true),
 		'(.) +([^ ]+) +(%*?)[^\n]*\n?'
@@ -301,6 +307,12 @@ local function autoload_analyze(file)
 		seen_abbrevs[key] = true
 	end
 
+	do
+		local key = vim.api.nvim_exec('browse set', 0)
+		local new_options = not seen_options[key]
+		seen_options[key] = true
+	end
+
 	Trace.trace(span)
 
 	if not file then
@@ -313,6 +325,7 @@ local function autoload_analyze(file)
 		keymap = new_keymap,
 		autocmds = new_autocmds,
 		abbrevs = new_abbrevs,
+		options = new_options or nil,
 	})
 end
 
@@ -333,12 +346,20 @@ local function source_file(file, plugin)
 	if not generate_autoload then
 		local data = autoload[file]
 		if data then
-			if #data.commands + #data.keymap + #data.autocmds + #data.abbrevs > 0 then
+			if not data.options and (
+				#data.commands +
+				#data.keymap +
+				#data.autocmds +
+				#data.abbrevs
+			) > 0 then
 				return
 			end
 		else
 			autoload_kill()
 		end
+	elseif not did_baseline_analyze then
+		did_baseline_analyze = true
+		autoload_analyze()
 	end
 
 	local span = Trace.trace(string.format(
@@ -449,10 +470,6 @@ function M.setup(spec, opts)
 	else
 		autoload = {}
 		generate_autoload = false
-	end
-
-	if generate_autoload then
-		autoload_analyze()
 	end
 
 	local pp_before, pp_after = get_packpath_dirs()
