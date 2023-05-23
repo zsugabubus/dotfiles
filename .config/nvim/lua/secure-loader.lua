@@ -9,9 +9,10 @@ package.loaders = {
 local Trace = require 'trace'
 if Trace.verbose > 0 then
 	local vim_loader = package.loaders[2]
-	table.insert(package.loaders, 1, function(path)
+	package.loaders[2] = function(path)
 		local span = Trace.trace(string.format('require "%s"', path))
-		vim_loader(path)
+		local t = vim_loader(path)
 		Trace.trace(span)
-	end)
+		return t
+	end
 end
