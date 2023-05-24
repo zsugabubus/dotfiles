@@ -66,6 +66,10 @@ function _G.loadfile(path)
 			if err and string.find(err, '^EEXIST:') then
 				return
 			end
+			-- Cannot do much about it.
+			if err and string.find(err, '^EROFS:') then
+				return
+			end
 			assert(not err, err)
 			-- LuaJIT accepts a second argument "strip". When set, the produced
 			-- bytecode will be free from debug information that results in smaller
