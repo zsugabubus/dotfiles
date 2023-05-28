@@ -1,0 +1,3 @@
+[init.lua:137] [1mtest.lua[0m > [1;31mFAIL[m unknown option: -z
+exit 1
+
