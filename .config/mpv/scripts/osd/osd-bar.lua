@@ -13,8 +13,7 @@ local props = {
 	['playlist-count'] = 0,
 	['mouse-pos'] = {x = 0, y = 0}
 }
-local current_sub_margin_y = mp.get_property_native('sub-margin-y')
-local original_sub_margin_y = current_sub_margin_y
+local base_sub_margin_y = mp.get_property_native('sub-margin-y')
 local mouse_time
 local chapter_pos
 
@@ -50,8 +49,8 @@ local function measure_text(size)
 end
 
 local function set_sub_margin_y(value)
-	if current_sub_margin_y ~= value then
-		current_sub_margin_y = value
+	if props['sub-margin-y'] ~= value then
+		props['sub-margin-y'] = value
 		-- set_property() is handled only after window resize, commandv() applied
 		-- immediately (when subtitle changes).
 		mp.commandv('set', 'sub-margin-y', value)
@@ -306,7 +305,7 @@ function update()
 		if not visible then
 			hide_timeout:kill()
 			osd:remove()
-			set_sub_margin_y(original_sub_margin_y)
+			set_sub_margin_y(base_sub_margin_y)
 			mouse_prog_hit = false
 		end
 	end
@@ -315,12 +314,13 @@ function update()
 		old_mouse_prog_hit = mouse_prog_hit
 
 		if mouse_prog_hit then
-			-- Okay. Fuck my life. MBTN_LEFT (but only this) sends "up" event as soon
-			-- as MOUSE_MOVEs.
-			mp.add_forced_key_binding('MBTN_RIGHT', 'osd-bar/MBTN_RIGHT', handle_mouse_seek_to_chapter, COMPLEX)
+			props['window-dragging'] = mp.get_property_native('window-dragging')
+			mp.set_property_native('window-dragging', false)
 			mp.add_forced_key_binding('MBTN_LEFT', 'osd-bar/MBTN_LEFT', handle_mouse_seek, COMPLEX)
 			mp.add_forced_key_binding('MBTN_MID', 'osd-bar/MBTN_MID', handle_mouse_seek, COMPLEX)
+			mp.add_forced_key_binding('MBTN_RIGHT', 'osd-bar/MBTN_RIGHT', handle_mouse_seek_to_chapter, COMPLEX)
 		else
+			mp.set_property_native('window-dragging', props['window-dragging'])
 			mp.remove_key_binding('osd-bar/MBTN_LEFT')
 			mp.remove_key_binding('osd-bar/MBTN_MID')
 			mp.remove_key_binding('osd-bar/MBTN_RIGHT')
@@ -646,7 +646,7 @@ function update()
 		local scaled_margin_bottom = osd.height ~= 0
 			and (osd.height - box_y0) / osd.height * 720
 			or 0
-		set_sub_margin_y(original_sub_margin_y + math.ceil(scaled_margin_bottom))
+		set_sub_margin_y(base_sub_margin_y + math.ceil(scaled_margin_bottom))
 	end
 
 	osd:update()
