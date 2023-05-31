@@ -545,7 +545,7 @@ function mutt n() {
 	TERM=$term command mutt "$@"
 }
 
-function ttycat() {
+function catty() {
 	socat -u SYSTEM:"$*",openpty -
 }
 
