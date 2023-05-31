@@ -349,7 +349,7 @@ function oom pan pani panic() {
 
 function sheep_pacman() {
 	# --noconfirm does ask confirmation for conflicting packages.
-	sheep 'yes | pacman '$*' && su $USER'
+	sheep '{ yes | head -n10; cat; } | pacman '$*' && su $USER'
 }
 
 function sheep_black() {
