@@ -2,8 +2,6 @@ local osd = require 'osd'.new()
 local utils = require 'utils'
 local title = require 'title'
 
-local NIL_CHAPTER = { time = -math.huge }
-
 local visibility = 'auto'
 local visible = false
 local hide_timeout
@@ -512,20 +510,15 @@ function update()
 			osd:draw_end()
 			osd:put('\n')
 
-			chapter_pos = NIL_CHAPTER
 			local chapter_at = mouse_prog_hit and mouse_time or props['time-pos']
 
 			for _, chapter in ipairs(chapters) do
 				if
-					chapter_pos.time <= chapter.time and
-					chapter.time <= chapter_at
+					chapter.time <= chapter_at and
+					(not chapter_pos or chapter_pos.time <= chapter.time)
 				then
 					chapter_pos = chapter
 				end
-			end
-
-			if chapter_pos == NIL_CHAPTER then
-				chapter_pos = nil
 			end
 		end
 	end
