@@ -711,7 +711,7 @@ __zfiles_update_ls_colors
 function zfiles() {
 	zfiles-show "$@"
 	if (( $#__zfiles_selection )); then
-		print -c $__zfiles_selection
+		print -c -- $__zfiles_selection
 	fi
 }
 
