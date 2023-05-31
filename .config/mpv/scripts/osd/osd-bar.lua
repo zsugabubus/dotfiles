@@ -510,7 +510,7 @@ function update()
 			osd:draw_end()
 			osd:put('\n')
 
-			local chapter_at = mouse_prog_hit and mouse_time or props['time-pos']
+			local chapter_at = mouse_prog_hit and mouse_time or (props['time-pos'] or 0)
 
 			for _, chapter in ipairs(chapters) do
 				if
