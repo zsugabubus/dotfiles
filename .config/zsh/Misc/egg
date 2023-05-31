@@ -1,0 +1,19 @@
+#autoload
+
+emulate -L zsh
+
+setopt local_options err_return
+
+() {
+	gpg --quiet --pinentry-mode=cancel >"$2" --decrypt "$1"
+	local mtim=$(date -r "$2")
+	command nvim --clean -n -b --cmd 'set noundofile' -- "$2" || {
+		echo 'Aborted.'
+		return
+	}
+	if [[ $mtim != $(date -r -- "$2") ]]; then
+		gpg --output "$1" --encrypt "$2"
+	else
+		echo 'Unchanged, not saved.'
+	fi
+} "$1" =()

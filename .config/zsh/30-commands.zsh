@@ -633,19 +633,4 @@ function pyman() {
 	python -c "import $1; help($1)"
 }
 
-function egpg() {
-	emulate -L zsh
-	setopt local_options err_return
-	() {
-		gpg --quiet --pinentry-mode=cancel >"$2" --decrypt "$1"
-		local mtim=$(date -r "$2")
-		nvim -i NONE -n -b -R -c 'set noundofile' "$2"
-		if [[ $mtim != $(date -r "$2") ]]; then
-			gpg --output "$1" --encrypt "$2"
-		else
-			echo 'Unchanged, not saved.'
-		fi
-	} "$1" =();
-}
-
 autoload -Uz ${:-$ZDOTDIR/Misc/*(N.:t)}
