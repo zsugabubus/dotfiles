@@ -495,7 +495,6 @@ alias dn='DOTNET_CLI_TELEMETRY_OPTOUT=1 ht dotnet'
 alias info='info --vi-keys'
 alias info_all='info --subnodes'
 alias oct='od -tu1'
-alias readelf='readelf -W'
 alias yt=yt-dlp
 
 function pc() {
