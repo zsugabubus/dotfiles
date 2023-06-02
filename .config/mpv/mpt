@@ -1,0 +1,495 @@
+#!/usr/bin/luajit
+local ffi = require('ffi')
+local uv = require('luv')
+local json = require('cjson')
+local curs = ffi.load('ncursesw')
+
+ffi.cdef([[
+enum { LC_ALL = 6 };
+char *setlocale(int, const char *);
+]])
+
+ffi.C.setlocale(ffi.C.LC_ALL, '')
+
+ffi.cdef([[
+typedef struct WINDOW WINDOW;
+
+extern int LINES, COLS;
+
+WINDOW *initscr(void);
+int noecho(void);
+int curs_set(int);
+int wnoutrefresh(WINDOW *);
+int doupdate(void);
+int nodelay(WINDOW *, bool);
+int endwin(void);
+int wmove(WINDOW *, int, int);
+int wscrl(WINDOW *, int);
+int wresize(WINDOW *, int, int);
+int mvwin(WINDOW *, int, int);
+WINDOW *newwin(int, int, int, int);
+int waddnstr(WINDOW *, const char *, int);
+int werase(WINDOW *);
+int wattr_set(WINDOW *, uint32_t, short, void *);
+int getcurx(const WINDOW *);
+int getmaxy(const WINDOW *);
+int getmaxx(const WINDOW *);
+int wgetch(WINDOW *);
+char const *keyname(int);
+
+enum {
+	A_NORMAL = 0,
+	A_REVERSE = 1 << 18,
+	A_BOLD = 1 << 21,
+};
+]])
+
+ffi.metatype('WINDOW', {
+	__index = {
+		cursor = function(self, y, x)
+			return curs.wmove(self, y, x)
+		end,
+		put = function(self, s)
+			return curs.waddnstr(self, s, #s)
+		end,
+		putf = function(self, s, ...)
+			return self:put(string.format(s, ...))
+		end,
+		refresh = function(self)
+			return curs.wnoutrefresh(self)
+		end,
+		erase = function(self)
+			return curs.werase(self)
+		end,
+		attr = function(self, attrs, pair)
+			return curs.wattr_set(self, attrs, pair, nil)
+		end,
+		x = function(self)
+			return curs.getcurx(self)
+		end,
+		lines = function(self)
+			return curs.getmaxy(self)
+		end,
+		cols = function(self)
+			return curs.getmaxx(self)
+		end,
+		getch = function(self)
+			return curs.wgetch(self)
+		end,
+		nodelay = function(self, b)
+			return curs.nodelay(self, b)
+		end,
+		scroll = function(self, n)
+			return curs.wscrl(self, n)
+		end,
+		resize = function(self, y, x)
+			return curs.wresize(self, y, x)
+		end,
+		move = function(self, y, x)
+			return curs.mvwin(self, y, x)
+		end,
+	},
+})
+
+local function assert_uv_ok(err)
+	-- assert(not err, err)
+end
+
+local Client = {}
+Client.__index = Client
+
+function Client.new(cls, ipc_server)
+	return setmetatable({
+		ipc_server = ipc_server,
+		pipe = uv.new_pipe(),
+		event_handlers = {},
+	}, cls)
+end
+
+function Client:close()
+	uv.close(self.pipe, assert_uv_ok)
+end
+
+function Client:request(command, on_reply)
+	self.request_id = self.request_id + 1
+
+	local request = {
+		request_id = self.request_id,
+		command = command,
+	}
+
+	self.reply_handlers[self.request_id] = on_reply
+
+	uv.write(self.pipe, json.encode(request) .. '\n', function(err)
+		if err then
+			return self:close()
+		end
+	end)
+end
+
+function Client:on(name, on_event)
+	self.event_handlers[name] = on_event
+end
+
+function Client:connect(on_connect)
+	self.request_id = 0
+	self.reply_handlers = {}
+	uv.pipe_connect(self.pipe, self.ipc_server, function(err)
+		if err then
+			return on_connect(self, err)
+		end
+
+		local buffer = ''
+		uv.read_start(self.pipe, function(err, data)
+			if not data then
+				return self:close()
+			end
+
+			for line, eol in string.gmatch(buffer .. data, '([^\n]*)(\n?)') do
+				if eol == '' then
+					buffer = line
+					break
+				end
+
+				local msg = json.decode(line)
+				if msg.event then
+					local handler = self.event_handlers[msg.event]
+					if handler then
+						handler(self, msg)
+					end
+				else
+					local handler = self.reply_handlers[msg.request_id]
+					if handler then
+						handler(self, msg)
+					end
+				end
+			end
+		end)
+
+		return on_connect(self)
+	end)
+end
+
+do
+	local signal = uv.new_signal()
+	uv.unref(signal)
+	uv.signal_start(signal, 'sigint', function()
+		uv.stop()
+	end)
+end
+
+do
+	local signal = uv.new_signal()
+	uv.unref(signal)
+	uv.signal_start(signal, 'sigpipe', function() end)
+end
+
+local client
+local local_bindings
+local props = {
+	volume = 0,
+	playlist = {},
+	['playlist-pos-1'] = 0,
+	['term-osd-bar-chars'] = '[-+-]',
+}
+
+local scrolloff = 5
+local top = 0
+local shellout
+local stdin = uv.new_poll(0)
+uv.unref(stdin)
+local sigwinch = uv.new_signal()
+uv.unref(sigwinch)
+
+local stdscr = curs.initscr()
+curs.noecho()
+curs.curs_set(0)
+stdscr:nodelay(true)
+
+local playlist_win = curs.newwin(0, 0, 1, 1)
+local status_win = curs.newwin(0, 0, 1, 1)
+
+local function render_playlist()
+	local win = playlist_win
+	local lines = win:lines()
+	local pos = props['playlist-pos-1']
+	local playlist = props.playlist
+
+	local old_top = top
+	top = math.min(top, pos - scrolloff)
+	top = math.max(top, pos + scrolloff - lines + 1)
+	top = math.min(top, #playlist - lines + 1)
+	top = math.max(1, top)
+
+	win:erase()
+	win:scroll(top - old_top)
+
+	local bottom = math.min(top + lines - 1, #playlist)
+	for i = 0, bottom - top do
+		local entry = playlist[top + i]
+		win:attr(curs.A_NORMAL, 0)
+		win:cursor(i, 0)
+		if top + i == pos then
+			win:attr(curs.A_BOLD + curs.A_REVERSE, 0)
+		end
+		win:put(entry.filename)
+	end
+
+	win:refresh()
+end
+
+local function human_time(sec)
+	local sign = sec < 0 and '-' or ''
+	sec = math.abs(sec)
+	return string.format('%s%02d:%02d', sign, math.floor(sec / 60), sec % 60)
+end
+
+local function render_status()
+	local win = status_win
+	local pct = (props.duration or 0) ~= 0
+			and (props['time-pos'] or 0) / props.duration
+		or 0
+	win:erase()
+
+	win:attr(curs.A_BOLD, 0)
+	if props.pause then
+		win:put('(Paused) ')
+	end
+	if props.mute then
+		win:put('(Muted) ')
+	end
+
+	win:attr(curs.A_NORMAL, 0)
+	win:putf(
+		'[%d/%d] %s / %s (%2d%%) Volume: %d%% ',
+		props['playlist-pos-1'],
+		#props.playlist,
+		human_time(props['time-pos'] or 0),
+		human_time(props.duration or 0),
+		100 * pct,
+		props.volume
+	)
+
+	local left, left_space, indicator, right_space, right =
+		string.match(props['term-osd-bar-chars'], '^(.)(.)(.)(.)(.)$')
+	local x0, x1 = win:x() + 1, win:cols() - 1
+	local w = x1 - x0
+	local sp0 = math.floor(w * pct)
+	local sp1 = w - 1 - sp0
+	win:put(left)
+	win:put(string.rep(left_space, sp0))
+	win:put(indicator)
+	win:put(string.rep(right_space, sp1))
+	win:put(right)
+
+	win:refresh()
+end
+
+local function render()
+	if shellout then
+		return
+	end
+
+	playlist_win:move(0, 0)
+	playlist_win:resize(curs.LINES - 1, curs.COLS)
+
+	status_win:move(curs.LINES - 1, 0)
+	status_win:resize(1, curs.COLS)
+
+	render_playlist()
+	render_status()
+
+	curs.doupdate()
+end
+
+local function set_client(client_)
+	client = client_
+	client:on('property-change', function(self, event)
+		local name = event.name
+		local data = event.data
+		if name == 'time-pos' and data then
+			data = math.floor(data)
+		end
+		if props[name] ~= data then
+			props[name] = data
+			render()
+		end
+	end)
+	client:request({ 'observe_property', 1, 'volume' })
+	client:request({ 'observe_property', 2, 'playlist' })
+	client:request({ 'observe_property', 3, 'playlist-pos-1' })
+	client:request({ 'observe_property', 4, 'time-pos' })
+	client:request({ 'observe_property', 5, 'duration' })
+	client:request({ 'observe_property', 6, 'pause' })
+	client:request({ 'observe_property', 7, 'mute' })
+	client:request({ 'observe_property', 8, 'term-osd-bar-chars' })
+end
+
+local function enter_shell()
+	shellout = true
+	uv.poll_stop(stdin)
+	uv.signal_stop(sigwinch)
+	curs.endwin()
+end
+
+local function enter_program(b)
+	shellout = false
+	uv.poll_start(stdin, 'r', function(err)
+		if err then
+			return uv.stop()
+		end
+		local c = stdscr:getch()
+		local key = ffi.string(curs.keyname(c))
+
+		local x = string.match(key, '^^([A-Z])$')
+		if x then
+			key = 'Ctrl+' .. string.lower(x)
+		elseif key == '^[' then
+			key = 'ESC'
+		end
+
+		local handler = local_bindings[key]
+		if handler then
+			return handler()
+		end
+
+		client:request({ 'keypress', key })
+	end)
+	uv.signal_start(sigwinch, 'sigwinch', function()
+		curs.endwin()
+		curs.doupdate()
+		render()
+	end)
+	render()
+end
+
+local function fzf_playlist()
+	enter_shell()
+
+	local stdin = uv.new_pipe()
+	local stdout = uv.new_pipe()
+	local reply = ''
+
+	uv.spawn('fzf', {
+		args = { '--read0', '--print0' },
+		stdio = { stdin, stdout, 2 },
+	}, function(code, signal)
+		enter_program()
+
+		if code == 0 then
+			reply = string.sub(reply, 1, -2)
+			for i, entry in ipairs(props.playlist) do
+				if entry.filename == reply then
+					client:request({ 'playlist-play-index', i - 1 })
+					break
+				end
+			end
+		end
+	end)
+
+	for _, entry in ipairs(props.playlist) do
+		uv.write(stdin, entry.filename)
+		uv.write(stdin, '\0')
+	end
+	uv.shutdown(stdin, function()
+		uv.close(stdin, assert_uv_ok)
+	end)
+
+	uv.read_start(stdout, function(err, data)
+		if data then
+			reply = reply .. data
+		end
+	end)
+end
+
+local_bindings = {
+	q = function()
+		uv.stop()
+	end,
+	['/'] = fzf_playlist,
+}
+
+local function glob(expr, on_entry)
+	local dirname, pat = string.match(expr, '^(.-)/?([^/]+)$')
+	pat = '^' .. pat .. '$'
+
+	local dir = uv.fs_opendir(dirname, function(err, dir)
+		assert(not err, err)
+
+		local function read_next(err, entries)
+			assert(not err, err)
+
+			if not entries then
+				return on_entry()
+			end
+
+			for _, entry in ipairs(entries) do
+				if string.match(entry.name, pat) then
+					entry.path = dirname .. '/' .. entry.name
+					on_entry(entry)
+				end
+			end
+
+			return uv.fs_readdir(dir, read_next)
+		end
+
+		uv.fs_readdir(dir, read_next)
+	end)
+end
+
+local function connect_to_best_client(clients, on_connect)
+	if #clients == 0 then
+		return on_connect()
+	end
+
+	local best
+	local best_pause
+
+	local n = #clients
+	local function step()
+		n = n - 1
+		if n == 0 then
+			for _, client in ipairs(clients) do
+				if client ~= best then
+					client:close()
+				end
+			end
+			return on_connect(best)
+		end
+	end
+
+	for _, client in ipairs(clients) do
+		client:connect(function(self, err)
+			if err then
+				return step()
+			end
+
+			self:request({ 'get_property', 'pause' }, function(self, msg)
+				local pause = msg.data
+				if not best or (best_pause and not pause) then
+					best, best_pause = self, pause
+				end
+				return step()
+			end)
+		end)
+	end
+end
+
+do
+	local clients = {}
+	glob('/tmp/mpv.*', function(entry)
+		if not entry then
+			return connect_to_best_client(clients, function(client)
+				if client then
+					return set_client(client)
+				end
+			end)
+		end
+		local client = Client:new(entry.path)
+		table.insert(clients, client)
+	end)
+end
+
+enter_program()
+uv.run()
+enter_shell()
