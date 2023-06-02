@@ -3,7 +3,7 @@ M.__index = M
 
 local serial = 2
 
-local COMPLEX = {complex = true}
+local REPEATABLE = {repeatable = true}
 
 function M.new()
 	serial = serial + 1
@@ -70,12 +70,8 @@ local function add_key_binding(self, lhs, rhs)
 	mp.add_forced_key_binding(
 		lhs,
 		self.binding_prefix .. lhs,
-		function(event)
-			if event.event == 'down' or event.event == 'repeat' then
-				return rhs(event)
-			end
-		end,
-		COMPLEX
+		rhs,
+		REPEATABLE
 	)
 end
 
