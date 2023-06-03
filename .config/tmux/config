@@ -182,6 +182,12 @@ bind v set -s @copy_visible 1 \; set -s @copy_feedkeys ":call search('\\\\\\S', 
 bind e capture-pane -S- \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
 bind E capture-pane -S0 \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
 
+bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi + \
+	send-keys -X copy-selection-and-cancel \;\
+	run-shell -b "tmux show-buffer | xclip -silent -i -selection clipboard"
+
 bind a paste-buffer -p
 bind A paste-buffer
 bind b choose-buffer { paste-buffer -b '%%' -p }
