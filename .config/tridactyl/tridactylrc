@@ -1,9 +1,7 @@
 sanitise tridactyllocal tridactylsync
 
-" General {{{1
 colourscheme magazine
 
-" Bleh.
 set visualenterauto false
 
 set editorcmd $TERMINAL -e nvim -c startinsert
@@ -15,65 +13,10 @@ set modeindicator false
 
 set findcase smart
 
-" Aliases {{{1
-alias noh nohlsearch
-
 alias tabsort jsb browser.tabs.query({}).then(tabs => tabs.sort((t1, t2) => t1.url.localeCompare(t2.url)).forEach((tab, index) => browser.tabs.move(tab.id, {index})))
 alias tabuniq jsb browser.tabs.query({}).then(tabs => browser.tabs.remove(tabs.filter((tab, index) => tabs.slice(index + 1).find(t => t.url == tab.url)).map(tab => tab.id)))
 
-alias aprefs tabopen about:preferences
-alias amem tabopen about:memory
-alias aconf tabopen about:config
-alias arob tabopen about:robots
-
-" Search providers {{{1
-set searchengine   s
-" set storageloc     local
-
-set searchurls.a   https://www.archlinux.org/packages/?sort=&q=%s1&maintainer=&flagged=
-set searchurls.aw  https://wiki.archlinux.org/index.php?search=%s&title=Special%3ASearch&go=Go
-
-set searchurls.g   https://www.google.com/search?q=
-set searchurls.gm  https://www.google.com/maps/search/
-set searchurls.s   https://startpage.com/do/search?language=english&cat=web&query=
-set searchurls.w   https://en.wikipedia.org/w/index.php?title=Special:Search&search=
-set searchurls.wh  https://hu.wikipedia.org/w/index.php?title=Special:Search&search=
-set searchurls.yt  https://www.youtube.com/results?search_query=
-set searchurls.d   https://www.die.net/search/?q=
-set searchurls.matlab https://www.mathworks.com/help/search.html?qdoc=
-
-set searchurls.reddit https://www.reddit.com/r/%s
-
-set searchurls.tg https://translate.google.com/#view=home&op=translate&sl=%s1&tl=%s2&text=%s3
-set searchurls.T  https://translate.google.com/#view=home&op=translate&sl=hu&tl=en&text=
-set searchurls.treng https://translate.google.com/#view=home&op=translate&sl=en&tl=hu&text=
-set searchurls.ty https://translate.yandex.com/?lang=%s1-%s2&text=%s3
-
-set searchurls.mdn https://developer.mozilla.org/en-US/search?q=%s&topic=api&topic=js
-set searchurls.npm https://www.npmjs.com/search?q=%s
-
-set searchurls.gh  https://github.com/search?utf8=✓&q=
-set searchurls.c   https://crates.io/search?q=
-set searchurls.r   https://doc.rust-lang.org/std/?search=
-
-" Keybindings {{{1
-unbind <A-P>
-unbind <A-M>
-unbind zR
-unbind zr
-unbind zM
-
 bind gs jsb browser.tabs.query({currentWindow: true, active: true}).then(t => browser.tabs.update({url: t[0].url.replace(/^(https:\/\/www.reddit.com\/u(ser)\/([^/]+))\/?.*/, '$1/submitted')}))
-
-bind g1 tab 1
-bind g2 tab 2
-bind g3 tab 3
-bind g4 tab 4
-bind g5 tab 5
-bind g6 tab 6
-bind g7 tab 7
-bind g8 tab 8
-bind g9 tab 9
 
 bind K tabnext
 bind J tabprev
@@ -83,31 +26,5 @@ unbind --mode=ex <C-j>
 bind --mode=ex <C-I> ex.prev_completion
 bind --mode=ex <C-i> ex.next_completion
 bind --mode=ex <A-Enter> composite ex.next_completion | ex.accept_line
-
-bind e fillcmdline bmarks
-bind E fillcmdline bmarks -t
-
-" fucking eastern egg
-unbind <SA-ArrowUp><SA-ArrowUp><SA-ArrowDown><SA-ArrowDown><SA-ArrowLeft><SA-ArrowRight><SA-ArrowLeft><SA-ArrowRight>ba
-
-bind zm mute toggle
-bind zp pin toggle
-
-bind gd tabdetach
-bind gD composite tabduplicate | tabdetach
-
-" bind / fillcmdline find
-" bind ? fillcmdline find -?
-" bind n findnext 1
-" bind N findnext -1
-
-" bind ;v openwith !s mpv --force-window
-" bind ;gv hint -gW exclaim_quiet mpv --force-window
-
-" Only hint search results on Google
-bindurl www.google.com f hint -Jc .rc > .r > a
-bindurl www.google.com F composite hint -Jpipe .rc>.r>a href | tabopen | buffer #
-
-"1}}}
 
 " vim: fdm=marker ft=vim
