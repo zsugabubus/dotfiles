@@ -130,6 +130,39 @@ function M.plugin_missing(plugin)
 	echo_error("Plugin '%s' not found", plugin.id)
 end
 
+function M.plugin_before(plugin)
+	if plugin.before then
+		return plugin:before()
+	end
+end
+
+function M.plugin_after(plugin)
+	if plugin.after then
+		return plugin:after()
+	end
+
+	if plugin.opts == nil then
+		return
+	end
+
+	local name = plugin.id
+		:gsub('^n?vim[.-]', '')
+		:gsub('[.-]n?vim$', '')
+	local ok, package = pcall(require, name)
+	if
+		ok and
+		type(package) == 'table' and
+		type(package.setup) == 'function'
+	then
+		return package.setup(plugin.opts)
+	else
+		echo_error(
+			"Plugin '%s' specifies 'opts' but cannot find setup function. Use 'after' to call it.",
+			plugin.id
+		)
+	end
+end
+
 function M.setup(spec, opts)
 	local setup_span = Trace.trace('setup')
 
@@ -177,6 +210,7 @@ function M.setup(spec, opts)
 			)
 		then
 			plugins[plugin.id] = plugin
+			M.plugin_before(plugin)
 		end
 	end
 
@@ -188,6 +222,16 @@ function M.setup(spec, opts)
 	Trace.trace(span)
 
 	initialize_plugins()
+
+	local span = Trace.trace('after plugins')
+
+	for _, plugin in pairs(plugins) do
+		local span = Trace.trace(plugin.id)
+		M.plugin_after(plugin)
+		Trace.trace(span)
+	end
+
+	Trace.trace(span)
 
 	collectgarbage('restart')
 
