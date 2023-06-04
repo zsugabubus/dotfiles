@@ -13,11 +13,17 @@ vim.api.nvim_create_autocmd('BufWinEnter', {
 	end,
 })
 
-vim.api.nvim_create_autocmd('Colorscheme', {
+vim.api.nvim_create_autocmd('VimEnter', {
 	group = group,
 	callback = function()
-		M._reset_hls()
+		vim.api.nvim_create_autocmd('ColorScheme', {
+			group = group,
+			callback = function()
+				M._reset_hls()
+			end,
+		})
 	end,
+	once = true,
 })
 
 vim.api.nvim_create_user_command(
