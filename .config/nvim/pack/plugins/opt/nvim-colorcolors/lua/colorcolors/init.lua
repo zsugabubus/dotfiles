@@ -211,6 +211,10 @@ local function highlight_lines(buffer, start_lnum, end_lnum)
 	-- obviously. Thus we must make sure highlight updating happens after (2) so
 	-- it does not interfere with it.
 	vim.schedule(function()
+		-- TODO: Find out whether there are better ways to keep it always fast.
+		if end_lnum < 0 then
+			end_lnum = 9999
+		end
 		if not pcall(vim.api.nvim_buf_clear_namespace, buffer, ns, start_lnum, end_lnum) then
 			-- Buffer got deleted.
 			return
