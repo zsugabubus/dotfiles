@@ -83,6 +83,27 @@ vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_node_provider = 0
 
+vim.api.nvim_create_autocmd('FocusGained', {
+	pattern = '*',
+	callback = function()
+		local group = vim.api.nvim_create_augroup('init/clipboard', {})
+		vim.api.nvim_create_autocmd('TextYankPost', {
+			group = group,
+			once = true,
+			pattern = '*',
+			callback = function()
+				vim.api.nvim_create_autocmd('FocusLost', {
+					group = group,
+					pattern = '*',
+					callback = function()
+						vim.fn.setreg('+', vim.fn.getreg('@'))
+					end,
+				})
+			end,
+		})
+	end,
+})
+
 vim.cmd [=[
 command! -nargs=* Termdebug delcommand Termdebug<bar>packadd termdebug<bar>Termdebug <args>
 
@@ -124,9 +145,6 @@ nnoremap U <nop>
 
 " Copy whole line.
 silent! unmap Y
-
-" Handy yanking to system-clipboard.
-map gy "+yy
 
 " Reindent before append.
 nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
