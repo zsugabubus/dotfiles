@@ -322,10 +322,7 @@ require 'pack'.setup({
 	'vim-stdin',
 	'vim-surround',
 	'vim-textobjects',
-	{
-		'vim-themember',
-		on = true,
-	},
+	'vim-themember',
 	'vim-tilde',
 	'vim-vnicode',
 	'vim-woman',
