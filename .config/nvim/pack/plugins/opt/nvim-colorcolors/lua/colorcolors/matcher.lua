@@ -125,7 +125,7 @@ function M:new(opts)
 		return node
 	end
 
-	local start = generate(opts.spec, '', 0)
+	local start = generate(opts.spec, '')
 
 	local charmap = ffi.new('uint8_t[?]', 256)
 	local k = 0
