@@ -329,6 +329,26 @@ require 'pack'.setup({
 	'vim-wtc7',
 	'vim-wtf',
 	'vimdent.nvim',
+	{
+		'vim-commentr',
+		before = function()
+			vim.cmd [[
+			let commentr_leader = 'g'
+			let commentr_uncomment_map = ''
+
+			nmap gcD gcdO
+			nmap gcM gcmO
+			]]
+		end,
+	},
+	{
+		'vim-jumpmotion',
+		after = function()
+			vim.keymap.set('', '<space>', function()
+				return require 'jumpmotion'.jump_character()
+			end)
+		end,
+	},
 }, {
 	source_blacklist = {
 		'/runtime/plugin/netrwPlugin.vim',
