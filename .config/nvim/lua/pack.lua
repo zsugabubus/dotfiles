@@ -3,6 +3,7 @@ local Trace = require 'trace'
 local uv = vim.loop
 
 local path2plugin = {}
+local lua2path = {}
 
 local source_blacklist
 
@@ -104,6 +105,25 @@ local function source_dir(dir, plugin)
 	end
 end
 
+local function package_loader(path)
+	-- :h require()
+	local head, tail = string.match(path, '^([^.]*)(.*)')
+	local path = lua2path[head]
+	if path then
+		local prefix = path .. string.gsub(tail, '%.', '/')
+
+		local ok, code = pcall(loadfile, prefix .. '.lua')
+		if ok then
+			return code
+		end
+
+		local ok, code = pcall(loadfile, prefix .. '/init.lua')
+		if ok then
+			return code
+		end
+	end
+end
+
 local function initialize_plugins()
 	assert(vim.v.vim_did_enter == 0, 'Vim already initialized')
 
@@ -111,6 +131,18 @@ local function initialize_plugins()
 
 	-- PERF: Much faster than vim.opt.runtimepath:get().
 	local rtp = vim.api.nvim_list_runtime_paths()
+
+	local span = Trace.trace(span, 'initialize lua package cache')
+
+	for _, path in ipairs(rtp) do
+		local dir = path .. '/lua'
+		for name in scandir(dir) do
+			local path = string.format('%s/%s', dir, name)
+			lua2path[name] = path
+		end
+	end
+
+	table.insert(package.loaders, 2, package_loader)
 
 	local span = Trace.trace(span, 'initialize plugins')
 
