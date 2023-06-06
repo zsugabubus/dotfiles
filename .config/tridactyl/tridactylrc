@@ -1,7 +1,5 @@
 sanitise tridactyllocal tridactylsync
 
-colourscheme magazine
-
 set visualenterauto false
 
 set editorcmd $TERMINAL -e nvim -c startinsert
