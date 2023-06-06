@@ -1,5 +1,7 @@
 #!/bin/dash -eu
+pass=true
 stdin=$(cat)
 for f in $0.d/*; do
-	! test -x "$f" || { printf '%s' "$stdin" | "$f"; }
+	! test -x "$f" || { printf '%s' "$stdin" | "$f"; } || pass=false
 done
+$($pass)
