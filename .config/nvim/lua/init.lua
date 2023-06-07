@@ -22,7 +22,6 @@ o.smartcase = true
 o.splitright = true
 o.swapfile = false
 o.switchbuf = 'useopen'
-o.tab = 8
 o.timeoutlen = 600
 o.title = true
 o.wildcharm = '<C-Z>'
