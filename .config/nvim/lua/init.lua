@@ -132,7 +132,7 @@ command! -range URLFilter silent '<,'>!awk '/^http/ {print $1}' | sort -u
 
 command! Ctags !test -d build && ln -sf build/tags tags; ctags -R --exclude=node_modules --exclude='*.json' --exclude='*.patch' '--map-typescript=+.tsx'
 
-inoremap <expr> <C-f> expand("%:t:r")
+inoremap <expr> <C-f> substitute(expand('%:t:r'), '\v^(init<bar>index<bar>main)$', expand('%:p:h:t'), '')
 
 inoremap <C-r> <C-r><C-o>
 
