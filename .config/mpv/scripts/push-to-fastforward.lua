@@ -1,7 +1,7 @@
-local options = require 'mp.options'
+local options = require('mp.options')
 
 local opts = {
-	speed = 2.71828 -- speeeeeeed
+	speed = 2.71828, -- speeeeeeed
 }
 options.read_options(opts)
 
@@ -24,4 +24,4 @@ mp.add_key_binding(nil, 'push-to-fastforward', function(event)
 		mp.set_property_number('speed', 1)
 		mp.osd_message('')
 	end
-end, {complex = true})
+end, { complex = true })

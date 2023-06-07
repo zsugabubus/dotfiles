@@ -1,8 +1,8 @@
 local M = {}
-local Osd = require 'osd'
+local Osd = require('osd')
 
 local HORIZONTAL_ELLIPSIS = '\u{2026}'
-local SP_PATS = {'%.', '-', '%_'}
+local SP_PATS = { '%.', '-', '%_' }
 local HE_PATH = '/' .. HORIZONTAL_ELLIPSIS .. '/'
 
 local cache = {}
@@ -70,9 +70,8 @@ end
 
 function M.get_current()
 	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
-	local title =
-		mp.get_property_native('metadata/by-key/Title', nil) or
-		mp.get_property_native('media-title', nil)
+	local title = mp.get_property_native('metadata/by-key/Title', nil)
+		or mp.get_property_native('media-title', nil)
 	if artist and title then
 		local version = mp.get_property_native('metadata/by-key/Version', nil)
 		return table.concat({
@@ -89,13 +88,8 @@ function M.get_current()
 		local current = mp.get_property_native(
 			'playlist/' .. mp.get_property_native('playlist-pos')
 		)
-		if (
-			current and
-			(
-				not title or
-				title == current.filename:gsub('^.*/', '')
-			)
-		)
+		if
+			current and (not title or title == current.filename:gsub('^.*/', ''))
 		then
 			return M.get_playlist_entry(current)
 		elseif title then

@@ -1,6 +1,6 @@
-local COVERS = {'cover.jpg', 'cover.png'}
+local COVERS = { 'cover.jpg', 'cover.png' }
 
-local utils = require 'mp.utils'
+local utils = require('mp.utils')
 
 local skip_dir
 

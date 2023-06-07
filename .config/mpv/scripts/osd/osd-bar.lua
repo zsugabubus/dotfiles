@@ -1,6 +1,6 @@
-local osd = require 'osd'.new()
-local utils = require 'utils'
-local title = require 'title'
+local osd = require('osd').new()
+local utils = require('utils')
+local title = require('title')
 
 local visibility = 'auto'
 local visible = false
@@ -9,7 +9,7 @@ local props = {
 	speed = 1,
 	['playlist-pos'] = -1,
 	['playlist-count'] = 0,
-	['mouse-pos'] = {x = 0, y = 0}
+	['mouse-pos'] = { x = 0, y = 0 },
 }
 local base_sub_margin_y = mp.get_property_native('sub-margin-y')
 local mouse_time
@@ -79,11 +79,7 @@ local function set_visibility(action)
 end
 
 local function update_property(name, value)
-	if
-		name == 'metadata' or
-		name == 'media-title' or
-		name == 'playlist-pos'
-	then
+	if name == 'metadata' or name == 'media-title' or name == 'playlist-pos' then
 		old_title = nil
 	elseif name == 'osd-dimensions' then
 		osd:set_res(value.w, value.h)
@@ -96,14 +92,11 @@ local function update_property(name, value)
 	if old and value then
 		if
 			-- VO may not support 'focused' so exlicitly check for false.
-			props['focused'] == false and
-			not props['paused'] and
-			not props['mouse-pos']['hover']
+			props['focused'] == false
+			and not props['paused']
+			and not props['mouse-pos']['hover']
 		then
-			if
-				name ~= 'time-pos' and
-				name ~= 'duration'
-			then
+			if name ~= 'time-pos' and name ~= 'duration' then
 				return
 			end
 
@@ -124,8 +117,7 @@ local function update_property(name, value)
 		elseif name == 'demuxer-cache-state' then
 			-- "seekable-ranges" does not worth frequent updates.
 			if
-				math.floor(old['cache-duration']) ==
-				math.floor(value['cache-duration'])
+				math.floor(old['cache-duration']) == math.floor(value['cache-duration'])
 			then
 				return
 			end
@@ -140,16 +132,18 @@ local function handle_mouse_live_seek(event)
 		'no-osd',
 		'seek',
 		mouse_time,
-		props['duration'] < 10 * 60
-			and 'absolute+exact'
-			or 'absolute+keyframes'
+		props['duration'] < 10 * 60 and 'absolute+exact' or 'absolute+keyframes'
 	)
 end
 
 local function handle_mouse_seek(event)
 	if event.event ~= 'up' then
 		mp.commandv('no-osd', 'seek', mouse_time, 'absolute+exact')
-		return mp.add_forced_key_binding('MOUSE_MOVE', 'osd-bar/MOUSE_MOVE', handle_mouse_live_seek)
+		return mp.add_forced_key_binding(
+			'MOUSE_MOVE',
+			'osd-bar/MOUSE_MOVE',
+			handle_mouse_live_seek
+		)
 	else
 		return mp.remove_key_binding('osd-bar/MOUSE_MOVE')
 	end
@@ -168,7 +162,11 @@ local function handle_mouse_seek_to_chapter(event)
 		end
 
 		mp.commandv('set', 'chapter', tostring(chapter_pos.id))
-		return mp.add_forced_key_binding('MOUSE_MOVE', 'osd-bar/MOUSE_MOVE', handle_mouse_live_seek_to_chapter)
+		return mp.add_forced_key_binding(
+			'MOUSE_MOVE',
+			'osd-bar/MOUSE_MOVE',
+			handle_mouse_live_seek_to_chapter
+		)
 	else
 		return mp.remove_key_binding('osd-bar/MOUSE_MOVE')
 	end
@@ -193,7 +191,7 @@ local function osd_put_human_duration(duration)
 	end
 end
 
-local COMPLEX = {complex = true}
+local COMPLEX = { complex = true }
 
 function update()
 	local main_fs = math.max(math.floor(math.min(osd.width, osd.height) / 23), 30)
@@ -230,18 +228,16 @@ function update()
 	local duration = props['duration'] or 0
 
 	local mouse = props['mouse-pos']
-	local mouse_hit = mouse.hover and (
-		(box_x0 <= mouse.x and mouse.x <= box_x1) and
-		(box_y0 <= mouse.y and mouse.y <= box_y1)
-	)
-	local mouse_main_hit = mouse_hit and (
-		main_y0 <= mouse.y and
-		mouse.y < main_y0 + box_height
-	)
+	local mouse_hit = mouse.hover
+		and (
+			(box_x0 <= mouse.x and mouse.x <= box_x1)
+			and (box_y0 <= mouse.y and mouse.y <= box_y1)
+		)
+	local mouse_main_hit = mouse_hit
+		and (main_y0 <= mouse.y and mouse.y < main_y0 + box_height)
 	local mouse_percent = (mouse.x - prog_x0) / prog_width
-	local mouse_prog_hit = mouse_main_hit and (
-		0 <= mouse_percent and mouse_percent < 1
-	)
+	local mouse_prog_hit = mouse_main_hit
+		and (0 <= mouse_percent and mouse_percent < 1)
 	mouse_time = duration * mouse_percent
 
 	if visibility == 'auto' then
@@ -269,10 +265,7 @@ function update()
 		end
 	end
 
-	if
-		old_visibility ~= visibility or
-		old_visible ~= visible
-	then
+	if old_visibility ~= visibility or old_visible ~= visible then
 		old_visibility = visibility
 		old_visible = visible
 
@@ -314,9 +307,24 @@ function update()
 		if mouse_prog_hit then
 			props['window-dragging'] = mp.get_property_native('window-dragging')
 			mp.set_property_native('window-dragging', false)
-			mp.add_forced_key_binding('MBTN_LEFT', 'osd-bar/MBTN_LEFT', handle_mouse_seek, COMPLEX)
-			mp.add_forced_key_binding('MBTN_MID', 'osd-bar/MBTN_MID', handle_mouse_seek, COMPLEX)
-			mp.add_forced_key_binding('MBTN_RIGHT', 'osd-bar/MBTN_RIGHT', handle_mouse_seek_to_chapter, COMPLEX)
+			mp.add_forced_key_binding(
+				'MBTN_LEFT',
+				'osd-bar/MBTN_LEFT',
+				handle_mouse_seek,
+				COMPLEX
+			)
+			mp.add_forced_key_binding(
+				'MBTN_MID',
+				'osd-bar/MBTN_MID',
+				handle_mouse_seek,
+				COMPLEX
+			)
+			mp.add_forced_key_binding(
+				'MBTN_RIGHT',
+				'osd-bar/MBTN_RIGHT',
+				handle_mouse_seek_to_chapter,
+				COMPLEX
+			)
 		else
 			mp.set_property_native('window-dragging', props['window-dragging'])
 			mp.remove_key_binding('osd-bar/MBTN_LEFT')
@@ -331,12 +339,17 @@ function update()
 	end
 
 	local function osd_clip_main(prog)
-		osd:put('{\\clip(',
-			prog == 'right' and prog_pos or main_x0, ',',
-			main_y0, ',',
-			prog == 'left' and prog_pos or main_x1, ',',
+		osd:put(
+			'{\\clip(',
+			prog == 'right' and prog_pos or main_x0,
+			',',
+			main_y0,
+			',',
+			prog == 'left' and prog_pos or main_x1,
+			',',
 			main_y1,
-		')}')
+			')}'
+		)
 	end
 
 	local function time2x(time)
@@ -387,8 +400,10 @@ function update()
 			local function draw()
 				for _, range in ipairs(seekable_ranges) do
 					osd:draw_rect(
-						math.floor(time2x(range.start)), line_margin,
-						math.floor(time2x(range['end'])), main_height - line_margin
+						math.floor(time2x(range.start)),
+						line_margin,
+						math.floor(time2x(range['end'])),
+						main_height - line_margin
 					)
 				end
 			end
@@ -414,10 +429,13 @@ function update()
 	if not (prog_small and mouse_prog_hit) then
 		local fs = main_fs * (prog_small and 0.8 or 1)
 		-- Left block.
-		osd:put('{\\r\\pos(',
-			box_x0 + (prog_small and 0 or side_width / 2), ',',
+		osd:put(
+			'{\\r\\pos(',
+			box_x0 + (prog_small and 0 or side_width / 2),
+			',',
 			main_yc,
-		')}')
+			')}'
+		)
 		osd:put(
 			'{\\bord2\\fs',
 			fs,
@@ -428,10 +446,13 @@ function update()
 		osd:put('\n')
 
 		-- Right block.
-		osd:put('{\\r\\pos(',
-			box_x1 - (prog_small and 0 or side_width / 2), ',',
+		osd:put(
+			'{\\r\\pos(',
+			box_x1 - (prog_small and 0 or side_width / 2),
+			',',
 			main_yc,
-		')}')
+			')}'
+		)
 		osd:put(
 			'{\\bord2\\fs',
 			fs,
@@ -445,22 +466,23 @@ function update()
 		then
 			osd_put_human_time(duration)
 		else
-			local time_remaininig = (props['duration'] or 0) - (props['time-pos'] or 0)
+			local time_remaininig = (props['duration'] or 0)
+				- (props['time-pos'] or 0)
 			local playtime_remaininig = time_remaininig / props['speed']
 			osd_put_human_time(-playtime_remaininig)
 		end
-		osd:put(
-			prog_small and '\\h' or '',
-			'\n'
-		)
+		osd:put(prog_small and '\\h' or '', '\n')
 	end
 
 	-- Top left block.
 	do
-		osd:put('{\\r\\pos(',
-			box_x0 + side_width / 2, ',',
+		osd:put(
+			'{\\r\\pos(',
+			box_x0 + side_width / 2,
+			',',
 			math.floor(box_y0 + top_fs / 2),
-		')}')
+			')}'
+		)
 		osd:put('{\\bord1\\fs', top_fs, '\\fnmonospace\\an5}')
 		osd:put(props['playlist-pos'], '/', props['playlist-count'])
 		osd:put('\n')
@@ -468,10 +490,13 @@ function update()
 
 	-- Top right block.
 	if cache then
-		osd:put('{\\r\\pos(',
-			box_x1 - side_width / 2, ',',
+		osd:put(
+			'{\\r\\pos(',
+			box_x1 - side_width / 2,
+			',',
 			math.floor(box_y0 + top_fs / 2),
-		')}')
+			')}'
+		)
 		osd:put('{\\bord1\\fs', top_fs, '\\fnmonospace\\an5}')
 		osd:put('Cache: ')
 		osd_put_human_duration(cache['cache-duration'] or 0)
@@ -488,34 +513,37 @@ function update()
 			local tri_height = main_fs / 8
 			local tri_side = tri_height / math.sin(45 / 180 * math.pi)
 
-			osd:put('{\\r\\pos(',
-				main_x0 + prog_margin, ',',
-				main_y0, ')\\bord1\\1a&H10&\\1c&HFFFFFF&}'
+			osd:put(
+				'{\\r\\pos(',
+				main_x0 + prog_margin,
+				',',
+				main_y0,
+				')\\bord1\\1a&H10&\\1c&HFFFFFF&}'
 			)
 			osd:draw_begin()
 			for i, chapter in ipairs(chapters) do
 				chapter.id = i - 1
 				local x = time2x(chapter.time)
+				osd:draw_triangle(x, tri_height, 90 + 45, tri_side, 90 - 45, tri_side)
 				osd:draw_triangle(
-					x, tri_height,
-					90 + 45, tri_side,
-					90 - 45, tri_side
-				)
-				osd:draw_triangle(
-					x, main_height - tri_height,
-					-90 + 45, tri_side,
-					-90 - 45, tri_side
+					x,
+					main_height - tri_height,
+					-90 + 45,
+					tri_side,
+					-90 - 45,
+					tri_side
 				)
 			end
 			osd:draw_end()
 			osd:put('\n')
 
-			local chapter_at = mouse_prog_hit and mouse_time or (props['time-pos'] or 0)
+			local chapter_at = mouse_prog_hit and mouse_time
+				or (props['time-pos'] or 0)
 
 			for _, chapter in ipairs(chapters) do
 				if
-					chapter.time <= chapter_at and
-					(not chapter_pos or chapter_pos.time <= chapter.time)
+					chapter.time <= chapter_at
+					and (not chapter_pos or chapter_pos.time <= chapter.time)
 				then
 					chapter_pos = chapter
 				end
@@ -533,21 +561,25 @@ function update()
 			local tri_height = main_fs / 5
 			local tri_side = tri_height / math.sin(45 / 180 * math.pi)
 
-			osd:put('{\\r\\pos(',
-				main_x0 + prog_margin, ',',
-				main_y0, ')\\bord1\\1a&H10&\\1c&H', color, '&}'
+			osd:put(
+				'{\\r\\pos(',
+				main_x0 + prog_margin,
+				',',
+				main_y0,
+				')\\bord1\\1a&H10&\\1c&H',
+				color,
+				'&}'
 			)
 			osd:draw_begin()
 			local x = time2x(math.min(time, duration))
+			osd:draw_triangle(x, tri_height, 90, tri_height, rot, tri_side)
 			osd:draw_triangle(
-				x, tri_height,
-				90, tri_height,
-				rot, tri_side
-			)
-			osd:draw_triangle(
-				x, main_height - tri_height,
-				-90, tri_height,
-				-rot, tri_side
+				x,
+				main_height - tri_height,
+				-90,
+				tri_height,
+				-rot,
+				tri_side
 			)
 			osd:draw_end()
 			osd:put('\n')
@@ -583,12 +615,8 @@ function update()
 	-- Top center block.
 	do
 		local mouse_chapter = mouse_prog_hit and chapter_pos
-		local x0 = top_small
-			and box_x0
-			or (mouse_chapter
-				and prog_x0 + time2x(mouse_chapter.time)
-				or main_x0
-			)
+		local x0 = top_small and box_x0
+			or (mouse_chapter and prog_x0 + time2x(mouse_chapter.time) or main_x0)
 		local y0 = box_y0 + (top_small and top_fs or 0)
 		local align = x0 < osd.width / 2 and 4 or 6
 		osd:put('{\\r\\pos(', x0, ',', y0 + top_fs / 2, ')}')
@@ -599,12 +627,17 @@ function update()
 			mouse_chapter and align or 4,
 			'}'
 		)
-		osd:put('{\\clip(',
-			top_small and box_x0 or main_x0, ',',
-			y0, ',',
-			top_small and box_x1 or main_x1, ',',
+		osd:put(
+			'{\\clip(',
+			top_small and box_x0 or main_x0,
+			',',
+			y0,
+			',',
+			top_small and box_x1 or main_x1,
+			',',
 			y0 + top_fs,
-		')}')
+			')}'
+		)
 		if mouse_chapter then
 			osd:put(
 				top_small and '' or '\\h',
@@ -623,10 +656,7 @@ function update()
 		osd:put('\n')
 
 		if mouse_chapter and not top_small then
-			osd:put(
-				'{\\r\\pos(', x0, ',', y0, ')}',
-				'{\\bord1\\3c&HFFFFFF&}'
-			)
+			osd:put('{\\r\\pos(', x0, ',', y0, ')}', '{\\bord1\\3c&HFFFFFF&}')
 			osd:draw_begin()
 			osd:draw_move(0, 0)
 			osd:draw_line(0, top_fs)
@@ -637,7 +667,7 @@ function update()
 
 	do
 		local scaled_margin_bottom = osd.height ~= 0
-			and (osd.height - box_y0) / osd.height * 720
+				and (osd.height - box_y0) / osd.height * 720
 			or 0
 		set_sub_margin_y(base_sub_margin_y + math.ceil(scaled_margin_bottom))
 	end

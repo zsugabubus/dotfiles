@@ -1,13 +1,13 @@
-local osd = require 'osd'.new()
-local mode = require 'mode'.new()
-local utils = require 'utils'
+local osd = require('osd').new()
+local mode = require('mode').new()
+local utils = require('utils')
 
 local PROPERTIES = {
-	{name = 'brightness', short_name = 'b', icon = 0xa},
-	{name = 'contrast',   short_name = 'c', icon = 0x7},
-	{name = 'gamma',      short_name = 'g', icon = 0xa},
-	{name = 'saturation', short_name = 's', icon = 0x8},
-	{name = 'hue',        short_name = 'h', icon = 0xb},
+	{ name = 'brightness', short_name = 'b', icon = 0xa },
+	{ name = 'contrast', short_name = 'c', icon = 0x7 },
+	{ name = 'gamma', short_name = 'g', icon = 0xa },
+	{ name = 'saturation', short_name = 's', icon = 0x8 },
+	{ name = 'hue', short_name = 'h', icon = 0xb },
 }
 
 local visible = false
@@ -26,7 +26,7 @@ end
 
 local function load_default_presets()
 	presets = utils.do_script_opt('color-presets.lua') or {}
-	table.insert(presets, 1, {name = 'none'})
+	table.insert(presets, 1, { name = 'none' })
 
 	-- Normalize.
 	for _, preset in ipairs(presets) do
@@ -202,7 +202,7 @@ function update()
 end
 update = osd.update_wrap(update)
 
-mode:map {
+mode:map({
 	UP = function()
 		set_cursor('up')
 	end,
@@ -254,7 +254,7 @@ mode:map {
 	ESC = function()
 		set_visible('hide')
 	end,
-}
+})
 
 utils.register_script_messages('osd-colors', {
 	visibility = set_visible,

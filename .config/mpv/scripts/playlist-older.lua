@@ -3,10 +3,7 @@ local MAX_HISTORY = 10
 local history = {}
 
 mp.observe_property('playlist-pos', 'native', function(_, current)
-	if
-		current >= 0 and
-		current ~= history[#history]
-	then
+	if current >= 0 and current ~= history[#history] then
 		if #history >= MAX_HISTORY then
 			table.remove(history, 1)
 		end

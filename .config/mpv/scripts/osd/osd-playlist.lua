@@ -1,6 +1,6 @@
-local osd = require 'osd'.new()
-local utils = require 'utils'
-local title = require 'title'
+local osd = require('osd').new()
+local utils = require('utils')
+local title = require('title')
 
 local font_scale = 0.65
 
@@ -17,17 +17,11 @@ local function set_visible(action)
 	local temporary = false
 
 	if action == 'show' or action == 'peek' then
-		temporary = action == 'peek' and (
-			not visible or
-			hide_timeout:is_enabled()
-		)
+		temporary = action == 'peek' and (not visible or hide_timeout:is_enabled())
 		visible = true
 	elseif action == 'hide' then
 		visible = false
-	elseif
-		action == 'toggle' or
-		action == 'blink'
-	then
+	elseif action == 'toggle' or action == 'blink' then
 		temporary = action == 'blink'
 		visible = not visible
 	end
@@ -103,7 +97,9 @@ function update()
 	osd:reset()
 	osd:putf(
 		'{\\q2\\pos(0, %d)\\fscx%f\\fscy%f}',
-		y, font_scale * 100, font_scale * 100
+		y,
+		font_scale * 100,
+		font_scale * 100
 	)
 
 	local top, bottom
@@ -137,7 +133,11 @@ utils.register_script_messages('osd-playlist', {
 	scroll_half_screen = scroll_half_screen,
 })
 
-mp.add_key_binding('Ctrl+d', function() scroll_half_screen('down') end)
-mp.add_key_binding('Ctrl+u', function() scroll_half_screen('up') end)
+mp.add_key_binding('Ctrl+d', function()
+	scroll_half_screen('down')
+end)
+mp.add_key_binding('Ctrl+u', function()
+	scroll_half_screen('up')
+end)
 
 update()

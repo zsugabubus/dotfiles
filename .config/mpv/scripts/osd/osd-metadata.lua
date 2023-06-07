@@ -1,5 +1,5 @@
-local osd = require 'osd'.new()
-local utils = require 'utils'
+local osd = require('osd').new()
+local utils = require('utils')
 
 local visible = false
 local props = {}
@@ -24,9 +24,11 @@ local function update_property(name, value)
 	if name == 'metadata' then
 		local list = {}
 		for k, v in pairs(value) do
-			table.insert(list, {k, v})
+			table.insert(list, { k, v })
 		end
-		table.sort(list, function(x, y) return x[1] < y[1] end)
+		table.sort(list, function(x, y)
+			return x[1] < y[1]
+		end)
 		props['metadata/list'] = list
 	end
 

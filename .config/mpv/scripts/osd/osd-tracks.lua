@@ -1,6 +1,6 @@
-local osd = require 'osd'.new()
-local mode = require 'mode'.new()
-local utils = require 'utils'
+local osd = require('osd').new()
+local mode = require('mode').new()
+local utils = require('utils')
 
 local visible = false
 local cursor_type, cursor_id = 'video', 0
@@ -40,11 +40,7 @@ local function set_cursor(action)
 		return set_cursor(CURSOR_TYPE_UP[cursor_type])
 	elseif action == 'group-down' then
 		return set_cursor(CURSOR_TYPE_DOWN[cursor_type])
-	elseif
-		action == 'audio' or
-		action == 'video' or
-		action == 'sub'
-	then
+	elseif action == 'audio' or action == 'video' or action == 'sub' then
 		cursor_type = action
 		local x = props['track-list/selected'][action]
 		cursor_id = x and x.id or 0
@@ -72,7 +68,7 @@ local function update_property(name, value)
 	props[name] = value
 
 	if name == 'track-list' then
-		local x = {video = {}, audio = {}, sub = {}}
+		local x = { video = {}, audio = {}, sub = {} }
 		for _, track in ipairs(value) do
 			table.insert(x[track.type], track)
 		end
@@ -95,12 +91,12 @@ local function update_property(name, value)
 end
 
 local TRACK_FLAGS = {
-	{'forced'},
-	{'visual-impaired'},
-	{'hearing-impaired'},
-	{'external'},
-	{'albumart', 'cover'},
-	{'default'},
+	{ 'forced' },
+	{ 'visual-impaired' },
+	{ 'hearing-impaired' },
+	{ 'external' },
+	{ 'albumart', 'cover' },
+	{ 'default' },
 }
 
 local function osd_put_track(track)
@@ -124,10 +120,7 @@ local function osd_put_track(track)
 
 	if track['demux-w'] then
 		osd:putf(' %dx%d', track['demux-w'], track['demux-h'])
-	elseif
-		track.type == 'video' and
-		track.selected
-	then
+	elseif track.type == 'video' and track.selected then
 		local pars = props['video-params'] or props['video-out-params']
 		if pars then
 			osd:putf(' %dx%d', pars.w, pars.h)
@@ -135,17 +128,17 @@ local function osd_put_track(track)
 	end
 
 	if
-		track['demux-channels'] and
-		not string.find(track['demux-channels'], 'unknown')
+		track['demux-channels']
+		and not string.find(track['demux-channels'], 'unknown')
 	then
 		osd:put(' ', track['demux-channels'])
 	else
 		local pars = props['audio-params'] or props['audio-out-params']
 		if
-			track.type == 'audio' and
-			track.selected and
-			pars and
-			pars['hr-channels']
+			track.type == 'audio'
+			and track.selected
+			and pars
+			and pars['hr-channels']
 		then
 			osd:putf(' ', pars['hr-channels'])
 		elseif track['demux-channel-count'] then
@@ -175,15 +168,9 @@ local function osd_put_track(track)
 	end
 
 	if track.selected then
-		if
-			track.type == 'audio' and
-			props['mute']
-		then
+		if track.type == 'audio' and props['mute'] then
 			osd:put(' (muted)')
-		elseif
-			track.type == 'sub' and
-			not props['sub-visibility']
-		then
+		elseif track.type == 'sub' and not props['sub-visibility'] then
 			osd:put(' (hidden)')
 		end
 	end
@@ -264,11 +251,14 @@ function update()
 
 	local paginate = #props['track-list'] > page_size
 	local more_lines = paginate
-		and math.min(math.max(
-			#props['track-list/type']['audio'],
-			#props['track-list/type']['video'],
-			#props['track-list/type']['sub']
-		), page_size - 1)
+			and math.min(
+				math.max(
+					#props['track-list/type']['audio'],
+					#props['track-list/type']['video'],
+					#props['track-list/type']['sub']
+				),
+				page_size - 1
+			)
 		or #props['track-list']
 
 	osd:reset()
@@ -285,7 +275,7 @@ function update()
 end
 update = osd.update_wrap(update)
 
-mode:map {
+mode:map({
 	a = function()
 		set_cursor('audio')
 	end,
@@ -325,7 +315,7 @@ mode:map {
 			set_enabled('toggle')
 		end
 	end,
-}
+})
 
 utils.register_script_messages('osd-tracks', {
 	visibility = set_visible,

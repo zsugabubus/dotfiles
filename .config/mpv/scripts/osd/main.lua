@@ -1,9 +1,9 @@
-require 'choose-value'
-require 'osd-bar'
-require 'osd-colors'
-require 'osd-filters'
-require 'osd-icons'
-require 'osd-metadata'
-require 'osd-playlist'
-require 'osd-title'
-require 'osd-tracks'
+require('choose-value')
+require('osd-bar')
+require('osd-colors')
+require('osd-filters')
+require('osd-icons')
+require('osd-metadata')
+require('osd-playlist')
+require('osd-title')
+require('osd-tracks')

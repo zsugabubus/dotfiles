@@ -3,7 +3,7 @@ M.__index = M
 
 local serial = 2
 
-local REPEATABLE = {repeatable = true}
+local REPEATABLE = { repeatable = true }
 
 function M.new()
 	serial = serial + 1
@@ -67,12 +67,7 @@ local function add_key_binding(self, lhs, rhs)
 		rhs = self.key_bindings[rhs]
 	end
 
-	mp.add_forced_key_binding(
-		lhs,
-		self.binding_prefix .. lhs,
-		rhs,
-		REPEATABLE
-	)
+	mp.add_forced_key_binding(lhs, self.binding_prefix .. lhs, rhs, REPEATABLE)
 end
 
 local function remove_key_binding(self, lhs)

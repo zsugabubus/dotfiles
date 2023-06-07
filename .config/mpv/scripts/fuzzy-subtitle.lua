@@ -1,4 +1,4 @@
-local utils = require 'mp.utils'
+local utils = require('mp.utils')
 
 local SUBTITLE_EXTENSIONS = { 'srt', 'lrc', 'txt' }
 
@@ -8,13 +8,10 @@ local CODEC_BLACKLIST = {
 }
 
 local XDG_CACHE_DIR = (
-	os.getenv('XDG_CACHE_DIR') or
-	utils.join_path(os.getenv('HOME'), '.cache')
+	os.getenv('XDG_CACHE_DIR') or utils.join_path(os.getenv('HOME'), '.cache')
 )
-local TMP_PREFIX = utils.join_path(
-	XDG_CACHE_DIR,
-	'mpv-' .. mp.get_script_name()
-)
+local TMP_PREFIX =
+	utils.join_path(XDG_CACHE_DIR, 'mpv-' .. mp.get_script_name())
 
 mp.msg.debug('Temporary file prefix', TMP_PREFIX)
 

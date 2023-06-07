@@ -17,7 +17,7 @@ do
 end
 
 local function confirm_if(cond, ...)
-	local argv = {...}
+	local argv = { ... }
 
 	local f = load('return (' .. cond .. ')')
 	setfenv(f, ENV)

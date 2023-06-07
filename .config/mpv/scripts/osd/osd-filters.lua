@@ -1,10 +1,10 @@
-local osd = require 'osd'.new()
-local mode = require 'mode'.new()
-local utils = require 'utils'
+local osd = require('osd').new()
+local mode = require('mode').new()
+local utils = require('utils')
 
 local visible = false
 local cursor_tab, cursor_id = 'af', 0
-local props = {vf = {}, af = {}}
+local props = { vf = {}, af = {} }
 
 local old_visible
 
@@ -74,7 +74,7 @@ end
 
 local function set_default_filters()
 	local defaults = utils.do_script_opt('filters.lua') or {}
-	for _, k in pairs({'af', 'vf'}) do
+	for _, k in pairs({ 'af', 'vf' }) do
 		mp.set_property(k, table.concat(defaults[k] or {}, ','))
 	end
 end
@@ -169,7 +169,7 @@ function update()
 end
 update = osd.update_wrap(update)
 
-mode:map {
+mode:map({
 	a = function()
 		set_cursor('audio')
 	end,
@@ -213,7 +213,7 @@ mode:map {
 	ESC = function()
 		set_visible('hide')
 	end,
-}
+})
 
 utils.register_script_messages('osd-filters', {
 	visibility = set_visible,

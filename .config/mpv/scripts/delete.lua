@@ -7,12 +7,16 @@ mp.add_key_binding('Shift+DEL', 'delete-file', function()
 	end
 
 	-- Perform safety checks after 'path' has been get to avoid race conditions.
-	if (
-		not mp.get_property_bool('pause') and
-		mp.get_property_number('time-pos', 0) < 1
-	) then
-		mp.msg.error('Safety check blocked deleting file that has just started to play')
-		mp.msg.info('To delete the file pause playback or try again a few moments later')
+	if
+		not mp.get_property_bool('pause')
+		and mp.get_property_number('time-pos', 0) < 1
+	then
+		mp.msg.error(
+			'Safety check blocked deleting file that has just started to play'
+		)
+		mp.msg.info(
+			'To delete the file pause playback or try again a few moments later'
+		)
 		mp.osd_message('Delete blocked')
 		return
 	end
@@ -32,4 +36,4 @@ mp.add_key_binding('Shift+DEL', 'delete-file', function()
 	else
 		mp.osd_message('Delete failed')
 	end
-end, {repeatable = false})
+end, { repeatable = false })

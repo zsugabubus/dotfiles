@@ -20,7 +20,7 @@ function M.new(opts)
 
 	local o = {
 		ass = mp.create_osd_overlay('ass-events'),
-		buf = require 'string.buffer'.new(),
+		buf = require('string.buffer').new(),
 	}
 
 	o.ass.z = opts.z or 0
@@ -78,11 +78,7 @@ function M:put_fsc(props, line_count, max_scale)
 	-- Insert blank line to skip message line.
 	self:put('\\h\n')
 	-- Disable line wrapping so line_count is exact.
-	self:putf(
-		'{\\q2\\fscx%d\\fscy%d}',
-		font_scale * 100,
-		font_scale * 100
-	)
+	self:putf('{\\q2\\fscx%d\\fscy%d}', font_scale * 100, font_scale * 100)
 end
 
 function M:draw_begin()
@@ -118,9 +114,7 @@ end
 
 local function xy_offset(x, y, angle, length)
 	angle = deg2rad(angle)
-	return
-		x + math.cos(angle) * length,
-		y - math.sin(angle) * length
+	return x + math.cos(angle) * length, y - math.sin(angle) * length
 end
 
 function M:draw_triangle(x, y, a0, l0, a1, l1)
@@ -162,7 +156,10 @@ function M.ass_escape(s)
 	return s
 		-- ASS' escape handling is WTF: RS cannot be escaped with RS so we trick it
 		-- by using ZWJ.
-		:gsub('\\', '\\\u{FEFF}')
+		:gsub(
+			'\\',
+			'\\\u{FEFF}'
+		)
 		:gsub('{', '\\{')
 		:gsub('\n', '\\N')
 end

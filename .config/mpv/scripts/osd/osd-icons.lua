@@ -1,10 +1,17 @@
-local osd = require 'osd'.new { z = 10 }
+local osd = require('osd').new({ z = 10 })
 
 local props = {}
 local update_timeout
 
 local function osd_put_icon(align, alpha, text)
-	osd:put('\n{\\an', align, '\\1a&H', alpha, '\\fscx200\\fscy200\\fnmpv-osd-symbols}', text)
+	osd:put(
+		'\n{\\an',
+		align,
+		'\\1a&H',
+		alpha,
+		'\\fscx200\\fscy200\\fnmpv-osd-symbols}',
+		text
+	)
 end
 
 local function update()

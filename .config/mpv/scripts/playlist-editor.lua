@@ -18,25 +18,23 @@ mp.register_script_message('edit-playlist', function()
 	local p = mp.command_native({
 		name = 'subprocess',
 		playback_only = false,
-		args =
-			visual
-				and {
-					visual,
-					'--',
-					tmp,
-				}
-				or {
-					-- Some terminals (e.g. Alacritty) has fucked signal handling so we
-					-- must start it from shell to unblock SIGCHLD.
-					'/bin/sh',
-					'-c',
-					("%s -e /bin/sh -c '%s +%d -- %s || rm -f -- %s'"):format(
-						os.getenv('TERMINAL') or 'xterm',
-						os.getenv('EDITOR') or 'vim',
-						pos,
-						tmp,
-						tmp),
-				}
+		args = visual and {
+			visual,
+			'--',
+			tmp,
+		} or {
+			-- Some terminals (e.g. Alacritty) has fucked signal handling so we
+			-- must start it from shell to unblock SIGCHLD.
+			'/bin/sh',
+			'-c',
+			("%s -e /bin/sh -c '%s +%d -- %s || rm -f -- %s'"):format(
+				os.getenv('TERMINAL') or 'xterm',
+				os.getenv('EDITOR') or 'vim',
+				pos,
+				tmp,
+				tmp
+			),
+		},
 	})
 
 	local f = io.open(tmp, 'r')
@@ -52,4 +50,4 @@ mp.register_script_message('edit-playlist', function()
 		f:close()
 		os.remove(tmp)
 	end
-end, {repeatable = false})
+end, { repeatable = false })

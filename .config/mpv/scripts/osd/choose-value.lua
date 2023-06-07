@@ -1,7 +1,7 @@
-local utils = require 'utils'
+local utils = require('utils')
 
 local function build_chooser(name, choices_file)
-	local osd = require 'osd'.new()
+	local osd = require('osd').new()
 
 	local visible = false
 	local is_property = mp.get_property(name) ~= nil
@@ -21,29 +21,26 @@ local function build_chooser(name, choices_file)
 	local function update_choices()
 		choices = utils.do_script_opt(choices_file)
 
-		mode = require 'mode'.new()
+		mode = require('mode').new()
 
-		mode:map {
+		mode:map({
 			ESC = function()
 				set_visible('hide')
 			end,
-		}
+		})
 
 		for _, choice in ipairs(choices) do
 			local key, value = unpack(choice)
-			mode:map(
-				key,
-				function()
-					set_visible('hide')
-					if is_property then
-						mp.commandv('osd-msg-bar', 'set', name, value)
-					elseif type(value) == 'string' then
-						mp.command(value)
-					else
-						value()
-					end
+			mode:map(key, function()
+				set_visible('hide')
+				if is_property then
+					mp.commandv('osd-msg-bar', 'set', name, value)
+				elseif type(value) == 'string' then
+					mp.command(value)
+				else
+					value()
 				end
-			)
+			end)
 		end
 
 		return update()
@@ -103,9 +100,7 @@ local function build_chooser(name, choices_file)
 	return update()
 end
 
-for _, file in ipairs(
-	require 'mp.utils'.readdir(utils.script_opts, 'files')
-) do
+for _, file in ipairs(require('mp.utils').readdir(utils.script_opts, 'files')) do
 	local name = string.match(file, '^choose%-(.*)%.lua$')
 	if name then
 		build_chooser(name, file)

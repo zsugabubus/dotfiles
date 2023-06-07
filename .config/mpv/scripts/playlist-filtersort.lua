@@ -50,19 +50,19 @@ local function filter_playlist(playlist)
 		local entry = playlist[i]
 		local s = entry.filename:lower()
 		if
-			s:match('^sa?mple?[/.-]') or
-			s:match('[/!.-]sample') or
-			s:match('%.aria2$') or
-			s:match('%.exe$') or
-			s:match('%.torrent$') or
-			s:match('%.srt$') or
-			s:match('%.nfo$') or
-			s:match('%.part$') or
-			s:match('%.rar$') or
-			s:match('%.r[0-9]*$') or
-			s:match('%.sfv$') or
-			s:match('%.txt$') or
-			s:match('%.pdf$')
+			s:match('^sa?mple?[/.-]')
+			or s:match('[/!.-]sample')
+			or s:match('%.aria2$')
+			or s:match('%.exe$')
+			or s:match('%.torrent$')
+			or s:match('%.srt$')
+			or s:match('%.nfo$')
+			or s:match('%.part$')
+			or s:match('%.rar$')
+			or s:match('%.r[0-9]*$')
+			or s:match('%.sfv$')
+			or s:match('%.txt$')
+			or s:match('%.pdf$')
 		then
 			mp.msg.info('Remove', s)
 			mp.commandv('playlist-remove', i - 1)
@@ -103,9 +103,7 @@ local function sort_playlist(playlist)
 				:gsub('([0-9]+)(.)', sub_wide_number)
 				:lower()
 		elseif by == 'name' then
-			entry.key = entry.filename
-				:gsub('^.*/', '')
-				:lower()
+			entry.key = entry.filename:gsub('^.*/', ''):lower()
 		elseif by == 'path' then
 			entry.key = entry.filename
 		end
@@ -161,8 +159,8 @@ local function sort_playlist(playlist)
 				if i == j then
 					break
 				end
-				mp.commandv('playlist-move', (i)     - 1, (j + 1) - 1)
-				mp.commandv('playlist-move', (j - 1) - 1, (i)     - 1)
+				mp.commandv('playlist-move', i - 1, (j + 1) - 1)
+				mp.commandv('playlist-move', (j - 1) - 1, i - 1)
 				playlist[j], playlist[i] = playlist[i], playlist[j]
 			end
 		end
@@ -214,10 +212,7 @@ local function update_playlist()
 	-- Because of this, it can be assumed that no other script touches playlist,
 	-- so sorting (and filtering) have to be redone only when playlist-count
 	-- increases.
-	if (
-		old_playlist_count < playlist_count or
-		old_sort_by ~= sort_options.by
-	) then
+	if old_playlist_count < playlist_count or old_sort_by ~= sort_options.by then
 		local start = mp.get_time()
 
 		local playlist = mp.get_property_native('playlist')
@@ -236,11 +231,9 @@ local function update_playlist()
 
 		local elapsed = mp.get_time() - start
 
-		mp.msg.info(string.format(
-			"Sorted by '%s' in %.3f seconds",
-			sort_options.by,
-			elapsed
-		))
+		mp.msg.info(
+			string.format("Sorted by '%s' in %.3f seconds", sort_options.by, elapsed)
+		)
 	end
 	old_playlist_count = playlist_count
 	old_sort_by = sort_options.by
@@ -249,19 +242,17 @@ end
 local function validate_options(first_run)
 	if not SORT_BY_CHOICES[sort_options.by] then
 		mp.msg.error(
-			'--script-opts=' ..
-			mp.get_script_name() ..
-			'-by=X must be one of: ' ..
-			table.concat(SORT_BY_CHOICES, ', ')
+			'--script-opts='
+				.. mp.get_script_name()
+				.. '-by=X must be one of: '
+				.. table.concat(SORT_BY_CHOICES, ', ')
 		)
 	end
 
 	if first_run then
 		if sort_options.by ~= 'none' then
 			mp.msg.info(
-				'Use --script-opts=' ..
-				mp.get_script_name() ..
-				'-by=none to disable.'
+				'Use --script-opts=' .. mp.get_script_name() .. '-by=none to disable.'
 			)
 		end
 	end
@@ -292,6 +283,6 @@ mp.register_script_message('sort-now', function(by)
 	sort_options.by = saved_sort_by
 end)
 
-require 'mp.options'.read_options(sort_options, 'sort', update_options)
-require 'mp.options'.read_options(sort_options, nil, update_options)
+require('mp.options').read_options(sort_options, 'sort', update_options)
+require('mp.options').read_options(sort_options, nil, update_options)
 validate_options(true)

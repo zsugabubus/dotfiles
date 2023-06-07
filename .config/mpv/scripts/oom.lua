@@ -1,4 +1,4 @@
-local utils = require 'mp.utils'
+local utils = require('mp.utils')
 local pid = utils.getpid()
 
 local function oom_score_adj(n)

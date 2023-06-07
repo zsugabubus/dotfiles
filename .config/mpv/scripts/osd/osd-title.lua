@@ -1,6 +1,6 @@
-local osd = require 'osd'.new { z = 10 }
-local utils = require 'utils'
-local title = require 'title'
+local osd = require('osd').new({ z = 10 })
+local utils = require('utils')
+local title = require('title')
 
 local visible = false
 local props = {}
@@ -58,7 +58,13 @@ function update()
 			if track.type == 'video' then
 				local pars = props['video-params']
 				if pars then
-					osd_put_block(3, '%s%dx%d', track.albumart and '[P] ' or '', pars.w, pars.h)
+					osd_put_block(
+						3,
+						'%s%dx%d',
+						track.albumart and '[P] ' or '',
+						pars.w,
+						pars.h
+					)
 				end
 				break
 			elseif track.type == 'audio' then
@@ -75,7 +81,12 @@ function update()
 		osd_put_block(3, ' %02d:%02d', duration / 60, duration % 60)
 	end
 
-	osd_put_block(1, '%d/%d', props['playlist-pos'] or 0, props['playlist-count'] or 0)
+	osd_put_block(
+		1,
+		'%d/%d',
+		props['playlist-pos'] or 0,
+		props['playlist-count'] or 0
+	)
 
 	osd:update()
 end
@@ -90,8 +101,8 @@ utils.register_script_messages('osd-title', {
 mp.add_key_binding('y', 'yank-title', function()
 	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
 	local title = (
-		mp.get_property_native('metadata/by-key/Title', nil) or
-		mp.get_property_native('media-title', nil)
+		mp.get_property_native('metadata/by-key/Title', nil)
+		or mp.get_property_native('media-title', nil)
 	)
 	local version = mp.get_property_native('metadata/by-key/Version', nil)
 	local title = ('%s%s%s%s'):format(
@@ -100,8 +111,12 @@ mp.add_key_binding('y', 'yank-title', function()
 		title,
 		version and (' (%s)'):format(version) or ''
 	)
-	os.execute(('printf %%s %s | xclip -l 1 -selection clipboard &'):format(utils.shesc(title)))
+	os.execute(
+		('printf %%s %s | xclip -l 1 -selection clipboard &'):format(
+			utils.shesc(title)
+		)
+	)
 	mp.osd_message('Yanked: ' .. title)
-end, {repeatable = false})
+end, { repeatable = false })
 
 update()
