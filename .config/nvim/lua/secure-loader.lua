@@ -6,7 +6,7 @@ package.loaders = {
 	package.loaders[2], -- NeoVim loader.
 }
 
-local Trace = require 'trace'
+local Trace = require('trace')
 if Trace.verbose > 0 then
 	local vim_loader = package.loaders[2]
 	package.loaders[2] = function(path)

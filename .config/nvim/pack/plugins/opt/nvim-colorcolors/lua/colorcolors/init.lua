@@ -7,7 +7,7 @@ local matcher
 local attached = {}
 
 local function load_library()
-	local ffi = require 'ffi'
+	local ffi = require('ffi')
 
 	local hdr = [[
 enum type {
@@ -55,32 +55,35 @@ size_t match(char const *, size_t, struct highlight *, size_t);
 		local spec = {}
 
 		for name, u888 in pairs(vim.api.nvim_get_color_map()) do
-			table.insert(spec, {name, bit.bor(bit.lshift(u888, 8), ffi.C.T_NAMED)})
+			table.insert(spec, { name, bit.bor(bit.lshift(u888, 8), ffi.C.T_NAMED) })
 		end
-		for name, hex in pairs(require 'colorcolors.tailwind') do
-			table.insert(spec, {'-' .. name, string.format('0x%s%02x', hex, ffi.C.T_NAMED)})
+		for name, hex in pairs(require('colorcolors.tailwind')) do
+			table.insert(
+				spec,
+				{ '-' .. name, string.format('0x%s%02x', hex, ffi.C.T_NAMED) }
+			)
 		end
-		table.insert(spec, {'#[a-f0-9]{3}', ffi.C.T_RGB})
-		table.insert(spec, {'#[a-f0-9]{6}', ffi.C.T_RRGGBB})
-		table.insert(spec, {'0x[a-f0-9]{3}', ffi.C.T_RGB})
-		table.insert(spec, {'0x[a-f0-9]{6}', ffi.C.T_RRGGBB})
-		table.insert(spec, {'"[a-f0-9]{6}"', bit.bor(0x0100, ffi.C.T_RRGGBB)})
-		table.insert(spec, {"'[a-f0-9]{6}'", bit.bor(0x0100, ffi.C.T_RRGGBB)})
-		table.insert(spec, {"rgb(", ffi.C.T_RGB_FN})
-		table.insert(spec, {"rgba(", ffi.C.T_RGB_FN})
-		table.insert(spec, {"hsl(", ffi.C.T_HSL_FN})
-		table.insert(spec, {"hsla(", ffi.C.T_HSL_FN})
-		table.insert(spec, {"hwb(", ffi.C.T_HWB_FN})
-		table.insert(spec, {"lab(", ffi.C.T_LAB_FN})
-		table.insert(spec, {"lch(", ffi.C.T_LCH_FN})
-		table.insert(spec, {'color[0-9]', ffi.C.T_COLOR})
-		table.insert(spec, {'colour[0-9]', ffi.C.T_COLOR})
-		table.insert(spec, {'[[;]3[0-7][;m]', ffi.C.T_SGR_8})
-		table.insert(spec, {'[[;]4[0-7][;m]', ffi.C.T_SGR_8})
-		table.insert(spec, {'[[;]9[0-7][;m]', ffi.C.T_SGR_BRIGHT_8})
-		table.insert(spec, {'[[;]10[0-7][;m]', ffi.C.T_SGR_BRIGHT_8})
-		table.insert(spec, {'[[;][34]8;5;[0-9]', ffi.C.T_SGR_256})
-		table.insert(spec, {'[[;][34]8;2;[0-9]', ffi.C.T_SGR_RGB})
+		table.insert(spec, { '#[a-f0-9]{3}', ffi.C.T_RGB })
+		table.insert(spec, { '#[a-f0-9]{6}', ffi.C.T_RRGGBB })
+		table.insert(spec, { '0x[a-f0-9]{3}', ffi.C.T_RGB })
+		table.insert(spec, { '0x[a-f0-9]{6}', ffi.C.T_RRGGBB })
+		table.insert(spec, { '"[a-f0-9]{6}"', bit.bor(0x0100, ffi.C.T_RRGGBB) })
+		table.insert(spec, { "'[a-f0-9]{6}'", bit.bor(0x0100, ffi.C.T_RRGGBB) })
+		table.insert(spec, { 'rgb(', ffi.C.T_RGB_FN })
+		table.insert(spec, { 'rgba(', ffi.C.T_RGB_FN })
+		table.insert(spec, { 'hsl(', ffi.C.T_HSL_FN })
+		table.insert(spec, { 'hsla(', ffi.C.T_HSL_FN })
+		table.insert(spec, { 'hwb(', ffi.C.T_HWB_FN })
+		table.insert(spec, { 'lab(', ffi.C.T_LAB_FN })
+		table.insert(spec, { 'lch(', ffi.C.T_LCH_FN })
+		table.insert(spec, { 'color[0-9]', ffi.C.T_COLOR })
+		table.insert(spec, { 'colour[0-9]', ffi.C.T_COLOR })
+		table.insert(spec, { '[[;]3[0-7][;m]', ffi.C.T_SGR_8 })
+		table.insert(spec, { '[[;]4[0-7][;m]', ffi.C.T_SGR_8 })
+		table.insert(spec, { '[[;]9[0-7][;m]', ffi.C.T_SGR_BRIGHT_8 })
+		table.insert(spec, { '[[;]10[0-7][;m]', ffi.C.T_SGR_BRIGHT_8 })
+		table.insert(spec, { '[[;][34]8;5;[0-9]', ffi.C.T_SGR_256 })
+		table.insert(spec, { '[[;][34]8;2;[0-9]', ffi.C.T_SGR_RGB })
 
 		local Matcher = require('colorcolors.matcher')
 		m = Matcher:new({
@@ -91,7 +94,7 @@ size_t match(char const *, size_t, struct highlight *, size_t);
 
 	local src = vim.fn.tempname() .. '.c'
 	local f = assert(io.open(src, 'w'))
-	f:write [[
+	f:write([[
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
@@ -99,7 +102,7 @@ size_t match(char const *, size_t, struct highlight *, size_t);
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-]]
+]])
 	f:write(hdr)
 	f:write(('static uint16_t const K = %d;\n'):format(m.alphabet))
 	f:write(('static uint16_t const S = %d;\n'):format(m.start))
@@ -124,14 +127,16 @@ size_t match(char const *, size_t, struct highlight *, size_t);
 	write_array('uint8_t', 'CHARMAP', m.charmap, 256)
 	write_array('uint16_t', 'TRANSITIONS', m.transitions, m.states * m.alphabet)
 
-	f:write(require 'colorcolors.code')
+	f:write(require('colorcolors.code'))
 	f:close()
 
-	os.execute(string.format(
-		'cc -shared -fPIC -O2 -o %s %s -lm -Wconversion -Wall -Wextra -Wshadow -ffast-math',
-		obj,
-		src
-	))
+	os.execute(
+		string.format(
+			'cc -shared -fPIC -O2 -o %s %s -lm -Wconversion -Wall -Wextra -Wshadow -ffast-math',
+			obj,
+			src
+		)
+	)
 	os.remove(src)
 
 	return ffi.load(obj)
@@ -145,7 +150,7 @@ local function hls_iter(hls, i)
 end
 
 local function load_matcher()
-	local ffi = require 'ffi'
+	local ffi = require('ffi')
 	lib = load_library()
 	local hls = ffi.new('struct highlight[?]', 1000)
 	return function(s)
@@ -215,11 +220,20 @@ local function highlight_lines(buffer, start_lnum, end_lnum)
 		if end_lnum < 0 then
 			end_lnum = 9999
 		end
-		if not pcall(vim.api.nvim_buf_clear_namespace, buffer, ns, start_lnum, end_lnum) then
+		if
+			not pcall(
+				vim.api.nvim_buf_clear_namespace,
+				buffer,
+				ns,
+				start_lnum,
+				end_lnum
+			)
+		then
 			-- Buffer got deleted.
 			return
 		end
-		local lines = vim.api.nvim_buf_get_lines(buffer, start_lnum, end_lnum, false)
+		local lines =
+			vim.api.nvim_buf_get_lines(buffer, start_lnum, end_lnum, false)
 		for i, line in ipairs(lines) do
 			highlight_line(buffer, start_lnum + i - 1, line)
 		end
@@ -245,25 +259,28 @@ local function attach_to_buffer(buffer)
 	matcher = matcher or load_matcher()
 	highlight_lines(buffer, 0, -1)
 
-	vim.api.nvim_buf_attach(
-		buffer,
-		false,
-		{
-			on_reload = function(_, buffer)
-				highlight_lines(buffer, 0, -1)
-			end,
-			on_lines = function(_, buffer, changedtick, firstline, lastline, new_lastline)
-				if not attached[buffer] then
-					return true
-				end
-				local start_lnum, end_lnum  = firstline, math.max(lastline, new_lastline)
-				highlight_lines(buffer, start_lnum, end_lnum)
-			end,
-			on_detach = function(_, buffer)
-				detach_from_buffer(buffer)
+	vim.api.nvim_buf_attach(buffer, false, {
+		on_reload = function(_, buffer)
+			highlight_lines(buffer, 0, -1)
+		end,
+		on_lines = function(
+			_,
+			buffer,
+			changedtick,
+			firstline,
+			lastline,
+			new_lastline
+		)
+			if not attached[buffer] then
+				return true
 			end
-		}
-	)
+			local start_lnum, end_lnum = firstline, math.max(lastline, new_lastline)
+			highlight_lines(buffer, start_lnum, end_lnum)
+		end,
+		on_detach = function(_, buffer)
+			detach_from_buffer(buffer)
+		end,
+	})
 end
 
 function M.is_attached(buffer)

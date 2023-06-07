@@ -43,7 +43,7 @@ end
 function M.new(cls, worker_fn, on_reply, ...)
 	local uv = vim.loop
 
-	local NONBLOCK = {nonblock = true}
+	local NONBLOCK = { nonblock = true }
 
 	local self = setmetatable({}, cls)
 
@@ -57,7 +57,14 @@ function M.new(cls, worker_fn, on_reply, ...)
 	self.reply_rx:open(reply_channel.read)
 
 	uv.new_thread(
-		function(rx_fd, tx_fd, worker_code, read_start_messages_code, write_mpack_code, ...)
+		function(
+			rx_fd,
+			tx_fd,
+			worker_code,
+			read_start_messages_code,
+			write_mpack_code,
+			...
+		)
 			local read_start_mpack = load(read_start_messages_code)
 			local write_mpack = load(write_mpack_code)
 

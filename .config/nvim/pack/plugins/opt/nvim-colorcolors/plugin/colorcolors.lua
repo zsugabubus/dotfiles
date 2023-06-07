@@ -1,6 +1,6 @@
 local M = setmetatable({}, {
 	__index = function(_, key)
-		M = require 'colorcolors'
+		M = require('colorcolors')
 		return M[key]
 	end,
 })
@@ -26,26 +26,14 @@ vim.api.nvim_create_autocmd('VimEnter', {
 	once = true,
 })
 
-vim.api.nvim_create_user_command(
-	'ColorColorsAttachToBuffer',
-	function()
-		M.toggle_buffer(nil, true)
-	end,
-	{}
-)
+vim.api.nvim_create_user_command('ColorColorsAttachToBuffer', function()
+	M.toggle_buffer(nil, true)
+end, {})
 
-vim.api.nvim_create_user_command(
-	'ColorColorsDetachFromBuffer',
-	function()
-		M.toggle_buffer(nil, false)
-	end,
-	{}
-)
+vim.api.nvim_create_user_command('ColorColorsDetachFromBuffer', function()
+	M.toggle_buffer(nil, false)
+end, {})
 
-vim.api.nvim_create_user_command(
-	'ColorColorsToggleBuffer',
-	function()
-		M.toggle_buffer()
-	end,
-	{}
-)
+vim.api.nvim_create_user_command('ColorColorsToggleBuffer', function()
+	M.toggle_buffer()
+end, {})

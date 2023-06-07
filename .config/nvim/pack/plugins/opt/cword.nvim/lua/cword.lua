@@ -1,6 +1,6 @@
 local M = {}
 local enabled = false
-local timer = require 'luv'.new_timer()
+local timer = require('luv').new_timer()
 local cword
 local wins = {}
 
@@ -29,15 +29,10 @@ local function update()
 
 	local pattern = string.format([[\<\V%s\>]], string.gsub(cword, [[\]], [[\\]]))
 	for _, win in ipairs(wins) do
-		vim.w[win].hicword_id = vim.fn.matchadd(
-			'Cword',
-			pattern,
-			-1,
-			vim.w[win].hicword_id or -1,
-			{
+		vim.w[win].hicword_id =
+			vim.fn.matchadd('Cword', pattern, -1, vim.w[win].hicword_id or -1, {
 				window = win,
-			}
-		)
+			})
 	end
 end
 
@@ -90,7 +85,7 @@ function M.toggle(enable)
 		end,
 	})
 
-	vim.api.nvim_create_autocmd({'WinNew', 'WinClosed', 'WinEnter'}, {
+	vim.api.nvim_create_autocmd({ 'WinNew', 'WinClosed', 'WinEnter' }, {
 		group = group,
 		callback = function()
 			vim.schedule(update_wins)

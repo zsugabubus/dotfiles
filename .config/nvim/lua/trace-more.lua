@@ -3,7 +3,7 @@ local M = {}
 function M.report(node)
 	local epoch = node.start
 
-	local buf = require 'string.buffer'.new()
+	local buf = require('string.buffer').new()
 	buf:putf('%11s %11s %11s %s\n', 'clock', 'total', 'self', 'event')
 
 	local function walk(node, depth)
@@ -32,15 +32,15 @@ function M.report(node)
 end
 
 function M.startuptime(verbose)
-	local Trace = require 'trace'
+	local Trace = require('trace')
 
-	Trace.setup { verbose = verbose }
+	Trace.setup({ verbose = verbose })
 	local root = Trace.trace('startup')
 
 	vim.api.nvim_create_autocmd('VimEnter', {
 		callback = function()
 			Trace.trace(root)
-			vim.api.nvim_echo({{M.report(root), 'Normal'}}, true, {})
+			vim.api.nvim_echo({ { M.report(root), 'Normal' } }, true, {})
 		end,
 	})
 end

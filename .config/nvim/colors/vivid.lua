@@ -1,4 +1,4 @@
-local trace = require 'trace'.trace
+local trace = require('trace').trace
 
 vim.g.colors_name = 'vivid'
 
@@ -39,6 +39,7 @@ local light = vim.o.background == 'light'
 
 local span = trace('colorscheme data')
 
+-- stylua: ignore start
 local theme = {
 	Conceal = 'Normal',
 	Directory = 'Normal',
@@ -203,15 +204,15 @@ local theme = {
 
 	changeLogError = {},
 }
+-- stylua: ignore end
 
 local span = trace(span, 'set highlights')
 
 local function resolve(spec, k)
 	local v = spec[k]
-	if (
-		type(v) == 'string' and
-		string.byte(v, 1) ~= 35 -- '#'
-	) then
+	if
+		type(v) == 'string' and string.byte(v, 1) ~= 35 -- '#'
+	then
 		local tn, tk = string.match(v, '([^.]+)%.([^.]+)')
 		spec[k] = theme[tn or v][tk or k]
 	end

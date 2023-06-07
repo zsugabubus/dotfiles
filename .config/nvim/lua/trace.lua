@@ -1,6 +1,6 @@
 local hrtime = vim.loop.hrtime
 
-local stack = {{}}
+local stack = { {} }
 
 -- Example:
 -- ```
@@ -46,13 +46,13 @@ local M = setmetatable({
 	verbose = 0,
 }, {
 	__index = function(self, k)
-		return require 'trace-more'[k]
+		return require('trace-more')[k]
 	end,
 })
 
 function M.setup(opts)
 	if opts.clear then
-		stack = {{}}
+		stack = { {} }
 	end
 	M.trace = opts.verbose > 0 and trace or trace_disabled
 	M.verbose = opts.verbose

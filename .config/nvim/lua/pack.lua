@@ -1,5 +1,5 @@
 local M = {}
-local Trace = require 'trace'
+local Trace = require('trace')
 local uv = vim.loop
 
 local path2plugin = {}
@@ -21,8 +21,8 @@ end
 
 local function echo_error(...)
 	vim.api.nvim_echo({
-		{'pack: ', 'ErrorMsg'},
-		{string.format(...), 'ErrorMsg'}
+		{ 'pack: ', 'ErrorMsg' },
+		{ string.format(...), 'ErrorMsg' },
 	}, true, {})
 end
 
@@ -85,11 +85,13 @@ local function source_file(file, plugin)
 		return
 	end
 
-	local span = Trace.trace(string.format(
-		'source %s (from %s)',
-		file,
-		plugin and plugin.id or '<no plugin>'
-	))
+	local span = Trace.trace(
+		string.format(
+			'source %s (from %s)',
+			file,
+			plugin and plugin.id or '<no plugin>'
+		)
+	)
 	vim_cmd_source(file)
 	Trace.trace(span)
 end
@@ -177,15 +179,9 @@ function M.plugin_after(plugin)
 		return
 	end
 
-	local name = plugin.id
-		:gsub('^n?vim[.-]', '')
-		:gsub('[.-]n?vim$', '')
+	local name = plugin.id:gsub('^n?vim[.-]', ''):gsub('[.-]n?vim$', '')
 	local ok, package = pcall(require, name)
-	if
-		ok and
-		type(package) == 'table' and
-		type(package.setup) == 'function'
-	then
+	if ok and type(package) == 'table' and type(package.setup) == 'function' then
 		return package.setup(plugin.opts)
 	else
 		echo_error(
@@ -235,11 +231,7 @@ function M.setup(spec, opts)
 		plugin.id = plugin[1]
 
 		if
-			plugin.enabled ~= false and
-			(
-				packadd(plugin) or
-				M.plugin_missing(plugin)
-			)
+			plugin.enabled ~= false and (packadd(plugin) or M.plugin_missing(plugin))
 		then
 			plugins[plugin.id] = plugin
 			M.plugin_before(plugin)

@@ -22,7 +22,8 @@ local function update_lines(buffer, fromline, toline)
 	for m in listchars:gmatch('tab:([^,]+)') do
 		tab = m
 	end
-	local tab_head, tab_rep = tab:match("^([\x01-\x7f\xc2-\xf4][\x80-\xbf]*)(.*)$")
+	local tab_head, tab_rep =
+		tab:match('^([\x01-\x7f\xc2-\xf4][\x80-\xbf]*)(.*)$')
 
 	local expandtab = V.nvim_buf_get_option(buffer, 'expandtab')
 	local tabstop = V.nvim_buf_get_option(buffer, 'tabstop')
@@ -46,9 +47,9 @@ local function update_lines(buffer, fromline, toline)
 		return
 	end
 
-	for index, line in ipairs(
-		V.nvim_buf_get_lines(buffer, fromline, toline, false)
-	) do
+	for index, line in
+		ipairs(V.nvim_buf_get_lines(buffer, fromline, toline, false))
+	do
 		-- Skip line if not blank.
 		if #line > 0 then
 			goto next_line
@@ -60,13 +61,13 @@ local function update_lines(buffer, fromline, toline)
 		local indent
 		if eval then
 			V.nvim_set_vvar('lnum', lnum1)
-			V.nvim_command(('sandbox let v:errmsg = (%s)'):format(
-				indentexpr:gsub('\n', ' ')
-			))
+			V.nvim_command(
+				('sandbox let v:errmsg = (%s)'):format(indentexpr:gsub('\n', ' '))
+			)
 			indent = V.nvim_get_vvar('errmsg')
 		else
 			indent = V.nvim_call_function(indentexpr, {
-				lnum1 + lnumoff
+				lnum1 + lnumoff,
 			})
 		end
 
@@ -79,17 +80,16 @@ local function update_lines(buffer, fromline, toline)
 		local indentstr
 		if not expandtab then
 			indentstr = (
-				(tab_head .. tab_rep:rep(tabstop - 1))
-					:rep(math.floor(indent / tabstop)) ..
-				space:rep(indent % tabstop)
+				(tab_head .. tab_rep:rep(tabstop - 1)):rep(math.floor(indent / tabstop))
+				.. space:rep(indent % tabstop)
 			)
 		else
 			indentstr = space:rep(indent)
 		end
 
 		V.nvim_buf_set_extmark(buffer, ns, lnum0, 0, {
-			virt_text={{indentstr, 'Whitespace'}},
-			virt_text_pos='overlay',
+			virt_text = { { indentstr, 'Whitespace' } },
+			virt_text_pos = 'overlay',
 		})
 
 		::next_line::
@@ -97,7 +97,7 @@ local function update_lines(buffer, fromline, toline)
 end
 
 return {
-	attach_to_buffer=function(buffer)
+	attach_to_buffer = function(buffer)
 		if (buffer or 0) == 0 then
 			buffer = V.nvim_get_current_buf()
 		end
@@ -108,20 +108,20 @@ return {
 		update_lines(buffer, 0, V.nvim_buf_line_count(buffer) - 1)
 
 		V.nvim_buf_attach(buffer, false, {
-			on_lines=function(_, changedtick, firstline, lastline, new_lastline)
+			on_lines = function(_, changedtick, firstline, lastline, new_lastline)
 				-- Changing indentation of last line (likely) changes indentation of
 				-- empty lines following it.
 				new_lastline = V.nvim_call_function('nextnonblank', {
-					new_lastline + 1
+					new_lastline + 1,
 				})
 				update_lines(buffer, firstline, new_lastline)
 				return not attached[buffer]
 			end,
-			on_detach=detach_from_buffer
+			on_detach = detach_from_buffer,
 		})
 		attached[buffer] = true
 	end,
-	reattach=function(buffer)
+	reattach = function(buffer)
 		local buffers
 
 		if buffer == 0 then
@@ -131,7 +131,7 @@ return {
 			if not attached[buffer] then
 				return
 			end
-			buffers = {buffer}
+			buffers = { buffer }
 		else
 			buffers = attached
 		end
@@ -140,11 +140,11 @@ return {
 			update_lines(buffer, 0, -1)
 		end
 	end,
-	detach_from_buffer=detach_from_buffer,
-	is_buffer_attached=function(buffer)
+	detach_from_buffer = detach_from_buffer,
+	is_buffer_attached = function(buffer)
 		if (buffer or 0) == 0 then
 			buffer = vim.api.nvim_get_current_buf()
 		end
 		return attached[buffer] or false
-	end
+	end,
 }

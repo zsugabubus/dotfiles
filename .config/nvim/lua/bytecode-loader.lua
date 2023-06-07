@@ -1,4 +1,4 @@
-local Trace = require 'trace'
+local Trace = require('trace')
 local cache_dir = vim.fn.stdpath('cache') .. '/bytecode'
 local loadfile = loadfile -- Make it local.
 local version_key

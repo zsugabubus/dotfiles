@@ -29,15 +29,15 @@ o.wildcharm = '<C-Z>'
 o.wildignorecase = true
 o.wildmenu = true
 o.wrap = false
-opt.cinoptions:append { 't0', ':0', 'l1' }
+opt.cinoptions:append({ 't0', ':0', 'l1' })
 opt.completeopt = { 'menu', 'longest', 'noselect', 'preview' }
 opt.diffopt = { 'filler', 'vertical', 'algorithm:patience' }
-opt.matchpairs:append { '‘:’', '“:”' }
-opt.nrformats:remove { 'octal' }
-opt.path:append { 'src/**', 'include/**' }
-opt.shortmess:append 'mrFI'
-opt.suffixes:append { '' } -- Rank files lower with no suffix.
-opt.wildignore:append { '.git', '*.lock', '*~', 'node_modules' }
+opt.matchpairs:append({ '‘:’', '“:”' })
+opt.nrformats:remove({ 'octal' })
+opt.path:append({ 'src/**', 'include/**' })
+opt.shortmess:append('mrFI')
+opt.suffixes:append({ '' }) -- Rank files lower with no suffix.
+opt.wildignore:append({ '.git', '*.lock', '*~', 'node_modules' })
 opt.wildmode = { 'list:longest', 'full' }
 
 if vim.fn.filewritable(vim.fn.stdpath('config')) then
@@ -104,7 +104,7 @@ vim.api.nvim_create_autocmd('FocusGained', {
 	end,
 })
 
-vim.cmd [=[
+vim.cmd([=[
 command! -nargs=* Termdebug delcommand Termdebug<bar>packadd termdebug<bar>Termdebug <args>
 
 " Create a command abbrevation.
@@ -296,9 +296,9 @@ augroup vimrc_syntax
 	autocmd BufReadPre *.glsl ++once packadd vim-glsl
 	autocmd BufReadPre *.rs ++once packadd rust.vim
 augroup END
-]=]
+]=])
 
-require 'pack'.setup({
+require('pack').setup({
 	'ansiesc.nvim',
 	'cword.nvim',
 	'nvim-colorcolors',
@@ -332,20 +332,20 @@ require 'pack'.setup({
 	{
 		'vim-commentr',
 		before = function()
-			vim.cmd [[
+			vim.cmd([[
 			let commentr_leader = 'g'
 			let commentr_uncomment_map = ''
 
 			nmap gcD gcdO
 			nmap gcM gcmO
-			]]
+			]])
 		end,
 	},
 	{
 		'vim-jumpmotion',
 		after = function()
 			vim.keymap.set('', '<space>', function()
-				return require 'jumpmotion'.jump_character()
+				return require('jumpmotion').jump_character()
 			end)
 		end,
 	},

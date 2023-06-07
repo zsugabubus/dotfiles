@@ -22,8 +22,7 @@ function test_error()
 	error('test')
 end
 
-function test_empty()
-end
+function test_empty() end
 
 function test_mat()
 	function test_ros()
@@ -33,42 +32,37 @@ function test_mat()
 	end
 end
 
-test(
-	'test_parameters',
-	{
-		{nil, nil},
-		{1, nil},
-		{nil, 1},
-	},
-	function(a, b)
-		eq(a, b)
-	end
-)
+test('test_parameters', {
+	{ nil, nil },
+	{ 1, nil },
+	{ nil, 1 },
+}, function(a, b)
+	eq(a, b)
+end)
 
 test(
 	'test_parameter_name_specifiers %s %s %s %3 %2 %1 (%0)',
-	{{'a', 'b'}},
+	{ { 'a', 'b' } },
 	function()
 		eq()
 	end
 )
 
-test(
-	'test_parameter_name_single_line',
-	{{{nil,2,3}}},
-	function()
-		eq()
-	end
-)
+test('test_parameter_name_single_line', { { { nil, 2, 3 } } }, function()
+	eq()
+end)
 
 test('test_no_parameters', {}, function() end)
-test('test_parameters_with_empty', {{}}, function() end)
+test('test_parameters_with_empty', { {} }, function() end)
 
-test('test_call', setmetatable({}, {
-	__call = function()
-		eq()
-	end,
-}))
+test(
+	'test_call',
+	setmetatable({}, {
+		__call = function()
+			eq()
+		end,
+	})
+)
 
 function describe_skip()
 	function it_skips()

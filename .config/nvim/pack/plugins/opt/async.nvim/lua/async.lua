@@ -3,18 +3,17 @@ local M = {}
 local function autoload(lib)
 	M[lib] = setmetatable({}, {
 		__index = function(_, key)
-			M[lib] = require ('async.' .. lib)
+			M[lib] = require('async.' .. lib)
 			return M[lib][key]
-		end
+		end,
 	})
-
 end
 
 autoload('uv')
 autoload('uv_await')
 
 function M.imm(...)
-	local args = {...}
+	local args = { ... }
 	return function(ready)
 		return ready(unpack(args))
 	end
@@ -22,7 +21,7 @@ end
 
 function M.future(async_fn, ...)
 	assert(async_fn)
-	local args = {...}
+	local args = { ... }
 	return function(ready)
 		table.insert(args, ready)
 		assert(async_fn(unpack(args)))
@@ -44,7 +43,7 @@ local function mux(futures, wait_all)
 		for key, future in pairs(futures) do
 			n = n + 1
 			futures[key] = future(function(...)
-				local result = {...}
+				local result = { ... }
 				futures[key] = result
 				done = done + 1
 				-- Ensure that ready is not called synchronously here.
@@ -85,7 +84,7 @@ function M.await(future)
 		if coroutine.status(thread) == 'suspended' then
 			return assert(coroutine.resume(thread, ...))
 		end
-		return {...}
+		return { ... }
 	end)
 	-- nil: `ready` to be called asynchronously.
 	-- function: Same as nil but can be canceled.

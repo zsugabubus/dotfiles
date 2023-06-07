@@ -1,3 +1,4 @@
+-- stylua: ignore start
 return {
 	['slate-50'   ] = 'f8fafc',
 	['slate-100'  ] = 'f1f5f9',

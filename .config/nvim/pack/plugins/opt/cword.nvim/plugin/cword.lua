@@ -1,12 +1,12 @@
 local M = setmetatable({}, {
 	__index = function(self, key)
-		return require 'cword'[key]
+		return require('cword')[key]
 	end,
 })
 
 vim.api.nvim_create_user_command('Cword', function(opts)
 	M.toggle(not opts.bang)
-end, {bang = true})
+end, { bang = true })
 
 vim.api.nvim_create_user_command('CwordEnable', function()
 	M.toggle(true)

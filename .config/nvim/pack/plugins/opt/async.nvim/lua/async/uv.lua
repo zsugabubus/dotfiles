@@ -1,4 +1,4 @@
-local uv = require 'luv'
+local uv = require('luv')
 local M = setmetatable({}, {
 	__index = function(M, uv_fn)
 		assert(type(uv[uv_fn]) == 'function')
@@ -10,7 +10,7 @@ local M = setmetatable({}, {
 })
 
 function M.future(uv_fn, ...)
-	local args = {...}
+	local args = { ... }
 	return function(ready)
 		table.insert(args, ready)
 		local req = assert(uv_fn(unpack(args)))
@@ -61,11 +61,11 @@ function M.popen(args, ready)
 	local stdout_buf, stderr_buf = {}, {}
 
 	local argv0, argv = (function(argv0, ...)
-		return argv0, {...}
+		return argv0, { ... }
 	end)(unpack(args))
 
 	local handle = uv.spawn(argv0, {
-		stdio = {nil, stdout, stderr},
+		stdio = { nil, stdout, stderr },
 		args = argv,
 	}, function(code, signal)
 		if code == 0 and signal == 0 then

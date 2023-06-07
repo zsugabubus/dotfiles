@@ -1,4 +1,4 @@
-# vim:set ft=c
+-- vim:set ft=c
 return [=[
 /*
  * Stolen from:

@@ -1,4 +1,4 @@
-local a = require 'async'
+local a = require('async')
 return setmetatable({}, {
 	__index = function(M, uv_fn)
 		M[uv_fn] = function(...)

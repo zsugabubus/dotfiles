@@ -168,15 +168,12 @@ function M.highlight_buffer(buffer)
 				table.insert(starts, i - 1)
 				table.insert(sgrs, s)
 
-				line = (
-					string.sub(line, 1, i - 1) ..
-					string.sub(line, j + 1)
-				)
+				line = (string.sub(line, 1, i - 1) .. string.sub(line, j + 1))
 				start = i
 			end
 
 			if line ~= original then
-				vim.api.nvim_buf_set_lines(buffer, lnum - 1, lnum, true, {line})
+				vim.api.nvim_buf_set_lines(buffer, lnum - 1, lnum, true, { line })
 			end
 		end
 

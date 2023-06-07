@@ -70,7 +70,7 @@ local function sorted_keys(t)
 end
 
 function M:new(opts)
-	local ffi = require 'ffi'
+	local ffi = require('ffi')
 	local nodes = {}
 	local charset = {}
 	local id = 0
@@ -96,7 +96,7 @@ function M:new(opts)
 					if not charset[c] then
 						charset[c] = true
 					end
-					table.insert(branches[c], {tail, pat[2]})
+					table.insert(branches[c], { tail, pat[2] })
 				end
 			else
 				node.accept = pat[2]

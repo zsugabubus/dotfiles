@@ -14,16 +14,17 @@ if vim == nil then
 	end
 	test_arg = test_arg .. '}'
 
-	local x = os.execute(string.format(
-		"exec nvim --headless --clean --cmd %s -u %s",
-		shellescape('lua test_arg = ' .. test_arg),
-		shellescape(arg[0])
-	))
+	local x = os.execute(
+		string.format(
+			'exec nvim --headless --clean --cmd %s -u %s',
+			shellescape('lua test_arg = ' .. test_arg),
+			shellescape(arg[0])
+		)
+	)
 	os.exit(
 		-- LuaJIT
-		x == 0 or
-		-- Lua
-		x == true
+		x == 0 -- Lua
+			or x == true
 	)
 end
 
@@ -97,10 +98,10 @@ local function print_location()
 end
 
 local function quit(ok)
-	return vim.cmd.cquit {
+	return vim.cmd.cquit({
 		bang = true,
-		count = ok == false and 1 or 0
-	}
+		count = ok == false and 1 or 0,
+	})
 end
 
 local function die(user_depth, format, ...)
@@ -150,14 +151,16 @@ local function string_or_inspect(x)
 end
 
 local function print_summary()
-	return print(string.format(
-		'%s\n%s %d passed, %d failed, %d skipped.\n',
-		string.rep('=', 30),
-		failed == 0 and PASS or FAIL,
-		passed,
-		failed,
-		skipped
-	))
+	return print(
+		string.format(
+			'%s\n%s %d passed, %d failed, %d skipped.\n',
+			string.rep('=', 30),
+			failed == 0 and PASS or FAIL,
+			passed,
+			failed,
+			skipped
+		)
+	)
 end
 
 local function add_test(ok, format, ...)
@@ -172,12 +175,7 @@ local function add_test(ok, format, ...)
 	end
 
 	print_location()
-	return print(
-		ok and PASS or FAIL,
-		' ',
-		string.format(format, ...),
-		'\n'
-	)
+	return print(ok and PASS or FAIL, ' ', string.format(format, ...), '\n')
 end
 
 local function run_function(user_depth, name, fn)
@@ -187,11 +185,7 @@ local function run_function(user_depth, name, fn)
 	local ok, err = pcall(fn)
 	if not ok then
 		if err ~= SKIP_ERROR then
-			add_test(
-				false,
-				'Unhandled error:\n%s',
-				string_or_inspect(err)
-			)
+			add_test(false, 'Unhandled error:\n%s', string_or_inspect(err))
 		end
 	else
 		if entry.total == total then
@@ -203,24 +197,15 @@ local function run_function(user_depth, name, fn)
 end
 
 local function run_file(file)
-	return run_function(
-		3,
-		file,
-		function()
-			return dofile(file)
-		end
-	)
+	return run_function(3, file, function()
+		return dofile(file)
+	end)
 end
 
 local function run_files()
 	local files = vim.fn.glob(opts.glob, true, true)
 
-	add_test(
-		#files > 0,
-		'%d files matched %s',
-		#files,
-		inspect(opts.glob)
-	)
+	add_test(#files > 0, '%d files matched %s', #files, inspect(opts.glob))
 
 	for _, file in ipairs(files) do
 		run_file(file)
@@ -311,23 +296,18 @@ describe = it
 
 function eq(a, b)
 	push(3)
-	add_test(
-		a == b,
-		'Expected %s == %s',
-		inspect(a),
-		inspect(b)
-	)
+	add_test(a == b, 'Expected %s == %s', inspect(a), inspect(b))
 	return pop()
 end
 
 setmetatable(_G, {
 	__newindex = function(_G, k, v)
 		if
-			type(k) == 'string' and
-			(
-				string.match(k, '^test_') or
-				string.match(k, '^it_') or
-				string.match(k, '^describe_')
+			type(k) == 'string'
+			and (
+				string.match(k, '^test_')
+				or string.match(k, '^it_')
+				or string.match(k, '^describe_')
 			)
 		then
 			return it(k, v)
