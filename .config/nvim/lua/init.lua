@@ -104,8 +104,6 @@ vim.api.nvim_create_autocmd('FocusGained', {
 })
 
 vim.cmd([=[
-command! -nargs=* Termdebug delcommand Termdebug<bar>packadd termdebug<bar>Termdebug <args>
-
 " Create a command abbrevation.
 command! -nargs=+ Ccabbrev let s:_ = [<f-args>][0]|execute(printf("cnoreabbrev <expr> %s getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s", s:_, len(s:_) + 1, <q-args>[len(s:_) + 1:], string(s:_)))
 
@@ -134,7 +132,6 @@ command! -range URLFilter silent '<,'>!awk '/^http/ {print $1}' | sort -u
 
 command! Ctags !test -d build && ln -sf build/tags tags; ctags -R --exclude=node_modules --exclude='*.json' --exclude='*.patch' '--map-typescript=+.tsx'
 
-inoremap <expr> <C-s> strftime("%F")
 inoremap <expr> <C-f> expand("%:t:r")
 
 inoremap <C-r> <C-r><C-o>
@@ -163,9 +160,6 @@ augroup END
 
 nnoremap <silent> dar :.argdelete<bar>argument<CR>
 
-" m but show available marks.
-nnoremap <expr> m ':echomsg "'.join(map(map(range(char2nr('a'), char2nr('z')) + range(char2nr('A'), char2nr('Z')), {_,nr-> nr2char(nr)}), {_,mark-> (getpos("'".mark)[1] ==# 0 ? mark : ' ')}), '').'"<CR>m'
-
 " Jump to parent indention.
 nnoremap <silent> <C-q> :call search('\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S', 'b')<CR>
 
@@ -182,8 +176,8 @@ nnoremap <silent> gss :setlocal spell!<CR>
 nnoremap <silent> gse :setlocal spell spelllang=en<CR>
 nnoremap <silent> gsh :setlocal spell spelllang=hu<CR>
 
-nnoremap <expr> + (!&diff ? 'g+' : ":diffput\<CR>")
-nnoremap <expr> - (!&diff ? 'g-' : ":diffget\<CR>")
+nnoremap + g+
+nnoremap - g-
 
 nnoremap ! <Cmd>FizzyBuffers<CR>
 nmap <C-w>! :split<CR>!
