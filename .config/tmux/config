@@ -43,8 +43,11 @@ set -g copy-mode-current-match-style bg=#fdef39,fg=#000000
 
 set -g status-left "[#S#{?destroy-unattached,:T,}#{?#{||:#{==:#{session_group},},#{==:#{session_group},#{session_name}}},, (#{session_group})}]"
 set -g status-left-length 0
-set -g status-right "#[fg=color34,bold]#{@status-mail}#[default] %a, %b %d %R"
+set -g status-right "#{?#{==:#{@status-mail},},,[#{E:@status-mail}] }%a, %b %d %R"
 set -g status-right-length 0
+
+set -gF @status-mail-unread-style "#{window-status-bell-style}"
+set -g @status-mail-unread-silent-style fg=color34,bold
 
 # sort /[^ ]* [^ ]* \zs/
 set -g aggressive-resize on

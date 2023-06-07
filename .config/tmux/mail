@@ -1,31 +1,217 @@
-#!/usr/bin/zsh -eu
+#!/usr/bin/luajit
+local uv = require('luv')
 
-zmodload zsh/datetime
+local folders = {}
+local folders_by_display = {}
+local bell_timer = uv.new_timer()
+local bell_file = os.getenv('HOME') .. '/doc/bell.mp3'
+local is_ringing = false
 
-function update() {
-	local s=
-	for dir in */inbox */new; do
-		maildir=${dir%/new}
-		for new in $maildir/new $maildir/*/new(N); do
-			local new_mails=( $new/*(N) )
-			if (( $#new_mails )) then
-				s+="${s:+ }${${new%/new}%/inbox}:$#new_mails"
-			fi
-		done
-	done
+local function scandir_empty()
+	-- Just return nil.
+end
 
-	tmux set -gF @status-mail "[$s]"
-}
+local function scandir(path)
+	local handle = uv.fs_scandir(path)
+	if handle then
+		return uv.fs_scandir_next, handle
+	end
+	return scandir_empty
+end
 
-cd $MAIL
+local function throttle_wrap(fn, delay, interval)
+	local timer = uv.new_timer()
+	local call
 
-exec < <(inotifywait -qmr --include 'new' -e CREATE -e DELETE -e MOVE --format '%n' .)
+	local function handler()
+		if call then
+			call = false
+			timer:start(interval, 0, handler)
+			return fn()
+		end
+	end
 
-update
+	return function()
+		call = true
+		if not timer:is_active() then
+			return timer:start(delay, 0, handler)
+		end
+	end
+end
 
-while read -r; do
-	float deadline=$(( EPOCHREALTIME + 1 ))
-	while read -rt $(( deadline - EPOCHREALTIME )) 2>/dev/null
-	do :; done
-	update
-done
+function bell()
+	if is_ringing then
+		return
+	end
+
+	assert(uv.spawn('ffplay', {
+		args = {
+			'-autoexit',
+			'-nodisp',
+			bell_file,
+			'-loglevel',
+			'error',
+		},
+	}, function(code)
+		assert(code == 0)
+		is_ringing = false
+	end))
+	is_ringing = true
+end
+
+local function update_status()
+	local t = {}
+	for _, folder in ipairs(folders) do
+		if folder.new_mails > 0 then
+			table.insert(
+				t,
+				string.format(
+					'%s%s:%d%s',
+					folder.unread
+							and (folder.silent and '#[#{@status-mail-unread-silent-style}]' or '#[#{@status-mail-unread-style}]')
+						or '',
+					folder.display,
+					folder.new_mails,
+					folder.unread and '*#[default]' or ''
+				)
+			)
+		end
+	end
+	local s = string.format('%s', table.concat(t, ' '))
+
+	assert(uv.spawn('tmux', {
+		args = {
+			'set',
+			'-gF',
+			'@status-mail',
+			s,
+		},
+	}, function(code)
+		assert(code == 0)
+	end))
+
+	local active = false
+	for _, folder in ipairs(folders) do
+		active = active or (not folder.silent and folder.unread)
+	end
+	if active then
+		if not bell_timer:is_active() then
+			bell_timer:start(60 * 1000, 60 * 1000, bell)
+		end
+	else
+		bell_timer:stop()
+	end
+end
+local update_status = throttle_wrap(update_status, 50, 500)
+
+local function count_files(path)
+	local n = 0
+	for _ in scandir(path) do
+		n = n + 1
+	end
+	return n
+end
+
+local function load_config(path)
+	local ok, code = pcall(loadfile, path .. '/watch.lua')
+	if ok and code then
+		setfenv(code, {})
+		return code()
+	end
+end
+
+local function update_folders()
+	for _, folder in ipairs(folders) do
+		if not folder.root then
+			local display_root = string.match(folder.display, '^[^/]*')
+			folder.root = folders_by_display[display_root]
+		end
+	end
+end
+
+local function add_folder(path, fullname, config)
+	local name = string.match(fullname, '([^/]*)$')
+	local display = string.gsub(string.sub(fullname, 2), '/inbox$', '')
+	local folder = {
+		fullname = fullname,
+		display = display,
+		path = path,
+		name = name,
+		inbox = name == 'inbox',
+		new_mails = math.huge,
+		unread = false,
+		silent = false,
+	}
+	table.insert(folders, folder)
+	folders_by_display[display] = folder
+
+	for k, v in pairs(config or {}) do
+		folder[k] = v
+	end
+
+	update_folders()
+
+	local new_path = path .. '/new'
+
+	local function update_count()
+		local prev = folder.new_mails
+		local curr = count_files(new_path)
+		folder.new_mails = curr
+
+		if curr > prev then
+			folder.unread = true
+		elseif curr < prev then
+			folder.unread = false
+		end
+
+		if curr > prev and not folder.silent then
+			bell()
+		end
+
+		update_status()
+	end
+	local update_count = throttle_wrap(update_count, 50, 3000)
+
+	local fs_event = uv.new_fs_event()
+	fs_event:start(new_path, {}, function(err)
+		assert(not err, err)
+		update_count()
+	end)
+
+	update_count()
+end
+
+local function find_folders(path, fullname, config)
+	config = load_config(path) or config
+
+	if uv.fs_access(path .. '/new', 'x') then
+		add_folder(path, fullname, config)
+	end
+
+	for name, kind in scandir(path) do
+		if
+			kind == 'file'
+			or string.sub(name, 1, 1) == '.'
+			or name == 'cur'
+			or name == 'new'
+			or name == 'tmp'
+		then
+			-- Ignore.
+		else
+			find_folders(path .. '/' .. name, fullname .. '/' .. name, config)
+		end
+	end
+end
+
+find_folders(os.getenv('MAIL'), '')
+
+table.sort(folders, function(a, b)
+	if a.root.inbox ~= b.root.inbox then
+		return a.root.inbox
+	end
+	return a.display < b.display
+end)
+
+update_status()
+
+uv.run()
