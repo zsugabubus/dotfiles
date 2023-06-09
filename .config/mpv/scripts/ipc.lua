@@ -11,4 +11,8 @@ then
 	local path = ('/tmp/mpv%s%s'):format(options.name, pid)
 	mp.msg.info('Automatic server:', path)
 	mp.set_property_native('input-ipc-server', path)
+
+	mp.register_event('shutdown', function()
+		os.remove(path)
+	end)
 end
