@@ -409,34 +409,6 @@ local_bindings = {
 	['/'] = fzf_playlist,
 }
 
-local function glob(expr, on_entry)
-	local dirname, pat = string.match(expr, '^(.-)/?([^/]+)$')
-	pat = '^' .. pat .. '$'
-
-	local dir = uv.fs_opendir(dirname, function(err, dir)
-		assert(not err, err)
-
-		local function read_next(err, entries)
-			assert(not err, err)
-
-			if not entries then
-				return on_entry()
-			end
-
-			for _, entry in ipairs(entries) do
-				if string.match(entry.name, pat) then
-					entry.path = dirname .. '/' .. entry.name
-					on_entry(entry)
-				end
-			end
-
-			return uv.fs_readdir(dir, read_next)
-		end
-
-		uv.fs_readdir(dir, read_next)
-	end)
-end
-
 local function connect_to_best_client(clients, on_connect)
 	if #clients == 0 then
 		return on_connect()
@@ -477,16 +449,13 @@ end
 
 do
 	local clients = {}
-	glob('/tmp/mpv.*', function(entry)
-		if not entry then
-			return connect_to_best_client(clients, function(client)
-				if client then
-					return set_client(client)
-				end
-			end)
+	for i, path in ipairs(arg) do
+		table.insert(clients, Client:new(path))
+	end
+	connect_to_best_client(clients, function(client)
+		if client then
+			return set_client(client)
 		end
-		local client = Client:new(entry.path)
-		table.insert(clients, client)
 	end)
 end
 

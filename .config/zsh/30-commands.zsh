@@ -530,7 +530,10 @@ alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
 alias mpctl=mpvctl
 alias mpom='mp --script-opts=sort=none *(om)'
-alias mpt=~c/mpv/mpt
+
+function mpt() {
+	~c/mpv/mpt ${@:-/tmp/mpv*}
+}
 
 function mutt n() {
 	set -- -n "$@"
