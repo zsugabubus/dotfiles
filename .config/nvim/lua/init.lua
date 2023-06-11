@@ -323,15 +323,14 @@ require('pack').setup({
 	'vim-wtf',
 	'vimdent.nvim',
 	{
-		'vim-commentr',
-		before = function()
-			vim.cmd([[
-			let commentr_leader = 'g'
-			let commentr_uncomment_map = ''
-
-			nmap gcD gcdO
-			nmap gcM gcmO
-			]])
+		'commenter.nvim',
+		after = function()
+			require('commenter.config').setup({
+				keymap = {
+					leader = 'gc',
+					line = 'gcc',
+				},
+			})
 		end,
 	},
 	{
