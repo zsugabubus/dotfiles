@@ -313,7 +313,13 @@ require('pack').setup({
 	'vim-qf',
 	'vim-star',
 	'vim-stdin',
-	'vim-surround',
+	{
+		'vim-surround',
+		before = function()
+			vim.keymap.set('n', 'ds', '<Plug>(SurroundDelete)')
+			vim.keymap.set('x', 's', '<Plug>(Surround)')
+		end,
+	},
 	'vim-textobjects',
 	'vim-themember',
 	'vim-tilde',

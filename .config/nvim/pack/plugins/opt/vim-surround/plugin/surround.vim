@@ -3,13 +3,6 @@ if exists('loaded_surround')
 endif
 let loaded_surround = 1
 
-if !hasmapto('<Plug>(SurroundDelete)')
-	nmap ds <Plug>(SurroundDelete)
-endif
-if !hasmapto('<Plug>(Surround)')
-	xmap s <Plug>(Surround)
-endif
-
 nmap <silent> <Plug>(SurroundDelete) %%v%O<Esc>xgv<Left>o<Esc>xgvo<Esc>
 xnoremap <silent><expr> <Plug>(Surround)" mode() ==# 'V' ? 'c"""<CR><C-r><C-o>""""<Esc>' : 'c"<C-r><C-o>""<Esc>'
 xnoremap <silent><expr> <Plug>(Surround)' mode() ==# 'V' ? 'c''''''<CR><C-r><C-o>"''''''<Esc>' : 'c''<C-r><C-o>"''<Esc>'
