@@ -15,8 +15,8 @@ xnoremap <silent><expr> <Plug>(Surround)" mode() ==# 'V' ? 'c"""<CR><C-r><C-o>""
 xnoremap <silent><expr> <Plug>(Surround)' mode() ==# 'V' ? 'c''''''<CR><C-r><C-o>"''''''<Esc>' : 'c''<C-r><C-o>"''<Esc>'
 xnoremap <silent><expr> <Plug>(Surround)` mode() ==# 'V' ? 'c```<CR><C-r><C-o>"```<Esc>' : 'c`<C-r><C-o>"`<Esc>'
 xnoremap <silent><expr> <Plug>(Surround)> mode() ==# 'V' ? 'c<<CR><C-r><C-o>"><Esc>' : 'c<<C-r><C-o>"><Esc>'
-xnoremap <silent><expr> <Plug>(Surround)< substitute('c<%><C-r><C-o>"</%><Esc>', '%', input('<'), 'g')
-xnoremap <silent><expr> <Plug>(Surround)c substitute('c%<C-r><C-o>"%<Esc>', '%', getcharstr(), 'g')
+xnoremap <silent><expr> <Plug>(Surround)< substitute('c<%>'.(mode() ==# 'V' ? '<CR>' : '').'<C-r><C-o>"</%><Esc>', '%', input('<'), 'g')
+xnoremap <silent><expr> <Plug>(Surround)c substitute('c%'.(mode() ==# 'V' ? '<CR>' : '').'<C-r><C-o>"%<Esc>', '%', getcharstr(), 'g')
 xmap <Plug>(Surround)<space> <Plug>(Surround)c<space>
 xmap <Plug>(Surround)<bar> <Plug>(Surround)c<bar>
 xmap <Plug>(Surround)<CR> <Plug>(Surround)c<CR>
