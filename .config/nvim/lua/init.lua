@@ -335,11 +335,9 @@ require('pack').setup({
 		end,
 	},
 	{
-		'vim-jumpmotion',
+		'jumpmotion.nvim',
 		after = function()
-			vim.keymap.set('', '<space>', function()
-				return require('jumpmotion').jump_character()
-			end)
+			vim.keymap.set('', '<space>', '<Plug>(JumpMotion)')
 		end,
 	},
 }, {
