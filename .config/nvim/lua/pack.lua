@@ -174,21 +174,6 @@ function M.plugin_after(plugin)
 	if plugin.after then
 		return plugin:after()
 	end
-
-	if plugin.opts == nil then
-		return
-	end
-
-	local name = plugin.id:gsub('^n?vim[.-]', ''):gsub('[.-]n?vim$', '')
-	local ok, package = pcall(require, name)
-	if ok and type(package) == 'table' and type(package.setup) == 'function' then
-		return package.setup(plugin.opts)
-	else
-		echo_error(
-			"Plugin '%s' specifies 'opts' but cannot find setup function. Use 'after' to call it.",
-			plugin.id
-		)
-	end
 end
 
 function M.setup(spec, opts)
