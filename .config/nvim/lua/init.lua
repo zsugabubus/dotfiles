@@ -7,6 +7,8 @@ o.cursorline = true
 o.cursorlineopt = 'number'
 o.expandtab = false
 o.fileignorecase = true
+o.foldopen = true
+o.foldtext = 'fold#foldtext()'
 o.hidden = true
 o.ignorecase = true
 o.joinspaces = false -- No double space.
@@ -108,8 +110,6 @@ vim.cmd([=[
 command! -nargs=+ Ccabbrev let s:_ = [<f-args>][0]|execute(printf("cnoreabbrev <expr> %s getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s", s:_, len(s:_) + 1, <q-args>[len(s:_) + 1:], string(s:_)))
 
 command! Sweep silent! %bdelete
-
-command! SynShow echo map(synstack(line('.'), col('.')), 'synIDattr(v:val, "name")')
 
 command! -bang -nargs=+ Bufdo -tabnew|execute 'bufdo<bang>' <q-args>|bdelete
 
@@ -290,6 +290,12 @@ augroup vimrc_syntax
 	autocmd BufReadPre *.rs ++once packadd rust.vim
 augroup END
 ]=])
+
+vim.filetype.add({
+	pattern = {
+		['/tmp/fstab%.'] = 'fstab',
+	},
+})
 
 require('pack').setup({
 	'ansiesc.nvim',
