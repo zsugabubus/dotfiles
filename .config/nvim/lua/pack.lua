@@ -223,15 +223,11 @@ function M.setup(spec, opts)
 
 	local plugins = {}
 	for _, plugin in ipairs(spec) do
-		if type(plugin) == 'string' then
-			plugin = {
-				plugin,
-			}
-		end
 		plugin.id = plugin[1]
 
 		if
-			plugin.enabled ~= false and (packadd(plugin) or M.plugin_missing(plugin))
+			plugin.enabled ~= false
+			and (packadd(plugin) or M.plugin_missing(plugin))
 		then
 			plugins[plugin.id] = plugin
 			M.plugin_before(plugin)
