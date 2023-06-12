@@ -4,3 +4,7 @@
 [submodule "i3blocks/fourmat"]
 	path = .config/i3blocks/src/fourmat
 	url = https://github.com/zsugabubus/fourmat
+[submodule ".config/nvim/pack/git/opt/nvim-treesitter"]
+	path = .config/nvim/pack/git/opt/nvim-treesitter
+	url = https://github.com/nvim-treesitter/nvim-treesitter
+	shallow = true

@@ -291,6 +291,15 @@ augroup vimrc_syntax
 augroup END
 ]=])
 
+-- vim.treesitter pulls in lot's of Lua code.
+vim.api.nvim_create_autocmd('FileType', {
+	pattern = 'typescriptreact',
+	once = true,
+	callback = function()
+		vim.treesitter.language.register('tsx', 'typescriptreact')
+	end,
+})
+
 vim.filetype.add({
 	pattern = {
 		['/tmp/fstab%.'] = 'fstab',
@@ -349,6 +358,17 @@ require('pack').setup({
 		'jumpmotion.nvim',
 		after = function()
 			vim.keymap.set('', '<space>', '<Plug>(JumpMotion)')
+		end,
+	},
+	{
+		'nvim-treesitter',
+		enabled = false,
+		after = function(self)
+			require('nvim-treesitter.configs').setup({
+				indent = { enable = false },
+				highlight = { enable = false },
+				parser_install_dir = vim.fn.stdpath('data') .. '/site',
+			})
 		end,
 	},
 }, {
