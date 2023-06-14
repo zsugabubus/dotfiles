@@ -1,12 +1,6 @@
 local Trace = require('trace')
 local cache_dir = vim.fn.stdpath('cache') .. '/bytecode'
 local loadfile = loadfile -- Make it local.
-local version_key
-do
-	local v = vim.version()
-	version_key = string.format('%d_%d_%d', v.major, v.minor, v.patch)
-end
-local EMPTY_STAT = { size = 0, mtime = { sec = 0, nsec = 0 } }
 
 function _G.loadfile(path)
 	local trace = Trace.trace
@@ -14,20 +8,15 @@ function _G.loadfile(path)
 
 	local uv = vim.loop
 
-	local stat = EMPTY_STAT
-	-- Skip stat() of site files, they are static per version.
-	if not string.find(path, '/share/nvim/runtime/') then
-		local span = trace('stat')
-		stat = uv.fs_stat(path)
-		trace(span)
-	end
+	local stat_span = trace('stat')
+	local stat = uv.fs_stat(path)
+	trace(stat_span)
 
 	local path_key = string.gsub(path, '/', '%%')
 	local cache_path = string.format(
-		'%s/%s%%V=%s,M=%s_%s,S=%s',
+		'%s/%s%%M=%s_%s,S=%s',
 		cache_dir,
 		path_key,
-		version_key,
 		stat.mtime.sec,
 		stat.mtime.nsec,
 		stat.size
