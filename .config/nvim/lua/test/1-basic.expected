@@ -25,9 +25,14 @@ test.test.lua:22: test
 [test.test.lua:82] [1mdescribe_skip[0m > [1mtest_skip2[0m > [1mSKIP[m
 [test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global index "b"
 [test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global newindex "a"
+[test.test.lua:90] [1mdeep[0m > [1;32mPASS[m Expected { {
+    a = { 1 }
+  } } == { {
+    a = { 1 }
+  } }
 [init.lua:216] [1mtest.test.lua[0m > [1;31mFAIL[m Unhandled error:
-test.test.lua:89: bye
+test.test.lua:93: bye
 ==============================
-[1;31mFAIL[m 10 passed, 13 failed, 2 skipped.
+[1;31mFAIL[m 11 passed, 13 failed, 2 skipped.
 exit 1
 

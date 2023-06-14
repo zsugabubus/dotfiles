@@ -8,7 +8,7 @@
 [test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global index "b"
 [test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global newindex "a"
 [init.lua:216] [1mtest.test.lua[0m > [1;31mFAIL[m Unhandled error:
-test.test.lua:89: bye
+test.test.lua:93: bye
 ==============================
 [1;31mFAIL[m 2 passed, 6 failed, 0 skipped.
 exit 1

@@ -86,4 +86,8 @@ end
 
 a = b
 
+test('deep', function()
+	eq({ { a = { 1 } } }, { { a = { 1 } } })
+end)
+
 error('bye')

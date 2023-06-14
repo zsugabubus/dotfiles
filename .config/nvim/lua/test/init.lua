@@ -301,7 +301,7 @@ describe = it
 
 function eq(a, b)
 	push(3)
-	add_test(a == b, 'Expected %s == %s', inspect(a), inspect(b))
+	add_test(vim.deep_equal(a, b), 'Expected %s == %s', inspect(a), inspect(b))
 	return pop()
 end
 
