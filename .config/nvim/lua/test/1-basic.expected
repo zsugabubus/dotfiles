@@ -1,5 +1,5 @@
 [test.lua:0] [1mtest.lua[0m > [1;32mPASS[m 2 files matched "**/*.test.lua"
-[init.lua:211] [1mempty.test.lua[0m > [1;31mFAIL[m No tests defined
+[init.lua:216] [1mempty.test.lua[0m > [1;31mFAIL[m No tests defined
 [test.test.lua:1] [1mtest.test.lua[0m > [1;31mFAIL[m Expected 0 == 1
 [test.test.lua:4] [1mtest_pass[0m > [1;32mPASS[m Expected 0 == 0
 [test.test.lua:8] [1mtest_fail[0m > [1;31mFAIL[m Expected 0 == 1
@@ -25,7 +25,7 @@ test.test.lua:22: test
 [test.test.lua:82] [1mdescribe_skip[0m > [1mtest_skip2[0m > [1mSKIP[m
 [test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global index "b"
 [test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global newindex "a"
-[init.lua:211] [1mtest.test.lua[0m > [1;31mFAIL[m Unhandled error:
+[init.lua:216] [1mtest.test.lua[0m > [1;31mFAIL[m Unhandled error:
 test.test.lua:89: bye
 ==============================
 [1;31mFAIL[m 10 passed, 13 failed, 2 skipped.

@@ -197,9 +197,14 @@ local function run_function(user_depth, name, fn)
 end
 
 local function run_file(file)
-	return run_function(3, file, function()
-		return dofile(file)
+	local cwd = vim.loop.cwd()
+	run_function(4, file, function()
+		local dir = vim.fs.dirname(file)
+		local basename = vim.fs.basename(file)
+		vim.api.nvim_set_current_dir(dir)
+		return dofile(basename)
 	end)
+	vim.api.nvim_set_current_dir(cwd)
 end
 
 local function run_files()

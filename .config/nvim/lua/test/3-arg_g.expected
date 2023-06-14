@@ -1,5 +1,5 @@
 [test.lua:0] [1mtest.lua[0m > [1;32mPASS[m 1 files matched "**/empty*"
-[init.lua:211] [1mempty.test.lua[0m > [1;31mFAIL[m No tests defined
+[init.lua:216] [1mempty.test.lua[0m > [1;31mFAIL[m No tests defined
 ==============================
 [1;31mFAIL[m 1 passed, 1 failed, 0 skipped.
 exit 1
