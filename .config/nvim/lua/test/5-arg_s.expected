@@ -1,4 +1,4 @@
-[init.lua:226] [1mempty.test.lua[0m > [1;31mFAIL[m No tests defined
+[init.lua:211] [1mempty.test.lua[0m > [1;31mFAIL[m No tests defined
 [test.test.lua:1] [1mtest.test.lua[0m > [1;31mFAIL[m Expected 0 == 1
 [test.test.lua:8] [1mtest_fail[0m > [1;31mFAIL[m Expected 0 == 1
 [test.test.lua:13] [1mtest_pass_then_fail[0m > [1;31mFAIL[m Expected 0 == 1
@@ -6,15 +6,15 @@
 [test.test.lua:21] [1mtest_error[0m > [1;31mFAIL[m Unhandled error:
 test.test.lua:22: test
 [test.test.lua:25] [1mtest_empty[0m > [1;31mFAIL[m No tests defined
-[test.test.lua:44] [1mtest_parameters (1, nil)[0m > [1;31mFAIL[m Expected 1 == nil
-[test.test.lua:44] [1mtest_parameters (nil, 1)[0m > [1;31mFAIL[m Expected nil == 1
-[test.test.lua:64] [1mtest.test.lua[0m > [1;31mFAIL[m No parameters defined
-[test.test.lua:65] [1mtest_parameters_with_empty (nil)[0m > [1;31mFAIL[m No tests defined
-[test.test.lua:85] [1mdescribe_skip[0m > [1;31mFAIL[m skip() after test
-[test.test.lua:93] [1mtest.test.lua[0m > [1;33mWARN[m Global index "b"
-[test.test.lua:93] [1mtest.test.lua[0m > [1;33mWARN[m Global newindex "a"
-[init.lua:226] [1mtest.test.lua[0m > [1;31mFAIL[m Unhandled error:
-test.test.lua:95: bye
+[test.test.lua:40] [1mtest_parameters (1, nil)[0m > [1;31mFAIL[m Expected 1 == nil
+[test.test.lua:40] [1mtest_parameters (nil, 1)[0m > [1;31mFAIL[m Expected nil == 1
+[test.test.lua:55] [1mtest.test.lua[0m > [1;31mFAIL[m No parameters defined
+[test.test.lua:56] [1mtest_parameters_with_empty (nil)[0m > [1;31mFAIL[m No tests defined
+[test.test.lua:79] [1mdescribe_skip[0m > [1;31mFAIL[m skip() after test
+[test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global index "b"
+[test.test.lua:87] [1mtest.test.lua[0m > [1;33mWARN[m Global newindex "a"
+[init.lua:211] [1mtest.test.lua[0m > [1;31mFAIL[m Unhandled error:
+test.test.lua:89: bye
 ==============================
 [1;31mFAIL[m 10 passed, 13 failed, 2 skipped.
 exit 1
