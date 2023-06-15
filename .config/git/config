@@ -6,9 +6,7 @@
 
 [alias]
 	a = add --verbose
-	a3 = apply --3way
 	ae = a --edit
-	ai = a --interactive
 	ap = a --patch
 	arej = apply --reject
 	au = a --update
