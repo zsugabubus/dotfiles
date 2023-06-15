@@ -22,9 +22,9 @@ DIR	1;38;5;33m \e[1;38;5;33
 EXEC	1;38;5;34m \e[1;38;5;34
 FILE	m \e[
 FIFO	1;33m \e[1;33
-SOCK	1;33m直\e[1;33
-BLK	1;95mﱢ \e[1;95
-CHR	1;95mﱡ \e[1;95
+SOCK	1;33m󰖩 \e[1;33
+BLK	1;95m󰝤 \e[1;95
+CHR	1;95m󰝣 \e[1;95
 
 .sh	m \e[
 .zsh	m \e[
@@ -80,7 +80,7 @@ CHR	1;95mﱡ \e[1;95
 .dwm	m \e[
 .esd	m \e[
 
-# Images & Videos (38;5;205) 
+# Images & Videos
 .bmp	m \e[
 .gif	m \e[
 .jpeg	m \e[
@@ -98,22 +98,21 @@ CHR	1;95mﱡ \e[1;95
 .xbm	m \e[
 .xpm	m \e[
 
-# 
-.avi	m \e[
-.m2v	m \e[
-.m4v	m \e[
-.mkv	m \e[
-.mov	m \e[
-.mp4	m \e[
-.mp4v	m \e[
-.mpeg	m \e[
-.mpg	m \e[
-.ogv	m \e[
-.ogx	m \e[
-.vob	m \e[
-.webm	m \e[
-.wmv	m \e[
-.yuv	m \e[
+.avi	m󰈰 \e[
+.m2v	m󰈰 \e[
+.m4v	m󰈰 \e[
+.mkv	m󰈰 \e[
+.mov	m󰈰 \e[
+.mp4	m󰈰 \e[
+.mp4v	m󰈰 \e[
+.mpeg	m󰈰 \e[
+.mpg	m󰈰 \e[
+.ogv	m󰈰 \e[
+.ogx	m󰈰 \e[
+.vob	m󰈰 \e[
+.webm	m󰈰 \e[
+.wmv	m󰈰 \e[
+.yuv	m󰈰 \e[
 
 # Documents
 .pdf	m \e[
@@ -122,38 +121,38 @@ CHR	1;95mﱡ \e[1;95
 .fb2	m \e[
 .djvu	m \e[
 
-# Audios (00;38;5;202) ﭵ
-.aac	m \e[
-.aiff	m \e[
-.au	m \e[
-.flac	m \e[
-.m4a	m \e[
-.midi	m \e[
-.mid	m \e[
-.mka	m \e[
-.mp0	m \e[
-.mp3	m \e[
-.mpc	m \e[
-.oga	m \e[
-.ogg	m \e[
-.opus	m \e[
-.ra	m \e[
-.spx	m \e[
-.wav	m \e[
-.xspf	m \e[
+# Audios
+.aac	m󰎈 \e[
+.aiff	m󰎈 \e[
+.au	m󰎈 \e[
+.flac	m󰎈 \e[
+.m4a	m󰎈 \e[
+.midi	m󰎈 \e[
+.mid	m󰎈 \e[
+.mka	m󰎈 \e[
+.mp0	m󰎈 \e[
+.mp3	m󰎈 \e[
+.mpc	m󰎈 \e[
+.oga	m󰎈 \e[
+.ogg	m󰎈 \e[
+.opus	m󰎈 \e[
+.ra	m󰎈 \e[
+.spx	m󰎈 \e[
+.wav	m󰎈 \e[
+.xspf	m󰎈 \e[
 
 .bin	m \e[
-.py	m \e[
+.py	m󰌠 \e[
 
-.build	m \e[
-.m4	m \e[
-.am	m \e[
-.ac	m \e[
-.in	m \e[
+.build	m󰁨 \e[
+.m4	m󰁨 \e[
+.am	m󰁨 \e[
+.ac	m󰁨 \e[
+.in	m󰁨 \e[
 
-.m3u	m蘿\e[
-.m3u8	m蘿\e[
-.pl	m蘿\e[
+.m3u	m󰐑 \e[
+.m3u8	m󰐑 \e[
+.pl	m󰐑 \e[
 
 *COPYING	m \e[
 *COPYING.txt	m \e[
@@ -165,25 +164,22 @@ CHR	1;95mﱡ \e[1;95
 *README	4m \e[4
 *README.md	4m \e[4
 *README.rst	4m \e[4
-*CHANGELOG	4m龎\e[4
-*AUTHORS	m \e[
+*CHANGELOG	4m󰗚 \e[4
+*AUTHORS	m󰀎 \e[
 *NEWS	m \e[
 *THANKS	m \e[
 *install	4m \e[4
 *configure	4m \e[4
 
-.template	mזּ \e[
 *Makefile	m \e[
 *CMakeLists.txt	m \e[
 *PKGBUILD	m \e[
-*tags	m狀\e[
-.key	m \e[
-.pub	m \e[
+*tags	m󰓻 \e[
+.key	m󰌆 \e[
+.pub	m󰌆 \e[
 
-.theme	m嗀\e[
-*~	mﰣ \e[
-
-*cargo.toml	m \e[
+.theme	m󰔎 \e[
+*~	m󰜥 \e[
 
 .crt	m \e[
 .pem	m \e[
@@ -196,16 +192,18 @@ CHR	1;95mﱡ \e[1;95
 .yml	m \e[
 *rc	m \e[
 
-# Manual Pages
-.1	m龎\e[
-.2	m龎\e[
-.3	m龎\e[
-.5	m龎\e[
-.6	m龎\e[
-.7	m龎\e[
-.8	m龎\e[
+*cargo.toml	m \e[
 
-.torrent	m \e[
+# Manual Pages
+.1	m󰗚 \e[
+.2	m󰗚 \e[
+.3	m󰗚 \e[
+.5	m󰗚 \e[
+.6	m󰗚 \e[
+.7	m󰗚 \e[
+.8	m󰗚 \e[
+
+.torrent	m󰍇 \e[
 .php	m \e[
 .md	m \e[
 .cpp	m \e[
@@ -224,18 +222,18 @@ CHR	1;95mﱡ \e[1;95
 .gpg	m \e[
 .rs	m \e[
 .go	m \e[
-.spl	m暈\e[
+.spl	m󰓆 \e[
 .vim	m \e[
 .styl	m \e[
 .css	m \e[
 .html	m \e[
-.ods	m \e[
+.ods	m󰈙 \e[
 .ld	m \e[
 .diff	m \e[
 .pm	m \e[
 .patch	m \e[
-.xml	m謹\e[
-.m	m \e[
+.xml	m󰗀 \e[
+.m	m󰆆 \e[
 
 # }}}
 
