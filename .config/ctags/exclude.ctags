@@ -1,0 +1,6 @@
+--exclude=*~
+--exclude=*lock
+--exclude=*.min.*
+--exclude=dist
+--exclude=vendor
+--exclude=node_modules
