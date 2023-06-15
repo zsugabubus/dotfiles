@@ -1,4 +1,67 @@
 local o, opt = vim.o, vim.opt
+local api, cmd, fn = vim.api, vim.cmd, vim.fn
+local group = api.nvim_create_augroup('init', {})
+
+local function map(mode, lhs, rhs)
+	return api.nvim_set_keymap(mode, lhs, rhs, {
+		noremap = true,
+	})
+end
+
+local function remap(mode, lhs, rhs)
+	return api.nvim_set_keymap(mode, lhs, rhs, {
+		noremap = false,
+	})
+end
+
+local function smap(mode, lhs, rhs)
+	return api.nvim_set_keymap(mode, lhs, rhs, {
+		silent = true,
+	})
+end
+
+local function fmap(mode, lhs, callback)
+	return api.nvim_set_keymap(mode, lhs, '', {
+		callback = callback,
+	})
+end
+
+local function xmap(mode, lhs, callback)
+	return api.nvim_set_keymap(mode, lhs, '', {
+		expr = true,
+		replace_keycodes = true,
+		callback = callback,
+	})
+end
+
+local function xmapescape(s)
+	return string.gsub(s, '<', '<LT>')
+end
+
+local function filetype(pattern, callback)
+	return api.nvim_create_autocmd('FileType', {
+		group = group,
+		pattern = pattern,
+		callback = callback,
+	})
+end
+
+local function cabbr(lhs, rhs)
+	vim.cmd.cnoreabbrev(
+		'<expr>',
+		lhs,
+		string.format(
+			"getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s",
+			#lhs + 1,
+			fn.string(rhs),
+			fn.string(lhs)
+		)
+	)
+end
+
+function _G.tabline()
+	return require('init.tabline')()
+end
 
 o.autoindent = true
 o.autowrite = true
@@ -8,10 +71,12 @@ o.cursorlineopt = 'number'
 o.expandtab = false
 o.fileignorecase = true
 o.foldopen = true
-o.foldtext = 'fold#foldtext()'
+o.grepformat = '%f:%l:%c:%m'
+o.grepprg = 'noglob rg --vimgrep --smart-case'
 o.hidden = true
 o.ignorecase = true
 o.joinspaces = false -- No double space.
+o.laststatus = 2
 o.lazyredraw = true
 o.more = false
 o.mouse = ''
@@ -19,11 +84,13 @@ o.number = true
 o.relativenumber = true
 o.scrolloff = 5
 o.shiftwidth = 0
+o.showmode = false
 o.sidescrolloff = 23
 o.smartcase = true
 o.splitright = true
 o.swapfile = false
 o.switchbuf = 'useopen'
+o.tabline = '%!v:lua.tabline()'
 o.timeoutlen = 600
 o.title = true
 o.wildcharm = '<C-Z>'
@@ -41,9 +108,9 @@ opt.suffixes:append({ '' }) -- Rank files lower with no suffix.
 opt.wildignore:append({ '.git', '*.lock', '*~', 'node_modules' })
 opt.wildmode = { 'list:longest', 'full' }
 
-if vim.fn.filewritable(vim.fn.stdpath('config')) then
+if fn.filewritable(fn.stdpath('config')) then
 	o.undofile = true
-	o.undodir = vim.fn.stdpath('cache') .. '/undo'
+	o.undodir = fn.stdpath('cache') .. '/undo'
 else
 	o.undofile = false
 	o.shada = 'NONE'
@@ -74,30 +141,209 @@ else
 	}
 end
 
--- themember sets 'background' that reloads colorscheme. We fake it to
--- avoid loading dark colorscheme first unconditionally.
-vim.g.colors_name = 'vivid'
+do
+	local theme_file = fn.stdpath('config') .. '/theme.vim'
 
--- Disable providers.
-vim.g.loaded_python3_provider = 0
-vim.g.loaded_ruby_provider = 0
-vim.g.loaded_perl_provider = 0
-vim.g.loaded_node_provider = 0
+	local function load_theme()
+		-- Avoid loading colorscheme twice.
+		vim.g.colors_name = nil
+		pcall(cmd.source, theme_file)
+		cmd.colorscheme('vivid')
+	end
 
-vim.api.nvim_create_autocmd('FocusGained', {
+	api.nvim_create_autocmd('Signal', {
+		group = group,
+		pattern = 'SIGUSR1',
+		callback = function()
+			load_theme()
+			cmd.redraw({ bang = true })
+		end,
+	})
+
+	load_theme()
+end
+
+map('c', '<C-a>', '<Home>')
+map('c', '<C-b>', '<Left>')
+map('c', '<C-e>', '<End>')
+map('c', '<C-f>', '<Right>')
+map('c', '<C-n>', '<Down>')
+map('c', '<C-p>', '<Up>')
+map('c', '<C-v>', '<C-f>')
+map('c', '<M-b>', '<C-Left>')
+map('c', '<M-f>', '<C-Right>')
+
+map('i', '<C-a>', '<C-o>_')
+map('i', '<C-e>', '<C-o>g_<Right>')
+
+smap('n', '<M-l>', ':lnext<CR>:silent! normal! zOzz<CR>')
+smap('n', '<M-L>', ':lprev<CR>:silent! normal! zOzz<CR>')
+smap('n', '<M-n>', ':cnext<CR>:silent! normal! zOzz<CR>')
+smap('n', '<M-N>', ':cprev<CR>:silent! normal! zOzz<CR>')
+smap('n', '<M-f>', ':next<CR>')
+smap('n', '<M-F>', ':prev<CR>')
+
+xmap('i', '<C-f>', function()
+	local s = fn.expand('%:t:r')
+	if s == 'init' or s == 'index' or s == 'main' then
+		s = fn.expand('%:p:h:t')
+	end
+	return xmapescape(s)
+end)
+
+map('i', '<C-r>', '<C-r><C-o>')
+
+map('n', 'U', '')
+
+-- Reindent before append.
+xmap('n', 'A', function()
+	return api.nvim_get_current_line() ~= '' and 'A' or 'cc'
+end)
+
+smap('n', 'dar', ':.argdelete<bar>argument<CR>')
+
+-- Jump to parent indention.
+fmap('n', '<C-q>', function()
+	fn.search(
+		[[\v^\s+\zs%<]] .. fn.indent(fn.prevnonblank('.')) .. [[v\S|^#@!\S]],
+		'b'
+	)
+end)
+
+xmap('n', '<M-!>', function()
+	return ':edit ' .. xmapescape(fn.fnameescape(fn.expand('%:h'))) .. '/<C-Z>'
+end)
+smap('n', '<M-m>', ':Make<CR>')
+smap('n', '<M-o>', ':buffer #<CR>')
+smap('n', '<M-q>', ':quit<CR>')
+smap('n', '<M-w>', ':silent! wa<CR>')
+
+-- Put the first line of the paragraph at the top of the window.
+xmap('n', 'z{', function()
+	return '{zt' .. (vim.o.scrolloff + 1) .. '<C-E>'
+end)
+
+smap('n', 'gss', ':setlocal spell!<CR>')
+smap('n', 'gse', ':setlocal spell spelllang=en<CR>')
+smap('n', 'gsh', ':setlocal spell spelllang=hu<CR>')
+
+map('n', '+', 'g+')
+map('n', '-', 'g-')
+
+map('n', '!', '<Cmd>FizzyBuffers<CR>')
+map('n', 'g/', '<Cmd>FizzyFiles<CR>')
+
+map('n', '<C-w>T', '<C-w>s<C-w>T')
+
+xmap('n', 's;', function()
+	return 'A' .. (vim.o.filetype == 'python' and ':' or ';') .. '<Esc>'
+end)
+map('n', 's,', 'A,<Esc>')
+
+map('n', 's<C-g>', ':! stat %<CR>')
+
+fmap('n', 'sb', function()
+	local x = not vim.wo.scrollbind
+	for _, win in ipairs(api.nvim_tabpage_list_wins(0)) do
+		vim.wo[win].scrollbind = x
+	end
+end)
+smap('n', 'sp', [[vip:sort /\v^(#!)@!\A*\zs/<CR>]])
+smap('n', 'sw', ':set wrap!<CR>')
+
+map('n', 'Q', ':normal n.<CR>zz')
+
+-- Repeat over visual block
+map('x', '.', ':normal! .<CR>')
+
+-- Execute macro over visual range
+xmap('x', '@', function()
+	return string.format(':normal! @%s<CR>', fn.getcharstr())
+end)
+
+-- Reindent inner % lines.
+remap('n', '>i', '>%<<$%<<$%')
+remap('n', '<i', '<%>>$%>>$%')
+
+map('v', '>', '>gv')
+map('v', '<', '<gv')
+
+-- Linewise {, }.
+map('o', '{', 'V{')
+map('o', '}', 'V}')
+
+map('n', 'z/', '<Plug>(FuzzySearchFizzy)')
+
+map('x', '//', 'y:GREP -F <C-r>=shellescape(@", 1)<CR><CR>')
+
+cabbr('ccd', 'cd %:p:h<C-Z>')
+cabbr('lcd', 'lcd %:p:h<C-Z>')
+cabbr('tcd', 'tcd %:p:h<C-Z>')
+
+cabbr('bg', 'BufGrep')
+cabbr('g', 'GREP')
+cabbr('gr', 'GREP')
+
+cabbr('m', 'Man')
+cabbr('man', 'Man')
+
+api.nvim_create_user_command('Capture', function(opts)
+	if opts.args == '' then
+		opts.args = 'messages'
+	end
+	local output = api.nvim_exec2(opts.args, {
+		output = true,
+	}).output
+	if output == '' then
+		api.nvim_echo({
+			{ 'Empty output', 'WarningMsg' },
+		}, false, {})
+		return
+	end
+
+	local buf = fn.bufnr('output://' .. opts.args, true)
+	vim.bo[buf].buftype = 'nofile'
+	vim.bo[buf].swapfile = false
+	api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(output, '\n'))
+	cmd.buffer({ count = buf })
+end, {
+	complete = 'command',
+	nargs = '*',
+})
+
+api.nvim_create_user_command('Sweep', 'silent! %bdelete', {})
+
+api.nvim_create_user_command('GREP', function(opts)
+	if opts.args == '' then
+		opts.args = fn.getreg('/')
+	end
+
+	local AVOID_ESCAPE_RE = vim.regex([=[\v\c(^| )-[a-z]|^['"]]=])
+
+	cmd.grep(
+		AVOID_ESCAPE_RE:match_str(opts.args) and opts.args
+			or fn.shellescape(opts.args, 1)
+	)
+	cmd.redraw()
+end, { nargs = '*' })
+
+api.nvim_create_user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
+
+api.nvim_create_autocmd('FocusGained', {
+	group = group,
 	pattern = '*',
 	callback = function()
-		local group = vim.api.nvim_create_augroup('init/clipboard', {})
-		vim.api.nvim_create_autocmd('TextYankPost', {
+		local group = api.nvim_create_augroup('init/clipboard', {})
+		api.nvim_create_autocmd('TextYankPost', {
 			group = group,
 			once = true,
 			pattern = '*',
 			callback = function()
-				vim.api.nvim_create_autocmd('FocusLost', {
+				api.nvim_create_autocmd('FocusLost', {
 					group = group,
 					pattern = '*',
 					callback = function()
-						vim.fn.setreg('+', vim.fn.getreg('@'))
+						fn.setreg('+', fn.getreg('@'))
 					end,
 				})
 			end,
@@ -105,198 +351,71 @@ vim.api.nvim_create_autocmd('FocusGained', {
 	end,
 })
 
-vim.cmd([=[
-" Create a command abbrevation.
-command! -nargs=+ Ccabbrev let s:_ = [<f-args>][0]|execute(printf("cnoreabbrev <expr> %s getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s", s:_, len(s:_) + 1, <q-args>[len(s:_) + 1:], string(s:_)))
+do
+	local colors_dir = fn.stdpath('config') .. '/colors'
 
-command! Sweep silent! %bdelete
+	api.nvim_create_autocmd('BufWritePost', {
+		group = group,
+		pattern = '*.vim,*.lua',
+		nested = true,
+		callback = function(opts)
+			local dir = fn.fnamemodify(opts.file, ':p:h')
+			if dir == colors_dir then
+				cmd.colorscheme(fn.fnamemodify(opts.file, ':t:r'))
+			end
+		end,
+	})
+end
 
-command! -bang -nargs=+ Bufdo -tabnew|execute 'bufdo<bang>' <q-args>|bdelete
-
-" Perform shell glob on lines.
-command! -nargs=* -range Glob silent! execute ':<line1>,<line2>!while read; do print -l $REPLY/'.escape(<q-args>, '!%').'(N) $REPLY'.escape(<q-args>, '!%').'(N); done'
-
-command! -nargs=1 RegEdit let @<args>=input('"'.<q-args>.'=', @<args>)
-
-command! -nargs=* -complete=command Capture call capture#Capture(<q-args>)
-
-command! -nargs=* -complete=command Time call time#Time(<q-args>)
-
-let s:madhls = ['DiffAdd', 'DiffDelete', 'DiffChange']
-let s:modi = 0
-command! -nargs=+ Mad call matchadd(s:madhls[s:modi], <q-args>)|let s:modi = (s:modi + 1) % len(s:madhls)
-
-command! -nargs=* DelShada execute 'normal' ':%s/\v^[^ ].*(\n .*){-}\V'.escape(<q-args>, '\/').'\v.*(\n .*)*\n//' "\n"
-
-command! -range URLFilter silent '<,'>!awk '/^http/ {print $1}' | sort -u
-
-command! Ctags !test -d build && ln -sf build/tags tags; ctags -R --exclude=node_modules --exclude='*.json' --exclude='*.patch' '--map-typescript=+.tsx'
-
-inoremap <expr> <C-f> substitute(expand('%:t:r'), '\v^(init<bar>index<bar>main)$', expand('%:p:h:t'), '')
-
-inoremap <C-r> <C-r><C-o>
-
-" How many times... you little shit...
-nnoremap U <nop>
-
-" Copy whole line.
-silent! unmap Y
-
-" Reindent before append.
-nnoremap <expr> A !empty(getline('.')) ? 'A' : 'cc'
-
-" Clear indent-only line.
-augroup vimrc_insertempty
-	autocmd!
-	autocmd InsertLeave *
-		\ try|
-		\   if empty(trim(getline('.')))|
-		\     undojoin|
-		\     call setline('.', '')|
-		\   endif|
-		\ catch /undojoin/|
-		\ endtry
-augroup END
-
-nnoremap <silent> dar :.argdelete<bar>argument<CR>
-
-" Jump to parent indention.
-nnoremap <silent> <C-q> :call search('\v^\s+\zs%<'.indent(prevnonblank('.')).'v\S\|^#@!\S', 'b')<CR>
-
-nnoremap <expr> <M-!> ':edit '.fnameescape(expand('%:h')).'/<C-z>'
-nnoremap <silent> <M-m> :Make<CR>
-nnoremap <silent> <M-o> :buffer #<CR>
-nnoremap <silent> <M-q> :quit<CR>
-nnoremap <silent> <M-w> :silent! wa<CR>
-
-" Put the first line of the paragraph at the top of the window.
-nnoremap <silent><expr> z{ '{zt'.(&scrolloff + 1)."\<lt>C-E>"
-
-nnoremap <silent> gss :setlocal spell!<CR>
-nnoremap <silent> gse :setlocal spell spelllang=en<CR>
-nnoremap <silent> gsh :setlocal spell spelllang=hu<CR>
-
-nnoremap + g+
-nnoremap - g-
-
-nnoremap ! <Cmd>FizzyBuffers<CR>
-nmap <C-w>! :split<CR>!
-
-nnoremap g/ <Cmd>FizzyFiles<CR>
-
-nnoremap <silent><expr> goo ':e %<.'.get({'h': 'c', 'c': 'h', 'hpp': 'cpp', 'cpp': 'hpp'}, expand('%:e'), expand('%:e'))."\<CR>"
-
-nnoremap <C-w>T <C-w>s<C-w>T
-
-nnoremap <expr> s; 'A'.(";:"[&ft == 'python']).'<Esc>'
-nnoremap s, A,<Esc>
-
-nnoremap s<C-g> :! stat %<CR>
-
-nnoremap <silent> sw :set wrap!<CR>
-
-nnoremap <silent> sb :execute 'windo let &scrollbind = ' . !&scrollbind<CR>
-nnoremap <silent> sp vip:sort /\v^(#!)@!\A*\zs/<CR>
-
-nnoremap Q :normal n.<CR>zz
-
-" Repeat last action over visual block.
-xnoremap . :normal! .<CR>
-
-" Execute macro over visual range
-xnoremap <expr><silent> @ printf(':normal! @%s<CR>', getcharstr())
-
-Ccabbrev m 'Man'
-Ccabbrev man 'Man'
-
-Ccabbrev f 'find'.(' ' !=# v:char ? ' ' : '')
-
-" Reindent inner % lines.
-nmap >i >%<<$%<<$%
-nmap <i <%>>$%>>$%
-
-vnoremap > >gv
-vnoremap < <gv
-
-" Delete surrounding lines.
-nmap d< $<%%dd<C-O>dd
-
-" Make {, } linewise.
-onoremap <silent> { V{
-onoremap <silent> } V}
-
-nmap <silent> z/ <Plug>(FuzzySearchFizzy)
-
-let pets_joker = ''
-
-augroup vimrc_filetypes
-	autocmd!
-	autocmd FileType xml,html
-		\ setlocal equalprg=xmllint\ --encode\ UTF-8\ --html\ --nowrap\ --dropdtd\ --format\ -
-
-	autocmd FileType sh,zsh,dash
-		\ setlocal ts=2|
-		\ xnoremap <buffer> s< c<<EOF<CR><C-r><C-o>"EOF<CR><Esc><<gvo$B<Esc>i|
-		\ nnoremap <silent><buffer><nowait> ]] :call search('^.*\(function\<bar>()\s*{\)', 'W')<CR>|
-		\ nnoremap <silent><buffer><nowait> [[ :call search('^.*\(function\<bar>()\s*{\)', 'Wb')<CR>
-
-	autocmd FileType plaintex,tex
-		\ xnoremap <buffer> sli c\lstinline{<C-r><C-o>"}<Esc>|
-		\ xnoremap <buffer> sq c\textquote{<C-r><C-o>"}<Esc>
-
-	autocmd FileType vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*
-		\ setlocal ts=2 sw=0
-
-	autocmd FileType awk,cshtml
-		\ setlocal ts=4 sw=0
-
-	let c_gnu = 1
-	let c_no_curly_error = 1 " (struct s){ } <-- avoid red
-	autocmd FileType c,cpp
-		\ setlocal ts=8 fdm=manual|
-		\ setlocal equalprg=clang-format
-
-	autocmd FileType rust
-		\ setlocal ts=4 sw=4 fdm=manual
-
-	autocmd FileType json,javascript
-		\ setlocal ts=2 suffixesadd+=.js
-
-	autocmd FileType json
-		\ setlocal equalprg=jq
-
-	autocmd FileType lua
-		\ setlocal ts=2 suffixesadd+=.lua
-
-	autocmd FileType gitcommit,markdown
-		\ setlocal spell expandtab ts=2
-
-	let netrw_banner = 0
-	let netrw_list_hide = '\(^\|\s\s\)\zs\.\S\+'
-	" let netrw_keepdir = 0
-	autocmd FileType netrw
-		\ nmap <buffer> . -|
-		\ nmap <buffer> e :e<Space>
-augroup END
-
-augroup vimrc_autoresize
-	autocmd! VimResized * wincmd =
-augroup END
-
-augroup vimrc_syntax
-	autocmd!
-	autocmd BufReadPre *.toml ++once packadd vim-toml
-	autocmd BufReadPre *.glsl ++once packadd vim-glsl
-	autocmd BufReadPre *.rs ++once packadd rust.vim
-augroup END
-]=])
-
--- vim.treesitter pulls in lot's of Lua code.
-vim.api.nvim_create_autocmd('FileType', {
-	pattern = 'typescriptreact',
-	once = true,
+api.nvim_create_autocmd('BufNewFile', {
+	group = group,
+	pattern = '*',
 	callback = function()
-		vim.treesitter.language.register('tsx', 'typescriptreact')
+		local function once(event, callback)
+			return api.nvim_create_autocmd(event, {
+				group = group,
+				buffer = 0,
+				once = true,
+				callback = callback,
+			})
+		end
+
+		once('FileType', function()
+			if fn.changenr() ~= 0 or not vim.bo.modifiable then
+				return
+			end
+
+			local ft = vim.bo.filetype
+			local interpreter = ({
+				javascript = 'node',
+				python = 'python3',
+			})[ft] or ft
+
+			local path = fn.exepath(interpreter)
+			if path == '' then
+				return
+			end
+
+			api.nvim_buf_set_lines(0, 0, -1, false, {
+				'#!' .. path,
+				'',
+			})
+			cmd.normal({ args = { 'G' }, bang = true })
+		end)
+
+		once('BufWritePre', function(opts)
+			fn.mkdir(vim.fs.dirname(opts.file), 'p')
+		end)
+
+		once('BufWritePost', function(opts)
+			if string.sub(fn.getline(1), 1, 2) == '#!' then
+				local uv = vim.loop
+				local bit = require('bit')
+				local mode = uv.fs_stat(opts.file).mode
+				local ugo_x = 0x49
+				uv.fs_chmod(opts.file, bit.bor(mode, ugo_x))
+			end
+		end)
 	end,
 })
 
@@ -306,41 +425,238 @@ vim.filetype.add({
 	},
 })
 
+filetype(
+	'vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*,*sh,json',
+	function()
+		vim.bo.tabstop = 2
+	end
+)
+
+filetype('awk,python,rust', function()
+	vim.bo.tabstop = 4
+end)
+
+filetype('gitcommit,markdown', function()
+	vim.wo.spell = true
+end)
+
+filetype('json', function()
+	vim.bo.equalprg = 'jq'
+end)
+
+filetype('xml,html', function()
+	vim.bo.equalprg =
+		'xmllint --encode UTF-8 --html --nowrap --dropdtd --format -'
+end)
+
+-- vim.treesitter pulls in lot's of Lua code.
+api.nvim_create_autocmd('FileType', {
+	group = group,
+	pattern = 'typescriptreact',
+	once = true,
+	callback = function()
+		vim.treesitter.language.register('tsx', 'typescriptreact')
+	end,
+})
+
+api.nvim_create_autocmd('TextChanged', {
+	group = group,
+	pattern = '*',
+	callback = function()
+		if vim.wo.diff then
+			cmd.diffupdate()
+		end
+	end,
+})
+
+api.nvim_create_autocmd('BufHidden,BufUnload', {
+	group = group,
+	pattern = '*',
+	callback = function()
+		if not vim.bo.buflisted then
+			cmd.diffoff({ bang = true })
+		end
+	end,
+})
+
+api.nvim_create_autocmd('VimResized', {
+	group = group,
+	callback = function()
+		cmd.wincmd('=')
+	end,
+})
+
+api.nvim_create_autocmd('StdinReadPost', {
+	group = group,
+	pattern = '*',
+	callback = function()
+		vim.bo.buftype = 'nofile'
+		vim.bo.bufhidden = 'hide'
+		vim.bo.swapfile = false
+	end,
+})
+
+api.nvim_create_autocmd('BufReadPost', {
+	group = group,
+	pattern = '*',
+	callback = function()
+		local IGNORE_RE = vim.regex([[\vgit|mail]])
+
+		api.nvim_create_autocmd('FileType', {
+			group = group,
+			buffer = 0,
+			once = true,
+			callback = function()
+				if IGNORE_RE:match_str(vim.bo.filetype) then
+					return
+				end
+
+				api.nvim_create_autocmd('BufEnter', {
+					group = group,
+					buffer = 0,
+					once = true,
+					callback = function()
+						local lnum = fn.line('\'"')
+						if 1 <= lnum and lnum <= fn.line('$') then
+							cmd.normal({ args = { 'g`"zvzz' }, bang = true })
+						end
+					end,
+				})
+			end,
+		})
+	end,
+})
+
+api.nvim_create_autocmd('VimLeave', {
+	group = group,
+	pattern = '*',
+	callback = function()
+		if vim.v.dying == 0 and vim.v.exiting == 0 and vim.v.this_session ~= '' then
+			cmd.mkession({ args = { vim.v.this_session }, bang = true })
+		end
+	end,
+})
+
+api.nvim_create_user_command('SourceSession', function()
+	cmd.source('Session.vim')
+end, {})
+
+do
+	local IGNORE_WHITESPACE_RE =
+		vim.regex([[\v^(|text|markdown|mail)$|git|diff|log]])
+
+	api.nvim_create_autocmd('FileType,BufWinEnter,WinNew,ColorScheme', {
+		group = group,
+		pattern = '*',
+		callback = function()
+			api.nvim_set_hl(0, 'WhitespaceError', {
+				default = true,
+				ctermbg = 197,
+				ctermfg = 231,
+				bg = '#ff005f',
+				fg = '#ffffff',
+			})
+		end,
+	})
+
+	api.nvim_create_autocmd('FileType,BufWinEnter,WinNew', {
+		group = group,
+		pattern = '*',
+		callback = function()
+			if vim.w.japan then
+				fn.matchdelete(vim.w.japan)
+				vim.w.japan = nil
+			end
+			if
+				vim.bo.buftype == ''
+				and not vim.bo.readonly
+				and vim.bo.modifiable
+				and not IGNORE_WHITESPACE_RE:match_str(vim.bo.filetype)
+			then
+				vim.w.japan = fn.matchadd('WhitespaceError', [[\v +\t+|\s+%#@!$]], 10)
+			end
+		end,
+	})
+end
+
+api.nvim_create_user_command(
+	'Japan',
+	[[keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e]],
+	{}
+)
+
+map('t', '<C-v>', '<C-\\><C-n>')
+
+api.nvim_create_autocmd('TermClose', {
+	group = group,
+	callback = function()
+		cmd.stopinsert()
+	end,
+})
+
+api.nvim_create_user_command('Register', function(opts)
+	cmd.edit(fn.fnameescape('reg://' .. opts.args))
+end, {
+	nargs = '?',
+})
+
+api.nvim_create_autocmd('BufReadCmd', {
+	group = group,
+	pattern = 'reg://*',
+	callback = function(opts)
+		local regname = string.sub(opts.match, 7)
+		api.nvim_buf_set_lines(opts.buf, 0, -1, true, fn.getreg(regname, 1, true))
+	end,
+})
+
+api.nvim_create_autocmd('BufWriteCmd', {
+	group = group,
+	pattern = 'reg://*',
+	callback = function(opts)
+		local regname = string.sub(opts.match, 7)
+		fn.setreg(regname, api.nvim_buf_get_lines(opts.buf, 0, -1, true))
+		vim.bo[opts.buf].modified = false
+		api.nvim_echo({
+			{
+				string.format('Register %s written', regname),
+				'Normal',
+			},
+		}, true, {})
+	end,
+})
+
+-- Disable providers.
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_node_provider = 0
+
 require('pack').setup({
 	{ 'ansiesc.nvim' },
 	{ 'cword.nvim' },
 	{ 'nvim-colorcolors' },
-	{ 'vim-acid' },
-	{ 'vim-betterm' },
 	{ 'vim-bufgrep' },
-	{ 'vim-difficooler' },
-	{ 'vim-elephant' },
 	{ 'vim-fizzy' },
 	{ 'vim-fuzzysearch' },
 	{ 'vim-git' },
-	{ 'vim-japan' },
 	{ 'vim-make' },
 	{ 'vim-mall' },
 	{ 'vim-mankey' },
-	{ 'vim-newfile' },
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
 	{ 'vim-qf' },
 	{ 'vim-star' },
-	{ 'vim-stdin' },
 	{
 		'vim-surround',
 		before = function()
-			vim.keymap.set('n', 'ds', '<Plug>(SurroundDelete)')
-			vim.keymap.set('x', 's', '<Plug>(Surround)')
+			map('n', 'ds', '<Plug>(SurroundDelete)')
+			map('x', 's', '<Plug>(Surround)')
 		end,
 	},
 	{ 'vim-textobjects' },
-	{ 'vim-themember' },
 	{ 'vim-tilde' },
 	{ 'vim-vnicode' },
 	{ 'vim-woman' },
-	{ 'vim-wtc7' },
 	{ 'vim-wtf' },
 	{ 'vimdent.nvim' },
 	{
@@ -357,7 +673,7 @@ require('pack').setup({
 	{
 		'jumpmotion.nvim',
 		after = function()
-			vim.keymap.set('', '<space>', '<Plug>(JumpMotion)')
+			map('', '<space>', '<Plug>(JumpMotion)')
 		end,
 	},
 	{
@@ -367,17 +683,21 @@ require('pack').setup({
 			require('nvim-treesitter.configs').setup({
 				indent = { enable = false },
 				highlight = { enable = false },
-				parser_install_dir = vim.fn.stdpath('data') .. '/site',
+				parser_install_dir = fn.stdpath('data') .. '/site',
 			})
 		end,
 	},
 }, {
 	source_blacklist = {
+		'/runtime/plugin/health.vim',
 		'/runtime/plugin/netrwPlugin.vim',
 		'/runtime/plugin/rplugin.vim',
+		'/runtime/plugin/spellfile.vim',
 		'/runtime/plugin/tohtml.vim',
 		'/runtime/plugin/tutor.vim',
 		'/vimfiles/plugin/black.vim',
 		'/vimfiles/plugin/fzf.vim',
 	},
 })
+
+require('init.statusline')

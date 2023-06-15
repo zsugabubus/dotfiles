@@ -1,2 +1,3 @@
 #!/usr/bin/dash
-nvim +"set background=$1|doautocmd OptionSet background|quit"
+printf 'set background=%s\n' "$1" > theme.vim
+pkill -USR1 nvim
