@@ -57,7 +57,7 @@ folder-hook !sent $my_reset
 
 folder-hook . 'set index_format="%3C %Z %@date@ %-20.20L%@attach@%?M?(%M) ?%s (%?l?%4l&%4c?)%@label@"'
 
-index-format-hook attach "~X>"	"  "
+index-format-hook attach "~X>"	" 󰏢 "
 index-format-hook attach "~A"	"   "
 
 index-format-hook date "~d<1d"	"%[ %H:%M]"
