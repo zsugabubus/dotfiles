@@ -412,7 +412,7 @@ api.nvim_create_autocmd('BufNewFile', {
 				local uv = vim.loop
 				local bit = require('bit')
 				local mode = uv.fs_stat(opts.file).mode
-				local ugo_x = 0x49
+				local ugo_x = tonumber('111', 8)
 				uv.fs_chmod(opts.file, bit.bor(mode, ugo_x))
 			end
 		end)

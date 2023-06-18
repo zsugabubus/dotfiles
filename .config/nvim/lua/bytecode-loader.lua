@@ -47,9 +47,9 @@ function _G.loadfile(path)
 		return
 	end
 
-	uv.fs_mkdir(cache_dir, 448, function()
+	uv.fs_mkdir(cache_dir, tonumber('700', 8), function()
 		local tmp_path = string.format('%s.%d~', cache_path, uv.os_getpid())
-		uv.fs_open(tmp_path, 'wx', 384, function(err, fd)
+		uv.fs_open(tmp_path, 'wx', tonumber('600', 8), function(err, fd)
 			-- Maybe another loadfile() would like to cache concurrently, or maybe
 			-- something below failed so do not try again.
 			if err and string.find(err, '^EEXIST:') then
