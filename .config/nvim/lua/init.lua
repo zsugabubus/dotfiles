@@ -99,7 +99,7 @@ o.wildmenu = true
 o.wrap = false
 opt.cinoptions:append({ 't0', ':0', 'l1' })
 opt.completeopt = { 'menu', 'longest', 'noselect', 'preview' }
-opt.diffopt = { 'filler', 'vertical', 'algorithm:patience' }
+opt.diffopt = { 'closeoff', 'filler', 'vertical', 'algorithm:patience' }
 opt.matchpairs:append({ '‘:’', '“:”' })
 opt.nrformats:remove({ 'octal' })
 opt.path:append({ 'src/**', 'include/**' })
@@ -638,7 +638,7 @@ require('pack').setup({
 	{ 'vim-bufgrep' },
 	{ 'vim-fizzy' },
 	{ 'vim-fuzzysearch' },
-	{ 'vim-git' },
+	{ 'git.nvim' },
 	{ 'vim-make' },
 	{ 'vim-mall' },
 	{ 'vim-mankey' },
