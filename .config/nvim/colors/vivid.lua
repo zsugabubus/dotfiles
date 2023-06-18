@@ -13,30 +13,6 @@ end
 
 local light = vim.o.background == 'light'
 
--- #372230
--- #043617
--- #232a3f
--- #8500ac
--- #7afb70
--- #2b033b
--- #b1d7ff
--- #1b1f33
--- #45993d
--- #30d440
--- #5858d8
--- #e8a152
--- #8e98b3
--- #ecbd1a
--- #44212f
--- #0f2f21
--- #1f362a
--- #f3f3a3
--- #f7f7f7
--- #f868d8
--- #fdce67
--- #fff3a0
--- #ffdf28 #fa1000
-
 local span = trace('colorscheme data')
 
 -- stylua: ignore start
@@ -51,7 +27,7 @@ local theme = {
 	Special = 'Normal',
 	SpecialKey = 'NonText',
 	VertSplit = { fg = '#ababab' },
-	Visual = { bg = light and '#accdfe' or '#4c4dbd', ctermbg = 4 },
+	Visual = { bg = light and '#acd0fe' or '#4c4dbd', ctermbg = 4 },
 	VisualNOS = { fg = '#d8d8dc' },
 
 	TabLine = { fg = light and '#444444' or '#f8fcf8', bg = 'StatusLine' },
@@ -96,12 +72,12 @@ local theme = {
 	String = 'Constant',
 	Type = { fg = light and '#ed0085' or '#fd0069', bold = true },
 
-	DiffAdd = { fg = light and '#00a206' or '#2edd2e', bg = light and '#ddf7cf' or nil },
-	DiffChange = { fg = light and '#ec5f00' or '#ffaf08', bg = light and '#ffedaa' or nil },
-	DiffDelete = { fg = light and '#ff003e' or '#ff2e1f', bg = light and '#ffe5f0' or nil },
-	diffAdded = 'DiffAdd',
-	diffRemoved = 'DiffDelete',
-	diffText = { fg = '#040404', bg = '#ffaf08' },
+	DiffAdd = { bg = light and '#b5f78b' or nil, fg = not light and '#2edd2e' or nil },
+	DiffChange = { bg = light and '#FFDDA5' or nil, fg = not light and '#ffc028' or nil },
+	DiffDelete = { fg = light and '#9D1E17' or '#fff0f0', bg = light and '#ffa195' or '#EA1F24' },
+	diffAdded = { fg = light and '#00a206' or '#2edd2e' },
+	diffRemoved = { fg = '#fe2e1f' },
+	diffText = { bg = light and '#ffafff' or '#ffc028', fg = not light and '#000000' or nil },
 
 	Pmenu = { bg = '#e0e0e0', fg = '#303030' },
 	PmenuSbar = { bg = 'Pmenu' },
