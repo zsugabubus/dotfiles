@@ -641,7 +641,6 @@ require('pack').setup({
 	{ 'vim-fuzzysearch' },
 	{ 'git.nvim' },
 	{ 'vim-make' },
-	{ 'vim-mall' },
 	{ 'vim-mankey' },
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
