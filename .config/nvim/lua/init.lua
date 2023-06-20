@@ -662,12 +662,8 @@ require('pack').setup({
 	{
 		'commenter.nvim',
 		after = function()
-			require('commenter.config').setup({
-				keymap = {
-					leader = 'gc',
-					line = 'gcc',
-				},
-			})
+			map('n', 'gc', '<Plug>(commenter)')
+			map('n', 'gcc', '<Plug>(commenter-current-line)')
 		end,
 	},
 	{

@@ -3,12 +3,8 @@ vim.cmd.runtime({ args = { 'plugin/commenter.*' } })
 
 local function reset(commentstring)
 	package.loaded.commenter = nil
-	require('commenter.config').setup({
-		keymap = {
-			leader = 'gc',
-			line = 'gcc',
-		},
-	})
+	vim.keymap.set('', 'gc', '<Plug>(commenter)')
+	vim.keymap.set('', 'gcc', '<Plug>(commenter-current-line)')
 	vim.o.commentstring = commentstring
 end
 
