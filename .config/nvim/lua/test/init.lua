@@ -1,33 +1,4 @@
-#!/usr/bin/luajit
-if vim == nil then
-	local function shellescape(s)
-		return string.format("'%s'", string.gsub(s, "'", [['"'"']]))
-	end
-
-	local function luastring(s)
-		return string.format('"%s"', string.gsub(s, '[\\"]', '\\%0'))
-	end
-
-	local test_arg = '{'
-	for _, s in ipairs(arg) do
-		test_arg = test_arg .. luastring(s) .. ','
-	end
-	test_arg = test_arg .. '}'
-
-	local x = os.execute(
-		string.format(
-			'exec nvim --headless --clean --cmd %s -u %s',
-			shellescape('lua test_arg = ' .. test_arg),
-			shellescape(arg[0])
-		)
-	)
-	os.exit(
-		-- LuaJIT
-		x == 0 -- Lua
-			or x == true
-	)
-end
-
+#!/usr/bin/nvim -l
 local inspect = vim.inspect
 local INSPECT_SINGLE_LINE = { newline = '' }
 local SKIP_ERROR = {}
@@ -115,12 +86,12 @@ end
 local function parse_args()
 	local i = 1
 
-	while i <= #test_arg do
-		local opt = test_arg[i]
+	while i <= #arg do
+		local opt = arg[i]
 		i = i + 1
 
-		local function arg()
-			local s = test_arg[i]
+		local function optval()
+			local s = arg[i]
 			i = i + 1
 			if not s then
 				die(4, 'option %s requires argument', opt)
@@ -129,9 +100,9 @@ local function parse_args()
 		end
 
 		if opt == '-g' then
-			opts.glob = arg()
+			opts.glob = optval()
 		elseif opt == '-p' then
-			opts.pattern = arg()
+			opts.pattern = optval()
 		elseif opt == '-s' then
 			opts.silent = true
 		elseif string.match(opt, '^%-') then
