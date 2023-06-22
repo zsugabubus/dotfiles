@@ -1,4 +1,5 @@
-local group = vim.api.nvim_create_augroup('Vimdent', {})
+local api = vim.api
+local group = api.nvim_create_augroup('Vimdent', {})
 
 local function sw_max(t)
 	local sum = 0
@@ -16,24 +17,26 @@ local function sw_max(t)
 end
 
 local function detect()
-	if vim.bo.buftype ~= '' then
+	local bo = vim.bo
+	local b = vim.b
+	if bo.buftype ~= '' then
 		return
 	end
 
-	local ffi = require 'ffi'
+	local ffi = require('ffi')
 
 	local sw_tbl = ffi.new('int[?]', 100)
 	local sw2_tbl = ffi.new('int[?]', 100)
 	local et_tbl = ffi.new('int[?]', 100)
 	local tab_only = 0
 
-	local saved_tabstop = vim.bo.tabstop
-	local saved_vartabstop = vim.bo.vartabstop
-	vim.bo.tabstop = 100
-	vim.bo.vartabstop = ''
+	local saved_tabstop = bo.tabstop
+	local saved_vartabstop = bo.vartabstop
+	bo.tabstop = 100
+	bo.vartabstop = ''
 
 	local prev_tab, prev_sp = 0, 0
-	local endl = vim.api.nvim_buf_line_count(0)
+	local endl = api.nvim_buf_line_count(0)
 	for i = math.max(1, endl - 1000), endl do
 		local indent = vim.fn.indent(i)
 		local tab, sp = math.floor(indent / 100), indent % 100
@@ -68,7 +71,12 @@ local function detect()
 			end
 		end
 
-		prev_tab, prev_sp = tab, sp
+		-- XXX: Stylua has a hard time parsing the file if ::label:: is not
+		-- preceded by `end`.
+		do
+			prev_tab, prev_sp = tab, sp
+		end
+
 		::ignore_blank::
 	end
 
@@ -79,12 +87,12 @@ local function detect()
 
 	if et_tbl[2] < tab_only then
 		-- Tab only.
-		vim.bo.shiftwidth = 0
-		vim.bo.expandtab = false
-		vim.bo.tabstop = saved_tabstop
-		vim.bo.vartabstop = saved_vartabstop
-		vim.bo.softtabstop = 0
-		vim.b.did_vimdent = 1
+		bo.shiftwidth = 0
+		bo.expandtab = false
+		bo.tabstop = saved_tabstop
+		bo.vartabstop = saved_vartabstop
+		bo.softtabstop = 0
+		b.did_vimdent = 1
 		return
 	end
 
@@ -100,40 +108,40 @@ local function detect()
 			sw2_tbl[best_sw2] = sw2_tbl[best_sw2] + sw2_tbl[8]
 		end
 
-		vim.bo.shiftwidth = best_sw
-		if (
-			best_sw2 and
-			best_sw2 % best_sw == 0 and
-			et_tbl[best_sw2 + best_sw] < sw2_tbl[best_sw2]
-		) then
+		bo.shiftwidth = best_sw
+		if
+			best_sw2
+			and best_sw2 % best_sw == 0
+			and et_tbl[best_sw2 + best_sw] < sw2_tbl[best_sw2]
+		then
 			-- Space with tabs.
-			vim.bo.expandtab = false
-			vim.bo.tabstop = best_sw + best_sw2
-			vim.bo.vartabstop = ''
+			bo.expandtab = false
+			bo.tabstop = best_sw + best_sw2
+			bo.vartabstop = ''
 		else
 			-- Space only.
-			vim.bo.expandtab = true
-			vim.bo.tabstop = 8
-			vim.bo.vartabstop = saved_vartabstop
+			bo.expandtab = true
+			bo.tabstop = 8
+			bo.vartabstop = saved_vartabstop
 		end
-		vim.bo.softtabstop = 0
-		vim.b.did_vimdent = 1
+		bo.softtabstop = 0
+		b.did_vimdent = 1
 		return
 	end
 
 	-- Unknown.
-	vim.bo.tabstop = saved_tabstop
-	vim.bo.vartabstop = saved_vartabstop
+	bo.tabstop = saved_tabstop
+	bo.vartabstop = saved_vartabstop
 
-	vim.api.nvim_create_autocmd('BufWritePost', {
+	api.nvim_create_autocmd('BufWritePost', {
 		group = group,
 		buffer = 0,
 		once = true,
 		callback = detect,
 	})
 
-	if vim.bo.filetype == '' then
-		vim.api.nvim_create_autocmd('FileType', {
+	if bo.filetype == '' then
+		api.nvim_create_autocmd('FileType', {
 			group = group,
 			buffer = 0,
 			once = true,
@@ -142,26 +150,23 @@ local function detect()
 		return
 	end
 
-	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-		if (
-			vim.b[buf].did_vimdent == 1 and
-			vim.bo[buf].filetype == vim.bo.filetype
-		) then
-			vim.bo.shiftwidth = vim.bo[buf].shiftwidth
-			vim.bo.expandtab = vim.bo[buf].expandtab
-			vim.bo.tabstop = vim.bo[buf].tabstop
-			vim.bo.vartabstop = vim.bo[buf].vartabstop
-			vim.bo.softtabstop = vim.bo[buf].softtabstop
+	for _, buf in ipairs(api.nvim_list_bufs()) do
+		if b[buf].did_vimdent == 1 and bo[buf].filetype == bo.filetype then
+			bo.shiftwidth = bo[buf].shiftwidth
+			bo.expandtab = bo[buf].expandtab
+			bo.tabstop = bo[buf].tabstop
+			bo.vartabstop = bo[buf].vartabstop
+			bo.softtabstop = bo[buf].softtabstop
 			-- Do not set did_vimdent, it is only a soft guess.
 			return
 		end
 	end
 end
 
-vim.api.nvim_create_autocmd('BufReadPost', {
+api.nvim_create_autocmd('BufReadPost', {
 	group = group,
 	callback = function()
-		vim.api.nvim_create_autocmd('BufEnter', {
+		api.nvim_create_autocmd('BufEnter', {
 			group = group,
 			buffer = 0,
 			once = true,
@@ -170,9 +175,9 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 	end,
 })
 
-vim.api.nvim_create_autocmd('BufNewFile', {
+api.nvim_create_autocmd('BufNewFile', {
 	group = group,
 	callback = detect,
 })
 
-vim.api.nvim_create_user_command('Vimdent', detect, {})
+api.nvim_create_user_command('Vimdent', detect, {})
