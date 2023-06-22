@@ -669,7 +669,7 @@ require('pack').setup({
 	{
 		'jumpmotion.nvim',
 		after = function()
-			map('', '<space>', '<Plug>(JumpMotion)')
+			map('', '<space>', '<Plug>(jumpmotion)')
 		end,
 	},
 	{

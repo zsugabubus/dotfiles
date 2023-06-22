@@ -1,4 +1,4 @@
-vim.api.nvim_set_keymap('', '<Plug>(JumpMotion)', '', {
+vim.api.nvim_set_keymap('', '<Plug>(jumpmotion)', '', {
 	callback = function()
 		local function rchar(c)
 			return (c == '\\' and '\\\\' or c) .. '\\+'
