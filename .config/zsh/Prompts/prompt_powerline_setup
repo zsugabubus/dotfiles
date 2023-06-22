@@ -37,6 +37,11 @@ function __prompt_vcs_info() {
 
 		dir=$cdup.git
 		[[ -d $dir ]] && break
+		if [[ -f $dir ]]; then
+			read dir <$dir
+			dir=${dir#gitdir: }
+			break
+		fi
 		[[ ${st[device]}:${st[inode]} == $root ]] && return
 		cdup+=../
 
