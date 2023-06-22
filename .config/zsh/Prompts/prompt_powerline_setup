@@ -81,7 +81,7 @@ function __prompt_vcs_info() {
 	fi
 
 	if [[ $head =~ '^[[:xdigit:]]{40}$' ]]; then
-		head=$(git --no-optional-locks name-rev --name-only "$head")
+		head=$(git --no-optional-locks name-rev --name-only --always --no-undefined "$head")
 	fi
 
 	typeset -g __prompt_vcs_dir=$dir
