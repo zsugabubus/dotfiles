@@ -7,6 +7,7 @@ After=mbsync-profile@clearnet.service
 Type=simple
 ExecStart=mbidled -c "%t/mbsyncrc.clearnet"
 Restart=always
+RuntimeMaxSec=10m
 
 [Install]
 WantedBy=default.target
