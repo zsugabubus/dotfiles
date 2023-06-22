@@ -1,8 +1,9 @@
 local M = {}
-local ns = vim.api.nvim_create_namespace('jumpmotion')
+local api, fn = vim.api, vim.fn
+local ns = api.nvim_create_namespace('jumpmotion')
 
 local function update_highlights()
-	vim.api.nvim_set_hl(0, 'JumpMotionHead', {
+	api.nvim_set_hl(0, 'JumpMotionHead', {
 		default = true,
 		bold = true,
 		ctermfg = 196,
@@ -10,7 +11,7 @@ local function update_highlights()
 		fg = '#ff0000',
 		bg = '#ffff00',
 	})
-	vim.api.nvim_set_hl(0, 'JumpMotionTail', {
+	api.nvim_set_hl(0, 'JumpMotionTail', {
 		default = true,
 		ctermfg = 196,
 		ctermbg = 226,
@@ -21,12 +22,8 @@ end
 
 local function update_extmarks(targets)
 	for _, target in ipairs(targets) do
-		target.extmark_id = vim.api.nvim_buf_set_extmark(
-			target.buf,
-			ns,
-			target.line - 1,
-			target.col,
-			{
+		target.extmark_id =
+			api.nvim_buf_set_extmark(target.buf, ns, target.line - 1, target.col, {
 				id = target.extmark_id,
 				virt_text = {
 					{ string.sub(target.key, 1, 1), 'JumpMotionHead' },
@@ -36,8 +33,7 @@ local function update_extmarks(targets)
 				},
 				virt_text_pos = 'overlay',
 				priority = 1000 + #targets,
-			}
-		)
+			})
 	end
 end
 
@@ -83,7 +79,7 @@ local function pick_target(targets)
 	while #targets > 1 do
 		update_extmarks(targets)
 
-		vim.api.nvim_echo({
+		api.nvim_echo({
 			{
 				string.format('jumpmotion (%d targets): ', #targets),
 				'Question',
@@ -91,12 +87,12 @@ local function pick_target(targets)
 		}, false, {})
 		vim.cmd.redraw()
 
-		local ok, c = pcall(vim.fn.getcharstr)
+		local ok, c = pcall(fn.getcharstr)
 		if not ok then
 			c = ' '
 		end
 
-		vim.api.nvim_echo({
+		api.nvim_echo({
 			{ '', 'Normal' },
 		}, false, {})
 
@@ -106,7 +102,7 @@ local function pick_target(targets)
 				target.key = string.sub(target.key, #c + 1)
 				table.insert(new_targets, target)
 			else
-				vim.api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
+				api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
 			end
 		end
 		targets = new_targets
@@ -114,7 +110,7 @@ local function pick_target(targets)
 
 	local target = targets[1]
 	if not target then
-		vim.api.nvim_echo({
+		api.nvim_echo({
 			{ 'jumpmotion: No matches', 'ErrorMsg' },
 		}, false, {})
 		return
@@ -122,7 +118,7 @@ local function pick_target(targets)
 
 	-- Single target will have no extmark set.
 	if target.extmark_id ~= nil then
-		vim.api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
+		api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
 	end
 
 	return target
@@ -131,27 +127,26 @@ end
 local function find_targets(pattern)
 	local targets = {}
 	local targets_set = {}
-	local current_win = vim.api.nvim_get_current_win()
+	local current_win = api.nvim_get_current_win()
 
 	local saved_scrolloff = vim.o.scrolloff
 	vim.o.scrolloff = 0
 
 	local function add_win_targets()
-		local win = vim.api.nvim_get_current_win()
-		local buf = vim.api.nvim_win_get_buf(win)
+		local win = api.nvim_get_current_win()
+		local buf = api.nvim_win_get_buf(win)
 
-		local view = vim.fn.winsaveview()
-		view.botline = vim.fn.line('w$')
-		view.rightcol = view.leftcol + vim.fn.winwidth(0) - 1
+		local view = fn.winsaveview()
+		view.botline = fn.line('w$')
+		view.rightcol = view.leftcol + api.nvim_win_get_width(0) - 1
 
 		local opt_wrap = vim.o.wrap
 
 		local flags = 'cWz'
-		vim.api.nvim_win_set_cursor(0, { view.topline, 0 })
+		api.nvim_win_set_cursor(0, { view.topline, 0 })
 
 		while true do
-			local lnum, col =
-				unpack(vim.fn.searchpos(pattern, flags, view.botline, 100))
+			local lnum, col = unpack(fn.searchpos(pattern, flags, view.botline, 100))
 			if lnum == 0 then
 				break
 			end
@@ -162,31 +157,35 @@ local function find_targets(pattern)
 
 			-- Skip non-visible portion of a line.
 			if not opt_wrap then
-				local vcol = vim.fn.virtcol('.')
+				local virt_col = fn.virtcol('.')
 
-				if vcol < view.leftcol then
-					local newcol = vim.fn.virtcol2col(0, lnum, view.leftcol)
-					if col + 1 < newcol then
-						vim.api.nvim_win_set_cursor(0, { lnum, newcol })
+				if virt_col < view.leftcol then
+					local new_col = fn.virtcol2col(0, lnum, view.leftcol)
+					if col + 1 < new_col then
+						api.nvim_win_set_cursor(0, { lnum, new_col })
 						flags = 'cWz'
 						goto continue
 					else
 						-- Short line.
-						vcol = math.huge
+						virt_col = math.huge
 					end
 				end
 
-				if view.rightcol < vcol then
-					vim.api.nvim_win_set_cursor(
+				if view.rightcol < virt_col then
+					-- `lnum + 1` may be after last line so this check is required.
+					if lnum == view.botline then
+						break
+					end
+					api.nvim_win_set_cursor(
 						0,
-						{ lnum + 1, vim.fn.virtcol2col(0, lnum + 1, view.leftcol) }
+						{ lnum + 1, fn.virtcol2col(0, lnum + 1, view.leftcol) }
 					)
 					flags = 'cWz'
 					goto continue
 				end
 			end
 
-			local visible = vim.fn.screenpos(0, lnum, col + 1).row ~= 0
+			local visible = fn.screenpos(0, lnum, col + 1).row ~= 0
 			if not visible then
 				goto continue
 			end
@@ -206,15 +205,15 @@ local function find_targets(pattern)
 			::continue::
 		end
 
-		vim.fn.winrestview(view)
+		fn.winrestview(view)
 	end
 
 	-- Current window first.
 	add_win_targets()
 
-	for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-		if win ~= current_win and vim.api.nvim_win_get_config(win).focusable then
-			vim.api.nvim_win_call(win, add_win_targets)
+	for _, win in ipairs(api.nvim_tabpage_list_wins(0)) do
+		if win ~= current_win and api.nvim_win_get_config(win).focusable then
+			api.nvim_win_call(win, add_win_targets)
 		end
 	end
 
@@ -225,13 +224,13 @@ end
 
 local last_pattern
 function M.jump(pattern)
-	local mode = vim.fn.mode()
+	local mode = fn.mode()
 
 	local targets = find_targets(pattern)
 	generate_keys(targets)
 
 	vim.o.opfunc = 'v:lua._jumpmotion_noop'
-	vim.api.nvim_command('silent! normal! g@:\n')
+	api.nvim_command('silent! normal! g@:\n')
 	vim.o.opfunc = 'v:lua._jumpmotion_repeat'
 	last_pattern = pattern
 
@@ -241,13 +240,13 @@ function M.jump(pattern)
 	end
 
 	-- Push current location to jumplist.
-	vim.api.nvim_command("normal! m'")
+	api.nvim_command("normal! m'")
 
-	vim.api.nvim_set_current_win(target.win)
-	vim.api.nvim_win_set_cursor(target.win, { target.line, target.col })
+	api.nvim_set_current_win(target.win)
+	api.nvim_win_set_cursor(target.win, { target.line, target.col })
 
 	if mode == 'v' or mode == 'V' then
-		vim.api.nvim_command('normal! m>gv')
+		api.nvim_command('normal! m>gv')
 	end
 
 	return true
