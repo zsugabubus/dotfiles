@@ -30,18 +30,18 @@ local theme = {
 	Visual = { bg = light and '#acd0fe' or '#4c4dbd', ctermbg = 4 },
 	VisualNOS = { fg = '#d8d8dc' },
 
-	TabLine = { fg = light and '#444444' or '#f8fcf8', bg = 'StatusLine' },
+	TabLine = { fg = light and '#444444' or '#d8ccd8', bg = 'StatusLine' },
 	TabLineFill = 'TabLine',
-	TabLineSel = { fg = '#414140', bg = light and '#eeeeee' or '#ffaf5f', bold = true },
+	TabLineSel = { fg = light and '#414140' or 'Normal', bg = light and '#eeeeee' or 'Normal', bold = true },
 
 	StatusLine = { fg = light and '#313140' or '#f8ece8', bg = light and '#e8e8e8' or '#363a46', bold = true },
 	StatusLineModeTerm = { fg = '#ffffff', bg = '#9D3695', bold = true },
 	StatusLineModeTermEnd = { fg = 'StatusLineModeTerm.bg', bg = 'StatusLine' },
-	StatusLineNC = { fg = light and '#404040' or '#d8ccc8', bg = 'StatusLine' },
+	StatusLineNC = { fg = light and '#404040' or '#d8ccd8', bg = 'StatusLine' },
 	StatusLineTerm = 'Normal',
 	StatusLineTermNC = 'StatusLineTerm',
 
-	User1 = { fg = light and '#e0e0e0' or '#ffaf5f', bg = 'StatusLine' },
+	User1 = { fg = light and '#dddddd' or '#ede4ed', bg = 'StatusLine' },
 	User2 = { fg = light and '#686868' or '#383838', bg = 'User1.fg' },
 	User3 = { fg = '#444444', bg = 'User1.fg', bold = true },
 	User4 = { fg = '#777777', bg = 'User1.fg' },
