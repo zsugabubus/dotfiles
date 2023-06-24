@@ -625,6 +625,14 @@ api.nvim_create_autocmd('BufWriteCmd', {
 	end,
 })
 
+api.nvim_create_autocmd('FocusLost', {
+	group = group,
+	pattern = '*',
+	callback = function()
+		pcall(fn.writefile, { fn.expand('%:p') }, fn.stdpath('run') .. '/nvim_here')
+	end,
+})
+
 -- Disable providers.
 vim.g.loaded_python3_provider = 0
 vim.g.loaded_ruby_provider = 0
