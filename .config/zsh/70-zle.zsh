@@ -141,8 +141,6 @@ bindkey -M menuselect -s \
 autoload -Uz paste-magic
 zle -N bracketed-paste paste-magic
 
-autoload -Uz zmail && zmail
-
 set -o ignore_eof
 function __zle-exit() {
 	zle .reset-prompt
