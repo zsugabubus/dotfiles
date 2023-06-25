@@ -188,6 +188,7 @@ local client
 local local_bindings
 local props = {
 	volume = 0,
+	speed = 1,
 	playlist = {},
 	['playlist-pos-1'] = 0,
 	['term-osd-bar-chars'] = '[-+-]',
@@ -261,14 +262,17 @@ local function render_status()
 
 	win:attr(curs.A_NORMAL, 0)
 	win:putf(
-		'[%d/%d] %s / %s (%2d%%) Volume: %d%% ',
+		'[%d/%d] %s / %s (%2d%%) ',
 		props['playlist-pos-1'],
 		#props.playlist,
 		human_time(props['time-pos'] or 0),
 		human_time(props.duration or 0),
-		100 * pct,
-		props.volume
+		100 * pct
 	)
+	if props.speed ~= 1 then
+		win:putf('x%.2f ', props.speed)
+	end
+	win:putf('Volume: %d%% ', props.volume)
 
 	local left, left_space, indicator, right_space, right =
 		string.match(props['term-osd-bar-chars'], '^(.)(.)(.)(.)(.)$')
@@ -315,14 +319,20 @@ local function set_client(client_)
 			render()
 		end
 	end)
-	client:request({ 'observe_property', 1, 'volume' })
-	client:request({ 'observe_property', 2, 'playlist' })
-	client:request({ 'observe_property', 3, 'playlist-pos-1' })
-	client:request({ 'observe_property', 4, 'time-pos' })
-	client:request({ 'observe_property', 5, 'duration' })
-	client:request({ 'observe_property', 6, 'pause' })
-	client:request({ 'observe_property', 7, 'mute' })
-	client:request({ 'observe_property', 8, 'term-osd-bar-chars' })
+
+	for i, name in ipairs({
+		'duration',
+		'mute',
+		'pause',
+		'playlist',
+		'playlist-pos-1',
+		'speed',
+		'term-osd-bar-chars',
+		'time-pos',
+		'volume',
+	}) do
+		client:request({ 'observe_property', i, name })
+	end
 end
 
 local function enter_shell()
