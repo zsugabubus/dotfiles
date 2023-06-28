@@ -20,9 +20,9 @@ vim.api.nvim_create_autocmd({ 'WinLeave', 'FocusLost' }, {
 	pattern = '*',
 	callback = function()
 		vim.wo.statusline = table.concat({
-			'%#StatusLineNC#%n:%f%h%w%( %m%)',
+			'%#StatusLineNC#%n:%f%( %m%)',
 			'%=',
-			'%l/%L:%-3v',
+			'%l/%L,%-3v',
 		})
 	end,
 })
@@ -36,15 +36,14 @@ vim.api.nvim_create_autocmd(
 			vim.wo.statusline = table.concat({
 				"%(%#StatusLineModeTerm#%{'t'==mode()?'  T ':''}%#StatusLineModeTermEnd#%{'t'==mode()?' ':''}%#StatusLine#%)",
 				"%(%( %{!&diff&&argc()>#1?(argidx()+1).' of '.argc():''} %)%(  %{luaeval('git_status()')} %) %)",
-				"%n:%f%h%w%{exists('b:gzflag')?'[GZ]':''}%r%( %m%)%k",
+				"%n:%f%( %h%w%{exists('b:gzflag')?'[GZ]':''}%r%)%( %m%)",
 				'%9*%<%#StatusLine#',
 				'%<%=',
 				'%1*%2*',
-				"%( %{&paste?'ρ':''} %)",
-				"%( %{&spell?&spelllang:''}  %)",
-				"%( %{substitute(&binary?'bin':(!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').(&fileformat!=#'unix'?','.&fileformat:''),'^utf-8$','','')} %)",
+				"%(  %{&spell?&spelllang:''} %)",
+				"%(  %{substitute(&binary?'bin':(!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').','.&fileformat,'^utf-8,unix$','','')} %)",
 				"%( %{!&binary&&!empty(&ft)?&ft:''} %)",
-				"%3* %l(%{luaeval('statusline_lnum_diff')})/%L:%-3v",
+				"%3* %l(%{luaeval('statusline_lnum_diff')})/%L,%-3v",
 			})
 		end,
 	}
