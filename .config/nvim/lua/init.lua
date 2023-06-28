@@ -329,7 +329,7 @@ end, { nargs = '*' })
 
 api.nvim_create_user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
 
-api.nvim_create_autocmd('FocusGained', {
+api.nvim_create_autocmd({ 'FocusGained', 'VimEnter' }, {
 	group = group,
 	pattern = '*',
 	callback = function()
