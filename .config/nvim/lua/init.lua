@@ -318,10 +318,10 @@ api.nvim_create_user_command('GREP', function(opts)
 		opts.args = fn.getreg('/')
 	end
 
-	local AVOID_ESCAPE_RE = vim.regex([=[\v\c(^| )-[a-z]|^['"]]=])
+	local DO_NOT_QUOTE_RE = vim.regex([=[\v\c(^| )-[a-z-]|^['"]]=])
 
 	cmd.grep(
-		AVOID_ESCAPE_RE:match_str(opts.args) and opts.args
+		DO_NOT_QUOTE_RE:match_str(opts.args) and opts.args
 			or fn.shellescape(opts.args, 1)
 	)
 	cmd.redraw()
