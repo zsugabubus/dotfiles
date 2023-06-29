@@ -45,7 +45,7 @@ function update_status(repo)
 	-- print(libgit2.git_repository_state(self.repo))
 end
 
-local Worker = require('git.worker')
+local Worker = require('libgit.worker')
 local worker = Worker:new(function(reply)
 	--[[
 		https://github.com/libgit2/libgit2.github.io/blob/main/docs/guides/101-samples/index.md
