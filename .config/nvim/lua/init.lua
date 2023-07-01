@@ -311,7 +311,13 @@ end, {
 	nargs = '*',
 })
 
-api.nvim_create_user_command('Sweep', 'silent! %bdelete', {})
+api.nvim_create_user_command('Sweep', function()
+	for _, buf in ipairs(api.nvim_list_bufs()) do
+		if fn.bufwinid(buf) == -1 then
+			pcall(api.nvim_buf_call, buf, cmd.bdelete)
+		end
+	end
+end, {})
 
 api.nvim_create_user_command('GREP', function(opts)
 	if opts.args == '' then
