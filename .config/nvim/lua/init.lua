@@ -291,24 +291,26 @@ api.nvim_create_user_command('Capture', function(opts)
 	if opts.args == '' then
 		opts.args = 'messages'
 	end
-	local output = api.nvim_exec2(opts.args, {
-		output = true,
-	}).output
-	if output == '' then
-		api.nvim_echo({
-			{ 'Empty output', 'WarningMsg' },
-		}, false, {})
-		return
-	end
-
-	local buf = fn.bufnr('output://' .. opts.args, true)
-	vim.bo[buf].buftype = 'nofile'
-	vim.bo[buf].swapfile = false
-	api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(output, '\n'))
-	cmd.buffer({ count = buf })
+	cmd.edit(fn.fnameescape('output://' .. opts.args))
 end, {
 	complete = 'command',
 	nargs = '*',
+})
+
+api.nvim_create_autocmd('BufReadCmd', {
+	group = group,
+	pattern = 'output://*',
+	callback = function(opts)
+		local src = string.sub(opts.match, 10)
+		local output = api.nvim_exec2(src, {
+			output = true,
+		}).output
+		api.nvim_buf_set_lines(opts.buf, 0, -1, false, vim.split(output, '\n'))
+		local bo = vim.bo[opts.buf]
+		bo.buftype = 'nofile'
+		bo.readonly = true
+		bo.swapfile = false
+	end,
 })
 
 api.nvim_create_user_command('Sweep', function()
