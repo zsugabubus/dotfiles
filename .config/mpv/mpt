@@ -29,7 +29,7 @@ int wresize(WINDOW *, int, int);
 int mvwin(WINDOW *, int, int);
 WINDOW *newwin(int, int, int, int);
 int waddnstr(WINDOW *, const char *, int);
-int werase(WINDOW *);
+int wclrtoeol(WINDOW *);
 int wattr_set(WINDOW *, uint32_t, short, void *);
 int getcurx(const WINDOW *);
 int getmaxy(const WINDOW *);
@@ -46,48 +46,26 @@ enum {
 
 ffi.metatype('WINDOW', {
 	__index = {
-		cursor = function(self, y, x)
-			return curs.wmove(self, y, x)
-		end,
+		cursor = curs.wmove,
 		put = function(self, s)
 			return curs.waddnstr(self, s, #s)
 		end,
 		putf = function(self, s, ...)
 			return self:put(string.format(s, ...))
 		end,
-		refresh = function(self)
-			return curs.wnoutrefresh(self)
-		end,
-		erase = function(self)
-			return curs.werase(self)
-		end,
+		refresh = curs.wnoutrefresh,
+		clrtoeol = curs.wclrtoeol,
 		attr = function(self, attrs, pair)
 			return curs.wattr_set(self, attrs, pair, nil)
 		end,
-		x = function(self)
-			return curs.getcurx(self)
-		end,
-		lines = function(self)
-			return curs.getmaxy(self)
-		end,
-		cols = function(self)
-			return curs.getmaxx(self)
-		end,
-		getch = function(self)
-			return curs.wgetch(self)
-		end,
-		nodelay = function(self, b)
-			return curs.nodelay(self, b)
-		end,
-		scroll = function(self, n)
-			return curs.wscrl(self, n)
-		end,
-		resize = function(self, y, x)
-			return curs.wresize(self, y, x)
-		end,
-		move = function(self, y, x)
-			return curs.mvwin(self, y, x)
-		end,
+		x = curs.getcurx,
+		lines = curs.getmaxy,
+		cols = curs.getmaxx,
+		getch = curs.wgetch,
+		nodelay = curs.nodelay,
+		scroll = curs.wscrl,
+		resize = curs.wresize,
+		move = curs.mvwin,
 	},
 })
 
@@ -222,7 +200,6 @@ local function render_playlist()
 	top = math.min(top, #playlist - lines + 1)
 	top = math.max(1, top)
 
-	win:erase()
 	win:scroll(top - old_top)
 
 	local bottom = math.min(top + lines - 1, #playlist)
@@ -230,10 +207,19 @@ local function render_playlist()
 		local entry = playlist[top + i]
 		win:attr(curs.A_NORMAL, 0)
 		win:cursor(i, 0)
+		win:put(' ')
 		if top + i == pos then
 			win:attr(curs.A_BOLD + curs.A_REVERSE, 0)
 		end
 		win:put(entry.filename)
+		win:clrtoeol()
+	end
+
+	win:attr(curs.A_NORMAL, 0)
+	for i = bottom - top + 1, lines - 1 do
+		win:cursor(i, 0)
+		win:put('~')
+		win:clrtoeol()
 	end
 
 	win:refresh()
@@ -250,8 +236,8 @@ local function render_status()
 	local pct = (props.duration or 0) ~= 0
 			and (props['time-pos'] or 0) / props.duration
 		or 0
-	win:erase()
 
+	win:cursor(0, 0)
 	win:attr(curs.A_BOLD, 0)
 	if props.pause then
 		win:put('(Paused) ')
