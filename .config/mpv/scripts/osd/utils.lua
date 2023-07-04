@@ -11,7 +11,7 @@ function M.reduce_bool(b, action)
 		return false
 	else
 		mp.msg.warn(
-			"Invalid action '%s', expected 'show', 'hide', 'on', 'off' or 'toggle'",
+			"Invalid action '%s', expected 'show', 'hide' or 'toggle'",
 			action
 		)
 		return b
