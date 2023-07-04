@@ -676,13 +676,10 @@ function update()
 end
 update = osd.update_wrap(update)
 
-hide_timeout = mp.add_timeout(
-	mp.get_property_number('osd-duration') / 1000,
-	function()
-		visible = false
-		return update()
-	end
-)
+hide_timeout = mp.add_timeout(1.5, function()
+	visible = false
+	return update()
+end)
 hide_timeout:kill()
 
 utils.register_script_messages('osd-bar', {
