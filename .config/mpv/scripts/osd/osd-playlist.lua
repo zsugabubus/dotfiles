@@ -80,7 +80,6 @@ function update()
 			mp.observe_property('playlist', 'native', update_property)
 		else
 			osd:remove()
-			title.flush_cache()
 		end
 
 		return
@@ -109,7 +108,7 @@ function update()
 
 	for i = top, bottom do
 		local entry = playlist[i]
-		local display = title.get_playlist_entry(entry)
+		local display = title.from_playlist_entry(entry)
 		osd:put('\\N\\h')
 		osd:put_cursor(entry.current)
 		osd:put(display)

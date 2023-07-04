@@ -38,7 +38,6 @@ function update()
 			mp.observe_property('track-list', 'native', update_property)
 			mp.observe_property('video-params', 'native', update_property)
 		else
-			title.flush_cache()
 			osd:remove()
 		end
 
@@ -51,7 +50,7 @@ function update()
 
 	osd:reset()
 
-	osd_put_block(2, '%s', title.get_current(osd))
+	osd_put_block(2, '%s', title.get_current_ass(osd))
 
 	for _, track in ipairs(props['track-list'] or {}) do
 		if track.selected then

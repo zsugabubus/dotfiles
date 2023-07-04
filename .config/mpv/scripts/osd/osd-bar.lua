@@ -646,7 +646,7 @@ function update()
 			)
 		else
 			if not old_title then
-				old_title = title.get_current() or ''
+				old_title = title.get_current_ass() or ''
 			end
 			osd:put(old_title)
 			if chapter_pos then
