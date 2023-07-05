@@ -1,5 +1,6 @@
 require('choose-value')
 require('osd-bar')
+require('osd-cache')
 require('osd-colors')
 require('osd-filters')
 require('osd-icons')
