@@ -194,6 +194,7 @@ function prompt_powerline_setup() {
 		PS2='%K{254}%F{247} %_ %k%F{254}%{%G%}%f '
 		;;
 	esac
+	PS1=$'%{\033]133;A\033\\\\%}'$PS1
 
 	case $TERM in
 	linux)
