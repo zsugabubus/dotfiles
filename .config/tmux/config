@@ -176,20 +176,28 @@ bind M if -F '#{!=:#{window_name},muck}' {
 
 bind r source-file ~/.tmux.conf \; display-message -d250 "Reloaded."
 
-bind y set -s @copy_visible 1 \; set -su @copy_feedkeys \; source ~/.config/tmux/editor-copy.tmux
-bind Y set -s @copy_visible 0 \; set -su @copy_feedkeys \; source ~/.config/tmux/editor-copy.tmux
-# bind Y choose-buffer { run-shell -b "tmux show-buffer -b '%%' | xclip -i" }
-bind / set -s @copy_visible 1 \; set -s @copy_feedkeys '?' \; source ~/.config/tmux/editor-copy.tmux
+bind / set -s @copy_feedkeys '?' \; source ~/.config/tmux/editor-copy.tmux
 bind C-u copy-mode \; send-keys -X halfpage-up
-bind v set -s @copy_visible 1 \; set -s @copy_feedkeys ":call search('\\\\\\S', 'cb')\\<CR>v" \; source ~/.config/tmux/editor-copy.tmux
-bind e capture-pane -S- \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
-bind E capture-pane -S0 \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
+bind v set -s @copy_feedkeys 'v' \; source ~/.config/tmux/editor-copy.tmux
+bind y set -su @copy_feedkeys \; source ~/.config/tmux/editor-copy.tmux
+bind e capture-pane -J -S- \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +normal!G{}k"
 
+bind -T copy-mode-vi [ send-keys -X previous-prompt
+bind -T copy-mode-vi ] send-keys -X next-prompt
 bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
 bind -T copy-mode-vi v send-keys -X begin-selection
 bind -T copy-mode-vi + \
 	send-keys -X copy-selection-and-cancel \;\
 	run-shell -b "tmux show-buffer | xclip -silent -i -selection clipboard"
+bind -T copy-mode-vi C-v \
+	capture-pane -e -J -S- \;\
+	set -F @_ '
+		call cursor(#{history_size} + 1 - #{scroll_position} + #{copy_cursor_y}, 0)|
+		call cursor(0, virtcol2col(0, line("."), #{copy_cursor_x} + 1))|
+		let @/="#{pane_search_string}"|
+		let v:hlsearch = 1
+	' \;\
+	split-window -Z 'tmux show-buffer | nvim +AnsiEsc "+$(tmux display-message -pF "#{@_}")"'
 
 bind a paste-buffer -p
 bind A paste-buffer
