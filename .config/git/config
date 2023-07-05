@@ -14,6 +14,7 @@
 	c = commit --allow-empty --verbose
 	cN = c --no-verify
 	ca = c --amend --reset-author
+	caN = ca --no-verify
 	cc = "!f() { exec git c --edit --file .git/COMMIT_EDITMSG \"$@\"; }; f"
 	ccrb = "!f() { exec git c --edit --file .git/rebase-merge/message \"$@\"; }; f"
 	cf = c --fixup
@@ -52,6 +53,7 @@
 	mt = mergetool
 
 	push-origin = push -u origin HEAD
+	pushN = push --no-verify
 
 	ra = !git diff --name-only --diff-filter=U -z | xargs -0r grep -LZ '<<<<<<<' | xargs -0r git add -v
 	rb = rebase
