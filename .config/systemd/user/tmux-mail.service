@@ -6,8 +6,8 @@ BindsTo=tmux-server.service
 [Service]
 Type=simple
 ExecStart=%E/tmux/mail
-ExecStop=tmux set -ug @status-mail
+ExecStop=-tmux set -ug @status-mail
 Restart=always
 
 [Install]
-WantedBy=default.target
+WantedBy=tmux-server.service
