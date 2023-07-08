@@ -1,22 +1,22 @@
+local Repository = require('git.repository')
+local buffer = require('git.buffer')
+local cli = require('git.cli')
+local utils = require('git.utils')
+
 return function(prefix)
 	if prefix == '%' then
-		return { require('git.buffer').current_rev() }
+		return { buffer.current_rev() }
 	end
 
-	local Repository = require('git.repository')
 	local repo = Repository.from_current_buf()
 	if not repo.git_dir then
 		return
 	end
 
-	local Cli = require('git.cli')
-
 	local rev, path, filter = string.match(prefix, '^([^:]+):(.-/?)([^/]*)$')
 	if path then
-		local Utils = require('git.utils')
-
 		-- Complete tree paths.
-		local output = Utils.system(Cli.make_args(repo, {
+		local output = utils.system(cli.make_args(repo, {
 			'ls-tree',
 			'-z',
 			'--full-tree',
@@ -56,7 +56,7 @@ return function(prefix)
 			patterns[i] = string.format(format, vim.pesc(prefix))
 		end
 
-		local output_lines = vim.fn.systemlist(Cli.make_args(repo, {
+		local output_lines = vim.fn.systemlist(cli.make_args(repo, {
 			'show-ref',
 			'--dereference',
 		}, true))

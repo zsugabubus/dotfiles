@@ -1,9 +1,9 @@
-return function(prefix)
-	local Utils = require('git.utils')
-	local Repository = require('git.repository')
+local Repository = require('git.repository')
+local utils = require('git.utils')
 
+return function(prefix)
 	local repo = Repository.from_current_buf()
-	if not Utils.ensure_work_tree(repo) then
+	if not utils.ensure_work_tree(repo) then
 		return
 	end
 
@@ -11,7 +11,7 @@ return function(prefix)
 
 	local t = {}
 	for _, path in
-		ipairs(vim.fn.glob(Utils.gesc(dir .. prefix) .. '*', false, true))
+		ipairs(vim.fn.glob(utils.gesc(dir .. prefix) .. '*', false, true))
 	do
 		local indicator = vim.fn.isdirectory(path) ~= 0 and '/' or ''
 		table.insert(t, string.sub(path, #dir + 1) .. indicator)

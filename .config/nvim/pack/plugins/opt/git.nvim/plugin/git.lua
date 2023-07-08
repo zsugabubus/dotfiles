@@ -9,6 +9,15 @@ vim.api.nvim_create_autocmd('BufReadCmd', {
 	end,
 })
 
+vim.api.nvim_create_autocmd('BufReadCmd', {
+	group = group,
+	pattern = 'git-blame://*',
+	nested = true,
+	callback = function(opts)
+		return require('git.blame').autocmd(opts)
+	end,
+})
+
 _G.git_status = function()
 	local fn = require('git.repository').status
 	_G.git_status = fn
@@ -19,7 +28,6 @@ vim.api.nvim_create_user_command('Gblame', function(opts)
 	return require('git.command.blame')(opts)
 end, {
 	nargs = '*',
-	range = true,
 	desc = 'Git blame',
 })
 

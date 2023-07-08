@@ -1,11 +1,13 @@
 local M = {}
+
+local cli = require('git.cli')
+local Repository = require('git.repository')
+local Revision = require('git.revision')
+
 local api = vim.api
 
 function M.buf_pipe(buf, opts)
 	assert(buf ~= 0)
-
-	local Cli = require('git.cli')
-	local Repository = require('git.repository')
 
 	local bo = vim.bo[buf]
 
@@ -41,7 +43,7 @@ function M.buf_pipe(buf, opts)
 	end
 
 	local repo = Repository.from_buf(buf)
-	return Cli.buf_run(buf, repo, {
+	return cli.buf_run(buf, repo, {
 		args = opts.args,
 		stdout_mode = 'stream',
 		on_stderr = function(data)
@@ -109,8 +111,6 @@ function M.buf_pipe(buf, opts)
 end
 
 local function buf_detect_blob_filetype(buf, rev)
-	local Revision = require('git.revision')
-
 	local _, path = Revision.split_path(rev)
 	local filetype, on_detect = vim.filetype.match({
 		buf = buf,
@@ -123,11 +123,8 @@ local function buf_detect_blob_filetype(buf, rev)
 end
 
 local function buf_detect_object_filetype(buf, rev)
-	local Cli = require('git.cli')
-	local Repository = require('git.repository')
-
 	local repo = Repository.from_buf(buf)
-	return Cli.buf_run(buf, repo, {
+	return cli.buf_run(buf, repo, {
 		args = {
 			'cat-file',
 			'-t',
@@ -151,7 +148,7 @@ local function buf_detect_object_filetype(buf, rev)
 end
 
 function M.buf_get_rev(buf)
-	return string.match(api.nvim_buf_get_name(buf), '^git://(.*)')
+	return string.match(api.nvim_buf_get_name(buf), '^git[^:]*://(.*)')
 end
 
 function M.current_rev()
@@ -171,14 +168,19 @@ local function buf_map(buf, lhs, rhs)
 	end
 end
 
-function M.goto_revision(rev)
-	local file = vim.fn.fnameescape('git://' .. rev)
+function M.goto_revision(rev, use_git)
+	local protocol = not use_git
+			and string.match(api.nvim_buf_get_name(0), '^git[^:]*://')
+		or 'git://'
+	local file = vim.fn.fnameescape(protocol .. rev)
 
 	-- May block file open since it can make rev expand to nothing.
 	local saved_wildignore = vim.go.wildignore
 	vim.go.wildignore = ''
 
-	if vim.b.git_use_preview then
+	local use_preview = protocol == 'git://' and vim.b.git_use_preview
+
+	if use_preview then
 		local saved_previewheight = vim.go.previewheight
 		vim.go.previewheight = 82
 		vim.cmd(
@@ -200,12 +202,10 @@ function M.goto_object()
 		return M.goto_revision('@:' .. abfile)
 	end
 
-	local Revision = require('git.revision')
 	return M.goto_revision(Revision.join(M.current_rev(), cfile))
 end
 
 local function goto_parent_tree()
-	local Revision = require('git.revision')
 	local parent = Revision.parent_tree(M.current_rev())
 	if not parent then
 		return vim.notify(
@@ -218,12 +218,10 @@ local function goto_parent_tree()
 end
 
 local function goto_ancestor()
-	local Revision = require('git.revision')
 	return M.goto_revision(Revision.ancestor(M.current_rev(), vim.v.count1))
 end
 
 local function goto_parent()
-	local Revision = require('git.revision')
 	return M.goto_revision(Revision.parent_commit(M.current_rev(), vim.v.count1))
 end
 
@@ -244,8 +242,6 @@ function M.buf_init(buf)
 end
 
 function M.autocmd(opts)
-	local Repository = require('git.repository')
-
 	local buf = opts.buf
 	local rev = M.buf_get_rev(0)
 

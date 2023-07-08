@@ -1,4 +1,7 @@
 local M = {}
+
+local cli = require('git.cli')
+
 local uv = vim.loop
 
 local redraw_timer = uv.new_timer()
@@ -61,9 +64,7 @@ function update_statusline(repo)
 end
 
 local function update_head(repo)
-	local Cli = require('git.cli')
-
-	Cli.run(repo, {
+	cli.run(repo, {
 		args = {
 			'symbolic-ref',
 			'--short',
@@ -78,7 +79,7 @@ local function update_head(repo)
 			end
 
 			repo.detached = true
-			Cli.run(repo, {
+			cli.run(repo, {
 				args = {
 					'name-rev',
 					'--name-only',
@@ -101,9 +102,7 @@ local function update_head(repo)
 end
 
 local function update_stashed(repo)
-	local Cli = require('git.cli')
-
-	Cli.run(repo, {
+	cli.run(repo, {
 		args = {
 			'rev-list',
 			'--walk-reflogs',
@@ -118,9 +117,7 @@ local function update_stashed(repo)
 end
 
 local function update_ahead_behind(repo)
-	local Cli = require('git.cli')
-
-	Cli.run(repo, {
+	cli.run(repo, {
 		args = {
 			'rev-list',
 			'--count',
@@ -218,9 +215,7 @@ end
 
 local function update_modified(repo)
 	if repo.work_tree then
-		local Cli = require('git.cli')
-
-		Cli.run(repo, {
+		cli.run(repo, {
 			args = {
 				'status',
 				'--porcelain',
@@ -256,8 +251,6 @@ function M.from_path(path)
 		return repo
 	end
 
-	local Cli = require('git.cli')
-
 	local repo = {
 		dir = path,
 		statusline = '',
@@ -265,7 +258,7 @@ function M.from_path(path)
 	}
 	repo_by_path[path] = repo
 
-	Cli.run(repo, {
+	cli.run(repo, {
 		args = {
 			'rev-parse',
 			'--is-bare-repository',

@@ -1,14 +1,14 @@
-return function(opts)
-	local Utils = require('git.utils')
-	local Repository = require('git.repository')
+local Repository = require('git.repository')
+local utils = require('git.utils')
 
+return function(opts)
 	local rev = opts.args
 	if rev == '' then
 		rev = ':0'
 	end
 
 	local repo = Repository.from_current_buf()
-	if not Utils.ensure_work_tree(repo) then
+	if not utils.ensure_work_tree(repo) then
 		return
 	end
 
