@@ -146,8 +146,6 @@ function __zle-exit() {
 	zle .reset-prompt
 	if [[ -n $zsh_scheduled_events ]]; then
 		print "zsh: you have scheduled events"
-	elif [[ -o login ]]; then
-		read -esrq "?zsh: surely exit? " && exit
 	else
 		exit
 	fi
