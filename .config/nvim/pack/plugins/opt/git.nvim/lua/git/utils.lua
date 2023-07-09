@@ -12,16 +12,7 @@ function M.shesc(s)
 end
 
 function M.ensure_work_tree(repo)
-	if repo.work_tree then
-		return true
-	end
-
-	vim.notify(
-		'git.nvim: This operation must be run in a work tree',
-		vim.log.levels.ERROR,
-		{}
-	)
-	return false
+	assert(repo.work_tree, 'This operation must be run in a work tree')
 end
 
 -- vim.fn.system() is not 8-bit clean.
@@ -63,6 +54,13 @@ function M.is_preview_window_open()
 		end
 	end
 	return false
+end
+
+function M.log_error(message)
+	vim.api.nvim_echo({
+		{ 'git.nvim: ', 'ErrorMsg' },
+		{ message, 'ErrorMsg' },
+	}, true, {})
 end
 
 return M

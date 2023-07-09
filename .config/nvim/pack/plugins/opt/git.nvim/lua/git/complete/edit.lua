@@ -3,9 +3,7 @@ local utils = require('git.utils')
 
 return function(prefix)
 	local repo = Repository.from_current_buf()
-	if not utils.ensure_work_tree(repo) then
-		return
-	end
+	utils.ensure_work_tree(repo)
 
 	local dir = repo.work_tree .. '/'
 

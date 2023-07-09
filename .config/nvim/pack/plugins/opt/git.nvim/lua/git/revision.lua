@@ -1,31 +1,16 @@
 local M = {}
 
 function M.canonical(rev)
-	return string.gsub(rev, '[~^][~^0-9]*', function(s)
-		local r = ''
-		local a, an
-		for b, bn in string.gmatch(s, '([~^])(%d*)') do
-			local bn = tonumber(bn) or 1
-			if b == '~' and bn == 0 then
-				-- Ignore.
-			elseif a == '~' and b == '~' then
-				an = an + bn
-			elseif (a == '^' and an == 1) and b == '~' then
-				a, an = '~', bn + 1
-			elseif a == '~' and (b == '^' and bn == 1) then
-				an = an + 1
-			else
-				if a then
-					r = r .. a .. an
-				end
-				a, an = b, bn
-			end
-		end
-		if a then
-			r = r .. a .. an
-		end
-		return r
-	end)
+	return rev
+		:gsub('~(%d+)', function(n)
+			return string.rep('~', tonumber(n))
+		end)
+		:gsub('(%^%d*)', function(s)
+			return (s == '^' or s == '^1') and '~' or s
+		end)
+		:gsub('~+', function(s)
+			return s == '~' and '~' or ('~' .. #s)
+		end)
 end
 
 function M.split_path(rev)

@@ -8,16 +8,15 @@ return function(opts)
 	end
 
 	local repo = Repository.from_current_buf()
-	if not utils.ensure_work_tree(repo) then
-		return
-	end
+	utils.ensure_work_tree(repo)
 
 	vim.cmd.diffthis()
 	vim.cmd.vsplit(
-		'git://'
-			.. rev
-			.. ':'
-			.. string.sub(vim.fn.expand('%:p'), #repo.work_tree + 2)
+		string.format(
+			'git://%s:%s',
+			rev,
+			string.sub(vim.fn.expand('%:p'), #repo.work_tree + 2)
+		)
 	)
 
 	vim.cmd.diffthis()

@@ -193,7 +193,7 @@ function M.autocmd(opts)
 		},
 		on_stderr = function(data)
 			vim.schedule(function()
-				vim.notify(data, vim.log.levels.ERROR, {})
+				utils.log_error(data)
 			end)
 		end,
 		on_stdout = function(data)
@@ -241,7 +241,7 @@ function M.autocmd(opts)
 			if commit then
 				return buffer.goto_revision(commit.hash, true)
 			else
-				vim.notify('git: No revision under cursor', vim.log.levels.ERROR, {})
+				utils.log_error('No revision under cursor')
 			end
 		end,
 	})

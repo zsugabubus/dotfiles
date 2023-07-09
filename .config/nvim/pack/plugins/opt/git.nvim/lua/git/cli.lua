@@ -2,7 +2,7 @@ local M = {}
 local uv = vim.loop
 
 local function read_start_buf(stream, mode, callback)
-	if mode == 'buffered' then
+	if mode == 'full' then
 		local buf = require('string.buffer'):new()
 		uv.read_start(stream, function(err, data)
 			assert(not err, err)
@@ -84,9 +84,9 @@ function M.run(repo, opts)
 		end
 	end)
 
-	read_start_buf(stdout, opts.stdout_mode or 'buffered', opts.on_stdout)
+	read_start_buf(stdout, opts.stdout_mode or 'full', opts.on_stdout)
 	if opts.on_stderr then
-		read_start_buf(stderr, 'buffered', function(data)
+		read_start_buf(stderr, 'full', function(data)
 			if #data > 1 then
 				-- Trim "\n".
 				opts.on_stderr(string.sub(data, 1, -2))

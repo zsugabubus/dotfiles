@@ -3,6 +3,7 @@ local M = {}
 local cli = require('git.cli')
 local Repository = require('git.repository')
 local Revision = require('git.revision')
+local utils = require('git.utils')
 
 local api = vim.api
 
@@ -208,11 +209,7 @@ end
 local function goto_parent_tree()
 	local parent = Revision.parent_tree(M.current_rev())
 	if not parent then
-		return vim.notify(
-			'git.nvim: Not a tree-ish revision',
-			vim.log.levels.ERROR,
-			{}
-		)
+		return utils.log_error('Not a tree-ish revision')
 	end
 	return M.goto_revision(parent)
 end
