@@ -22,7 +22,7 @@ vim.api.nvim_create_autocmd({ 'WinLeave', 'FocusLost' }, {
 		vim.wo.statusline = table.concat({
 			'%#StatusLineNC#%n:%f%( %m%)',
 			'%=',
-			'%l/%L,%-3v',
+			' %l/%L,%-3v',
 		})
 	end,
 })
