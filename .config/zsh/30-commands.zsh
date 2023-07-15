@@ -179,7 +179,7 @@ function mkar.xz() { tar cavf $1.tar.xz "$@" }
 function mkar.gz() { tar cavf $1.tar.gz "$@" }
 function mkar.zip() { zip -r $1.zip "$@" }
 
-function head.() {
+function h. head.() {
 	head *(.)
 }
 
