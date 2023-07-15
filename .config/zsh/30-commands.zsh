@@ -328,6 +328,15 @@ function rs() {
 	fi
 }
 
+function light() {
+	local dir
+	for dir in /sys/devices/*/*/drm/**/intel_backlight; do
+		integer max_brightness=$(< $dir/max_brightness)
+		integer wanted_brigtness=$(( ${1:-100} * max_brightness / 100 ))
+		echo $wanted_brigtness | sudo tee $dir/brightness
+	done
+}
+
 #
 # System.
 #
