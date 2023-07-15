@@ -46,23 +46,25 @@ for _, k in ipairs(SORT_BY_CHOICES) do
 end
 
 local function filter_playlist(playlist)
+	local lower, match = string.lower, string.match
+
 	for i = #playlist, 1, -1 do
 		local entry = playlist[i]
-		local s = entry.filename:lower()
+		local s = lower(entry.filename)
 		if
-			s:match('^sa?mple?[/.-]')
-			or s:match('[/!.-]sample')
-			or s:match('%.aria2$')
-			or s:match('%.exe$')
-			or s:match('%.torrent$')
-			or s:match('%.srt$')
-			or s:match('%.nfo$')
-			or s:match('%.part$')
-			or s:match('%.rar$')
-			or s:match('%.r[0-9]*$')
-			or s:match('%.sfv$')
-			or s:match('%.txt$')
-			or s:match('%.pdf$')
+			match(s, '^sa?mple?[/.-]')
+			or match(s, '[/!.-]sample')
+			or match(s, '%.aria2$')
+			or match(s, '%.exe$')
+			or match(s, '%.torrent$')
+			or match(s, '%.srt$')
+			or match(s, '%.nfo$')
+			or match(s, '%.part$')
+			or match(s, '%.rar$')
+			or match(s, '%.r[0-9]*$')
+			or match(s, '%.sfv$')
+			or match(s, '%.txt$')
+			or match(s, '%.pdf$')
 		then
 			mp.msg.info('Remove', s)
 			mp.commandv('playlist-remove', i - 1)
