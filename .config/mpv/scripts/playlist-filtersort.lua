@@ -125,11 +125,12 @@ local function sort_playlist(playlist)
 	if can_playlist_clear and not has_title then
 		-- TODO: Maybe we could use loadlist to preserve titles.
 		mp.commandv('playlist-clear')
+		-- entry.current cannot be trusted since current entry could have changed
+		-- before playlist-clear.
+		local current_entry_id = mp.get_property_native('playlist/0/id')
 		for i = 1, #playlist do
 			local entry = playlist[order[i]]
-			-- playlist-clear leaves the currently playing entry, if any, at the 0th
-			-- index.
-			if entry.current then
+			if entry.id == current_entry_id then
 				mp.commandv('playlist-move', 0, i)
 			else
 				mp.commandv('loadfile', entry.filename, 'append')
