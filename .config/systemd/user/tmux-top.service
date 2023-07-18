@@ -1,0 +1,13 @@
+[Unit]
+Description=Tmux Top Generator
+After=tmux-server.service
+BindsTo=tmux-server.service
+
+[Service]
+Type=simple
+ExecStart=%E/tmux/top
+ExecStop=-tmux set -ug @status-top
+Restart=always
+
+[Install]
+WantedBy=tmux-server.service

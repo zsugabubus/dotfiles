@@ -1,0 +1,235 @@
+#!/usr/bin/luajit
+local uv = require('luv')
+
+local function bytes(n)
+	if n < 1024 * 1024 * 1024 then
+		return string.format('%dM', n / 1024 / 1024)
+	else
+		return string.format('%dG', n / 1024 / 1024 / 1024)
+	end
+end
+
+local function readfile(path, thismuch)
+	local f = assert(io.open(path))
+	local s = f:read(thismuch)
+	f:close()
+	return s
+end
+
+local function periodic(fn)
+	return function(update_outer)
+		local timer = uv.new_timer()
+		local update
+
+		local o = {
+			set_interval = function(self, seconds)
+				local interval = seconds * 1000
+				if self.interval ~= interval then
+					self.interval = interval
+					timer:start(0, interval, update)
+				end
+			end,
+		}
+
+		local update_inner = fn(o)
+
+		function update()
+			update_inner()
+			return update_outer()
+		end
+
+		update()
+
+		return o
+	end
+end
+
+local function computed(o, fields)
+	setmetatable(o, {
+		__index = function(self, k)
+			local fn = fields[k]
+			if fn then
+				local v = fn(self, k)
+				self[k] = v
+				return v
+			end
+		end,
+	})
+
+	return function()
+		for k in pairs(fields) do
+			o[k] = nil
+		end
+	end
+end
+
+local Blocks = {}
+
+Blocks.mem = periodic(function(o)
+	local info = {}
+
+	local f = assert(io.open('/proc/meminfo'))
+	f:setvbuf('no')
+
+	return function()
+		f:seek('set')
+
+		for name, n in string.gmatch(f:read(84), '([^:]*): *(%d*) kB\n') do
+			info[name] = tonumber(n) * 1024
+		end
+
+		o.total = info.MemTotal
+		o.avail = info.MemAvailable
+		o.used = o.total - o.avail
+		o.percent = o.used * 100 / o.total
+	end
+end)
+
+Blocks.cpu = periodic(function(o)
+	local prev_total, prev_idle = 0, 0
+
+	local f = assert(io.open('/proc/stat'))
+	f:setvbuf('no')
+
+	return function()
+		f:seek('set')
+
+		local line = string.match(f:read(100), '^cpu  ([0-9 ]*)\n')
+
+		local i = 0
+		local total = 0
+		for n in string.gmatch(line, '%d+') do
+			n = tonumber(n)
+			total = total + n
+			i = i + 1
+			if i == 4 then
+				idle = n
+			end
+		end
+
+		local delta_total = total - prev_total
+		local delta_idle = idle - prev_idle
+
+		prev_total, prev_idle = total, idle
+
+		if delta_total == 0 then
+			o.usage = 0
+		else
+			o.usage = (1 - delta_idle / delta_total) * 100
+		end
+	end
+end)
+
+function Blocks.ac(update)
+	return setmetatable({}, {
+		__index = function(self, name)
+			self[name] = periodic(function(o)
+				local dir = string.format('/sys/class/power_supply/%s', name)
+
+				return computed(o, {
+					online = function()
+						return readfile(string.format('%s/online', dir), 1) == '1'
+					end,
+				})
+			end)(update)
+			return self[name]
+		end,
+	})
+end
+
+function Blocks.bat(update)
+	return setmetatable({}, {
+		__index = function(self, name)
+			self[name] = periodic(function(o)
+				local dir = string.format('/sys/class/power_supply/%s', name)
+
+				return computed(o, {
+					capacity = function()
+						return tonumber(readfile(string.format('%s/capacity', dir), '*a'))
+					end,
+				})
+			end)(update)
+			return self[name]
+		end,
+	})
+end
+
+local function reactor(fn, on_output)
+	local timer = uv.new_timer()
+	local last_output
+	local buf = require('string.buffer').new()
+
+	local blocks
+
+	local function update()
+		if timer:is_active() then
+			return
+		end
+
+		timer:start(100, 0, function()
+			buf:reset()
+			fn(blocks, buf)
+
+			local output = buf:tostring()
+			if output == last_output then
+				return
+			end
+			last_output = output
+
+			return on_output(output)
+		end)
+	end
+
+	blocks = setmetatable({}, {
+		__index = function(self, k)
+			self[k] = Blocks[k](update)
+			return self[k]
+		end,
+	})
+
+	return update()
+end
+
+local function tmux(fn)
+	return reactor(fn, function(output)
+		assert(uv.spawn('tmux', {
+			args = {
+				'set',
+				'-gF',
+				'@status-top',
+				output,
+			},
+		}, function(code)
+			assert(code == 0)
+		end))
+	end)
+end
+
+local function danger(is, text)
+	if is then
+		return string.format('#[bg=red,fg=color255,bold]%s#[default]', text or '!!')
+	end
+	return ''
+end
+
+tmux(function(B, buf)
+	local b = B.mem
+	b:set_interval(10)
+	buf:putf('%.0f%% (%s)%s', b.percent, bytes(b.avail), danger(b.percent > 90))
+
+	local b = B.cpu
+	b:set_interval(30)
+	if b.usage > 20 then
+		buf:putf('  %d%%%s', b.usage, danger(b.usage > 80))
+	end
+
+	local b = B.ac.AC
+	b:set_interval(60)
+	if not b.online then
+		local b = B.bat.BAT0
+		b:set_interval(60)
+		buf:putf(' ⚡%d%%%s ', b.capacity, danger(b.capacity < 80))
+	end
+end)
+
+uv.run()
