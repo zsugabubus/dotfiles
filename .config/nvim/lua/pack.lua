@@ -1,6 +1,11 @@
 local M = {}
 local Trace = require('trace')
 local uv = vim.loop
+local api = vim.api
+local pairs, ipairs = pairs, ipairs
+local string_format, string_match, string_find, string_gsub =
+	string.format, string.match, string.find, string.gsub
+local table_insert = table.insert
 
 local path2plugin = {}
 local lua2path = {}
@@ -20,15 +25,15 @@ local function scandir(path)
 end
 
 local function echo_error(...)
-	vim.api.nvim_echo({
+	api.nvim_echo({
 		{ 'pack: ', 'ErrorMsg' },
-		{ string.format(...), 'ErrorMsg' },
+		{ string_format(...), 'ErrorMsg' },
 	}, true, {})
 end
 
 local function vim_cmd_source(file)
 	local ok, err
-	if string.match(file, '%.lua$') then
+	if string_match(file, '%.lua$') then
 		ok, err = pcall(dofile, file)
 	else
 		ok, err = pcall(vim.cmd.source, file)
@@ -48,17 +53,17 @@ function get_packpath_dirs()
 		local pack = root .. '/pack'
 		for star, kind in scandir(pack) do
 			if kind ~= 'file' then
-				local opt = string.format('%s/%s/opt', pack, star)
+				local opt = string_format('%s/%s/opt', pack, star)
 				for name, kind in scandir(opt) do
 					if kind ~= 'file' then
-						local path = string.format('%s/%s', opt, name)
+						local path = string_format('%s/%s', opt, name)
 						before[name] = before[name] or {}
-						table.insert(before[name], path)
+						table_insert(before[name], path)
 
 						after[name] = after[name] or {}
 						local after_path = path .. '/after'
 						if uv.fs_access(after_path, 'x') then
-							table.insert(after[name], after_path)
+							table_insert(after[name], after_path)
 						end
 					end
 				end
@@ -73,7 +78,7 @@ end
 
 local function is_source_allowed(file)
 	for _, pat in ipairs(source_blacklist) do
-		if string.find(file, pat) then
+		if string_find(file, pat) then
 			return false
 		end
 	end
@@ -86,7 +91,7 @@ local function source_file(file, plugin)
 	end
 
 	local span = Trace.trace(
-		string.format(
+		string_format(
 			'source %s (from %s)',
 			file,
 			plugin and plugin.id or '<no plugin>'
@@ -98,7 +103,7 @@ end
 
 local function source_dir(dir, plugin)
 	for name, kind in scandir(dir) do
-		local path = string.format('%s/%s', dir, name)
+		local path = string_format('%s/%s', dir, name)
 		if kind == 'directory' then
 			source_dir(path, plugin)
 		else
@@ -109,10 +114,10 @@ end
 
 local function package_loader(path)
 	-- :h require()
-	local head, tail = string.match(path, '^([^.]*)(.*)')
+	local head, tail = string_match(path, '^([^.]*)(.*)')
 	local path = lua2path[head]
 	if path then
-		local prefix = path .. string.gsub(tail, '%.', '/')
+		local prefix = path .. string_gsub(tail, '%.', '/')
 
 		local ok, code = pcall(loadfile, prefix .. '.lua')
 		if ok then
@@ -127,26 +132,27 @@ local function package_loader(path)
 end
 
 local function initialize_plugins()
+	local trace = Trace.trace
 	assert(vim.v.vim_did_enter == 0, 'Vim already initialized')
 
-	local span = Trace.trace('get &runtimepath')
+	local span = trace('get &runtimepath')
 
 	-- PERF: Much faster than vim.opt.runtimepath:get().
-	local rtp = vim.api.nvim_list_runtime_paths()
+	local rtp = api.nvim_list_runtime_paths()
 
-	local span = Trace.trace(span, 'initialize lua package cache')
+	local span = trace(span, 'initialize lua package cache')
 
 	for _, path in ipairs(rtp) do
 		local dir = path .. '/lua'
 		for name in scandir(dir) do
-			local path = string.format('%s/%s', dir, name)
+			local path = string_format('%s/%s', dir, name)
 			lua2path[name] = path
 		end
 	end
 
-	table.insert(package.loaders, 2, package_loader)
+	table_insert(package.loaders, 2, package_loader)
 
-	local span = Trace.trace(span, 'initialize plugins')
+	local span = trace(span, 'initialize plugins')
 
 	-- Plugin loading is taken over.
 	vim.o.loadplugins = false
@@ -157,7 +163,7 @@ local function initialize_plugins()
 		source_dir(path .. '/plugin', path2plugin[path])
 	end
 
-	Trace.trace(span)
+	trace(span)
 end
 
 function M.plugin_missing(plugin)
@@ -177,7 +183,8 @@ function M.plugin_after(plugin)
 end
 
 function M.setup(spec, opts)
-	local setup_span = Trace.trace('setup')
+	local trace = Trace.trace
+	local setup_span = trace('setup')
 
 	collectgarbage('stop')
 
@@ -194,12 +201,12 @@ function M.setup(spec, opts)
 	local function packadd(plugin)
 		local found = false
 		for _, x in ipairs(pp_before[plugin.id] or {}) do
-			table.insert(rtp_prepend, x)
+			table_insert(rtp_prepend, x)
 			path2plugin[x] = plugin
 			found = true
 		end
 		for _, x in ipairs(pp_after[plugin.id] or {}) do
-			table.insert(rtp_append, x)
+			table_insert(rtp_append, x)
 			path2plugin[x] = plugin
 			found = true
 		end
@@ -211,36 +218,35 @@ function M.setup(spec, opts)
 		plugin.id = plugin[1]
 
 		if
-			plugin.enabled ~= false
-			and (packadd(plugin) or M.plugin_missing(plugin))
+			plugin.enabled ~= false and (packadd(plugin) or M.plugin_missing(plugin))
 		then
 			plugins[plugin.id] = plugin
 			M.plugin_before(plugin)
 		end
 	end
 
-	local span = Trace.trace('set &runtimepath')
+	local span = trace('set &runtimepath')
 	-- PERF: Modify 'runtimepath' in a batch call since it is much faster.
 	local rtp = vim.opt.runtimepath
 	rtp:prepend(rtp_prepend)
 	rtp:append(rtp_append)
-	Trace.trace(span)
+	trace(span)
 
 	initialize_plugins()
 
-	local span = Trace.trace('after plugins')
+	local span = trace('after plugins')
 
 	for _, plugin in pairs(plugins) do
-		local span = Trace.trace(plugin.id)
+		local span = trace(plugin.id)
 		M.plugin_after(plugin)
-		Trace.trace(span)
+		trace(span)
 	end
 
-	Trace.trace(span)
+	trace(span)
 
 	collectgarbage('restart')
 
-	Trace.trace(setup_span)
+	trace(setup_span)
 end
 
 return M

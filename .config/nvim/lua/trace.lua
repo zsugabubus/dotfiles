@@ -1,4 +1,6 @@
 local hrtime = vim.loop.hrtime
+local table_insert = table.insert
+local type = type
 
 local stack = { {} }
 
@@ -18,7 +20,7 @@ local function trace(node, name)
 		repeat
 			local pop = stack[#stack]
 			stack[#stack] = nil
-			table.insert(stack[#stack], pop)
+			table_insert(stack[#stack], pop)
 
 			pop.stop = now
 			pop.elapsed = now - pop.start
@@ -32,7 +34,7 @@ local function trace(node, name)
 			start = now,
 			name = name,
 		}
-		table.insert(stack, node)
+		table_insert(stack, node)
 		return node
 	end
 end
