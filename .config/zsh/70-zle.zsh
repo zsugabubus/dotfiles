@@ -132,7 +132,6 @@ bindkey -M menuselect \
 	'^M' .accept-line \
 
 bindkey -M menuselect -s \
-	' ' a \
 	h $terminfo[kcub1] \
 	j $terminfo[kcud1] \
 	k $terminfo[kcuu1] \
