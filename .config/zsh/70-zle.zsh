@@ -97,7 +97,7 @@ bindkey -M vicmd '^_' run-help
 function __zle-fuzzy-reverse-history-search() {
 	LBUFFER=$(
 		fc -rln 0 999999 |
-		fizzy -s -q "$BUFFER"
+		fzf --scheme=history -q "$BUFFER"
 	)
 	RBUFFER=
 	zle .redisplay

@@ -267,16 +267,16 @@ function topp() {
 
 function fkill() {
 	emulate -L zsh
-	setopt pipe_fail
+	setopt err_return pipe_fail
 
-	local pid
-	local args=()
-	(( EUID )) && args+=(-u $EUID)
-	ps h $args -o pid,pcpu,state,time,command |
-	awk 'NR<2 { print; next } { print | "sort -rgk2" }' |
-	fizzy -a |
-	awk '{ print $1 }' |
-	xargs -r kill -${1:-9}
+	local line=$(
+		ps fx -o pid,tty,stat,time,pcpu,command |
+		fzf --tac --header-lines=1 --no-hscroll --bind space:jump
+	)
+	[[ $line =~ '([0-9]+)' ]]
+	local pid=${match[1]}
+
+	print -z "kill $pid"
 }
 
 #

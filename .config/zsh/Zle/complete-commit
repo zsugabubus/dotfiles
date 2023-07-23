@@ -2,14 +2,14 @@
 
 emulate -L zsh
 
-setopt err_return pipe_fail
+setopt err_return pipe_fail extended_glob
 
-local commit=$(
-	git log-formatted --reflog --color=always |
-	uniq |
-	fizzy |
-	cut -d' ' -f1
+local line=$(
+	git log-formatted --all --graph --color=always |
+	fzf --ansi --layout=reverse --no-sort
 )
+[[ $line =~ '([0-9a-f]{4,})' ]]
+local commit=${match[1]}
 
 [[ -z $BUFFER ]] && LBUFFER+='e'
 [[ $LBUFFER =~ '\S$' ]] && LBUFFER+=' '
