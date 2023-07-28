@@ -39,8 +39,8 @@
 	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
 	lf = log --follow --patch
 	lg = log-formatted --graph
-	ll = log --left-only --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset)%C(reset) %C(dim white)(%ch)%C(reset) %s %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
-	log-formatted = log --date-order --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset)%C(reset) %s %C(dim white)(%cr)%C(reset) %C(bold blue)%aN%C(reset)'
+	ll = log --left-only --date=human-local --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset) %s %C(dim white)(%cd, %cr)%C(reset) %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
+	log-formatted = log --date-order --date=human-local --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset) %s %C(dim white)(%cd, %cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	log-vim = l
 	lp = ll --patch --stat
 	ls = l --stat
