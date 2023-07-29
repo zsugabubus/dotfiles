@@ -101,7 +101,7 @@ function _G.loadfile(path)
 									if name == path_key then
 										uv.fs_unlink(
 											bytecode_dir .. '/' .. entry.name,
-											function(err)
+											function(err, success)
 												if err and string.find(err, '^ENOENT:') then
 													return
 												end
