@@ -32,6 +32,7 @@ set postponed=+postponed
 set quit
 set record=+sent
 set reply_to
+set sidebar_divider_char='│'
 set sidebar_format="%D%* %?F?!?%?N?%N/?%S" sidebar_format="%B%* %?N?%N/?%!%S" sidebar_width=22
 set sidebar_next_new_wrap
 set sidebar_sort_method=unsorted
