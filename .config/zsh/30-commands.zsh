@@ -555,7 +555,7 @@ function mutt n() {
 	if [[ $term != linux ]]; then
 		term=screen-256color
 	fi
-	TERM=$term command mutt "$@"
+	TERM=$term command mutt -n "$@"
 }
 
 function catty() {
