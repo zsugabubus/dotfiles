@@ -601,4 +601,38 @@ function pyman() {
 	python -c "import $1; help($1)"
 }
 
+function start_x() {
+	emulate -L zsh
+
+	setopt nomonitor
+
+	export GPG_TTY=- # Disable pinentry on login tty.
+
+	export XAUTHORITY=${XDG_RUNTIME_DIR?}/Xauthority
+	touch $XAUTHORITY
+
+	export DISPLAY=:0
+
+	trap '
+		xauth generate $DISPLAY . trusted
+		tmux new-session -d -s wm -c ~s/heawm-lua ./rc
+	' USR1
+
+	(
+		trap '' USR1 &&
+		exec X \
+			$DISPLAY \
+			vt$XDG_VTNR \
+			-ac \
+			-background none \
+			-keeptty \
+			-novtswitch \
+			-noreset \
+			-ardelay 200 \
+			-arinterval 34
+	) &
+
+	wait
+}
+
 autoload -Uz ${:-$ZDOTDIR/Misc/*(N.:t)}
