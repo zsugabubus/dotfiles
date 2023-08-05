@@ -1,3 +1,0 @@
-#!/usr/bin/dash
-intel_gpu_top -l -s 3000 |
-stdbuf -oL awk '{print $5 "W" " R:" $6 "% B:" $9 "% V:" $12 "%"}'

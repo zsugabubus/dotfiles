@@ -1,8 +1,0 @@
-#!/bin/zsh
-upcoming_events=$(calcurse -d 3 | grep '^ \*' -c)
-
-case $upcoming_events in
-0) exit 0 ;;
-1) echo "$(calcurse -d 3 | grep -P '^ \* \K.{1,15}' -o)" ;;
-*) echo "$upcoming_events events" ;;
-esac
