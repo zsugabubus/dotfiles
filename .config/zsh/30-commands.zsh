@@ -193,8 +193,6 @@ compdef '_files -g "*.orig"' difforig
 #
 
 alias asm='gcc -fno-stack-protector -fno-asynchronous-unwind-tables -S'
-alias configure_make='./configure && make'
-alias make='nice -n15 make -j2'
 
 function meson() {
 	if (( !$# )); then
@@ -209,18 +207,6 @@ function meson_install() {
 	local builddir=${1:-build}
 	meson compile -C $builddir
 	sudo meson install -C $builddir
-}
-
-function make_install() {
-	CFLAGS='-O3 -flto -pipe' make &&
-	sudo make install
-}
-
-function configure_install() {
-	CFLAGS='-O3 -flto -pipe' ${1?srcdir missing}/configure &&
-	make -j3 &&
-	make -n install &&
-	sudo make install
 }
 
 function gccc() {
@@ -247,10 +233,6 @@ function zathura() {
 
 function im() {
 	nsxiv ${@:-.}
-}
-
-function vid() {
-	mpv (#i)*.(mp4|gif|webm|mkv)(.)
 }
 
 #
@@ -400,7 +382,7 @@ function poweroff reboot() {
 	fi &&
 	() {
 		local x=
-		for x in abduco tmux nvim firefox; do
+		for x in tmux nvim firefox; do
 			if pgrep -ax $x &>/dev/null; then
 				print -rP "zsh: $x is running"
 				return 1
@@ -455,8 +437,6 @@ function iptables_accept_tcp() {
 # Terminal.
 #
 
-alias abduco='ABDUCO_SOCKET_DIR=$XDG_RUNTIME_DIR abduco'
-
 function t() {
 	tmux attach-session
 }
@@ -467,30 +447,6 @@ function tnt() {
 	tmux -N \
 		new-session -t "$(tmux display-message -p '#S')" \;\
 		set-option -s destroy-unattached on
-}
-
-function ab() {
-	local session
-	if [[ -n "$1" ]] && ! which "$1" &>/dev/null; then
-		session="$1"
-		shift
-	else
-		session=$(tr </dev/urandom -dc a-z | head -c3)
-	fi
-	abduco -c "$session" "${@:-$SHELL}"
-}
-
-# Jumping from one abduco to another.
-function rabbit() {
-	while session=$(
-		abduco -l |
-		awk "-vq=$session" 'NR == 1 { print > "/dev/tty" } 1 < NR { print | "fzf --query=" q "" }' |
-		sed 's/[^\t]*\t[^\t]*\t//'
-	) &&
-	test -n "$session" &&
-	abduco -A $session "$SHELL"
-	do
-	done
 }
 
 #
