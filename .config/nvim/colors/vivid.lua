@@ -44,7 +44,6 @@ local theme = {
 	User1 = { fg = light and '#dddddd' or '#ede4ed', bg = 'StatusLine' },
 	User2 = { fg = light and '#686868' or '#383838', bg = 'User1.fg' },
 	User3 = { fg = '#444444', bg = 'User1.fg', bold = true },
-	User4 = { fg = '#777777', bg = 'User1.fg' },
 	User9 = { fg = light and '#888888' or '#a4a4a4', bg = 'StatusLine' },
 
 	Error = { fg = '#d80000', bg = '#ffd4d4', bold = true },
