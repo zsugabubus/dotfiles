@@ -3,6 +3,9 @@
 emulate -L zsh
 
 case ${1?} in
+mit)
+	curl -Lo LICENSE-MIT 'https://spdx.org/licenses/MIT.txt' ;;
+
 gpl3)
 	curl -Lo COPYING 'https://www.gnu.org/licenses/gpl-3.0.txt' ;;
 

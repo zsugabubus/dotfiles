@@ -2,6 +2,7 @@
 
 _arguments \
 	'1::license:((
+		mit\:"MIT License" \
 		gpl3\:"GNU General Public License v3.0" \
 		lgpl\:"GNU Lesser General Public License" \
 		wtfpl\:"Do What The F*ck You Want To Public License" \
