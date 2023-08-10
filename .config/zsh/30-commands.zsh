@@ -188,6 +188,10 @@ function difforig() {
 }
 compdef '_files -g "*.orig"' difforig
 
+function v() {
+	tree -C | e -c 'set nolist' -c AnsiEsc
+}
+
 #
 # Make.
 #
