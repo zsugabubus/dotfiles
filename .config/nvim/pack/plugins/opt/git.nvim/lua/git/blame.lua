@@ -27,15 +27,15 @@ function M.autocmd(opts)
 	local commits = {}
 	local line2commit = {}
 
-	local function step()
+	local function done()
 		if not api.nvim_buf_is_valid(buf) then
 			return
 		end
 
-		local commit_lines = {}
+		local commit2str = {}
 
 		for _, commit in pairs(commits) do
-			commit_lines[commit] = string.format(
+			commit2str[commit] = string.format(
 				'%s %s %s',
 				string.sub(commit.hash, 1, 7),
 				os.date('%Y-%m-%d', commit['author-time']),
@@ -46,7 +46,7 @@ function M.autocmd(opts)
 		local lines = {}
 
 		for i = 1, max_row do
-			lines[i] = commit_lines[line2commit[i]]
+			lines[i] = commit2str[line2commit[i]]
 		end
 
 		local win = fn.bufwinid(buf)
@@ -64,8 +64,8 @@ function M.autocmd(opts)
 
 			local max_width = 0
 
-			for _, line in pairs(commit_lines) do
-				local width = fn.strdisplaywidth(line)
+			for _, x in pairs(commit2str) do
+				local width = fn.strdisplaywidth(x)
 				max_width = math.max(max_width, width)
 			end
 
@@ -78,20 +78,7 @@ function M.autocmd(opts)
 
 		local content_win = vim.b[buf].git_related_win
 		if win and content_win then
-			do
-				local initial_cursor = api.nvim_win_get_cursor(content_win)
-
-				vim.wo[content_win].scrollbind = false
-
-				api.nvim_win_set_cursor(content_win, { 1, 0 })
-				api.nvim_win_set_cursor(win, { 1, 0 })
-
-				vim.wo[content_win].scrollbind = true
-				vim.wo[win].scrollbind = true
-
-				api.nvim_win_set_cursor(content_win, initial_cursor)
-				api.nvim_win_set_cursor(win, { initial_cursor[1], 0 })
-			end
+			utils.scrollbind(win, content_win)
 
 			local content_buf = api.nvim_win_get_buf(content_win)
 
@@ -180,14 +167,14 @@ function M.autocmd(opts)
 		end
 	end
 
-	local WORKTREE_REV = '--incremental'
+	local FAKE_WORKTREE_REV = '--incremental'
 
 	cli.buf_run(buf, repo, {
 		stdout_mode = 'line',
 		args = {
 			'blame',
 			'--incremental',
-			rev == '-' and WORKTREE_REV or rev,
+			rev == '-' and FAKE_WORKTREE_REV or rev,
 			'--',
 			path,
 		},
@@ -198,7 +185,7 @@ function M.autocmd(opts)
 		end,
 		on_stdout = function(data)
 			if not data then
-				return vim.schedule(step)
+				return vim.schedule(done)
 			end
 			if data == '' then
 				return

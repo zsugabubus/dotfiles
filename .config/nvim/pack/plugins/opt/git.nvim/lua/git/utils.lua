@@ -1,5 +1,7 @@
 local M = {}
 
+local api = vim.api
+
 function M.gesc(pattern)
 	-- FIXME: May not be totally correct.
 	-- :h wildcards
@@ -48,7 +50,7 @@ function M.execute(args)
 end
 
 function M.is_preview_window_open()
-	for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+	for _, win in ipairs(api.nvim_tabpage_list_wins(0)) do
 		if vim.wo[win].previewwindow then
 			return true
 		end
@@ -57,10 +59,26 @@ function M.is_preview_window_open()
 end
 
 function M.log_error(message)
-	vim.api.nvim_echo({
+	api.nvim_echo({
 		{ 'git.nvim: ', 'ErrorMsg' },
 		{ message, 'ErrorMsg' },
 	}, true, {})
+end
+
+function M.scrollbind(win, master_win)
+	local initial_cursor = api.nvim_win_get_cursor(master_win)
+
+	vim.wo[master_win].scrollbind = false
+	vim.wo[win].scrollbind = false
+
+	api.nvim_win_set_cursor(master_win, { 1, 0 })
+	api.nvim_win_set_cursor(win, { 1, 0 })
+
+	vim.wo[master_win].scrollbind = true
+	vim.wo[win].scrollbind = true
+
+	api.nvim_win_set_cursor(master_win, initial_cursor)
+	api.nvim_win_set_cursor(win, { initial_cursor[1], 0 })
 end
 
 return M
