@@ -38,8 +38,8 @@ function M.autocmd(opts)
 			commit_lines[commit] = string.format(
 				'%s %s %s',
 				string.sub(commit.hash, 1, 7),
-				os.date('%Y-%m-%d', commit.author_time),
-				commit.author
+				os.date('%Y-%m-%d', commit['author-time']),
+				commit['author']
 			)
 		end
 
@@ -217,19 +217,16 @@ function M.autocmd(opts)
 					commit = {
 						hash = hash,
 						lines = {},
-						author = '',
 					}
 					commits[hash] = commit
 				end
-			elseif k == 'author' then
-				commit.author = v
-			elseif k == 'author-time' then
-				commit.author_time = tonumber(v)
 			elseif k == 'filename' then
 				for i = start_row, end_row do
 					line2commit[i] = commit
 					table.insert(commit.lines, i)
 				end
+			else
+				commit[k] = v
 			end
 		end,
 	})
