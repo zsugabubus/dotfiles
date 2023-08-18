@@ -321,6 +321,43 @@ api.nvim_create_user_command('Sweep', function()
 	end
 end, {})
 
+api.nvim_create_user_command('Fold', function(args)
+	local context = math.max(0, args.count)
+
+	cmd.normal({ args = { 'zE' }, bang = true })
+	if args.args ~= '' then
+		vim.fn.setreg('/', args.args)
+	end
+
+	local fold_start = 1
+	local last_match = 0
+	local last_lnum = api.nvim_buf_line_count(0)
+
+	while fold_start < last_lnum do
+		fn.cursor(last_match + 1, 1)
+		local match = fn.search('', 'cW')
+
+		if match == 0 then
+			cmd.fold({ range = { fold_start, last_lnum } })
+			break
+		end
+
+		local fold_end = match - context - 1
+		if fold_start < fold_end then
+			cmd.fold({ range = { fold_start, fold_end } })
+		end
+
+		fold_start = match + context + 1
+		last_match = match
+	end
+
+	fn.cursor(1, 1)
+	vim.wo.foldenable = true
+end, {
+	nargs = '?',
+	count = true,
+})
+
 api.nvim_create_user_command('GREP', function(opts)
 	if opts.args == '' then
 		opts.args = fn.getreg('/')
