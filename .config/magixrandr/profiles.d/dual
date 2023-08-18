@@ -1,2 +1,0 @@
---output LVDS1 --auto
---output HDMI1 --auto --primary --right-of LVDS1 --dpi 96
