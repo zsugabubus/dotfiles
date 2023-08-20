@@ -297,25 +297,35 @@ local function render()
 	curs.doupdate()
 end
 
+local function set_prop(name, data)
+	if props[name] ~= data then
+		props[name] = data
+		render()
+	end
+end
+
 local function set_client(client_)
 	client = client_
-	client:on('property-change', function(self, event)
+	client:on('property-change', function(_, event)
 		local name = event.name
 		local data = event.data
+
+		if name == 'playlist-count' then
+			client:request({ 'get_property', 'playlist' }, function(_, msg)
+				set_prop('playlist', msg.data)
+			end)
+		end
+
 		if name == 'time-pos' and data then
 			data = math.floor(data)
 		end
-		if props[name] ~= data then
-			props[name] = data
-			render()
-		end
+		set_prop(name, data)
 	end)
 
 	for i, name in ipairs({
 		'duration',
 		'mute',
 		'pause',
-		'playlist',
 		'playlist-count',
 		'playlist-pos-1',
 		'speed',
