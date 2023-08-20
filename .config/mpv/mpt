@@ -102,6 +102,7 @@ function Client:request(command, on_reply)
 	local request = {
 		request_id = self.request_id,
 		command = command,
+		async = true,
 	}
 
 	self.reply_handlers[self.request_id] = on_reply
