@@ -168,6 +168,7 @@ local props = {
 	volume = 0,
 	speed = 1,
 	playlist = {},
+	['playlist-count'] = 0,
 	['playlist-pos-1'] = 0,
 	['term-osd-bar-chars'] = '[-+-]',
 }
@@ -250,7 +251,7 @@ local function render_status()
 	win:putf(
 		'[%d/%d] %s / %s (%2d%%) ',
 		props['playlist-pos-1'],
-		#props.playlist,
+		props['playlist-count'],
 		human_time(props['time-pos'] or 0),
 		human_time(props.duration or 0),
 		100 * pct
@@ -311,6 +312,7 @@ local function set_client(client_)
 		'mute',
 		'pause',
 		'playlist',
+		'playlist-count',
 		'playlist-pos-1',
 		'speed',
 		'term-osd-bar-chars',
