@@ -373,20 +373,16 @@ local function fzf_playlist()
 		enter_program()
 
 		if code == 0 then
-			reply = string.sub(reply, 1, -2)
-			for i, entry in ipairs(props.playlist) do
-				if entry.filename == reply then
-					client:request({ 'playlist-play-index', i - 1 })
-					break
-				end
-			end
+			local index = tonumber(string.match(reply, '^%d+'))
+			client:request({ 'playlist-play-index', index - 1 })
 		end
 	end)
 
-	for _, entry in ipairs(props.playlist) do
-		uv.write(stdin, entry.filename)
-		uv.write(stdin, '\0')
+	local buf = require('string.buffer').new()
+	for i, entry in ipairs(props.playlist) do
+		buf:put(tostring(i), '\t', entry.filename, '\0')
 	end
+	uv.write(stdin, buf:tostring())
 	uv.shutdown(stdin, function()
 		uv.close(stdin, assert_uv_ok)
 	end)
