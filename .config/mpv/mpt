@@ -77,11 +77,19 @@ local Client = {}
 Client.__index = Client
 
 function Client.new(cls, ipc_server)
-	return setmetatable({
+	local self = setmetatable({
 		ipc_server = ipc_server,
 		pipe = uv.new_pipe(),
 		event_handlers = {},
 	}, cls)
+
+	self.uv_cb = function(err)
+		if err then
+			return self:close()
+		end
+	end
+
+	return self
 end
 
 function Client:close()
@@ -98,11 +106,7 @@ function Client:request(command, on_reply)
 
 	self.reply_handlers[self.request_id] = on_reply
 
-	uv.write(self.pipe, json.encode(request) .. '\n', function(err)
-		if err then
-			return self:close()
-		end
-	end)
+	uv.write(self.pipe, { json.encode(request), '\n' }, self.uv_cb)
 end
 
 function Client:on(name, on_event)
