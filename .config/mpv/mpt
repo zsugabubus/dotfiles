@@ -186,13 +186,12 @@ uv.unref(stdin)
 local sigwinch = uv.new_signal()
 uv.unref(sigwinch)
 
-local stdscr = curs.initscr()
+curs.initscr()
 curs.noecho()
 curs.curs_set(0)
-stdscr:nodelay(true)
-
 local playlist_win = curs.newwin(0, 0, 1, 1)
 local status_win = curs.newwin(0, 0, 1, 1)
+status_win:nodelay(true)
 
 local function render_playlist()
 	local win = playlist_win
@@ -351,7 +350,7 @@ local function enter_program(b)
 		if err then
 			return uv.stop()
 		end
-		local c = stdscr:getch()
+		local c = status_win:getch()
 		local key = ffi.string(curs.keyname(c))
 
 		local x = string.match(key, '^^([A-Z])$')
