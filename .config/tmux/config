@@ -161,9 +161,6 @@ bind W if -F '#{@title}' \
 	{ set -w  @title 1 ; set -w window-status-format "#{E:@window-status-format}#T" } \;\
 	set -w window-status-current-format "#{E:window-status-format}"
 
-bind > send-keys -t :muck C-m
-bind . send-keys -t :muck c
-
 bind M if -F '#{!=:#{window_name},muck}' {
 	set -F @last_session "#{session_name}" ;
 	select-pane -m ;
