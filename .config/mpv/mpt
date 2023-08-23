@@ -14,34 +14,34 @@ ffi.C.setlocale(ffi.C.LC_ALL, '')
 ffi.cdef([[
 typedef struct WINDOW WINDOW;
 
-extern int LINES, COLS;
-
-WINDOW *initscr(void);
-int noecho(void);
-int curs_set(int);
-int wnoutrefresh(WINDOW *);
-int doupdate(void);
-int nodelay(WINDOW *, bool);
-int endwin(void);
-int wmove(WINDOW *, int, int);
-int wscrl(WINDOW *, int);
-int wresize(WINDOW *, int, int);
-int mvwin(WINDOW *, int, int);
-WINDOW *newwin(int, int, int, int);
-int waddnstr(WINDOW *, const char *, int);
-int wclrtoeol(WINDOW *);
-int wattr_set(WINDOW *, uint32_t, short, void *);
-int getcurx(const WINDOW *);
-int getmaxy(const WINDOW *);
-int getmaxx(const WINDOW *);
-int wgetch(WINDOW *);
-char const *keyname(int);
-
 enum {
 	A_NORMAL = 0,
 	A_REVERSE = 1 << 18,
 	A_BOLD = 1 << 21,
 };
+
+extern int LINES, COLS;
+
+WINDOW *initscr(void);
+WINDOW *newwin(int, int, int, int);
+char const *keyname(int);
+int curs_set(int);
+int doupdate(void);
+int endwin(void);
+int getcurx(const WINDOW *);
+int getmaxx(const WINDOW *);
+int getmaxy(const WINDOW *);
+int mvwin(WINDOW *, int, int);
+int nodelay(WINDOW *, bool);
+int noecho(void);
+int waddnstr(WINDOW *, const char *, int);
+int wattr_set(WINDOW *, uint32_t, short, void *);
+int wclrtoeol(WINDOW *);
+int wgetch(WINDOW *);
+int wmove(WINDOW *, int, int);
+int wnoutrefresh(WINDOW *);
+int wresize(WINDOW *, int, int);
+int wscrl(WINDOW *, int);
 ]])
 
 ffi.metatype('WINDOW', {
