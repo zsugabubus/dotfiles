@@ -497,7 +497,9 @@ alias mpn='() { eval mp "*(.om[1,${1:-100}])" }'
 compdef mpn=mpv_hack
 alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
-alias mpctl=mpvctl
+function mpd() {
+	mpv 2>/dev/null --no-terminal --no-video ${@:-.}
+}
 alias mpom='mp --script-opts=sort=none *(om)'
 
 function mpt() {
