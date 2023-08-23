@@ -280,18 +280,20 @@ local function render_status()
 	win:refresh()
 end
 
-local function render()
+local function render(full)
 	if shellout then
 		return
 	end
 
-	playlist_win:move(0, 0)
-	playlist_win:resize(curs.LINES - 1, curs.COLS)
+	if full then
+		playlist_win:move(0, 0)
+		playlist_win:resize(curs.LINES - 1, curs.COLS)
 
-	status_win:move(curs.LINES - 1, 0)
-	status_win:resize(1, curs.COLS)
+		status_win:move(curs.LINES - 1, 0)
+		status_win:resize(1, curs.COLS)
 
-	render_playlist()
+		render_playlist()
+	end
 	render_status()
 
 	curs.doupdate()
@@ -300,7 +302,7 @@ end
 local function set_prop(name, data)
 	if props[name] ~= data then
 		props[name] = data
-		render()
+		render(name == 'playlist' or name == 'playlist-pos-1')
 	end
 end
 
@@ -370,9 +372,9 @@ local function enter_program(b)
 	uv.signal_start(sigwinch, 'sigwinch', function()
 		curs.endwin()
 		curs.doupdate()
-		render()
+		render(true)
 	end)
-	render()
+	render(true)
 end
 
 local function fzf_playlist()
