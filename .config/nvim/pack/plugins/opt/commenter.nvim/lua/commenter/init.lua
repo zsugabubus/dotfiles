@@ -103,6 +103,18 @@ function M.comment_lines(start_lnum, end_lnum)
 			})
 		end
 	end
+
+	vim.api.nvim_echo({
+		{
+			op ~= nil and string.format(
+				'%d %s %s',
+				#lines,
+				#lines == 1 and 'line' or 'lines',
+				op and 'commented' or 'uncommented'
+			) or '--No lines to comment--',
+			'Normal',
+		},
+	}, false, {})
 end
 
 return M
