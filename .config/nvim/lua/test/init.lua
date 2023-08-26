@@ -270,11 +270,22 @@ end
 test = it
 describe = it
 
-function eq(a, b)
-	push(3)
-	add_test(vim.deep_equal(a, b), 'Expected %s == %s', inspect(a), inspect(b))
-	return pop()
-end
+local builtin_assert = assert
+assert = setmetatable({
+	eq = function(a, b)
+		push(3)
+		add_test(vim.deep_equal(a, b), 'Expected %s == %s', inspect(a), inspect(b))
+		return pop()
+	end,
+	screen = function(expected_lines)
+		local got_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+		return assert.eq(expected_lines, got_lines)
+	end,
+}, {
+	__call = function(_, ...)
+		return builtin_assert(...)
+	end,
+})
 
 setmetatable(_G, {
 	__newindex = function(_G, k, v)
