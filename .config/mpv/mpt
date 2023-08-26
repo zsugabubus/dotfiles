@@ -334,6 +334,7 @@ local function set_client(client_)
 		'term-osd-bar-chars',
 		'time-pos',
 		'volume',
+		'working-directory',
 	}) do
 		client:request({ 'observe_property', i, name })
 	end
@@ -412,11 +413,46 @@ local function fzf_playlist()
 	end)
 end
 
+local function editor_playlist()
+	enter_shell()
+
+	local filename = os.tmpname()
+	local f = io.open(filename, 'w')
+	local cwd = props['working-directory'] .. '/'
+	for _, entry in ipairs(props.playlist) do
+		local path = entry.filename
+		if not string.find(path, '://') and string.sub(path, 1, 1) ~= '/' then
+			path = cwd .. path
+		end
+		f:write(path, '\n')
+	end
+	f:close()
+
+	local function cleanup()
+		os.remove(filename)
+	end
+
+	uv.spawn(os.getenv('EDITOR') or 'vim', {
+		args = { string.format('+%d', props['playlist-pos-1']), '--', filename },
+		stdio = { 0, 1, 2 },
+	}, function(code, signal)
+		enter_program()
+
+		if code ~= 0 then
+			cleanup()
+			return
+		end
+
+		client:request({ 'loadlist', filename }, cleanup)
+	end)
+end
+
 local_bindings = {
 	q = function()
 		uv.stop()
 	end,
 	['/'] = fzf_playlist,
+	['Ctrl+w'] = editor_playlist,
 }
 
 local function connect_to_best_client(clients, on_connect)
