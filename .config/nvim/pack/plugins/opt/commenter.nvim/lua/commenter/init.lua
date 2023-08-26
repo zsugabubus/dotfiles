@@ -64,12 +64,15 @@ function M.comment_lines(start_lnum, end_lnum)
 		indent = math.min(indent, (string.find(line, '%S') or math.huge) - 1)
 	end
 
+	local op
+
 	for i, line in ipairs(lines) do
 		local lnum = start_lnum + i - 1
 		local prefix_offset, prefix, suffix, suffix_offset =
 			string.match(line, pattern)
 
-		if prefix then
+		if op ~= true and prefix then
+			op = false
 			if suffix then
 				vim.api.nvim_buf_set_text(
 					0,
@@ -88,7 +91,8 @@ function M.comment_lines(start_lnum, end_lnum)
 				#prefix_offset + #prefix,
 				{}
 			)
-		elseif string.find(line, '%S') then
+		elseif op ~= false and string.find(line, '%S') then
+			op = true
 			if cms_suffix ~= '' then
 				vim.api.nvim_buf_set_text(0, lnum - 1, #line, lnum - 1, #line, {
 					' ' .. cms_suffix,

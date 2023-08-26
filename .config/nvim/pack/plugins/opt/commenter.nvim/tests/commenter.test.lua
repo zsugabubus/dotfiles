@@ -16,12 +16,7 @@ local function screen(lines)
 	return vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 end
 
-local function assert_screen(expected_lines)
-	local got = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-	return eq(expected_lines, got)
-end
-
-test('gcc', {
+test('toggle single line', {
 	{ '/*%s*/', 'abc', '/* abc */' },
 	{ '/*%s*/', '/* abc */', 'abc' },
 	{ '/*%s*/', '/*abc*/', 'abc' },
@@ -29,47 +24,76 @@ test('gcc', {
 	{ '# %s ', '#  abc ', ' abc ' },
 	{ '--%s', 'abc--def', 'abcdef' },
 	{ '--%s', 'abc--def--ghi', 'abcdef--ghi' },
+	{ '//%s', '', '' },
+	{ '//%s', ' ', ' ' },
 }, function(commentstring, original_line, expected_line)
 	reset(commentstring)
 	screen({
 		original_line,
 	})
 	feedkeys('gcc')
-	assert_screen({
+	assert.screen({
 		expected_line,
 	})
 end)
 
-test('2gcc', {
-	{ '2gcc' },
-	{ 'gc2j' },
-	{ '2gcj' },
+test('toggle multi line', {
+	{ '4gcc' },
+	{ 'gc4j' },
+	{ '4gcj' },
 }, function(keys)
+	local ORIGINAL = {
+		'    aaa',
+		'',
+		'     ',
+		'  bbb',
+		'\t   ccc',
+	}
+
+	local COMMENTED = {
+		'  //   aaa',
+		'',
+		'     ',
+		'  // bbb',
+		'\t //   ccc',
+	}
+
 	reset('//%s')
-	screen({
-		'    abc',
-		'  def',
-		'    ghi',
-	})
+	screen(ORIGINAL)
 	feedkeys(keys)
-	assert_screen({
-		'  //   abc',
-		'  // def',
-		'  //   ghi',
-	})
+	assert.screen(COMMENTED)
+	feedkeys(keys)
+	assert.screen(ORIGINAL)
 end)
 
-function test_skip_empty()
-	reset('REM %s')
+function test_comment_all()
+	reset('*%s')
 	screen({
-		'  abc',
-		'    ',
-		'  def',
+		'',
+		'aaa',
+		'*bbb',
 	})
 	feedkeys('2gcc')
-	assert_screen({
-		'  REM abc',
-		'    ',
-		'  REM def',
+	assert.screen({
+		'',
+		'* aaa',
+		'* *bbb',
+	})
+end
+
+function test_uncomment_all()
+	reset('*%s')
+	screen({
+		'',
+		'* aaa',
+		'* *bbb',
+		'ccc',
+	})
+	feedkeys('3gcc')
+	assert.screen({
+		'',
+		'aaa',
+		'*bbb',
+		'ccc'
 	})
 end
