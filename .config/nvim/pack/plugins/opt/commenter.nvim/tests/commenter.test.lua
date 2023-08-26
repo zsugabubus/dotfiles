@@ -21,6 +21,10 @@ test('toggle single line', {
 	{ '/*%s*/', '/* abc */', 'abc' },
 	{ '/*%s*/', '/*abc*/', 'abc' },
 	{ '/*%s*/', '/*  abc  */', ' abc ' },
+	{ '/*%s*/', '/**//*def*/', '//*def' }, -- BAD
+	{ '/*%s*/', '/* *//*def*/', '/*def*/' },
+	{ '/*%s*/', '/*** abc ***/', 'abc' },
+	{ '//%s', '//// abc', 'abc' },
 	{ '# %s ', '#  abc ', ' abc ' },
 	{ '--%s', 'abc--def', 'abcdef' },
 	{ '--%s', 'abc--def--ghi', 'abcdef--ghi' },
