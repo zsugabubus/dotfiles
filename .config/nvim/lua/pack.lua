@@ -3,8 +3,8 @@ local Trace = require('trace')
 local uv = vim.loop
 local api = vim.api
 local pairs, ipairs = pairs, ipairs
-local string_format, string_match, string_find, string_gsub =
-	string.format, string.match, string.find, string.gsub
+local string_format, string_match, string_find, string_gsub, string_sub =
+	string.format, string.match, string.find, string.gsub, string.sub
 local table_insert = table.insert
 
 local path2plugin = {}
@@ -33,7 +33,7 @@ end
 
 local function vim_cmd_source(file)
 	local ok, err
-	if string_match(file, '%.lua$') then
+	if string_sub(file, -4) == '.lua' then
 		ok, err = pcall(dofile, file)
 	else
 		ok, err = pcall(vim.cmd.source, file)
