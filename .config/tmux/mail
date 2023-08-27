@@ -4,7 +4,7 @@ local uv = require('luv')
 local folders = {}
 local folders_by_display = {}
 local bell_timer = uv.new_timer()
-local bell_file = os.getenv('HOME') .. '/doc/bell.mp3'
+local bell_file = assert(os.getenv('HOME')) .. '/doc/bell.mp3'
 local is_ringing = false
 
 local function scandir_empty()
@@ -77,7 +77,7 @@ local function update_status()
 			)
 		end
 	end
-	local s = string.format('%s', table.concat(t, ' '))
+	local s = table.concat(t, ' ')
 
 	assert(uv.spawn('tmux', {
 		args = {
@@ -203,7 +203,7 @@ local function find_folders(path, fullname, config)
 	end
 end
 
-find_folders(os.getenv('MAIL'), '')
+find_folders(assert(os.getenv('MAIL')), '')
 
 table.sort(folders, function(a, b)
 	if a.root.inbox ~= b.root.inbox then
