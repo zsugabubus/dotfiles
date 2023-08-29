@@ -78,6 +78,7 @@
 	sp = stash pop
 	ss = status --short --branch
 	st = stash push
+	stp = stash push --patch
 	stpull = "!git st && git pull && git sp"
 
 	sw = switch
