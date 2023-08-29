@@ -23,6 +23,8 @@
 	co = checkout
 	cop = co --patch
 
+	ce = config --edit
+
 	cp = cherry-pick
 
 	d = diff --stat --patch
