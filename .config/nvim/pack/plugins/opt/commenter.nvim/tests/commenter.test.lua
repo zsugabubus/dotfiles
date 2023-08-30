@@ -74,13 +74,13 @@ function test_comment_all()
 	reset('*%s')
 	screen({
 		'',
-		'aaa',
+		'aaa*',
 		'*bbb',
 	})
 	feedkeys('2gcc')
 	assert.screen({
 		'',
-		'* aaa',
+		'* aaa*',
 		'* *bbb',
 	})
 end
@@ -90,14 +90,12 @@ function test_uncomment_all()
 	screen({
 		'',
 		'* aaa',
-		'* *bbb',
-		'ccc',
+		'ccc*',
 	})
-	feedkeys('3gcc')
+	feedkeys('2gcc')
 	assert.screen({
 		'',
 		'aaa',
-		'*bbb',
-		'ccc'
+		'ccc*'
 	})
 end

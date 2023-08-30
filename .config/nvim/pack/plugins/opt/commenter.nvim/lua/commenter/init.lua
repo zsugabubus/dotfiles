@@ -45,7 +45,12 @@ function M.comment_lines(start_lnum, end_lnum)
 		)
 	)
 
-	local pattern = '^(.-)('
+	local lines = vim.api.nvim_buf_get_lines(0, start_lnum - 1, end_lnum, true)
+
+	local bol = #lines > 1
+	local pattern = '^('
+		.. (bol and '%s' or '.')
+		.. '-)('
 		.. vim.pesc(cms_prefix)
 		.. expand(string.sub(cms_prefix, -1))
 		.. ' ?)'
@@ -57,15 +62,12 @@ function M.comment_lines(start_lnum, end_lnum)
 			.. ')(.-)$'
 	end
 
-	local lines = vim.api.nvim_buf_get_lines(0, start_lnum - 1, end_lnum, true)
-
 	local indent = math.huge
 	for _, line in ipairs(lines) do
 		indent = math.min(indent, (string.find(line, '%S') or math.huge) - 1)
 	end
 
 	local op
-
 	for i, line in ipairs(lines) do
 		local lnum = start_lnum + i - 1
 		local prefix_offset, prefix, suffix, suffix_offset =
