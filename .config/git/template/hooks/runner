@@ -1,4 +1,8 @@
 #!/bin/dash -eu
+if test -n "${GIT_NO_VERIFY+1}"; then
+	exit
+fi
+
 pass=true
 stdin=$(cat)
 for f in $0.d/*; do
