@@ -487,7 +487,12 @@ alias ffprobe='ffprobe -hide_banner'
 alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
 function mp() {
-	mpv 2>/dev/null --player-operation-mode=pseudo-gui ${@:-.} &!
+	mpv \
+		--player-operation-mode=pseudo-gui \
+		--force-window=immediate \
+		${@:-.} \
+		2>/dev/null \
+		&!
 }
 compdef mp=mpv_hack
 alias mp.='mp -- *(.)'
