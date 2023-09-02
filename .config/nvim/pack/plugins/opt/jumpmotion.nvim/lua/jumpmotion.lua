@@ -233,7 +233,7 @@ end
 
 local last_pattern
 function M.jump(pattern)
-	local mode = fn.mode()
+	local mode = api.nvim_get_mode().mode
 
 	local targets = find_targets(pattern)
 	generate_keys(targets)
