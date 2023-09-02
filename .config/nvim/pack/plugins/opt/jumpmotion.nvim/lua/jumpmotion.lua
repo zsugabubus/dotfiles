@@ -153,7 +153,15 @@ local function find_targets(pattern)
 			col = col - 1
 			flags = 'Wz'
 
-			local target_id = string.format('%d:%d:%d', buf, lnum, col)
+			local fold_end = fn.foldclosedend(lnum)
+			if fold_end >= 0 then
+				if fold_end >= view.botline then
+					break
+				end
+				api.nvim_win_set_cursor(0, { fold_end + 1, 0 })
+				flags = 'cWz'
+				goto continue
+			end
 
 			-- Skip non-visible portion of a line.
 			if not opt_wrap then
@@ -190,6 +198,7 @@ local function find_targets(pattern)
 				goto continue
 			end
 
+			local target_id = string.format('%d:%d:%d', buf, lnum, col)
 			if targets_set[target_id] then
 				goto continue
 			end
