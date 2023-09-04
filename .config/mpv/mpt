@@ -46,7 +46,16 @@ int wscrl(WINDOW *, int);
 
 ffi.metatype('WINDOW', {
 	__index = {
+		attr = function(self, attrs, pair)
+			return curs.wattr_set(self, attrs, pair, nil)
+		end,
+		clrtoeol = curs.wclrtoeol,
+		cols = curs.getmaxx,
 		cursor = curs.wmove,
+		getch = curs.wgetch,
+		lines = curs.getmaxy,
+		move = curs.mvwin,
+		nodelay = curs.nodelay,
 		put = function(self, s)
 			return curs.waddnstr(self, s, #s)
 		end,
@@ -54,18 +63,9 @@ ffi.metatype('WINDOW', {
 			return self:put(string.format(s, ...))
 		end,
 		refresh = curs.wnoutrefresh,
-		clrtoeol = curs.wclrtoeol,
-		attr = function(self, attrs, pair)
-			return curs.wattr_set(self, attrs, pair, nil)
-		end,
-		x = curs.getcurx,
-		lines = curs.getmaxy,
-		cols = curs.getmaxx,
-		getch = curs.wgetch,
-		nodelay = curs.nodelay,
-		scroll = curs.wscrl,
 		resize = curs.wresize,
-		move = curs.mvwin,
+		scroll = curs.wscrl,
+		x = curs.getcurx,
 	},
 })
 
