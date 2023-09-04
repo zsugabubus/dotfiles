@@ -1,0 +1,9 @@
+#!/bin/dash -xeu
+test_prog=$PWD/test
+for f in $(find pack/plugins/opt -name spec -type d); do
+	(
+		cd -- "${f%/spec}"
+		"$test_prog"
+	)
+	echo
+done

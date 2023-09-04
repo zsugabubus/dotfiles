@@ -1,0 +1,8 @@
+#!/usr/bin/nvim -l
+vim.list_extend(arg, {
+	'--helper=busted.helper',
+})
+require('busted.runner')({
+	standalone = false,
+})
+-- vim: ft=lua
