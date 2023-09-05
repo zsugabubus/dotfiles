@@ -125,7 +125,8 @@ function Client:connect(on_connect)
 		local buffer = ''
 		uv.read_start(self.pipe, function(err, data)
 			if not data then
-				return self:close()
+				self:close()
+				return
 			end
 
 			for line, eol in string.gmatch(buffer .. data, '([^\n]*)(\n?)') do
@@ -189,8 +190,8 @@ uv.unref(sigwinch)
 curs.initscr()
 curs.noecho()
 curs.curs_set(0)
-local playlist_win = curs.newwin(0, 0, 1, 1)
-local status_win = curs.newwin(0, 0, 1, 1)
+local playlist_win = curs.newwin(1, 0, 0, 0)
+local status_win = curs.newwin(1, 0, 0, 0)
 status_win:nodelay(true)
 
 local function render_playlist()
@@ -238,6 +239,16 @@ end
 
 local function render_status()
 	local win = status_win
+
+	if not client then
+		win:cursor(0, 0)
+		win:attr(curs.A_BOLD, 0)
+		win:put('Disconnected')
+		win:clrtoeol()
+		win:refresh()
+		return
+	end
+
 	local pct = (props.duration or 0) ~= 0
 			and (props['time-pos'] or 0) / props.duration
 		or 0
@@ -308,6 +319,12 @@ end
 
 local function set_client(client_)
 	client = client_
+	render(false)
+
+	if not client then
+		return
+	end
+
 	client:on('property-change', function(_, event)
 		local name = event.name
 		local data = event.data
@@ -368,7 +385,9 @@ local function enter_program(b)
 			return handler()
 		end
 
-		client:request({ 'keypress', key })
+		if client then
+			client:request({ 'keypress', key })
+		end
 	end)
 	uv.signal_start(sigwinch, 'sigwinch', function()
 		curs.endwin()
@@ -393,7 +412,9 @@ local function fzf_playlist()
 
 		if code == 0 then
 			local index = tonumber(string.match(reply, '^%d+'))
-			client:request({ 'playlist-play-index', index - 1 })
+			if client then
+				client:request({ 'playlist-play-index', index - 1 })
+			end
 		end
 	end)
 
@@ -443,7 +464,9 @@ local function editor_playlist()
 			return
 		end
 
-		client:request({ 'loadlist', filename }, cleanup)
+		if client then
+			client:request({ 'loadlist', filename }, cleanup)
+		end
 	end)
 end
 
@@ -500,7 +523,7 @@ do
 	end
 	connect_to_best_client(clients, function(client)
 		if client then
-			return set_client(client)
+			set_client(client)
 		end
 	end)
 end
