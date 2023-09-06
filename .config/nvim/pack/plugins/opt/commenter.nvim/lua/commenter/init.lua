@@ -1,17 +1,5 @@
 local M = {}
 
-M.commentstrings = setmetatable({
-	jsx = '{/*%s*/}',
-}, {
-	__index = function(t, ft)
-		local buf = vim.api.nvim_create_buf(false, true)
-		vim.bo[buf].filetype = ft
-		t[ft] = vim.bo[buf].commentstring
-		vim.cmd.bwipeout({ count = buf })
-		return t[ft]
-	end,
-})
-
 local function expand(c)
 	if c == '*' or c == '/' then
 		return vim.pesc(c) .. '*'
@@ -20,9 +8,13 @@ local function expand(c)
 end
 
 function M.comment_lines(start_lnum, end_lnum)
-	local ft = vim.bo.ft
+	local cms = vim.bo.commentstring
+	if cms == '' then
+		cms = '#%s'
+	end
 
 	pcall(function()
+		local ft = vim.bo.filetype
 		local lang = vim.treesitter.language.get_lang(ft) or ft
 		local tree = vim.treesitter.get_parser(0, lang)
 		tree:parse()
@@ -30,20 +22,11 @@ function M.comment_lines(start_lnum, end_lnum)
 			tree:named_node_for_range({ start_lnum - 1, 0, start_lnum - 1, 0 }):type()
 
 		if string.match(ty, '^jsx_') then
-			ft = 'jsx'
+			cms = '{/*%s*/}'
 		end
 	end)
 
-	local cms = M.commentstrings[ft]
 	local cms_prefix, cms_suffix = string.match(cms, '^(.-) *%%s *(.-)$')
-	assert(
-		cms_prefix,
-		string.format(
-			'Invalid commentstring=%s for filetype=%s',
-			vim.inspect(cms),
-			vim.inspect(ft)
-		)
-	)
 
 	local lines = vim.api.nvim_buf_get_lines(0, start_lnum - 1, end_lnum, true)
 

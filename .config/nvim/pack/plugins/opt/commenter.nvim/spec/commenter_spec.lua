@@ -122,6 +122,52 @@ describe('filetype', function()
 		vim.cmd.filetype({ args = { 'plugin', 'on' } })
 	end)
 
+	describe('unset', function()
+		before_each(function()
+			set_lines({
+				'text',
+			})
+		end)
+
+		test('uses default commentstring', function()
+			feedkeys('gcc')
+			assert_lines({
+				'# text',
+			})
+		end)
+
+		test('uses custom commentstring', function()
+			feedkeys('gcc')
+			feedkeys('gcc')
+			vim.o.cms = '//%s'
+			feedkeys('gcc')
+			assert_lines({
+				'// text',
+			})
+		end)
+	end)
+
+	describe('known', function()
+		before_each(function()
+			assert(vim.o.cms == '')
+			vim.o.ft = 'c'
+			assert(vim.o.cms ~= '')
+			set_lines({
+				'code',
+			})
+		end)
+
+		test('uses custom commentstring', function()
+			feedkeys('gcc')
+			feedkeys('gcc')
+			vim.o.cms = 'BLA %s BLA'
+			feedkeys('gcc')
+			assert_lines({
+				'BLA code BLA',
+			})
+		end)
+	end)
+
 	describe('tsx', function()
 		before_each(function()
 			vim.o.ft = 'typescriptreact'
@@ -132,7 +178,7 @@ describe('filetype', function()
 			})
 		end)
 
-		test('ts', function()
+		test('guesses ts correctly', function()
 			feedkeys('1Ggcc3Ggcc')
 			assert_lines({
 				'// (',
@@ -141,7 +187,7 @@ describe('filetype', function()
 			})
 		end)
 
-		test('x', function()
+		test('guesses html correctly', function()
 			pending('How to test treesitter?')
 			feedkeys('2Ggcc')
 			assert_lines({
