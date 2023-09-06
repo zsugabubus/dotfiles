@@ -1,6 +1,7 @@
 REPORTTIME=1
 TIMEFMT='%J  %U user %S system %P cpu %*E total %MkB max %R faults'
 DIRSTACKSIZE=10
+unset MAILCHECK
 
 function command_not_found_handler() {
 	print -u2 -r "zsh: command not found: ${(q)1}.  This incident will be reported."
