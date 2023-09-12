@@ -84,7 +84,12 @@ if (( ${#${(zA)content}} == 1 )); then
 			return
 		fi
 	fi
+fi
 
+# Paste quoted.
+if [[ $LBUFFER =~ "(.*)['\"]$" ]]; then
+	LBUFFER=${match[1]}${(q-)content}
+	return
 fi
 
 local start=$#LBUFFER
