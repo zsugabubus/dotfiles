@@ -40,7 +40,7 @@ if [[ $content =~ '^[\t\n ]*git clone' ]]; then
 fi
 
 # URI.
-if [[ $content =~ '^[\t\n ]*(([a-z]+):\S*)[\t\n ]*$' ]]; then
+if [[ $content =~ '^\s*(([a-z-]{3,}):\S*)\s*$' ]]; then
 	content=${match[1]}
 
 	if [[ -z $BUFFER && $content =~ '^https?://.*\.patch$' ]]; then
