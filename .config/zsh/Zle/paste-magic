@@ -50,8 +50,6 @@ if [[ $content =~ '^\s*(([a-z-]{3,}):\S*)\s*$' ]]; then
 		cd_m
 		LBUFFER=' yt-dlp'
 		RBUFFER=' -f22'
-	elif [[ -z $BUFFER && $content =~ '^https?://.*\.(mp[0-9]|gifv?|webm|m3u8|og[av])(\?.*)?$' ]]; then
-		LBUFFER=' mp'
 	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
 		content="https://raw.githubusercontent.com/${match[1]}/${match[2]}"
 		if [[ -z $BUFFER ]]; then
