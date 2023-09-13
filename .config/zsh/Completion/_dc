@@ -1,0 +1,54 @@
+#compdef dc
+
+_arguments -C \
+	"1: :->command" \
+	"*: :->option" \
+	&& ret=0
+
+case $state; in
+command)
+	local commands=()
+
+	while IFS= read -r; do
+		if [[ $REPLY = *Commands: ]]; then
+			while IFS= read -r && [[ $REPLY =~ '^  ([^ ]+) +(.*)' ]]; do
+				commands+=$match[1]:$match[2]
+			done
+		fi
+	done < <(command docker compose --dry-run --help)
+
+	_describe command commands
+	;;
+
+option)
+	local command=${words[2]}
+	local word=${words[$CURRENT]}
+
+	if ! [[ $word =~ '^-' ]]; then
+		local services=( $(
+			command docker compose ps -a --format json 2>/dev/null |
+			jq -r '.[].Name' |
+			while IFS= read -r && [[ $REPLY =~ '-([^-]+)-' ]]; do
+				printf '%s\n' $match[1]
+			done
+		) )
+		_describe service services -J service
+	fi
+
+	if ! [[ $word =~ '^[^-]' ]]; then
+		local options=()
+		while IFS= read -r; do
+			if [[ $REPLY = *Options: ]]; then
+				while IFS= read -r && [[ $REPLY =~ '^\s' ]]; do
+					if [[ $REPLY =~ '((-\S)?(, )?(--\S+))  +(.*)' ]]; then
+						[[ -n $match[2] ]] && options+=$match[2]:$match[5]
+						[[ -n $match[4] ]] && options+=$match[4]:$match[5]
+					fi
+				done
+			fi
+		done < <(command docker compose --dry-run "$command" --help 2>/dev/null)
+
+		_describe option options -J option
+	fi
+	;;
+esac
