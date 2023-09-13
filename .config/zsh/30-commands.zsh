@@ -17,10 +17,7 @@ alias cpd='() { rsync -aihPv -- $^*/ }'
 alias d='dirs -v'
 alias df='df -h'
 alias diff='diff --color=auto -upZ'
-alias e=$EDITOR
 alias f=zfiles
-alias g=git
-alias git='noglob git'
 alias grep='grep --color=auto'
 alias l='ls-color -ohtrvF --group-directories-first --color=tty --quoting-style=literal'
 alias la='l -A'
@@ -28,6 +25,13 @@ alias mv='mv -i'
 alias pm='progress -M'
 alias tree=tree-color
 alias vd=vidir
+
+alias e=$EDITOR
+compdef e=$EDITOR
+
+alias g=git
+compdef g=git
+alias git='noglob git'
 
 function mkcd md() {
 	mkdir -p -- $1 && cd -- $1
