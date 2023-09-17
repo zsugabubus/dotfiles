@@ -73,8 +73,8 @@ function catrm() {
 	local f
 	for f; do
 		echo
-		cat $f
-		rm -i $f
+		cat -- $f
+		rm -i -- $f
 	done
 }
 
