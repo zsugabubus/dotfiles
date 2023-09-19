@@ -1,11 +1,15 @@
+local api = vim.api
+local fn = vim.fn
+
 local M = {}
+
 local enabled = false
-local timer = require('luv').new_timer()
+local timer = vim.loop.new_timer()
 local cword
 local wins = {}
 
 local function clear_win(win)
-	vim.fn.matchdelete(vim.w[win].hicword_id, win)
+	fn.matchdelete(vim.w[win].hicword_id, win)
 end
 
 local function clear()
@@ -15,7 +19,7 @@ local function clear()
 end
 
 local function update()
-	local cur_cword = vim.fn.expand('<cword>')
+	local cur_cword = fn.expand('<cword>')
 	if cword == cur_cword then
 		return
 	end
@@ -29,70 +33,66 @@ local function update()
 
 	local pattern = string.format([[\<\V%s\>]], string.gsub(cword, [[\]], [[\\]]))
 	for _, win in ipairs(wins) do
-		vim.w[win].hicword_id =
-			vim.fn.matchadd('Cword', pattern, -1, vim.w[win].hicword_id or -1, {
-				window = win,
-			})
+		local w = vim.w[win]
+		w.hicword_id = fn.matchadd('Cword', pattern, -1, w.hicword_id or -1, {
+			window = win,
+		})
 	end
 end
 
-local schedule_update = vim.schedule_wrap(update)
+local function timer_callback()
+	vim.schedule(update)
+end
 
 local function setup_highlight()
-	vim.api.nvim_set_hl(0, 'Cword', {
-		underline = 1,
-		default = 1,
+	api.nvim_set_hl(0, 'Cword', {
+		underline = true,
+		default = true,
 	})
 end
 
 local function update_wins()
 	clear()
-	wins = vim.api.nvim_tabpage_list_wins(0)
+	wins = api.nvim_tabpage_list_wins(0)
 	cword = nil
 	update()
 end
 
-function M.toggle(enable)
-	if enable == nil then
-		enable = not enabled
+function M.toggle(b)
+	if b == nil then
+		b = not enabled
 	end
-	enabled = enable
+	enabled = b
 
-	local group = vim.api.nvim_create_augroup('hicword', {})
+	local group = api.nvim_create_augroup('cword', {})
 
 	if not enabled then
 		clear()
 		return
 	end
 
-	vim.api.nvim_create_autocmd('CursorMoved', {
+	api.nvim_create_autocmd('CursorMoved', {
 		group = group,
 		callback = function()
-			if vim.fn.reg_executing() ~= '' then
+			if fn.reg_executing() ~= '' then
 				return
 			end
 
-			local timeout = vim.g.cword_timeout or 75
-			if timeout <= 0 then
-				schedule_update()
-			else
-				if not timer:is_active() then
-					schedule_update()
-				end
-				timer:stop()
-				timer:start(timeout, 0, schedule_update)
+			if not timer:is_active() then
+				update()
 			end
+			timer:start(100, 0, timer_callback)
 		end,
 	})
 
-	vim.api.nvim_create_autocmd({ 'WinNew', 'WinClosed', 'WinEnter' }, {
+	api.nvim_create_autocmd({ 'WinNew', 'WinClosed', 'WinEnter' }, {
 		group = group,
 		callback = function()
 			vim.schedule(update_wins)
 		end,
 	})
 
-	vim.api.nvim_create_autocmd('Colorscheme', {
+	api.nvim_create_autocmd('ColorScheme', {
 		group = group,
 		callback = setup_highlight,
 	})

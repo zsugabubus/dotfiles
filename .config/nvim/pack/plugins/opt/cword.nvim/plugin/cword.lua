@@ -1,21 +1,24 @@
-local M = setmetatable({}, {
-	__index = function(self, key)
-		return require('cword')[key]
-	end,
-})
+local keymap = vim.api.nvim_set_keymap
+local user_command = vim.api.nvim_create_user_command
 
-vim.api.nvim_create_user_command('Cword', function(opts)
-	M.toggle(not opts.bang)
-end, { bang = true })
+local EMPTY = {}
 
-vim.api.nvim_create_user_command('CwordEnable', function()
-	M.toggle(true)
-end, {})
+local function toggle()
+	require('cword').toggle()
+end
 
-vim.api.nvim_create_user_command('CwordDisable', function()
-	M.toggle(false)
-end, {})
+local function enable()
+	require('cword').toggle(true)
+end
 
-vim.api.nvim_create_user_command('CwordToggle', function()
-	M.toggle()
-end, {})
+local function disable()
+	require('cword').toggle(false)
+end
+
+keymap('', '<Plug>(cword-toggle)', '', { callback = toggle })
+keymap('', '<Plug>(cword-enable)', '', { callback = enable })
+keymap('', '<Plug>(cword-disable)', '', { callback = disable })
+
+user_command('Cword', toggle, EMPTY)
+user_command('CwordEnable', enable, EMPTY)
+user_command('CwordDisable', disable, EMPTY)
