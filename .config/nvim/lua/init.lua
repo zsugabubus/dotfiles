@@ -287,32 +287,6 @@ cabbr('gr', 'GREP')
 cabbr('m', 'Man')
 cabbr('man', 'Man')
 
-api.nvim_create_user_command('Capture', function(opts)
-	if opts.args == '' then
-		opts.args = 'messages'
-	end
-	cmd.edit(fn.fnameescape('output://' .. opts.args))
-end, {
-	complete = 'command',
-	nargs = '*',
-})
-
-api.nvim_create_autocmd('BufReadCmd', {
-	group = group,
-	pattern = 'output://*',
-	callback = function(opts)
-		local src = string.sub(opts.match, 10)
-		local output = api.nvim_exec2(src, {
-			output = true,
-		}).output
-		api.nvim_buf_set_lines(opts.buf, 0, -1, false, vim.split(output, '\n'))
-		local bo = vim.bo[opts.buf]
-		bo.buftype = 'nofile'
-		bo.readonly = true
-		bo.swapfile = false
-	end,
-})
-
 api.nvim_create_user_command('Sweep', function()
 	for _, buf in ipairs(api.nvim_list_bufs()) do
 		if fn.bufwinid(buf) == -1 then
@@ -712,6 +686,7 @@ require('pack').setup({
 	{ 'vim-woman' },
 	{ 'vim-wtf' },
 	{ 'vimdent.nvim' },
+	{ 'capture.nvim' },
 	{
 		'commenter.nvim',
 		after = function()
