@@ -613,37 +613,6 @@ api.nvim_create_autocmd('TermClose', {
 	end,
 })
 
-api.nvim_create_user_command('Register', function(opts)
-	cmd.edit(fn.fnameescape('reg://' .. opts.args))
-end, {
-	nargs = '?',
-})
-
-api.nvim_create_autocmd('BufReadCmd', {
-	group = group,
-	pattern = 'reg://*',
-	callback = function(opts)
-		local regname = string.sub(opts.match, 7)
-		api.nvim_buf_set_lines(opts.buf, 0, -1, true, fn.getreg(regname, 1, true))
-	end,
-})
-
-api.nvim_create_autocmd('BufWriteCmd', {
-	group = group,
-	pattern = 'reg://*',
-	callback = function(opts)
-		local regname = string.sub(opts.match, 7)
-		fn.setreg(regname, api.nvim_buf_get_lines(opts.buf, 0, -1, true))
-		vim.bo[opts.buf].modified = false
-		api.nvim_echo({
-			{
-				string.format('Register %s written', regname),
-				'Normal',
-			},
-		}, true, {})
-	end,
-})
-
 api.nvim_create_autocmd('FocusLost', {
 	group = group,
 	pattern = '*',
@@ -687,6 +656,7 @@ require('pack').setup({
 	{ 'vim-wtf' },
 	{ 'vimdent.nvim' },
 	{ 'capture.nvim' },
+	{ 'register.nvim' },
 	{
 		'commenter.nvim',
 		after = function()
