@@ -690,6 +690,7 @@ require('pack').setup({
 }, {
 	source_blacklist = {
 		'/runtime/plugin/health.vim',
+		'/runtime/plugin/matchit.vim',
 		'/runtime/plugin/netrwPlugin.vim',
 		'/runtime/plugin/rplugin.vim',
 		'/runtime/plugin/spellfile.vim',
