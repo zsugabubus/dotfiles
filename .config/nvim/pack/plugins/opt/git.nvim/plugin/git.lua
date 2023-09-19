@@ -38,81 +38,78 @@ end, {
 	desc = 'Git diff',
 })
 
-local opts = {
+local function command_factory(package, opts)
+	return function(name)
+		return vim.api.nvim_create_user_command(name, function(opts)
+			return require(package)(opts)
+		end, opts)
+	end
+end
+
+local function command_with_cmd_factory(package, opts)
+	return function(name)
+		return vim.api.nvim_create_user_command(name, function(opts)
+			local cmd = string.sub(opts.name, 2)
+			return require(package)(cmd, opts)
+		end, opts)
+	end
+end
+
+local command_log = command_factory('git.command.log', {
 	nargs = '*',
 	range = true,
 	desc = 'Git log',
-}
-for _, x in ipairs({ 'l', 'log' }) do
-	vim.api.nvim_create_user_command('G' .. x, function(opts)
-		return require('git.command.log')(opts)
-	end, opts)
-end
+})
+command_log('Gl')
+command_log('Glog')
 
-local opts = {
+local command_show = command_factory('git.command.show', {
 	nargs = '*',
 	complete = function(...)
 		return require('git.complete.show')(...)
 	end,
 	desc = 'Git show',
-}
-for _, x in ipairs({ 'Gs', 'Gshow' }) do
-	vim.api.nvim_create_user_command(x, function(opts)
-		return require('git.command.show')(opts)
-	end, opts)
-end
+})
+command_show('Gs')
+command_show('Gshow')
 
-local opts = {
+local command_cd = command_with_cmd_factory('git.command.cd', {
 	nargs = '?',
 	complete = function(...)
 		return require('git.complete.cd')(...)
 	end,
 	desc = 'Cd to git directory',
-}
-for _, x in ipairs({ 'cd', 'lcd', 'tcd' }) do
-	vim.api.nvim_create_user_command('G' .. x, function(opts)
-		return require('git.command.cd')(x, opts)
-	end, opts)
-end
+})
+command_cd('Gcd')
+command_cd('Glcd')
+command_cd('Gtcd')
 
-local opts = {
+local command_edit = command_with_cmd_factory('git.command.edit', {
 	nargs = 1,
 	complete = function(...)
 		return require('git.complete.edit')(...)
 	end,
 	desc = 'Edit git file',
-}
-for _, x in ipairs({
-	'e',
-	'edit',
-	'tabe',
-	'tabedit',
-	'sp',
-	'split',
-	'vs',
-	'vsplit',
-}) do
-	vim.api.nvim_create_user_command('G' .. x, function(opts)
-		return require('git.command.edit')(x, opts)
-	end, opts)
-end
+})
+command_edit('Ge')
+command_edit('Gedit')
+command_edit('Gtabe')
+command_edit('Gtabedit')
+command_edit('Gsp')
+command_edit('Gsplit')
+command_edit('Gvs')
+command_edit('Gvsplit')
 
-local opts = {
+local command_grep = command_factory('git.command.show', {
 	nargs = '*',
 	bang = true,
 	desc = 'Git grep',
-}
-for _, x in ipairs({
-	'gr',
-	'grep',
-	'grepa',
-	'grepadd',
-	'lgr',
-	'lgrep',
-	'lgrepa',
-	'lgrepadd',
-}) do
-	vim.api.nvim_create_user_command('G' .. x, function(opts)
-		return require('git.command.show')(opts)
-	end, opts)
-end
+})
+command_grep('Ggr')
+command_grep('Ggrep')
+command_grep('Ggrepa')
+command_grep('Ggrepadd')
+command_grep('Glgr')
+command_grep('Glgrep')
+command_grep('Glgrepa')
+command_grep('Glgrepadd')
