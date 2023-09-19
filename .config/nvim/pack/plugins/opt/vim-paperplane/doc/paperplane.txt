@@ -1,0 +1,48 @@
+*paperplane.txt*	Show parent identations.
+
+					Type |gO| to see the table of contents.
+
+==============================================================================
+INTRO						*paperplane-intro*
+
+Paperplane is a simple plugin to show off-screen, parent indentations.
+
+==============================================================================
+USAGE						*paperplane-usage*
+
+You can open paperplain by |CTRL-W_Z|. If something has been mapped to it
+paperplain will not overwrite it, so you have to open its buffer manually: >
+	above pedit vim-paperplane://
+<	Currently, only preview window is supported.
+
+To close preview window you can simply use (the builtin) |CTRL-W_z|.
+
+==============================================================================
+CONFIGURATION					*paperplane-configuration*
+
+paperplain_doscrollmappings			*g:paperplain_doscrollmappings*
+		If not 0, remap |CTRL-E| and |CTRL-Y| to call
+		|paperplain#update|. Default is 0 (not to add anything).
+
+paperplane_timeout				*g:paperplane_timeout*
+		Timeout for |search()|. Default is 10.
+
+==============================================================================
+COMMANDS					*paperplane-commands*
+
+paperplane#isactive()				*paperplane#isactive()*
+		Return 1 if paperplane is active, otherwise 0.
+
+paperplane#update()				*paperplane#update()*
+		Update lines if |paperplane#isactive()|.
+
+		Note: Normally you may never call it directly because it is
+		bound to relevant |autocommand|s by default.
+		Also see |g:paperplain_doscrollmappings|.
+
+==============================================================================
+LICENSE						*paperplane-license*
+
+Released under the GNU General Public License version v3.0 or later.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:nowrap
