@@ -720,6 +720,12 @@ require('pack').setup({
 		end,
 	},
 	{
+		'context.nvim',
+		after = function()
+			map('n', '<C-w>x', '<Plug>(context-toggle)')
+		end,
+	},
+	{
 		'jumpmotion.nvim',
 		after = function()
 			map('', '<space>', '<Plug>(jumpmotion)')
