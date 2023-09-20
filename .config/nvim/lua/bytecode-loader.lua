@@ -3,6 +3,14 @@ local cache_dir = vim.fn.stdpath('cache')
 local bytecode_dir = cache_dir .. '/bytecode'
 local loadfile = loadfile -- Make it local.
 
+local NIL_STAT = {
+	mtime = {
+		sec = 0,
+		nsec = 0,
+	},
+	size = 0,
+}
+
 function _G.loadfile(path)
 	local trace = Trace.trace
 	local span = trace(path)
@@ -10,7 +18,7 @@ function _G.loadfile(path)
 	local uv = vim.loop
 
 	local stat_span = trace('stat')
-	local stat = uv.fs_stat(path)
+	local stat = uv.fs_stat(path) or NIL_STAT
 	trace(stat_span)
 
 	local path_key = string.gsub(path, '/', '%%')
@@ -42,10 +50,10 @@ function _G.loadfile(path)
 		return cache_code
 	end
 
-	local code = loadfile(path)
+	local code, err = loadfile(path)
 	trace(span)
 	if not code then
-		return
+		return nil, err
 	end
 
 	uv.fs_mkdir(cache_dir, tonumber('700', 8), function()
