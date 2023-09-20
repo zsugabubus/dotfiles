@@ -34,7 +34,10 @@ end
 local function vim_cmd_source(file)
 	local ok, err
 	if string_sub(file, -4) == '.lua' then
-		ok, err = pcall(dofile, file)
+		ok, err = loadfile(file)
+		if ok then
+			ok, err = pcall(ok)
+		end
 	else
 		ok, err = pcall(vim.cmd.source, file)
 	end
