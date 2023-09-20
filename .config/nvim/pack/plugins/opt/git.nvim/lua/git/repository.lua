@@ -255,6 +255,7 @@ function M.from_path(path)
 		dir = path,
 		statusline = '',
 		outdated = {},
+		pending = true,
 	}
 	repo_by_path[path] = repo
 
@@ -266,6 +267,8 @@ function M.from_path(path)
 			'--show-toplevel',
 		},
 		on_stdout = function(data)
+			repo.pending = nil
+
 			if data == '' then
 				return
 			end
@@ -353,6 +356,18 @@ function M.from_current_buf()
 		vim.b.git_dir = dir
 	end
 	return M.from_path(dir)
+end
+
+function M.await(repo)
+	if not repo.pending then
+		return repo
+	end
+
+	vim.wait(500, function()
+		return not repo.pending
+	end, 10)
+
+	return repo_by_path[repo.dir]
 end
 
 function is_status_enabled(buf)

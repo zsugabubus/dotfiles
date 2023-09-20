@@ -7,7 +7,7 @@ return function(opts)
 		rev = ':0'
 	end
 
-	local repo = Repository.from_current_buf()
+	local repo = Repository.await(Repository.from_current_buf())
 	utils.ensure_work_tree(repo)
 
 	vim.cmd.diffthis()
