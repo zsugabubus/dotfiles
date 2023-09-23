@@ -641,7 +641,7 @@ require('pack').setup({
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
 	{ 'vim-qf' },
-	{ 'vim-star' },
+	{ 'star.nvim' },
 	{
 		'vim-surround',
 		before = function()
