@@ -643,10 +643,10 @@ require('pack').setup({
 	{ 'vim-qf' },
 	{ 'star.nvim' },
 	{
-		'vim-surround',
-		before = function()
-			map('n', 'ds', '<Plug>(SurroundDelete)')
-			map('x', 's', '<Plug>(Surround)')
+		'surround.nvim',
+		after = function()
+			map('n', 'ds', '<Plug>(surround-delete)')
+			map('x', 's', '<Plug>(surround)')
 		end,
 	},
 	{ 'textobjects.nvim' },
