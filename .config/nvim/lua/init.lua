@@ -653,7 +653,7 @@ require('pack').setup({
 	{ 'vim-tilde' },
 	{ 'vim-vnicode' },
 	{ 'vim-woman' },
-	{ 'vim-wtf' },
+	{ 'wtf.nvim' },
 	{ 'vimdent.nvim' },
 	{ 'capture.nvim' },
 	{ 'register.nvim' },
