@@ -30,10 +30,7 @@ function M.comment_lines(start_lnum, end_lnum)
 
 	local lines = vim.api.nvim_buf_get_lines(0, start_lnum - 1, end_lnum, true)
 
-	local bol = #lines > 1
-	local pattern = '^('
-		.. (bol and '%s' or '.')
-		.. '-)('
+	local pattern = '^(%s-)('
 		.. vim.pesc(cms_prefix)
 		.. expand(string.sub(cms_prefix, -1))
 		.. ' ?)'
