@@ -649,7 +649,7 @@ require('pack').setup({
 			map('x', 's', '<Plug>(Surround)')
 		end,
 	},
-	{ 'vim-textobjects' },
+	{ 'textobjects.nvim' },
 	{ 'vim-tilde' },
 	{ 'vim-vnicode' },
 	{ 'vim-woman' },
