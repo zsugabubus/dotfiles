@@ -66,18 +66,15 @@ augroup vim_pets_snippets
 		\]
 
 	autocmd FileType html,xml let b:pets_snippets += [
-		\ ["\\<([a-zA-Z0-9:]+)[^>]*/@<!\\>[^>]*\<CR>", "\<CR></\\1>\<Esc>O"],
-		\ ["\\<([a-zA-Z0-9:]+)[^>]*>", ">\<Esc>a</\\1>\<C-g>U\<C-o>`["],
-		\ ["\\<([a-zA-Z0-9:]+)[^>]*\\>[^>]*<", "</\\1>"],
+		\ ["\\<([a-zA-Z0-9:]+)[^>]*>", ">\<CR></\\1>\<C-o>O"],
 		\ ["\\<([a-zA-Z0-9:]+)[^>]{-}\\ze\\s*/", " />"],
 		\]
 
 	autocmd FileType css let b:pets_snippets += [
-		\ ['\ze\s*!', ' !important;'],
+		\ ['\ze\s*!;', ' !important;'],
 		\]
 
 	autocmd FileType c,cpp let b:pets_snippets += [
-		\ ['^\s*enum\s+(\k+)\s*{', {m-> "{\<CR>".toupper(substitute(m[1], '\C\v[^A-Z_]\zs\ze[A-Z]|[A-Z]\zs\ze[A-Z][a-z]', '_', 'g'))."_,\<CR>};\<Esc>k$i"}],
 		\ ["^\\s*<%(if|for|while)> ", " ("],
 		\ ["^\\s*<%(if|for|while)>.{-}\\)\\ze ", {m-> empty(g:PetsUnclosedBrackets(winline())) ? " {\<CR>}\<C-O>O" : " "}],
 		\ ["<for>[^;]+;(\\s?)[^;]+;", {m-> ";".m[1]}],
@@ -113,18 +110,17 @@ augroup vim_pets_snippets
 		\ ["^[^\"]*%(%(\"[^\"]*){2})*[^- \\t\"'[({0-9]-", '->'],
 		\ ['-\>>', ''],
 		\ ['%(<for>.*)@<!;;', "\<C-F>\<Esc>"],
-		\ ['^\s*memset\(([*()]*\w+[*()]*))', ', 0, sizeof *\1);'],
+		\ ['^\s*\ze3;', "__asm__(\"int3\");\<C-F>"],
+		\ ['^\s*va_list (\k+);', {m-> ";\<CR>va_start(".m[1].", ".matchstr(getline(searchpos('\V...', 'bW')[0]), '\v\k+\ze[ \t]*,+[ \t]*\.\.\.').");\<CR>va_end(".m[1].");\<Esc>k_"}],
 		\]
 
-	autocmd FileType c,cpp,rust let b:pets_snippets += [
+	autocmd FileType c,cpp let b:pets_snippets += [
 		\ ['%(^|\w\s*){', "{\<CR>}\<C-O>O"],
 		\ ["\\.\\w+\\s*\\=\\s*\\{\<CR>", "\<CR>},\<C-O>O"],
 		\ ["\\=\\s*\\{ ", "  },\<Left>\<Left>\<Left>"],
 		\ ["\\{\<CR>", "\<CR>}\<C-O>O"],
 		\ ['\{ ', "  }\<Left>\<Left>"],
 		\ ['\)\s*{', "{\<CR>}\<C-O>O"],
-		\ ['^\s*\ze3;', "__asm__(\"int3\");\<C-F>"],
-		\ ['^\s*va_list (\k+);', {m-> ";\<CR>va_start(".m[1].", ".matchstr(getline(searchpos('\V...', 'bW')[0]), '\v\k+\ze[ \t]*,+[ \t]*\.\.\.').");\<CR>va_end(".m[1].");\<Esc>k_"}],
 		\ ['^\s*<(b%[rea]|c%[ontinu])>;', {m-> matchstr('break;continue;', '\V\<'.m[1].'\v\zs.{-};')}],
 		\]
 
@@ -134,12 +130,10 @@ augroup vim_pets_snippets
 		\]
 
 	autocmd FileType rust let b:pets_snippets += [
-		\ ["^\\s*<%(fun|trait|struct|for|loop|match|%(<else> )?if)>.{-}[^{]\\zs\\s*\<CR>", "\<CR>{\<CR>}\<C-O>O"],
-		\ ["^\\s*<%(fun|trait|struct|for|loop|match|%(<else> )?if)>.{-}[^{]\\zs\\s*{", " {\<CR>}\<C-O>O"],
-		\ ["^.*<let>.*=", "= "],
-		\ ["\\=>", "> "],
-		\ ["\\ze<e%[lse]>{", "else {\<CR>}\<C-O>O"],
-		\ ["\\ze<e%[lse]>\<CR>", "else\<CR>{\<CR>}\<C-O>O"],
+		\ ["^\\S{", " {\<CR>"],
+		\ ["%([\"'].*)@<! {", "{\<CR>}\<C-O>O"],
+		\ ["%([\"'].*)@<!{", "{\<CR>"],
+		\ ["%([{].*)@<![(){}]@<!}", "\<CR>}"],
 		\]
 
 	autocmd FileType sh,bash,zsh let b:pets_snippets += [
@@ -162,7 +156,6 @@ augroup vim_pets_snippets
 		\ ["<%(else)?if>.{-}\\ze\\s*%(.*<then>.*)@<!\<CR>", {-> " then\<CR>end\<C-O>O"}],
 		\ ["<%(else)?if>.*<then>.*\\S+.{-}\\ze\s*%(<end>)@<!\<CR>", " end\<CR>"],
 		\ ["<%(do|then)>%(.*<end>.*)@<!\<CR>", "\<CR>end\<C-O>O"],
-		\ ["\\ze<%(f%[unction])>(.{-})%(<end>)@<!\<CR>", {m-> 'function'.m[1].g:PetsUnclosedBrackets(1)."\<CR>end\<C-O>O"}],
 		\ ["^\\s*\\ze<e%[ls]>\<CR>", "else\<CR>"],
 		\ ["^\\s*\\ze<e%(%[lsif]|%[lseif])> ", "elseif "],
 		\ ["^\\s*<(for|while)>.{-}\\ze\\s*%(<do>\\s*)@<!\<CR>", " do\<CR>end\<C-O>O"],
@@ -179,11 +172,6 @@ augroup vim_pets_snippets
 
 	autocmd FileType gdb let b:pets_snippets += [
 		\ ["^\\s*<%(define|doc%[ument]|if|while|commands?)>.*\<CR>", "\<CR>end\<C-O>O"]
-		\]
-
-	" Vim fold marks
-	autocmd FileType * let b:pets_snippets += [
-		\ ["^\\s*(\\S+\\s*).{-}\\{\\{\\{(\\d*).{-}(\\s*\\S+)\<CR>", "\<CR>\\1\\2}}}\\3\<C-O>O"],
 		\]
 
 	autocmd FileType * let b:pets_snippets += [
