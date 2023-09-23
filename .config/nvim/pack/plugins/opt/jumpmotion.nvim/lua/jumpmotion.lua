@@ -231,17 +231,11 @@ local function find_targets(pattern)
 	return targets
 end
 
-local last_pattern
 function M.jump(pattern)
 	local mode = api.nvim_get_mode().mode
 
 	local targets = find_targets(pattern)
 	generate_keys(targets)
-
-	vim.o.opfunc = 'v:lua._jumpmotion_noop'
-	api.nvim_command('silent! normal! g@:\n')
-	vim.o.opfunc = 'v:lua._jumpmotion_repeat'
-	last_pattern = pattern
 
 	local target = pick_target(targets)
 	if not target then
@@ -259,14 +253,6 @@ function M.jump(pattern)
 	end
 
 	return true
-end
-
-function _G._jumpmotion_noop()
-	-- Do nothing. Really.
-end
-
-function _G._jumpmotion_repeat()
-	return M.jump(last_pattern)
 end
 
 return M
