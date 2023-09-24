@@ -657,6 +657,7 @@ require('pack').setup({
 	{ 'vimdent.nvim' },
 	{ 'capture.nvim' },
 	{ 'register.nvim' },
+	{ 'archive.nvim' },
 	{
 		'commenter.nvim',
 		after = function()
@@ -689,13 +690,16 @@ require('pack').setup({
 	},
 }, {
 	source_blacklist = {
+		'/runtime/plugin/gzip.vim',
 		'/runtime/plugin/health.vim',
 		'/runtime/plugin/matchit.vim',
 		'/runtime/plugin/netrwPlugin.vim',
 		'/runtime/plugin/rplugin.vim',
 		'/runtime/plugin/spellfile.vim',
+		'/runtime/plugin/tarPlugin.vim',
 		'/runtime/plugin/tohtml.vim',
 		'/runtime/plugin/tutor.vim',
+		'/runtime/plugin/zipPlugin.vim',
 		'/vimfiles/plugin/black.vim',
 		'/vimfiles/plugin/fzf.vim',
 	},
