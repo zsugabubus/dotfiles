@@ -1,22 +1,35 @@
 local M = {}
 
-function M.report(node)
-	local epoch = node.start
+function M.elapsed_time(node, earlier)
+	return node.start - earlier.start
+end
 
+function M.total_time(node)
+	return node.stop - node.start
+end
+
+function M.child_time(node)
+	local total = 0
+	for _, child in ipairs(node) do
+		total = total + M.total_time(child)
+	end
+	return total
+end
+
+function M.self_time(node)
+	return M.total_time(node) - M.child_time(node)
+end
+
+function M.report(root)
 	local buf = require('string.buffer').new()
 	buf:putf('%11s %11s %11s %s\n', 'clock', 'total', 'self', 'event')
 
 	local function walk(node, depth)
-		local children_elapsed = 0
-		for _, child in ipairs(node) do
-			children_elapsed = children_elapsed + child.elapsed
-		end
-
 		buf:putf(
 			'%8.3f ms %8.3f ms %8.3f ms %s%s\n',
-			(node.start - epoch) / 1e6,
-			node.elapsed / 1e6,
-			(node.elapsed - children_elapsed) / 1e6,
+			M.elapsed_time(node, root) / 1e6,
+			M.total_time(node) / 1e6,
+			M.self_time(node) / 1e6,
 			string.rep(' ', depth * 2),
 			node.name
 		)
@@ -26,7 +39,7 @@ function M.report(node)
 		end
 	end
 
-	walk(node, 0)
+	walk(root, 0)
 
 	return buf:tostring()
 end

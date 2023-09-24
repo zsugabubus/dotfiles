@@ -7,11 +7,11 @@ local stack = { {} }
 -- Example:
 -- ```
 -- a = trace("a")
---   ab1 = trace("a / b1")
---   ab2 = trace(ab1, "a / b2") -- Stop and start new.
---     trace("a / b2 / c")
---   trace(ab2) -- Stop (including child).
--- trace(span)
+--   b = trace("a / b")
+--   c = trace(b, "a / c") -- Stop "b", start "c".
+--     trace("a / c / d")
+--   trace(c) -- Stop "c" (auto-closes all children).
+-- trace(a)
 -- ```
 local function trace(node, name)
 	local now = hrtime()
@@ -23,7 +23,6 @@ local function trace(node, name)
 			table_insert(stack[#stack], pop)
 
 			pop.stop = now
-			pop.elapsed = now - pop.start
 		until pop == node
 	else
 		name = node
@@ -32,6 +31,7 @@ local function trace(node, name)
 	if type(name) == 'string' then
 		local node = {
 			start = now,
+			stop = 0,
 			name = name,
 		}
 		table_insert(stack, node)
