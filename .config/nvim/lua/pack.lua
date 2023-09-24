@@ -80,8 +80,8 @@ function get_packpath_dirs()
 end
 
 local function is_source_allowed(file)
-	for _, pat in ipairs(source_blacklist) do
-		if string_find(file, pat) then
+	for _, x in ipairs(source_blacklist) do
+		if string_find(file, x, 1, true) then
 			return false
 		end
 	end
