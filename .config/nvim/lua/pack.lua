@@ -3,8 +3,8 @@ local Trace = require('trace')
 local uv = vim.loop
 local api = vim.api
 local pairs, ipairs = pairs, ipairs
-local string_format, string_match, string_find, string_gsub, string_sub =
-	string.format, string.match, string.find, string.gsub, string.sub
+local string_format, string_find, string_gsub, string_sub =
+	string.format, string.find, string.gsub, string.sub
 local table_insert = table.insert
 
 local path2plugin = {}
@@ -115,20 +115,30 @@ local function source_dir(dir, plugin)
 	end
 end
 
-local function package_loader(path)
+local function package_loader(name)
 	-- :h require()
-	local head, tail = string_match(path, '^([^.]*)(.*)')
+	local path = lua2path[name .. '.lua']
+	if path then
+		local code = loadfile(path)
+		if code then
+			return code
+		end
+	end
+
+	local dot = string_find(name, '.', 1, true) or (#name + 1)
+	local head = string_sub(name, 1, dot - 1)
 	local path = lua2path[head]
 	if path then
+		local tail = string_sub(name, dot)
 		local prefix = path .. string_gsub(tail, '%.', '/')
 
-		local ok, code = pcall(loadfile, prefix .. '.lua')
-		if ok then
+		local code = loadfile(prefix .. '.lua')
+		if code then
 			return code
 		end
 
-		local ok, code = pcall(loadfile, prefix .. '/init.lua')
-		if ok then
+		local code = loadfile(prefix .. '/init.lua')
+		if code then
 			return code
 		end
 	end
