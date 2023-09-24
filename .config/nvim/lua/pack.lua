@@ -191,11 +191,8 @@ function M.setup(spec, opts)
 
 	collectgarbage('stop')
 
-	opts = vim.tbl_extend('force', {
-		source_blacklist = {},
-	}, opts or {})
-
-	source_blacklist = opts.source_blacklist
+	opts = opts or {}
+	source_blacklist = opts.source_blacklist or {}
 
 	local pp_before, pp_after = get_packpath_dirs()
 	local rtp_prepend, rtp_append = {}, {}
