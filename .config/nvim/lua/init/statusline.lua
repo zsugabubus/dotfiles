@@ -36,7 +36,7 @@ vim.api.nvim_create_autocmd(
 			vim.wo.statusline = table.concat({
 				"%(%#StatusLineModeTerm#%{'t'==mode()?'  T ':''}%#StatusLineModeTermEnd#%{'t'==mode()?' ':''}%#StatusLine#%)",
 				"%(%( %{!&diff&&argc()>#1?(argidx()+1).' of '.argc():''} %)%(  %{luaeval('git_status()')} %) %)",
-				"%n:%f%( %h%w%{exists('b:gzflag')?'[GZ]':''}%r%)%( %m%)",
+				'%n:%f%( %h%w%r%)%( %m%)',
 				'%9*%<%#StatusLine#',
 				'%<%=',
 				'%1*%2*',
