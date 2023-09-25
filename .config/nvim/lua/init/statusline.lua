@@ -5,7 +5,6 @@ local prev_lnum = 0
 
 vim.api.nvim_create_autocmd('CursorMoved', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		local lnum = vim.api.nvim_win_get_cursor(0)[1]
 		if lnum ~= prev_lnum then
@@ -17,7 +16,6 @@ vim.api.nvim_create_autocmd('CursorMoved', {
 
 vim.api.nvim_create_autocmd({ 'WinLeave', 'FocusLost' }, {
 	group = group,
-	pattern = '*',
 	callback = function()
 		vim.wo.statusline = table.concat({
 			'%#StatusLineNC#%n:%f%( %m%)',
@@ -31,7 +29,6 @@ vim.api.nvim_create_autocmd(
 	{ 'VimEnter', 'WinEnter', 'BufWinEnter', 'FocusGained' },
 	{
 		group = group,
-		pattern = '*',
 		callback = function()
 			vim.wo.statusline = table.concat({
 				"%(%#StatusLineModeTerm#%{'t'==mode()?'  T ':''}%#StatusLineModeTermEnd#%{'t'==mode()?' ':''}%#StatusLine#%)",
