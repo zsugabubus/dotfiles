@@ -40,7 +40,7 @@ function _G.loadfile(path)
 		trace(diff)
 		diff.name = string.format(
 			'loadfile speedup: %.3f ms',
-			(slow.elapsed - fast.elapsed) / 1e6
+			(Trace.total_time(slow) - Trace.total_time(fast)) / 1e6
 		)
 	end
 
