@@ -49,9 +49,6 @@
 	lu = l @{upstream}
 	lud = l @...@{upstream}
 
-	m = merge
-	mc = m --continue
-
 	mt = mergetool
 
 	push-origin = push -u origin HEAD
