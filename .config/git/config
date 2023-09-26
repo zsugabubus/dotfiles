@@ -125,11 +125,6 @@
 	tool = nvimdiff
 	conflictStyle = diff3
 
-[mergetool "nvimdiffx"]
-	keepBackup = no
-	trustExitCode = yes
-	cmd = nvim -d "$MERGED" "$BASE" "$LOCAL" "$REMOTE" +"wincmd J"
-
 [pull]
 	rebase = yes
 
