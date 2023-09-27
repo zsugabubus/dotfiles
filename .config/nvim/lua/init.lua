@@ -695,6 +695,7 @@ require('pack').setup({
 		'/runtime/plugin/matchit.vim',
 		'/runtime/plugin/netrwPlugin.vim',
 		'/runtime/plugin/rplugin.vim',
+		'/runtime/plugin/shada.vim',
 		'/runtime/plugin/spellfile.vim',
 		'/runtime/plugin/tarPlugin.vim',
 		'/runtime/plugin/tohtml.vim',
