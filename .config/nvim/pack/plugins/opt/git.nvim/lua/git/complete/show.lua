@@ -46,12 +46,12 @@ return function(prefix)
 		-- Complete symbolic reference.
 		local patterns = {}
 		for i, format in ipairs({
-			'^(%s.*)',
-			'^refs/(%s.*)',
-			'^refs/tags/(%s.*)',
-			'^refs/heads/(%s.*)',
-			'^refs/remotes/(%s.*)',
 			'^refs/remotes/(%s.*)/HEAD$',
+			'^refs/remotes/(%s.*)',
+			'^refs/heads/(%s.*)',
+			'^refs/tags/(%s.*)',
+			'^refs/(%s.*)',
+			'^(%s.*)',
 		}) do
 			patterns[i] = string.format(format, vim.pesc(prefix))
 		end
@@ -63,15 +63,6 @@ return function(prefix)
 
 		local result = {}
 
-		for name in vim.fs.dir(repo.git_dir) do
-			if
-				string.sub(name, 1, #prefix) == prefix
-				and string.sub(name, -4) == 'HEAD'
-			then
-				table.insert(result, name)
-			end
-		end
-
 		for _, x in ipairs(output) do
 			local refname = string.match(x, '^[^ ]* (.*)')
 			for _, pattern in ipairs(patterns) do
@@ -81,6 +72,15 @@ return function(prefix)
 					-- Show the shortest match only.
 					break
 				end
+			end
+		end
+
+		for name in vim.fs.dir(repo.git_dir) do
+			if
+				string.sub(name, 1, #prefix) == prefix
+				and string.sub(name, -4) == 'HEAD'
+			then
+				table.insert(result, name)
 			end
 		end
 
