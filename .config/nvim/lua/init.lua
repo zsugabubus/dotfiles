@@ -693,6 +693,7 @@ require('pack').setup({
 		'/runtime/plugin/gzip.vim',
 		'/runtime/plugin/health.vim',
 		'/runtime/plugin/matchit.vim',
+		'/runtime/plugin/matchparen.vim',
 		'/runtime/plugin/netrwPlugin.vim',
 		'/runtime/plugin/rplugin.vim',
 		'/runtime/plugin/shada.vim',
