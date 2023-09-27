@@ -23,7 +23,7 @@ return function(prefix)
 			string.format('%s:%s', rev, path),
 		}, true))
 
-		local t = {}
+		local result = {}
 
 		for x in
 			vim.gsplit(output, '\0', {
@@ -35,13 +35,13 @@ return function(prefix)
 			if string.sub(object_path, 1, #filter) == filter then
 				local indicator = object_type == 'tree' and '/' or ''
 				table.insert(
-					t,
+					result,
 					string.format('%s:%s%s%s', rev, path, object_path, indicator)
 				)
 			end
 		end
 
-		return t
+		return result
 	else
 		-- Complete symbolic reference.
 		local patterns = {}
@@ -56,34 +56,34 @@ return function(prefix)
 			patterns[i] = string.format(format, vim.pesc(prefix))
 		end
 
-		local output_lines = vim.fn.systemlist(cli.make_args(repo, {
+		local output = vim.fn.systemlist(cli.make_args(repo, {
 			'show-ref',
 			'--dereference',
 		}, true))
 
-		local t = {}
+		local result = {}
 
 		for name in vim.fs.dir(repo.git_dir) do
 			if
 				string.sub(name, 1, #prefix) == prefix
 				and string.sub(name, -4) == 'HEAD'
 			then
-				table.insert(t, name)
+				table.insert(result, name)
 			end
 		end
 
-		for _, x in ipairs(output_lines) do
+		for _, x in ipairs(output) do
 			local refname = string.match(x, '^[^ ]* (.*)')
 			for _, pattern in ipairs(patterns) do
 				local m = string.match(refname, pattern)
 				if m then
-					table.insert(t, m)
+					table.insert(result, m)
 					-- Show the shortest match only.
 					break
 				end
 			end
 		end
 
-		return t
+		return result
 	end
 end

@@ -6,13 +6,15 @@ return function(prefix)
 	utils.ensure_work_tree(repo)
 
 	local dir = repo.work_tree .. '/'
+	local result = {}
 
-	local t = {}
 	for _, path in
 		ipairs(vim.fn.glob(utils.gesc(dir .. prefix) .. '*', false, true))
 	do
 		local indicator = vim.fn.isdirectory(path) ~= 0 and '/' or ''
-		table.insert(t, string.sub(path, #dir + 1) .. indicator)
+		local filename = string.sub(path, #dir + 1)
+		table.insert(result, filename .. indicator)
 	end
-	return t
+
+	return result
 end
