@@ -20,7 +20,7 @@ vim.api.nvim_set_keymap('n', '<Plug>(commenter-current-line)', '', {
 
 function _G._commenter_opfunc()
 	require('commenter').comment_lines(
-		vim.fn.getpos("'[")[2],
-		vim.fn.getpos("']")[2]
+		vim.api.nvim_buf_get_mark(0, '[')[1],
+		vim.api.nvim_buf_get_mark(0, ']')[1]
 	)
 end
