@@ -2,7 +2,7 @@ local api, cmd, fn = vim.api, vim.cmd, vim.fn
 
 local function filter_completions(needle, choices)
 	return vim.tbl_filter(function(x)
-		return string.find(x, needle)
+		return string.find(x, needle, 1, true)
 	end, choices)
 end
 
