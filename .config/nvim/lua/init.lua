@@ -350,17 +350,14 @@ api.nvim_create_user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
 
 api.nvim_create_autocmd({ 'FocusGained', 'VimEnter' }, {
 	group = group,
-	pattern = '*',
 	callback = function()
 		local group = api.nvim_create_augroup('init/clipboard', {})
 		api.nvim_create_autocmd('TextYankPost', {
 			group = group,
 			once = true,
-			pattern = '*',
 			callback = function()
 				api.nvim_create_autocmd('FocusLost', {
 					group = group,
-					pattern = '*',
 					callback = function()
 						fn.setreg('+', fn.getreg('@'))
 					end,
@@ -388,7 +385,6 @@ end
 
 api.nvim_create_autocmd('BufNewFile', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		local function once(event, callback)
 			return api.nvim_create_autocmd(event, {
@@ -480,7 +476,6 @@ api.nvim_create_autocmd('FileType', {
 
 api.nvim_create_autocmd('TextChanged', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		if vim.wo.diff then
 			cmd.diffupdate()
@@ -490,7 +485,6 @@ api.nvim_create_autocmd('TextChanged', {
 
 api.nvim_create_autocmd('BufHidden,BufUnload', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		if not vim.bo.buflisted then
 			cmd.diffoff({ bang = true })
@@ -507,7 +501,6 @@ api.nvim_create_autocmd('VimResized', {
 
 api.nvim_create_autocmd('StdinReadPost', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		vim.bo.buftype = 'nofile'
 		vim.bo.bufhidden = 'hide'
@@ -517,7 +510,6 @@ api.nvim_create_autocmd('StdinReadPost', {
 
 api.nvim_create_autocmd('BufReadPost', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		local IGNORE_RE = vim.regex([[\vgit|mail]])
 
@@ -548,7 +540,6 @@ api.nvim_create_autocmd('BufReadPost', {
 
 api.nvim_create_autocmd('VimLeave', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		if vim.v.dying == 0 and vim.v.exiting == 0 and vim.v.this_session ~= '' then
 			cmd.mkession({ args = { vim.v.this_session }, bang = true })
@@ -566,7 +557,6 @@ do
 
 	api.nvim_create_autocmd('FileType,BufWinEnter,WinNew,ColorScheme', {
 		group = group,
-		pattern = '*',
 		callback = function()
 			api.nvim_set_hl(0, 'WhitespaceError', {
 				default = true,
@@ -580,7 +570,6 @@ do
 
 	api.nvim_create_autocmd('FileType,BufWinEnter,WinNew', {
 		group = group,
-		pattern = '*',
 		callback = function()
 			if vim.w.japan then
 				fn.matchdelete(vim.w.japan)
@@ -615,7 +604,6 @@ api.nvim_create_autocmd('TermClose', {
 
 api.nvim_create_autocmd('FocusLost', {
 	group = group,
-	pattern = '*',
 	callback = function()
 		pcall(fn.writefile, { fn.expand('%:p') }, fn.stdpath('run') .. '/nvim_here')
 	end,
