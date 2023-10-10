@@ -74,7 +74,7 @@ return {
 			buffer_name,
 			'-',
 		}, opts.buf)
-		if output == '' or output == '\n' then
+		if vim.v.shell_error == 0 then
 			vim.bo[opts.buf].modified = false
 			api.nvim_echo({
 				{
