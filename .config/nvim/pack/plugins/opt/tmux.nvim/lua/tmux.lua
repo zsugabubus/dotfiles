@@ -33,6 +33,14 @@ local function buf_read_system(buf, args)
 	return api.nvim_buf_set_lines(buf, 0, -1, true, fn.systemlist(args))
 end
 
+local function echo(...)
+	api.nvim_echo({ { string.format(...), 'Normal' } }, true, {})
+end
+
+local function echo_error(...)
+	api.nvim_echo({ { string.format(...), 'ErrorMsg' } }, true, {})
+end
+
 return {
 	BufReadCmd_buffers = function(opts)
 		buf_read_system(opts.buf, {
@@ -76,23 +84,9 @@ return {
 		}, opts.buf)
 		if vim.v.shell_error == 0 then
 			vim.bo[opts.buf].modified = false
-			api.nvim_echo({
-				{
-					string.format(
-						'"%s"%s written',
-						buffer_name,
-						output == '\n' and '' or ' [New]'
-					),
-					'Normal',
-				},
-			}, true, {})
+			echo('"%s"%s written', buffer_name, output == '\n' and '' or ' [New]')
 		else
-			api.nvim_echo({
-				{
-					string.format("Can't write tmux buffer: %s", vim.trim(output)),
-					'ErrorMsg',
-				},
-			}, true, {})
+			echo_error("Can't write tmux buffer: %s", vim.trim(output))
 		end
 	end,
 	BufReadCmd_pane = function(opts)
