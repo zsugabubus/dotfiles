@@ -54,6 +54,7 @@ return {
 		bo.filetype = 'tmuxbuffers'
 		bo.readonly = true
 		bo.swapfile = false
+		api.nvim_buf_set_keymap(opts.buf, 'n', '<CR>', 'gf', {})
 	end,
 	BufReadCmd_buffer = function(opts)
 		local buffer_name = string.sub(opts.match, 15)
