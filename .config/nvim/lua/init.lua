@@ -604,8 +604,14 @@ api.nvim_create_autocmd('TermClose', {
 
 api.nvim_create_autocmd('FocusLost', {
 	group = group,
-	callback = function()
-		pcall(fn.writefile, { fn.expand('%:p') }, fn.stdpath('run') .. '/nvim_here')
+	callback = function(opts)
+		if vim.bo[opts.buf].buftype == '' then
+			pcall(
+				fn.writefile,
+				{ fn.expand('%:p') },
+				fn.stdpath('run') .. '/nvim_here'
+			)
+		end
 	end,
 })
 
