@@ -55,3 +55,8 @@ user_command('Ttermcapture', autoload_user_command, opts)
 user_command('Tfileyank', autoload_user_command, {
 	desc = 'Yank buffer path to new tmux buffer',
 })
+
+user_command('Tloadbuffer', autoload_user_command, {
+	nargs = '?',
+	desc = 'Load tmux buffer',
+})

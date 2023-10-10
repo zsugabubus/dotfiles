@@ -131,4 +131,22 @@ return {
 			fn.expand(vim.bo.buftype == '' and '%:p' or '%'),
 		})
 	end,
+	Tloadbuffer = function(opts)
+		local output = fn.system(opts.args == '' and {
+			'tmux',
+			'load-buffer',
+			'-',
+		} or {
+			'tmux',
+			'load-buffer',
+			'-b',
+			opts.args,
+			'-',
+		}, api.nvim_get_current_buf())
+		if vim.v.shell_error == 0 then
+			echo('Buffer written')
+		else
+			echo_error("Can't load buffer: %s", vim.trim(output))
+		end
+	end,
 }
