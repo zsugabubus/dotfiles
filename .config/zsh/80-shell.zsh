@@ -1,5 +1,5 @@
 REPORTTIME=1
-TIMEFMT='%J  %U user %S system %P cpu %*E total %MkB max %R faults'
+TIMEFMT=$'%J \t %*U user %*S sys %P cpu %*E real %MkB max %R faults'
 DIRSTACKSIZE=10
 unset MAILCHECK
 
