@@ -1,0 +1,440 @@
+#!/bin/luajit
+collectgarbage('stop')
+
+local function path_join(a, b)
+	if string.sub(b, 1, 1) == '/' then
+		return b
+	end
+	return a .. '/' .. b
+end
+
+local posix = {}
+do
+	local ffi = require('ffi')
+	local C = ffi.C
+
+	ffi.cdef([[
+int execv(char const *, char const *const[]);
+int pipe(int[2]);
+ssize_t write(int, void const *, size_t);
+int close(int);
+ssize_t readlink(char const *, char *, size_t);
+]])
+
+	local fildes = ffi.new('int[2]')
+	local pathbuf = ffi.new('char[256]')
+
+	local M = posix
+
+	function M.execv(file, args)
+		assert(
+			C.execv(file, ffi.new('char const *[?]', #args + 1 --[[ NULL ]], args))
+				== 0
+		)
+	end
+
+	function M.pipe()
+		assert(C.pipe(fildes) == 0)
+		return fildes[0], fildes[1]
+	end
+
+	function M.write(fd, str)
+		assert(C.write(fd, str, #str) == #str)
+	end
+
+	function M.close(fd)
+		assert(C.close(fd) == 0)
+	end
+
+	function M.readlink(path)
+		local lim = ffi.sizeof(pathbuf)
+		local ret = C.readlink(path, pathbuf, lim)
+		assert(ret >= 0)
+		-- Equality can signify overflow so it should be strictly less.
+		assert(ret < lim)
+		return ffi.string(pathbuf, ret)
+	end
+end
+
+local function class(cls, super)
+	cls.__index = cls
+	return setmetatable(cls, super)
+end
+
+local function super(cls)
+	return getmetatable(cls)
+end
+
+local Args = {}
+do
+	local M = class(Args)
+
+	function M.new(cls)
+		return setmetatable({}, cls)
+	end
+
+	function M:put(arg)
+		assert(type(arg) == 'string')
+		self[#self + 1] = arg
+	end
+
+	function M:put2(arg1, arg2)
+		self:put(arg1)
+		self:put(arg2)
+	end
+
+	function M:put3(arg1, arg2, arg3)
+		self:put(arg1)
+		self:put2(arg2, arg3)
+	end
+
+	function M:put_all(argv)
+		for i = 1, #argv do
+			self:put(argv[i])
+		end
+	end
+
+	function M:print()
+		for i, arg in ipairs(self) do
+			print(string.format('[%2d] = "%s"', i, arg))
+		end
+	end
+end
+
+local BwrapArgs = {}
+do
+	local M = class(BwrapArgs, Args)
+
+	function M:setenv(name, value)
+		self:put3('--setenv', name, value)
+	end
+
+	function M:copyenv(name)
+		local value = os.getenv(name)
+		if value then
+			self:setenv(name, value)
+		end
+	end
+
+	function M:bind(src, dest)
+		self:put3('--bind', src, dest or src)
+	end
+
+	function M:ro_bind(src, dest)
+		self:put3('--ro-bind', src, dest or src)
+	end
+
+	function M:dev_bind(src, dest)
+		self:put3('--dev-bind', src, dest or src)
+	end
+
+	-- Makes link target visible inside sandbox.
+	function M:bind_if_symlink(src)
+		local is_link, target = pcall(posix.readlink, src)
+		if is_link then
+			self:bind(target)
+		end
+	end
+
+	local host_home_dir = os.getenv('HOME')
+	local function make_user_paths(self, src, dest)
+		return path_join(host_home_dir, src), path_join(self.home_dir, dest or src)
+	end
+
+	function M:ro_bind_user(...)
+		self:ro_bind(make_user_paths(self, ...))
+	end
+
+	function M:bind_user(...)
+		self:bind(make_user_paths(self, ...))
+	end
+
+	function M:chdir(dest)
+		self.cwd = dest
+	end
+
+	function M:symlink(target, dest)
+		self:put3('--symlink', target, dest)
+	end
+
+	function M:dev(dest)
+		self:put2('--dev', dest)
+	end
+
+	function M:proc(dest)
+		self:put2('--proc', dest)
+	end
+
+	function M:hostname(name)
+		self:put2('--hostname', name)
+	end
+
+	function M:dir(dest)
+		self:put2('--dir', dest)
+	end
+
+	local function data_to_fd(data)
+		local r, w = posix.pipe()
+		posix.write(w, data)
+		posix.close(w)
+		return tostring(r)
+	end
+
+	function M:file(dest, data)
+		self:put3('--file', data_to_fd(data), dest)
+	end
+end
+
+local BwrapBuilder = {}
+do
+	local M = class(BwrapBuilder, BwrapArgs)
+
+	local function setup_base(self)
+		self:setenv('PATH', '/usr/local/bin:/usr/bin')
+		self:setenv('TERM', os.getenv('TERM'))
+		self:setenv('LANG', os.getenv('LANG'))
+		self:setenv('TZ', os.getenv('TZ'))
+		self:ro_bind('/usr')
+		self:symlink('usr/bin', '/sbin')
+		self:symlink('usr/bin', '/bin')
+		self:symlink('usr/lib', '/lib64')
+		self:symlink('usr/lib', '/lib')
+		self:dev('/dev')
+		self:proc('/proc')
+		self:dir('/tmp')
+		self:ro_bind('/etc/ld.so.cache')
+	end
+
+	local function setup_net(self)
+		self.share_net = true
+		self:ro_bind('/etc/ssl')
+		self:ro_bind('/etc/ca-certificates')
+		self:ro_bind('/etc/resolv.conf')
+		self:ro_bind('/etc/hosts')
+		self:ro_bind('/etc/gai.conf')
+	end
+
+	local function setup_gpu(self)
+		self:ro_bind('/sys/devices')
+		self:ro_bind('/sys/dev')
+		self:dev_bind('/dev/dri')
+	end
+
+	local function setup_alsa(self)
+		self.share_ipc = true
+		self:copyenv('ALSA')
+		self:ro_bind('/etc/alsa')
+		self:dev_bind('/dev/snd')
+	end
+
+	local function setup_x11(self)
+		self:setenv('DISPLAY', os.getenv('DISPLAY'))
+		self:ro_bind_user('.XCompose')
+	end
+
+	local function setup_gtk(self)
+		self:ro_bind('/etc/gtk-3.0')
+	end
+
+	local function setup_fontconfig(self)
+		self:ro_bind('/etc/fonts')
+		self:ro_bind('/var/cache/fontconfig')
+		self:ro_bind_user('.config/fontconfig')
+	end
+
+	local function setup_user(self, username)
+		local home_dir = '/home/' .. username
+		self:dir(home_dir)
+		self.home_dir = home_dir
+		self:setenv('HOME', home_dir)
+		self:chdir(home_dir)
+		self:file(
+			'/etc/passwd',
+			string.format(
+				'%s:x:%s:%s::%s:/bin/no-shell',
+				username,
+				os.getenv('UID'),
+				os.getenv('GID'),
+				home_dir
+			)
+		)
+		self:dir(path_join(self.home_dir, '.cache'))
+	end
+
+	function M.new(cls, opts)
+		local self = super(cls).new(cls)
+
+		-- Reset everything.
+		self:put('bwrap')
+		self:put('--as-pid-1')
+		self:put('--die-with-parent')
+		self:hostname(opts.hostname or 'sandbox')
+		self:put('--clearenv')
+		self:setenv('PWD', '/')
+		self:put('--new-session')
+
+		setup_base(self)
+		setup_user(self, opts.username or 'nobody')
+
+		if opts.allow_net then
+			setup_net(self)
+		end
+
+		if opts.allow_gpu then
+			setup_gpu(self)
+		end
+
+		if opts.allow_alsa then
+			setup_alsa(self)
+		end
+
+		if opts.allow_gui then
+			setup_x11(self)
+			setup_gtk(self)
+			setup_fontconfig(self)
+		end
+
+		if not self.share_ipc then
+			self:put('--unshare-ipc')
+		end
+		if not self.share_net then
+			self:put('--unshare-net')
+		end
+		self:put('--unshare-user')
+		self:put('--unshare-pid')
+		self:put('--unshare-uts')
+		self:put('--unshare-cgroup')
+
+		return self
+	end
+
+	local function finish_args(self)
+		self:put2('--chdir', self.cwd or '/')
+		self:put('--')
+	end
+
+	function M:program(file, args)
+		finish_args(self)
+		self:put(file)
+		self:put_all(args)
+	end
+
+	function M:shell(cmd)
+		finish_args(self)
+		self:put('dash')
+		self:put('-ceux')
+		self:put(cmd)
+	end
+
+	function M:exec()
+		posix.execv('/bin/bwrap', self)
+	end
+end
+
+local programs = {}
+do
+	local M = programs
+
+	function M.cargo(...)
+		local o = BwrapBuilder:new({
+			allow_net = true,
+		})
+
+		o:bind('.', '/build')
+		o:chdir('/build')
+		o:bind_if_symlink('target')
+
+		o:bind_user('.cargo', cargo_home)
+		o:ro_bind_user('.rustup', rustup_home)
+
+		o:copyenv('RUST_BACKTRACE')
+
+		o:program(...)
+		o:exec()
+	end
+
+	local function setup_user_xdg(o)
+		o:bind_user('mem', 'Downloads')
+	end
+
+	M['telegram-desktop'] = function(...)
+		local o = BwrapBuilder:new({
+			allow_net = true,
+			allow_gui = true,
+		})
+
+		setup_user_xdg(o)
+
+		local tdata = '.local/share/TelegramDesktop/tdata'
+		o:dir(path_join(o.home_dir, tdata))
+		o:symlink(tdata, path_join(o.home_dir, 'tdata-local'))
+		o:bind_user(tdata, 'tdata-host')
+
+		-- This piece of shit writes 3MB after every. single. download.
+		o:shell([[
+rsync() {
+	command rsync \
+		-avh \
+		--stats \
+		--delete-after \
+		--exclude user_data \
+		--exclude emoji \
+		--exclude dumps \
+		"$@"
+}
+rsync tdata-host/ tdata-local
+telegram-desktop
+rsync tdata-local/ tdata-host
+		]])
+		o:exec()
+	end
+
+	function M.firefox(...)
+		local o = BwrapBuilder:new({
+			allow_net = true,
+			allow_gui = true,
+			allow_gpu = true,
+			allow_alsa = true,
+		})
+
+		setup_user_xdg(o)
+
+		o:bind(path_join(os.getenv('XDG_RUNTIME_DIR'), 'firefox'))
+		o:ro_bind_user('.local/share/tridactyl')
+		o:ro_bind_user('.config/firefox')
+		o:ro_bind_user('.config/tridactyl')
+		o:ro_bind_user('.config/alsa')
+		o:ro_bind_user('.mozilla')
+		o:bind(os.getenv('XDG_RUNTIME_DIR') .. '/bus')
+		o:copyenv('XDG_RUNTIME_DIR')
+
+		o:program(...)
+		o:exec()
+	end
+end
+
+local function main()
+	local file = string.match(arg[0], '[^/]+$')
+	local args = arg
+
+	local program = programs[file]
+
+	if not program then
+		local buf = require('string.buffer').new()
+		buf:putf("Invalid program '%s'.", file)
+		local t = {}
+		for name in pairs(programs) do
+			table.insert(t, name)
+		end
+		table.sort(t)
+		buf:putf(' Available programs (%d):\n', #t)
+		for _, name in ipairs(t) do
+			buf:putf('  - %s\n', name)
+		end
+		error(buf)
+	end
+
+	program(file, args)
+end
+
+main()
