@@ -624,7 +624,12 @@ vim.g.loaded_node_provider = 0
 require('pack').setup({
 	{ 'tmux.nvim' },
 	{ 'ansiesc.nvim' },
-	{ 'cword.nvim' },
+	{
+		'cword.nvim',
+		after = function()
+			map('n', 'sc', '<Plug>(cword-toggle)')
+		end,
+	},
 	{ 'nvim-colorcolors' },
 	{ 'vim-bufgrep' },
 	{ 'vim-fizzy' },
