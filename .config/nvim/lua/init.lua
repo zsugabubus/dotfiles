@@ -634,7 +634,14 @@ require('pack').setup({
 	{ 'vim-bufgrep' },
 	{ 'vim-fizzy' },
 	{ 'vim-fuzzysearch' },
-	{ 'git.nvim' },
+	{
+		'git.nvim',
+		after = function()
+			map('n', 'sd', ':Gdiff<CR>')
+			map('n', 'sgb', ':Gblame<CR>')
+			map('x', 'sgl', ':Glog<CR>')
+		end,
+	},
 	{ 'vim-make' },
 	{ 'vim-mankey' },
 	{ 'vim-pastereindent' },
