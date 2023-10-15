@@ -213,7 +213,11 @@ fmap('n', '<C-q>', function()
 end)
 
 xmap('n', '<M-!>', function()
-	return ':edit ' .. xmapescape(fn.fnameescape(fn.expand('%:h'))) .. '/<C-Z>'
+	local dirname = fn.expand('%:h')
+	if dirname == '' then
+		dirname = '.'
+	end
+	return ':edit ' .. xmapescape(fn.fnameescape(dirname)) .. '/<C-Z>'
 end)
 smap('n', '<M-m>', ':Make<CR>')
 smap('n', '<M-o>', ':buffer #<CR>')
