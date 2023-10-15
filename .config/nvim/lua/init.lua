@@ -1,33 +1,35 @@
-local o, opt = vim.o, vim.opt
-local api, cmd, fn = vim.api, vim.cmd, vim.fn
+local api = vim.api
+local cmd = vim.cmd
+local fn = vim.fn
+local o = vim.o
+local opt = vim.opt
+
+local autocmd = api.nvim_create_autocmd
+local keymap = api.nvim_set_keymap
+local user_command = api.nvim_create_user_command
+
 local group = api.nvim_create_augroup('init', {})
 
+local MAP_OPTS = { noremap = true }
 local function map(mode, lhs, rhs)
-	return api.nvim_set_keymap(mode, lhs, rhs, {
-		noremap = true,
-	})
+	return keymap(mode, lhs, rhs, MAP_OPTS)
 end
 
 local function remap(mode, lhs, rhs)
-	return api.nvim_set_keymap(mode, lhs, rhs, {
-		noremap = false,
-	})
+	return keymap(mode, lhs, rhs, { noremap = false })
 end
 
+local SMAP_OPTS = { silent = true }
 local function smap(mode, lhs, rhs)
-	return api.nvim_set_keymap(mode, lhs, rhs, {
-		silent = true,
-	})
+	return keymap(mode, lhs, rhs, SMAP_OPTS)
 end
 
 local function fmap(mode, lhs, callback)
-	return api.nvim_set_keymap(mode, lhs, '', {
-		callback = callback,
-	})
+	return keymap(mode, lhs, '', { callback = callback })
 end
 
 local function xmap(mode, lhs, callback)
-	return api.nvim_set_keymap(mode, lhs, '', {
+	return keymap(mode, lhs, '', {
 		expr = true,
 		replace_keycodes = true,
 		callback = callback,
@@ -39,7 +41,7 @@ local function xmapescape(s)
 end
 
 local function filetype(pattern, callback)
-	return api.nvim_create_autocmd('FileType', {
+	return autocmd('FileType', {
 		group = group,
 		pattern = pattern,
 		callback = callback,
@@ -47,7 +49,7 @@ local function filetype(pattern, callback)
 end
 
 local function cabbr(lhs, rhs)
-	vim.cmd.cnoreabbrev(
+	cmd.cnoreabbrev(
 		'<expr>',
 		lhs,
 		string.format(
@@ -151,7 +153,7 @@ do
 		cmd.colorscheme('vivid')
 	end
 
-	api.nvim_create_autocmd('Signal', {
+	autocmd('Signal', {
 		group = group,
 		pattern = 'SIGUSR1',
 		callback = function()
@@ -287,7 +289,7 @@ cabbr('gr', 'GREP')
 cabbr('m', 'Man')
 cabbr('man', 'Man')
 
-api.nvim_create_user_command('Sweep', function()
+user_command('Sweep', function()
 	for _, buf in ipairs(api.nvim_list_bufs()) do
 		if fn.bufwinid(buf) == -1 then
 			pcall(api.nvim_buf_call, buf, cmd.bdelete)
@@ -295,7 +297,7 @@ api.nvim_create_user_command('Sweep', function()
 	end
 end, {})
 
-api.nvim_create_user_command('Fold', function(args)
+user_command('Fold', function(args)
 	local context = math.max(0, args.count)
 
 	cmd.normal({ args = { 'zE' }, bang = true })
@@ -332,7 +334,7 @@ end, {
 	count = true,
 })
 
-api.nvim_create_user_command('GREP', function(opts)
+user_command('GREP', function(opts)
 	if opts.args == '' then
 		opts.args = fn.getreg('/')
 	end
@@ -346,17 +348,17 @@ api.nvim_create_user_command('GREP', function(opts)
 	cmd.redraw()
 end, { nargs = '*' })
 
-api.nvim_create_user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
+user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
 
-api.nvim_create_autocmd({ 'FocusGained', 'VimEnter' }, {
+autocmd({ 'FocusGained', 'VimEnter' }, {
 	group = group,
 	callback = function()
 		local group = api.nvim_create_augroup('init/clipboard', {})
-		api.nvim_create_autocmd('TextYankPost', {
+		autocmd('TextYankPost', {
 			group = group,
 			once = true,
 			callback = function()
-				api.nvim_create_autocmd('FocusLost', {
+				autocmd('FocusLost', {
 					group = group,
 					callback = function()
 						fn.setreg('+', fn.getreg('@'))
@@ -370,7 +372,7 @@ api.nvim_create_autocmd({ 'FocusGained', 'VimEnter' }, {
 do
 	local colors_dir = fn.stdpath('config') .. '/colors'
 
-	api.nvim_create_autocmd('BufWritePost', {
+	autocmd('BufWritePost', {
 		group = group,
 		pattern = '*.vim,*.lua',
 		nested = true,
@@ -383,11 +385,11 @@ do
 	})
 end
 
-api.nvim_create_autocmd('BufNewFile', {
+autocmd('BufNewFile', {
 	group = group,
 	callback = function()
 		local function once(event, callback)
-			return api.nvim_create_autocmd(event, {
+			return autocmd(event, {
 				group = group,
 				buffer = 0,
 				once = true,
@@ -465,7 +467,7 @@ filetype('xml,html', function()
 end)
 
 -- vim.treesitter pulls in lot's of Lua code.
-api.nvim_create_autocmd('FileType', {
+autocmd('FileType', {
 	group = group,
 	pattern = 'typescriptreact',
 	once = true,
@@ -474,7 +476,7 @@ api.nvim_create_autocmd('FileType', {
 	end,
 })
 
-api.nvim_create_autocmd('TextChanged', {
+autocmd('TextChanged', {
 	group = group,
 	callback = function()
 		if vim.wo.diff then
@@ -483,7 +485,7 @@ api.nvim_create_autocmd('TextChanged', {
 	end,
 })
 
-api.nvim_create_autocmd('BufHidden,BufUnload', {
+autocmd('BufHidden,BufUnload', {
 	group = group,
 	callback = function()
 		if not vim.bo.buflisted then
@@ -492,14 +494,14 @@ api.nvim_create_autocmd('BufHidden,BufUnload', {
 	end,
 })
 
-api.nvim_create_autocmd('VimResized', {
+autocmd('VimResized', {
 	group = group,
 	callback = function()
 		cmd.wincmd('=')
 	end,
 })
 
-api.nvim_create_autocmd('StdinReadPost', {
+autocmd('StdinReadPost', {
 	group = group,
 	callback = function()
 		vim.bo.buftype = 'nofile'
@@ -508,12 +510,12 @@ api.nvim_create_autocmd('StdinReadPost', {
 	end,
 })
 
-api.nvim_create_autocmd('BufReadPost', {
+autocmd('BufReadPost', {
 	group = group,
 	callback = function()
 		local IGNORE_RE = vim.regex([[\vgit|mail]])
 
-		api.nvim_create_autocmd('FileType', {
+		autocmd('FileType', {
 			group = group,
 			buffer = 0,
 			once = true,
@@ -522,7 +524,7 @@ api.nvim_create_autocmd('BufReadPost', {
 					return
 				end
 
-				api.nvim_create_autocmd('BufEnter', {
+				autocmd('BufEnter', {
 					group = group,
 					buffer = 0,
 					once = true,
@@ -538,7 +540,7 @@ api.nvim_create_autocmd('BufReadPost', {
 	end,
 })
 
-api.nvim_create_autocmd('VimLeave', {
+autocmd('VimLeave', {
 	group = group,
 	callback = function()
 		if vim.v.dying == 0 and vim.v.exiting == 0 and vim.v.this_session ~= '' then
@@ -547,7 +549,7 @@ api.nvim_create_autocmd('VimLeave', {
 	end,
 })
 
-api.nvim_create_user_command('SourceSession', function()
+user_command('SourceSession', function()
 	cmd.source('Session.vim')
 end, {})
 
@@ -555,7 +557,7 @@ do
 	local IGNORE_WHITESPACE_RE =
 		vim.regex([[\v^(|text|markdown|mail)$|git|diff|log]])
 
-	api.nvim_create_autocmd('FileType,BufWinEnter,WinNew,ColorScheme', {
+	autocmd('FileType,BufWinEnter,WinNew,ColorScheme', {
 		group = group,
 		callback = function()
 			api.nvim_set_hl(0, 'WhitespaceError', {
@@ -568,7 +570,7 @@ do
 		end,
 	})
 
-	api.nvim_create_autocmd('FileType,BufWinEnter,WinNew', {
+	autocmd('FileType,BufWinEnter,WinNew', {
 		group = group,
 		callback = function()
 			if vim.w.japan then
@@ -587,7 +589,7 @@ do
 	})
 end
 
-api.nvim_create_user_command(
+user_command(
 	'Japan',
 	[[keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e]],
 	{}
@@ -595,14 +597,14 @@ api.nvim_create_user_command(
 
 map('t', '<C-v>', '<C-\\><C-n>')
 
-api.nvim_create_autocmd('TermClose', {
+autocmd('TermClose', {
 	group = group,
 	callback = function()
 		cmd.stopinsert()
 	end,
 })
 
-api.nvim_create_autocmd('FocusLost', {
+autocmd('FocusLost', {
 	group = group,
 	callback = function(opts)
 		if vim.bo[opts.buf].buftype == '' then
