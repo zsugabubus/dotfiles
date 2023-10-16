@@ -1,6 +1,9 @@
+local autocmd = vim.api.nvim_create_autocmd
+local user_command = vim.api.nvim_create_user_command
+
 local group = vim.api.nvim_create_augroup('git', {})
 
-vim.api.nvim_create_autocmd('BufReadCmd', {
+autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'git://*',
 	nested = true,
@@ -9,7 +12,7 @@ vim.api.nvim_create_autocmd('BufReadCmd', {
 	end,
 })
 
-vim.api.nvim_create_autocmd('BufReadCmd', {
+autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'git-blame://*',
 	nested = true,
@@ -24,31 +27,25 @@ _G.git_status = function()
 	return fn()
 end
 
-vim.api.nvim_create_user_command('Gblame', function(opts)
-	return require('git.command.blame')(opts)
-end, {
-	nargs = '*',
-	desc = 'Git blame',
-})
+user_command('Gblame', function(...)
+	return require('git.command.blame')(...)
+end, { nargs = '*' })
 
-vim.api.nvim_create_user_command('Gdiff', function(opts)
-	return require('git.command.diff')(opts)
-end, {
-	nargs = '?',
-	desc = 'Git diff',
-})
+user_command('Gdiff', function(...)
+	return require('git.command.diff')(...)
+end, { nargs = '?' })
 
 local function command_factory(package, opts)
 	return function(name)
-		return vim.api.nvim_create_user_command(name, function(opts)
-			return require(package)(opts)
+		return user_command(name, function(...)
+			return require(package)(...)
 		end, opts)
 	end
 end
 
 local function command_with_cmd_factory(package, opts)
 	return function(name)
-		return vim.api.nvim_create_user_command(name, function(opts)
+		return user_command(name, function(opts)
 			local cmd = string.sub(opts.name, 2)
 			return require(package)(cmd, opts)
 		end, opts)
@@ -58,7 +55,6 @@ end
 local command_log = command_factory('git.command.log', {
 	nargs = '*',
 	range = true,
-	desc = 'Git log',
 })
 command_log('Gl')
 command_log('Glog')
@@ -68,7 +64,6 @@ local command_show = command_factory('git.command.show', {
 	complete = function(...)
 		return require('git.complete.show')(...)
 	end,
-	desc = 'Git show',
 })
 command_show('Gs')
 command_show('Gshow')
@@ -78,7 +73,6 @@ local command_cd = command_with_cmd_factory('git.command.cd', {
 	complete = function(...)
 		return require('git.complete.cd')(...)
 	end,
-	desc = 'Cd to git directory',
 })
 command_cd('Gcd')
 command_cd('Glcd')
@@ -89,7 +83,6 @@ local command_edit = command_with_cmd_factory('git.command.edit', {
 	complete = function(...)
 		return require('git.complete.edit')(...)
 	end,
-	desc = 'Edit git file',
 })
 command_edit('Ge')
 command_edit('Gedit')
@@ -103,7 +96,6 @@ command_edit('Gvsplit')
 local command_grep = command_factory('git.command.show', {
 	nargs = '*',
 	bang = true,
-	desc = 'Git grep',
 })
 command_grep('Ggr')
 command_grep('Ggrep')
