@@ -276,7 +276,9 @@ map('o', '}', 'V}')
 
 map('n', 'z/', '<Plug>(FuzzySearchFizzy)')
 
+map('n', 'gr', ':GREP ')
 map('x', '//', 'y:GREP -F <C-r>=shellescape(@", 1)<CR><CR>')
+remap('x', 'gr', '//')
 
 cabbr('ccd', 'cd %:p:h<C-Z>')
 cabbr('lcd', 'lcd %:p:h<C-Z>')
