@@ -337,10 +337,6 @@ end, {
 })
 
 user_command('GREP', function(opts)
-	if opts.args == '' then
-		opts.args = fn.getreg('/')
-	end
-
 	local DO_NOT_QUOTE_RE = vim.regex([=[\v\c(^| )-[a-z-]|^['"]]=])
 
 	cmd.grep(
@@ -348,7 +344,7 @@ user_command('GREP', function(opts)
 			or fn.shellescape(opts.args, 1)
 	)
 	cmd.redraw()
-end, { nargs = '*' })
+end, { nargs = '+' })
 
 user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
 
