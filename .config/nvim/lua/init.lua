@@ -647,6 +647,7 @@ require('pack').setup({
 			map('n', 'sd', ':Gdiff<CR>')
 			map('n', 'sgb', ':Gblame<CR>')
 			map('x', 'sgl', ':Glog<CR>')
+			map('n', 'gf', '<Plug>(git-goto-file)')
 		end,
 	},
 	{ 'vim-make' },
