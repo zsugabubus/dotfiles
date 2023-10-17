@@ -1,33 +1,34 @@
+local keymap = vim.api.nvim_buf_set_keymap
+
 local opts = {
 	nowait = true,
 	silent = true,
 	noremap = true,
 }
 
-vim.api.nvim_buf_set_keymap(0, 'n', 'cb', 'Obreak<Esc>0', opts)
+vim.b.git_use_preview = true
 
-for c, s in
-	string.gmatch('ppick rreword eedit ssquash ffixup ddrop', '([^ ])([^ ]+)')
-do
-	vim.api.nvim_buf_set_keymap(
+keymap(0, 'n', 'cb', 'Obreak<Esc>0', opts)
+
+local function change_command(lhs, command)
+	keymap(
 		0,
 		'',
-		'c' .. c,
-		string.format(':normal! 0ce%s<Esc>W', s),
+		'c' .. lhs,
+		string.format(':normal! 0ce%s<Esc>W', command),
 		opts
 	)
 end
 
-for c, s in
-	string.gmatch('xexec llabel treset mmerge uupdate-ref', '([^ ])([^ ]*)')
-do
-	vim.api.nvim_buf_set_keymap(0, 'n', 'c' .. c, string.format('O%s ', s), opts)
-end
-
-vim.b.git_use_preview = true
+change_command('d', 'drop')
+change_command('e', 'edit')
+change_command('f', 'fixup')
+change_command('p', 'pick')
+change_command('r', 'reword')
+change_command('s', 'squash')
 
 for _, x in ipairs({ 'gf', '<CR>' }) do
-	vim.api.nvim_buf_set_keymap(0, 'n', x, '', {
+	keymap(0, 'n', x, '', {
 		nowait = true,
 		callback = function()
 			return require('git.buffer').goto_object()
