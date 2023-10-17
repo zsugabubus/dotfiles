@@ -35,6 +35,10 @@ user_command('Gdiff', function(...)
 	return require('git.command.diff')(...)
 end, { nargs = '?' })
 
+user_command('Gsign', function(...)
+	return require('git.command.sign')(...)
+end, {})
+
 local function command_factory(package, opts)
 	return function(name)
 		return user_command(name, function(...)
