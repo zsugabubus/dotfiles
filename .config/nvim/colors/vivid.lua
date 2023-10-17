@@ -72,11 +72,15 @@ local theme = {
 	Type = { fg = light and '#ed0085' or '#fd0069', bold = true },
 
 	DiffAdd = { bg = light and '#b5f78b' or nil, fg = not light and '#2edd2e' or nil },
-	DiffChange = { bg = light and '#FFDDA5' or nil, fg = not light and '#ffc028' or nil },
-	DiffDelete = { fg = light and '#9D1E17' or '#fff0f0', bg = light and '#ffa195' or '#EA1F24' },
+	DiffChange = { bg = light and '#ffdda5' or nil, fg = not light and '#ffc028' or nil },
+	DiffDelete = { bg = light and '#ffa195' or '#ea1f24', fg = light and '#9d1e17' or '#fff0f0' },
 	diffAdded = { fg = light and '#00a206' or '#2edd2e' },
 	diffRemoved = { fg = '#fe2e1f' },
 	diffText = { bg = light and '#ffafff' or '#ffc028', fg = not light and '#000000' or nil },
+
+	GitSignAdd = { bg = light and '#b5f78b' or '#2edd2e', fg = '#000000', bold = true, },
+	GitSignDelete = { bg = light and '#ffa195' or '#ea1f24', fg = light and '#000000' or '#ffffff', bold = true, },
+	GitSignChange = { bg = light and '#ffdda5' or '#ffc028', fg = '#000000', bold = true, },
 
 	Pmenu = { bg = '#e0e0e0', fg = '#303030' },
 	PmenuSbar = { bg = 'Pmenu' },
