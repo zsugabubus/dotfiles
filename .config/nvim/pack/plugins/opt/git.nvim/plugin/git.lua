@@ -1,4 +1,5 @@
 local autocmd = vim.api.nvim_create_autocmd
+local keymap = vim.api.nvim_set_keymap
 local user_command = vim.api.nvim_create_user_command
 
 local group = vim.api.nvim_create_augroup('git', {})
@@ -109,3 +110,9 @@ command_grep('Glgr')
 command_grep('Glgrep')
 command_grep('Glgrepa')
 command_grep('Glgrepadd')
+
+keymap('n', '<Plug>(git-goto-file)', '', {
+	callback = function()
+		require('git.buffer').goto_object()
+	end,
+})
