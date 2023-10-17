@@ -198,12 +198,18 @@ end
 function M.goto_object()
 	local cfile = vim.fn.expand('<cfile>')
 
-	local abfile = string.match(cfile, '^[ab]/(.*)$')
-	if abfile then
-		return M.goto_revision('@:' .. abfile)
+	if string.match(cfile, '^%x%x%x%x+$') then
+		M.goto_revision(cfile)
+		return
 	end
 
-	return M.goto_revision(Revision.join(M.current_rev(), cfile))
+	local rev = M.current_rev()
+	if rev == '' then
+		vim.api.nvim_feedkeys('gf', 'xtin', false)
+		return
+	end
+
+	return M.goto_revision(Revision.join(rev, cfile))
 end
 
 local function goto_parent_tree()
