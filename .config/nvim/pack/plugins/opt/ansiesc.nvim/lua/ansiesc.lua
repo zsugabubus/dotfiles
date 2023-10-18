@@ -54,26 +54,22 @@ local function parse_sgr(s)
 	return params
 end
 
+local function parse_sgr_color(params, i)
+	if params[i] == 2 then
+		return i + 4, string.format(
+			'#%02x%02x%02x',
+			params[i + 1],
+			params[i + 2],
+			params[i + 3]
+		)
+	elseif params[i] == 5 then
+		return i + 2, index2hex(params[i + 1])
+	end
+	return i, nil
+end
+
 local function apply_sgr(pen, params)
 	local i = 1
-
-	local function parse_color()
-		local color
-		if params[i] == 2 then
-			color = string.format(
-				'#%02x%02x%02x',
-				params[i + 1],
-				params[i + 2],
-				params[i + 3]
-			)
-			i = i + 4
-		elseif params[i] == 5 then
-			color = index2hex(params[i + 1])
-			i = i + 2
-		end
-		return color
-	end
-
 	while i <= #params do
 		local Ps = params[i]
 		i = i + 1
@@ -102,17 +98,17 @@ local function apply_sgr(pen, params)
 		elseif 30 <= Ps and Ps <= 37 then
 			pen.fg = index2hex(Ps - 30)
 		elseif Ps == 38 then
-			pen.fg = parse_color()
+			i, pen.fg = parse_sgr_color(params, i)
 		elseif Ps == 39 then
 			pen.fg = nil
 		elseif 40 <= Ps and Ps <= 47 then
 			pen.bg = index2hex(Ps - 40)
 		elseif Ps == 48 then
-			pen.bg = parse_color()
+			i, pen.bg = parse_sgr_color(params, i)
 		elseif Ps == 49 then
 			pen.bg = nil
 		elseif Ps == 58 then
-			pen.sp = parse_color()
+			i, pen.sp = parse_sgr_color(params, i)
 		elseif 90 <= Ps and Ps <= 97 then
 			pen.bg = index2hex(8 + (Ps - 90))
 		elseif 100 <= Ps and Ps <= 107 then
