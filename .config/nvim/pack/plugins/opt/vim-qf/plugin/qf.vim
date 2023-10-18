@@ -11,5 +11,6 @@ command! Qbuflisted call qf#buflisted()
 augroup qf
 	autocmd!
 	autocmd QuickFixCmdPost l* ++nested silent! botright lwindow
+	autocmd QuickFixCmdPost [^l]* ++nested if empty(getqflist()) | silent! cclose | else | botright copen | cfirst | endif
 	autocmd QuitPre * ++nested silent! lclose | silent! cclose
 augroup END
