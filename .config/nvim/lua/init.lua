@@ -222,7 +222,6 @@ xmap('n', '<M-!>', function()
 	end
 	return ':edit ' .. xmapescape(fn.fnameescape(dirname)) .. '/<C-Z>'
 end)
-smap('n', '<M-m>', ':Make<CR>')
 smap('n', '<M-o>', ':buffer #<CR>')
 smap('n', '<M-q>', ':quit<CR>')
 smap('n', '<M-w>', ':silent! wa<CR>')
@@ -650,7 +649,6 @@ require('pack').setup({
 			map('n', 'gf', '<Plug>(git-goto-file)')
 		end,
 	},
-	{ 'vim-make' },
 	{ 'vim-mankey' },
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
