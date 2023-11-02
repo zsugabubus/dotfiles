@@ -1,9 +1,0 @@
-[Unit]
-Description=Nvim First Run
-
-[Service]
-Type=oneshot
-ExecStart=nvim --headless -c exit
-
-[Install]
-WantedBy=default.target
