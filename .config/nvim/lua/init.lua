@@ -636,7 +636,6 @@ require('pack').setup({
 			map('n', 'sc', '<Plug>(cword-toggle)')
 		end,
 	},
-	{ 'nvim-colorcolors' },
 	{ 'vim-bufgrep' },
 	{ 'vim-fizzy' },
 	{ 'vim-fuzzysearch' },
