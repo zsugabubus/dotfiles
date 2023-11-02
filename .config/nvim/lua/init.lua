@@ -146,7 +146,7 @@ end
 do
 	local theme_file = fn.stdpath('config') .. '/theme.vim'
 
-	local function load_theme()
+	local function reload()
 		-- Avoid loading colorscheme twice.
 		vim.g.colors_name = nil
 		pcall(cmd.source, theme_file)
@@ -156,13 +156,14 @@ do
 	autocmd('Signal', {
 		group = group,
 		pattern = 'SIGUSR1',
+		nested = true,
 		callback = function()
-			load_theme()
+			reload()
 			cmd.redraw({ bang = true })
 		end,
 	})
 
-	load_theme()
+	reload()
 end
 
 map('c', '<C-a>', '<Home>')
