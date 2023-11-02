@@ -1,0 +1,11 @@
+[package]
+name = "nvim-plugin-colors-build"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+
+[dependencies]
+automata = { path = "../automata" }
+teddy = { path = "../teddy" }
+# quote = "1.0"

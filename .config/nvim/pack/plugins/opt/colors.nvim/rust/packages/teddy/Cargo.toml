@@ -1,0 +1,10 @@
+[package]
+name = "teddy"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+
+[dependencies]
+rand = "0.8.5"
+# fxhash = "0.2.1"

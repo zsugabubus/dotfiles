@@ -1,0 +1,9 @@
+[workspace]
+members = ["packages/*"]
+default-members = ["packages/nvim-plugin-colors"]
+resolver = "2"
+
+[profile.release]
+strip = true
+lto = true
+debug = true
