@@ -26,7 +26,7 @@ zle .split-undo
 if [[ -z $BUFFER && $content =~ '^\s*(git clone )?(git://\S*|https?://(git\.\S*|\S*\.git|github.com/[^/]*/[^/]*))/?[\n \t]*$' ]]; then
 	cd_m
 	LBUFFER="git clone ${(q-)match[2]} --depth 1"
-	print -z " cd -- ${${match[2]:t}%.git}"
+	RBUFFER=" && cd -- ${(q-)${match[2]:t}%.git}"
 	return
 fi
 
@@ -35,7 +35,7 @@ if [[ $content =~ '^[\t\n ]*git clone' ]]; then
 	cd_m
 	LBUFFER="$content --depth 1"
 	# Tail of first link (or 3rd word if empty).
-	print -z " cd -- ${${${${${(z)content}[(r)*://*]:-${${(z)content}[3]}}:t}}%.git}"
+	RBUFFER=" && cd -- ${${${${${(z)content}[(r)*://*]:-${${(z)content}[3]}}:t}}%.git}"
 	return
 fi
 
