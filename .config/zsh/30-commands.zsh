@@ -547,23 +547,6 @@ function oz() {
 	sed 's/  >\(.*\)<$/  |\1|/'
 }
 
-function webfs() {
-	readonly port=${1:-8080} auth=$2
-	if (( $(id -u) )); then
-		print -rP "%B%F{red}error:%f%b you cannot perform this operation unless you are root."
-		return 1
-	fi
-	{
-		print -rP "%B%F{blue}::%f Adding iptables rule...%b"
-		iptables -I NEW_TCP -p tcp --dport $port -j ACCEPT
-		print -rP "%B%F{blue}::%f Listening on port $port...%b"
-		nice -n7 webfsd -Fp $port -t3 -a0 -R. -findex.html -nlocalhost ${auth:+-b$auth}
-	} always {
-		print -rP "%B%F{blue}::%f Deleting iptables rule...%b"
-		iptables -D NEW_TCP -p tcp --dport $port -j ACCEPT
-	}
-}
-
 alias pl='pass login'
 compdef '_files -W ~/.config/passwords' pl
 
