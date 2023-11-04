@@ -547,8 +547,9 @@ function oz() {
 	sed 's/  >\(.*\)<$/  |\1|/'
 }
 
-alias pl='pass login'
-compdef '_files -W ~/.config/passwords' pl
+function pass() {
+	python -m my.pass "$@"
+}
 
 function pdfmerge() {
 	local out=a.pdf
