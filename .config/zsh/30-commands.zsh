@@ -617,7 +617,7 @@ function pyman() {
 	python -c "import $1; help($1)"
 }
 
-function start_x() {
+function sx start_x() {
 	emulate -L zsh
 
 	setopt nomonitor
