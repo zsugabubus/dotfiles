@@ -1,32 +1,50 @@
-#!/usr/bin/dash -eu
-trap 'exit 0' INT TERM QUIT
+#!/usr/bin/python
+from urllist import URLList
+from subprocess import check_output, run, Popen, CalledProcessError, DEVNULL
+import re
 
-url=$(
-	${0%/*}/urllist |
-	fizzy -1
-)
 
-for action; do
-	case $action in
-	open)
-		if pidof firefox >/dev/null; then
-			firefox "$url" >/dev/null 2>/dev/null &
-			return
-		fi
-		;;
+class MyURLList(URLList):
+    @classmethod
+    def map(cls, url):
+        return re.sub(r"\.gifv$", ".mp4", url)
 
-	copy)
-		printf %s "$url" |
-		{
-			xclip -i -selection clipboard ||
-			tmux load-buffer -
-		} &&
-		return
-		;;
 
-	*)
-		printf >&2 'unknown action: %s' "$action"
-		return 1
-		;;
-	esac
-done
+try:
+    url = check_output(
+        ["fizzy", "-1"], input="\n".join(MyURLList.from_mail()).encode("utf-8")
+    )
+except KeyboardInterrupt:
+    pass
+else:
+
+    def is_running(cmd):
+        try:
+            run(
+                ["pidof", cmd],
+                stdin=DEVNULL,
+                stdout=DEVNULL,
+                stderr=DEVNULL,
+                check=True,
+            )
+            return True
+        except CalledProcessError:
+            return False
+
+    import sys
+
+    for action in sys.argv:
+        match action:
+            case "open":
+                if is_running("firefox"):
+                    Popen(
+                        ["firefox", url],
+                        stdin=DEVNULL,
+                    )
+                    break
+            case "copy":
+                run(
+                    ["xclip", "-i", "-silent", "-selection", "clipboard"],
+                    input=url,
+                )
+                break
