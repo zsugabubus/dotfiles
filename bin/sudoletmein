@@ -1,2 +1,0 @@
-#!/usr/bin/dash
-SUDO_ASKPASS=~/bin/letmein sudo -Ap '' /bin/true
