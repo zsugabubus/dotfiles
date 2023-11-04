@@ -15,11 +15,6 @@ if [[ -o interactive ]]; then
 
 	if [[ $(zstat -F %j +mtime -- $zcal_state 2>/dev/null) != $(strftime %j) ]]; then
 		touch -- $zcal_state
-		{
-			date +%F
-			echo
-			cal -mw --color=always
-			(( $+aliases[ca] )) && ca
-		} | less
+		(( $+commands[remind] )) && ca
 	fi
 fi
