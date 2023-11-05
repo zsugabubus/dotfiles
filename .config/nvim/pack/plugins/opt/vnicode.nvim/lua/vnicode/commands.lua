@@ -30,7 +30,25 @@ end
 
 function M.view(opts)
 	local ucd = opts.fargs[1] or 'NamesList.txt'
-	vim.cmd.view(vim.fn.fnameescape(data.get_ucd_filename(ucd)))
+	local bufname = vim.fn.fnameescape(data.get_ucd_filename(ucd))
+	local new = vim.fn.bufnr(bufname) < 0
+
+	vim.cmd.view(bufname)
+
+	if new then
+		local buf = vim.fn.bufnr(bufname)
+
+		vim.bo.readonly = false
+
+		for ch, row in data.ucd_codepoints(ucd) do
+			pcall(vim.api.nvim_buf_set_text, buf, row - 1, 0, row - 1, 0, {
+				vim.fn.nr2char(ch) .. '\t',
+			})
+		end
+
+		vim.bo.readonly = true
+		vim.bo.modified = false
+	end
 end
 
 function M.view_complete(prefix)

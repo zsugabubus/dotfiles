@@ -1,5 +1,6 @@
 local M = {}
 
+local N = 512
 local cache = {}
 
 local function flush_cache(ucd)
@@ -52,8 +53,6 @@ function M.install(ucd)
 end
 
 function M.get(ucd, codepoint)
-	local N = 512
-
 	local a = cache[ucd]
 	if not a then
 		local buf = vim.fn.bufnr(M.get_ucd_filename(ucd), true)
@@ -63,7 +62,7 @@ function M.get(ucd, codepoint)
 		cache[ucd] = a
 
 		for i, line in ipairs(vim.api.nvim_buf_get_lines(buf, 0, -1, true)) do
-			local m = string.match(line, '^([^;]+);')
+			local m = string.match(line, '^[0-9A-F]+')
 			if m then
 				local cp = tonumber(m, 16)
 				local n = math.floor(cp / N)
@@ -82,6 +81,27 @@ function M.get(ucd, codepoint)
 	if row then
 		local line = vim.api.nvim_buf_get_lines(a.buf, row - 1, row, true)[1]
 		return unpack(vim.split(line, ';'))
+	end
+end
+
+function M.ucd_codepoints(ucd)
+	local co = coroutine.create(function()
+		M.get(ucd, 0)
+		for ai, b in pairs(assert(cache[ucd])) do
+			if type(ai) == 'number' then
+				for bi, row in pairs(b) do
+					local ch = ai * N + bi
+					coroutine.yield(ch, row)
+				end
+			end
+		end
+	end)
+
+	return function()
+		local ok, ch, row = coroutine.resume(co)
+		if ok then
+			return ch, row
+		end
 	end
 end
 
