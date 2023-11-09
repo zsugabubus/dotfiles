@@ -79,7 +79,7 @@ function M.toggle(b)
 			end
 
 			if not timer:is_active() then
-				update()
+				vim.schedule(update)
 			end
 			timer:start(100, 0, timer_callback)
 		end,
