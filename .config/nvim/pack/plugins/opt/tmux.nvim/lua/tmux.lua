@@ -76,7 +76,7 @@ return {
 				string.gsub(buffer_name, '[#}]', '\\%0')
 			),
 			'-F',
-			'',
+			'found',
 			';',
 			'load-buffer',
 			'-b',
@@ -85,7 +85,11 @@ return {
 		}, opts.buf)
 		if vim.v.shell_error == 0 then
 			vim.bo[opts.buf].modified = false
-			echo('"%s"%s written', buffer_name, output == '\n' and '' or ' [New]')
+			echo(
+				'"%s"%s written',
+				buffer_name,
+				output == 'found\n' and '' or ' [New]'
+			)
 		else
 			echo_error("Can't write tmux buffer: %s", vim.trim(output))
 		end
