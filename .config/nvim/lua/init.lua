@@ -203,7 +203,7 @@ map('n', 'U', '')
 
 -- Reindent before append.
 xmap('n', 'A', function()
-	return api.nvim_get_current_line() ~= '' and 'A' or 'cc'
+	return fn.col('$') > 1 and 'A' or 'cc'
 end)
 
 smap('n', 'dar', ':.argdelete<bar>argument<CR>')
