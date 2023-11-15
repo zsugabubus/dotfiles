@@ -32,8 +32,8 @@ source $my_dotdir/colors-256.theme
 
 # After theme to ensure correct ordering.
 color index		brightcolor34	default		"~N|~O"
-color index		brightred	default		"~D"
-color index		brightcolor233	brightred	"~D~F"
 color index		color235	color117	"~T"
+color index		brightcolor232	color226	"~F"
+color index		brightcolor196	default		"~D"
 
 # vim: noet ts=8 ft=muttrc
