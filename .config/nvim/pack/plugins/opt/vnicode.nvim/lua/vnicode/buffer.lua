@@ -4,6 +4,10 @@ local fn = vim.fn
 
 local M = {}
 
+local function is_normal_mode()
+	return string.sub(api.nvim_get_mode().mode, 1, 1) == 'n'
+end
+
 function M.get_cursor_text()
 	local row, col = unpack(api.nvim_win_get_cursor(0))
 	local line = api.nvim_buf_get_text(0, row - 1, col, row - 1, -1, {})[1]
@@ -23,7 +27,7 @@ function M.get_visual_text()
 end
 
 function M.get_current_text()
-	if vim.api.nvim_get_mode().mode == 'n' then
+	if is_normal_mode() then
 		return M.get_cursor_text()
 	else
 		return M.get_visual_text()
