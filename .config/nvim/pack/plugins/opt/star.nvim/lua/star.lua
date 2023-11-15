@@ -5,6 +5,10 @@ local go = vim.go
 
 local M = {}
 
+local function is_normal_mode()
+	return string.sub(api.nvim_get_mode().mode, 1, 1) == 'n'
+end
+
 local function get_keyword(buf, row, col)
 	local re = vim.regex(
 		string.format(
@@ -67,7 +71,7 @@ function M.search(flags)
 	local text
 	local offset
 
-	if api.nvim_get_mode().mode == 'n' then
+	if is_normal_mode() then
 		local row, col = unpack(api.nvim_win_get_cursor(0))
 		local word, start_col, end_col = get_keyword(0, row, col)
 

@@ -28,6 +28,13 @@ describe('*', function()
 		assert.are.same(vim.fn.getreg('/'), [[\V\<\\\n*\>]])
 	end)
 
+	test('works in terminal normal mode', function()
+		vim.cmd.terminal('echo abc')
+		vim.wait(50)
+		feedkeys('*')
+		assert.are.same(vim.fn.getreg('/'), [[\V\<abc\>]])
+	end)
+
 	test('can find current word', function()
 		set_lines({ '   abc abc' })
 		feedkeys('*r*')
