@@ -1,6 +1,6 @@
 local group = vim.api.nvim_create_augroup('init/statusline', {})
 
-_G.statusline_lnum_diff = ''
+vim.g.lnum_status = ''
 local prev_lnum = 0
 
 vim.api.nvim_create_autocmd('CursorMoved', {
@@ -8,7 +8,7 @@ vim.api.nvim_create_autocmd('CursorMoved', {
 	callback = function()
 		local lnum = vim.api.nvim_win_get_cursor(0)[1]
 		if lnum ~= prev_lnum then
-			_G.statusline_lnum_diff = string.format('%+d', lnum - prev_lnum)
+			vim.g.lnum_status = string.format('%+d', lnum - prev_lnum)
 			prev_lnum = lnum
 		end
 	end,
@@ -40,7 +40,7 @@ vim.api.nvim_create_autocmd(
 				"%(  %{&spell?&spelllang:''} %)",
 				"%(  %{substitute(&binary?'bin':(!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').','.&fileformat,'^utf-8,unix$','','')} %)",
 				"%( %{!&binary&&!empty(&ft)?&ft:''} %)",
-				"%3* %l(%{luaeval('statusline_lnum_diff')})/%L,%-3v",
+				'%3* %l(%{lnum_status})/%L,%-3v',
 			})
 		end,
 	}
