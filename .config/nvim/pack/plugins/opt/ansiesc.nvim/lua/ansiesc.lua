@@ -56,12 +56,13 @@ end
 
 local function parse_sgr_color(params, i)
 	if params[i] == 2 then
-		return i + 4, string.format(
-			'#%02x%02x%02x',
-			params[i + 1],
-			params[i + 2],
-			params[i + 3]
-		)
+		return i + 4,
+			string.format(
+				'#%02x%02x%02x',
+				params[i + 1],
+				params[i + 2],
+				params[i + 3]
+			)
 	elseif params[i] == 5 then
 		return i + 2, index2hex(params[i + 1])
 	end
