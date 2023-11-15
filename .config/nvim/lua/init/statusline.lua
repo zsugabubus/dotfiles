@@ -32,7 +32,7 @@ vim.api.nvim_create_autocmd(
 		callback = function()
 			vim.wo.statusline = table.concat({
 				"%(%#StatusLineModeTerm#%{'t'==mode()?'  T ':''}%#StatusLineModeTermEnd#%{'t'==mode()?' ':''}%#StatusLine#%)",
-				"%(%( %{!&diff&&argc()>#1?(argidx()+1).' of '.argc():''} %)%(  %{luaeval('git_status()')} %) %)",
+				"%(%( %{!&diff&&argc()>#1?(argidx()+1).' of '.argc():''} %)%(  %{v:lua.git_status()} %) %)",
 				'%n:%f%( %h%w%r%)%( %m%)',
 				'%9*%#StatusLine#',
 				'%= ',
