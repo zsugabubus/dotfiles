@@ -1,0 +1,2 @@
+#!/bin/dash
+git diff --staged --check
