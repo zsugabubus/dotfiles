@@ -3,7 +3,7 @@ local function assert_lines(expected)
 	assert.are.same(expected, got)
 end
 
-local function feedkeys(keys)
+local function feed(keys)
 	return vim.api.nvim_feedkeys(keys, 'xtim', true)
 end
 
@@ -27,17 +27,17 @@ describe('text', function()
 			-- Set line without markers.
 			set_lines({ template('', '') })
 
-			feedkeys(keys)
+			feed(keys)
 
 			-- Makers are there.
 			assert_lines({ template("'", "'") })
 
 			-- In normal mode and cursor sits at the right end.
-			feedkeys('rX')
+			feed('rX')
 			assert_lines({ template("'", 'X') })
 
 			-- Visual selection is correct.
-			feedkeys('gvd')
+			feed('gvd')
 			assert_lines({ (string.gsub(input, '<.*>', '')) })
 		end)
 	end
@@ -90,9 +90,9 @@ describe('text', function()
 
 	test('multi-line', function()
 		set_lines({ 'a', 'b', '.' })
-		feedkeys("Vjsc'")
+		feed("Vjsc'")
 		assert_lines({ "'", 'a', 'b', "'", '.' })
-		feedkeys('rX')
+		feed('rX')
 		assert_lines({ "'", 'a', 'X', "'", '.' })
 	end)
 end)
@@ -102,20 +102,20 @@ describe('map', function()
 		describe(map, function()
 			test('charwise', function()
 				set_lines({ '_' })
-				feedkeys('vs' .. map)
+				feed('vs' .. map)
 				assert_lines({ expected_charwise })
 			end)
 
 			if expected_linewise then
 				test('single-line', function()
 					set_lines({ '_' })
-					feedkeys('Vs' .. map)
+					feed('Vs' .. map)
 					assert_lines({ expected_linewise[1], '_', expected_linewise[2] })
 				end)
 
 				test('multi-line', function()
 					set_lines({ '>', 'a', 'b', 'c', '<' })
-					feedkeys('jVjjs' .. map)
+					feed('jVjjs' .. map)
 					assert_lines({
 						'>',
 						expected_linewise[1],

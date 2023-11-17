@@ -9,7 +9,7 @@ local function assert_lines(expected_lines)
 	assert.are.same(expected_lines, got_lines)
 end
 
-local function feedkeys(keys)
+local function feed(keys)
 	return vim.api.nvim_feedkeys(keys, 'xtim', true)
 end
 
@@ -25,7 +25,7 @@ describe('toggle single line', function()
 				function()
 					vim.o.cms = cms
 					set_lines({ input })
-					feedkeys('gcc')
+					feed('gcc')
 					assert_lines({ expected_output })
 				end
 			)
@@ -70,9 +70,9 @@ describe('toggle multiple lines', function()
 
 			vim.o.cms = '//%s'
 			set_lines(UNCOMMENTED)
-			feedkeys(keys)
+			feed(keys)
 			assert_lines(COMMENTED)
-			feedkeys(keys)
+			feed(keys)
 			assert_lines(UNCOMMENTED)
 		end)
 	end
@@ -93,7 +93,7 @@ describe('toggle mixed lines', function()
 			'aaa*',
 			'*bbb',
 		})
-		feedkeys('2gcc')
+		feed('2gcc')
 		assert_lines({
 			'',
 			'* aaa*',
@@ -107,7 +107,7 @@ describe('toggle mixed lines', function()
 			'* aaa',
 			'ccc*',
 		})
-		feedkeys('2gcc')
+		feed('2gcc')
 		assert_lines({
 			'',
 			'aaa',
@@ -129,17 +129,17 @@ describe('filetype', function()
 		end)
 
 		test('uses default commentstring', function()
-			feedkeys('gcc')
+			feed('gcc')
 			assert_lines({
 				'# text',
 			})
 		end)
 
 		test('uses custom commentstring', function()
-			feedkeys('gcc')
-			feedkeys('gcc')
+			feed('gcc')
+			feed('gcc')
 			vim.o.cms = '//%s'
-			feedkeys('gcc')
+			feed('gcc')
 			assert_lines({
 				'// text',
 			})
@@ -157,10 +157,10 @@ describe('filetype', function()
 		end)
 
 		test('uses custom commentstring', function()
-			feedkeys('gcc')
-			feedkeys('gcc')
+			feed('gcc')
+			feed('gcc')
 			vim.o.cms = 'BLA %s BLA'
-			feedkeys('gcc')
+			feed('gcc')
 			assert_lines({
 				'BLA code BLA',
 			})
@@ -178,7 +178,7 @@ describe('filetype', function()
 		end)
 
 		test('guesses ts correctly', function()
-			feedkeys('1Ggcc3Ggcc')
+			feed('1Ggcc3Ggcc')
 			assert_lines({
 				'// (',
 				'<html/>',
@@ -188,7 +188,7 @@ describe('filetype', function()
 
 		test('guesses html correctly', function()
 			pending('How to test treesitter?')
-			feedkeys('2Ggcc')
+			feed('2Ggcc')
 			assert_lines({
 				'(',
 				'{/* <html/> */}',

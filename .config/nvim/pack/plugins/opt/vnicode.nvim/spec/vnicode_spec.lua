@@ -1,4 +1,4 @@
-local function feedkeys(keys)
+local function feed(keys)
 	return vim.api.nvim_feedkeys(keys, 'xtim', true)
 end
 
@@ -29,7 +29,7 @@ end
 test('ga, visual mode, multi-line', function()
 	set_lines({ 'a', 'b' })
 	local nvim_echo = spy.on(vim.api, 'nvim_echo')
-	feedkeys('vjga')
+	feed('vjga')
 	assert.spy(nvim_echo).was_called_with(
 		match.chunk_text([[< a >97, U+0061, Ll/LATIN SMALL LETTER A
 < ^J >10, U+000A, Cc/EOL (<control>)
@@ -44,7 +44,7 @@ describe('g8, normal mode:', function()
 		test(string.format("'%s'", s), function()
 			set_lines({ s })
 			local nvim_echo = spy.on(vim.api, 'nvim_echo')
-			feedkeys('g8')
+			feed('g8')
 			assert
 				.spy(nvim_echo)
 				.was_called_with(match.chunk_text(expected), false, match.is_table())

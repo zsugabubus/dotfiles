@@ -3,7 +3,7 @@ local function assert_lines(expected)
 	assert.are.same(expected, got)
 end
 
-local function feedkeys(keys)
+local function feed(keys)
 	return vim.api.nvim_feedkeys(keys, 'xtim', true)
 end
 
@@ -14,15 +14,15 @@ end
 local function case_modes(init_lhs, lhs, input, expected)
 	test('visual mode', function()
 		set_lines(input)
-		feedkeys(init_lhs)
-		feedkeys(string.format('v%sd', lhs))
+		feed(init_lhs)
+		feed(string.format('v%sd', lhs))
 		assert_lines(expected)
 	end)
 
 	test('operator-pending mode', function()
 		set_lines(input)
-		feedkeys(init_lhs)
-		feedkeys(string.format('d%s', lhs))
+		feed(init_lhs)
+		feed(string.format('d%s', lhs))
 		assert_lines(expected)
 	end)
 end

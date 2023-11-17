@@ -3,7 +3,7 @@ local function assert_lines(expected)
 	assert.are.same(expected, got)
 end
 
-local function feedkeys(keys)
+local function feed(keys)
 	return vim.api.nvim_feedkeys(keys, 'xtim', true)
 end
 
@@ -54,20 +54,20 @@ describe('zip', function()
 
 		test('gf', function()
 			local bufnr = vim.fn.bufnr()
-			feedkeys('gf')
+			feed('gf')
 			assert.are_not.same(bufnr, vim.fn.bufnr())
 		end)
 
 		test('<CR>', function()
 			local bufnr = vim.fn.bufnr()
-			feedkeys('\r')
+			feed('\r')
 			assert.are_not.same(bufnr, vim.fn.bufnr())
 		end)
 	end)
 
 	describe('file', function()
 		before_each(function()
-			feedkeys('gf')
+			feed('gf')
 		end)
 
 		test('content', function()
