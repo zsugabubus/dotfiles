@@ -471,6 +471,12 @@ filetype('xml,html', function()
 		'xmllint --encode UTF-8 --html --nowrap --dropdtd --format -'
 end)
 
+filetype('directory', function()
+	local keymap = api.nvim_buf_set_keymap
+	keymap(0, 'n', 'gu', '<Plug>(explorer-goto-parent)', SMAP_OPTS)
+	keymap(0, 'n', 'g.', '<Plug>(explorer-cd)', SMAP_OPTS)
+end)
+
 -- vim.treesitter pulls in lot's of Lua code.
 autocmd('FileType', {
 	group = group,
@@ -697,6 +703,7 @@ require('pack').setup({
 			map('', '<space>', '<Plug>(jumpmotion)')
 		end,
 	},
+	{ 'explorer.nvim' },
 	{
 		'nvim-treesitter',
 		enabled = false,
