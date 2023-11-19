@@ -13,7 +13,7 @@ local NIL_STAT = {
 
 function _G.loadfile(path)
 	local trace = Trace.trace
-	local span = trace(path)
+	local span = trace('loadfile ' .. path)
 
 	local uv = vim.loop
 

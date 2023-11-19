@@ -1,28 +1,15 @@
-local M = {}
-local Trace = require('trace')
-local uv = vim.loop
 local api = vim.api
-local pairs, ipairs = pairs, ipairs
-local string_format, string_find, string_gsub, string_sub =
-	string.format, string.find, string.gsub, string.sub
+local ipairs = ipairs
+local string_find = string.find
+local string_format = string.format
+local string_gmatch = string.gmatch
+local string_gsub = string.gsub
+local string_sub = string.sub
 local table_insert = table.insert
+local type = type
+local uv = vim.loop
 
-local path2plugin = {}
 local lua2path = {}
-
-local source_blacklist
-
-local function scandir_empty()
-	-- Just return nil.
-end
-
-local function scandir(path)
-	local handle = uv.fs_scandir(path)
-	if handle then
-		return uv.fs_scandir_next, handle
-	end
-	return scandir_empty
-end
 
 local function echo_error(...)
 	api.nvim_echo({
@@ -31,7 +18,39 @@ local function echo_error(...)
 	}, true, {})
 end
 
-local function vim_cmd_source(file)
+local function dir_empty()
+	-- Do nothing.
+end
+
+local function dir(path)
+	local handle = uv.fs_scandir(path)
+	if handle then
+		return uv.fs_scandir_next, handle
+	end
+	return dir_empty
+end
+
+-- pack_plugin_dirs[name] = {package_dir}/pack/*/opt/{name}
+local function find_package_plugins(package_dir, pack_plugin_dirs)
+	local pack_dir = package_dir .. '/pack'
+	for star, kind in dir(pack_dir) do
+		if kind ~= 'file' then
+			local opt_dir = string_format('%s/%s/opt', pack_dir, star)
+			for name, kind in dir(opt_dir) do
+				if kind ~= 'file' then
+					local path = string_format('%s/%s', opt_dir, name)
+					if not pack_plugin_dirs[name] then
+						pack_plugin_dirs[name] = path
+					end
+				end
+			end
+		end
+	end
+end
+
+local function source_file(file, trace)
+	local span = trace('source ' .. file)
+
 	local ok, err
 	if string_sub(file, -4) == '.lua' then
 		ok, err = loadfile(file)
@@ -39,78 +58,22 @@ local function vim_cmd_source(file)
 			ok, err = pcall(ok)
 		end
 	else
-		ok, err = pcall(vim.cmd.source, file)
+		ok, err = pcall(api.nvim_cmd, { cmd = 'source', args = { file } }, {})
 	end
 	if not ok then
 		echo_error('Error detected while processing %s:\n%s', file, err)
 	end
+
+	trace(span)
 end
 
--- &packpath/pack/*/opt/{name}[/after]
-function get_packpath_dirs()
-	local span = Trace.trace('find pack plugins')
-
-	local before, after = {}, {}
-
-	for _, root in ipairs(vim.opt.packpath:get()) do
-		local pack = root .. '/pack'
-		for star, kind in scandir(pack) do
-			if kind ~= 'file' then
-				local opt = string_format('%s/%s/opt', pack, star)
-				for name, kind in scandir(opt) do
-					if kind ~= 'file' then
-						local path = string_format('%s/%s', opt, name)
-						before[name] = before[name] or {}
-						table_insert(before[name], path)
-
-						after[name] = after[name] or {}
-						local after_path = path .. '/after'
-						if uv.fs_access(after_path, 'x') then
-							table_insert(after[name], after_path)
-						end
-					end
-				end
-			end
-		end
-	end
-
-	Trace.trace(span)
-
-	return before, after
-end
-
-local function is_source_allowed(file)
-	for _, x in ipairs(source_blacklist) do
-		if string_find(file, x, 1, true) then
-			return false
-		end
-	end
-	return true
-end
-
-local function source_file(file, plugin)
-	if not is_source_allowed(file) then
-		return
-	end
-
-	local span = Trace.trace(
-		string_format(
-			'source %s (from %s)',
-			file,
-			plugin and plugin.id or '<no plugin>'
-		)
-	)
-	vim_cmd_source(file)
-	Trace.trace(span)
-end
-
-local function source_dir(dir, plugin)
-	for name, kind in scandir(dir) do
-		local path = string_format('%s/%s', dir, name)
+local function source_dir(path, trace)
+	for name, kind in dir(path) do
+		local path = string_format('%s/%s', path, name)
 		if kind == 'directory' then
-			source_dir(path, plugin)
+			source_dir(path, trace)
 		else
-			source_file(path, plugin)
+			source_file(path, trace)
 		end
 	end
 end
@@ -125,7 +88,18 @@ local function package_loader(name)
 		end
 	end
 
-	local dot = string_find(name, '.', 1, true) or (#name + 1)
+	local path = lua2path[name]
+	if path then
+		local code = loadfile(path .. '/init.lua')
+		if code then
+			return code
+		end
+	end
+
+	local dot = string_find(name, '.', 1, true)
+	if not dot then
+		return
+	end
 	local head = string_sub(name, 1, dot - 1)
 	local path = lua2path[head]
 	if path then
@@ -144,119 +118,188 @@ local function package_loader(name)
 	end
 end
 
-local function initialize_plugins()
-	local trace = Trace.trace
-	assert(vim.v.vim_did_enter == 0, 'Vim already initialized')
+local function plugin_before(plugin)
+	if plugin.before then
+		local ok, err = pcall(plugin.before, plugin)
+		if not ok then
+			echo_error('Plugin %s: before() failed:\n%s', plugin.name, err)
+		end
+	end
+end
 
-	local span = trace('get &runtimepath')
+local function plugin_after(plugin)
+	if plugin.after then
+		local ok, err = pcall(plugin.after, plugin)
+		if not ok then
+			echo_error('Plugin %s: after() failed:\n%s', plugin.name, err)
+		end
+	end
+end
 
-	-- PERF: Much faster than vim.opt.runtimepath:get().
-	local rtp = api.nvim_list_runtime_paths()
+local function plugin_main_setup(plugin)
+	local opts = plugin.opts
+	if type(opts) == 'function' then
+		opts = opts()
+	end
+	require(plugin.main).setup(opts)
+end
 
-	local span = trace(span, 'initialize lua package cache')
+local function plugin_setup(plugin)
+	if plugin.opts == nil then
+		return
+	end
 
-	for _, path in ipairs(rtp) do
-		local dir = path .. '/lua'
-		for name in scandir(dir) do
-			local path = string_format('%s/%s', dir, name)
-			lua2path[name] = path
+	if not plugin.main then
+		echo_error(
+			'Plugin %s specified opts but main is unset (maybe not a Lua plugin)',
+			plugin.name
+		)
+		return
+	end
+
+	local ok, err = pcall(plugin_main_setup, plugin)
+	if not ok then
+		echo_error(
+			'Plugin %s: require(%s).setup({opts}) failed:\n%s',
+			plugin.name,
+			vim.inspect(plugin.main),
+			err
+		)
+	end
+end
+
+local function setup(opts)
+	local trace = require('trace').trace
+
+	local setup_span = trace('setup')
+
+	local pack_plugin_dirs = {}
+	local rtp_plugin_files = {}
+	local rtp_before = {}
+	local rtp_middle = {}
+	local rtp_after = {}
+	local source_files_before = {}
+	local source_dirs_before = {}
+	local source_dirs_after = {}
+	local path2plugin = {}
+
+	local span = trace('find pack plugins')
+
+	for package_dir in string_gmatch(api.nvim_get_option('packpath'), '[^,]+') do
+		find_package_plugins(package_dir, pack_plugin_dirs)
+	end
+
+	local span = trace(span, 'find rtp plugins')
+
+	for path in string_gmatch(api.nvim_get_option('runtimepath'), '[^,]+') do
+		table_insert(rtp_middle, path)
+
+		local plugin_dir = path .. '/plugin'
+		for name in dir(plugin_dir) do
+			if not rtp_plugin_files[name] then
+				local path = string_format('%s/%s', plugin_dir, name)
+				rtp_plugin_files[name] = path
+			end
 		end
 	end
 
-	table_insert(package.loaders, 2, package_loader)
+	local span = trace(span, 'add plugins')
+
+	local plugins = {}
+	for _, plugin in ipairs(opts) do
+		if plugin and plugin.enabled ~= false then
+			plugin.name = plugin[1]
+
+			local plugin_dir = pack_plugin_dirs[plugin.name]
+			if plugin_dir then
+				table_insert(rtp_before, plugin_dir)
+				table_insert(source_dirs_before, plugin_dir .. '/plugin')
+				path2plugin[plugin_dir] = plugin
+
+				local after_dir = plugin_dir .. '/after'
+				if uv.fs_access(after_dir, 'x') then
+					table_insert(rtp_after, after_dir)
+					table_insert(source_dirs_after, after_dir .. '/plugin')
+					path2plugin[after_dir] = plugin
+				end
+			else
+				local plugin_file = rtp_plugin_files[plugin.name]
+				if plugin_file then
+					table_insert(source_files_before, plugin_file)
+				else
+					echo_error('Plugin %s not found', plugin.name)
+					goto not_found
+				end
+			end
+
+			table_insert(plugins, plugin)
+
+			plugin_before(plugin)
+		end
+		::not_found::
+	end
+
+	local span = trace(span, 'set &runtimepath')
+
+	local rtp = rtp_before
+	for _, path in ipairs(rtp_middle) do
+		table_insert(rtp, path)
+	end
+	for _, path in ipairs(rtp_after) do
+		table_insert(rtp, path)
+	end
+	api.nvim_set_option('runtimepath', table.concat(rtp, ','))
 
 	local span = trace(span, 'initialize plugins')
 
-	-- Plugin loading is taken over.
-	vim.o.loadplugins = false
-
-	-- PERF: Same but uses much less stat calls:
-	-- vim.cmd "runtime! plugin/**/*.vim plugin/**/*.lua"
-	for _, path in ipairs(rtp) do
-		source_dir(path .. '/plugin', path2plugin[path])
+	if api.nvim_get_vvar('vim_did_enter') == 0 then
+		table_insert(package.loaders, 2, package_loader)
+		api.nvim_set_option('loadplugins', false)
 	end
 
-	trace(span)
-end
+	local lua_span = trace('initialize lua package cache')
 
-function M.plugin_missing(plugin)
-	echo_error("Plugin '%s' not found", plugin.id)
-end
-
-function M.plugin_before(plugin)
-	if plugin.before then
-		return plugin:before()
-	end
-end
-
-function M.plugin_after(plugin)
-	if plugin.after then
-		return plugin:after()
-	end
-end
-
-function M.setup(spec, opts)
-	local trace = Trace.trace
-	local setup_span = trace('setup')
-
-	collectgarbage('stop')
-
-	opts = opts or {}
-	source_blacklist = opts.source_blacklist or {}
-
-	local pp_before, pp_after = get_packpath_dirs()
-	local rtp_prepend, rtp_append = {}, {}
-
-	-- Same as :packadd! but does fewer stat calls.
-	local function packadd(plugin)
-		local found = false
-		for _, x in ipairs(pp_before[plugin.id] or {}) do
-			table_insert(rtp_prepend, x)
-			path2plugin[x] = plugin
-			found = true
-		end
-		for _, x in ipairs(pp_after[plugin.id] or {}) do
-			table_insert(rtp_append, x)
-			path2plugin[x] = plugin
-			found = true
-		end
-		return found
-	end
-
-	local plugins = {}
-	for _, plugin in ipairs(spec) do
-		plugin.id = plugin[1]
-
-		if
-			plugin.enabled ~= false and (packadd(plugin) or M.plugin_missing(plugin))
-		then
-			plugins[plugin.id] = plugin
-			M.plugin_before(plugin)
+	for _, plugin_dir in ipairs(rtp) do
+		local plugin = path2plugin[plugin_dir]
+		local lua_dir = plugin_dir .. '/lua'
+		for name, kind in dir(lua_dir) do
+			lua2path[name] = string_format('%s/%s', lua_dir, name)
+			if plugin and not plugin.main then
+				if kind == 'directory' then
+					plugin.main = name
+				else
+					plugin.main = string_sub(name, 1, -5)
+				end
+			end
 		end
 	end
 
-	local span = trace('set &runtimepath')
-	-- PERF: Modify 'runtimepath' in a batch call since it is much faster.
-	local rtp = vim.opt.runtimepath
-	rtp:prepend(rtp_prepend)
-	rtp:append(rtp_append)
-	trace(span)
+	trace(lua_span)
 
-	initialize_plugins()
+	for _, file in ipairs(source_files_before) do
+		source_file(file, trace)
+	end
+	for _, dir in ipairs(source_dirs_before) do
+		source_dir(dir, trace)
+	end
+	for _, dir in ipairs(source_dirs_after) do
+		source_dir(dir, trace)
+	end
 
-	local span = trace('after plugins')
+	local span = trace(span, 'after plugins')
 
-	for _, plugin in pairs(plugins) do
-		local span = trace(plugin.id)
-		M.plugin_after(plugin)
+	for _, plugin in ipairs(plugins) do
+		local span = trace(plugin.name)
+		plugin_setup(plugin)
+		plugin_after(plugin)
 		trace(span)
 	end
 
 	trace(span)
 
-	collectgarbage('restart')
-
 	trace(setup_span)
 end
 
-return M
+return {
+	setup = setup,
+}

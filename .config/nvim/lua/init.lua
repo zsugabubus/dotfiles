@@ -715,23 +715,8 @@ require('pack').setup({
 			})
 		end,
 	},
-}, {
-	source_blacklist = {
-		'/runtime/plugin/gzip.vim',
-		'/runtime/plugin/health.vim',
-		'/runtime/plugin/matchit.vim',
-		'/runtime/plugin/matchparen.vim',
-		'/runtime/plugin/netrwPlugin.vim',
-		'/runtime/plugin/rplugin.vim',
-		'/runtime/plugin/shada.vim',
-		'/runtime/plugin/spellfile.vim',
-		'/runtime/plugin/tarPlugin.vim',
-		'/runtime/plugin/tohtml.vim',
-		'/runtime/plugin/tutor.vim',
-		'/runtime/plugin/zipPlugin.vim',
-		'/vimfiles/plugin/black.vim',
-		'/vimfiles/plugin/fzf.vim',
-	},
+	{ 'editorconfig.lua' },
+	{ 'man.lua' },
 })
 
 require('init.statusline')
