@@ -49,9 +49,19 @@ function M.startuptime(verbose)
 
 	Trace.setup({ verbose = verbose })
 	local root = Trace.trace('startup')
+	local span
 
 	vim.api.nvim_create_autocmd('VimEnter', {
+		once = true,
 		callback = function()
+			span = Trace.trace('VimEnter')
+		end,
+	})
+
+	vim.api.nvim_create_autocmd('UIEnter', {
+		once = true,
+		callback = function()
+			Trace.trace(span, 'UIEnter')
 			Trace.trace(root)
 			vim.api.nvim_echo({ { M.report(root), 'Normal' } }, true, {})
 		end,
