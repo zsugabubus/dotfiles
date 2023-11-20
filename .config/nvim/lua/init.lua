@@ -2,7 +2,6 @@ local api = vim.api
 local cmd = vim.cmd
 local fn = vim.fn
 local o = vim.o
-local opt = vim.opt
 
 local autocmd = api.nvim_create_autocmd
 local keymap = api.nvim_set_keymap
@@ -67,12 +66,15 @@ end
 
 o.autoindent = true
 o.autowrite = true
+o.cinoptions = 't0,:0,l1'
+o.completeopt = 'menu,longest,noselect,preview'
 o.copyindent = true
 o.cursorline = true
 o.cursorlineopt = 'number'
+o.diffopt = 'closeoff,filler,vertical,algorithm:patience'
 o.expandtab = false
 o.fileignorecase = true
-o.foldopen = true
+o.foldopen = ''
 o.grepformat = '%f:%l:%c:%m'
 o.grepprg = 'noglob rg --vimgrep --smart-case'
 o.hidden = true
@@ -86,6 +88,7 @@ o.number = true
 o.relativenumber = true
 o.scrolloff = 5
 o.shiftwidth = 0
+o.shortmess = o.shortmess .. 'mrFI'
 o.showmode = false
 o.sidescrolloff = 23
 o.smartcase = true
@@ -96,19 +99,11 @@ o.tabline = '%!v:lua.tabline()'
 o.timeoutlen = 600
 o.title = true
 o.wildcharm = '<C-Z>'
+o.wildignore = '.git,*.lock,*~,node_modules'
 o.wildignorecase = true
 o.wildmenu = true
+o.wildmode = 'list:longest,full'
 o.wrap = false
-opt.cinoptions:append({ 't0', ':0', 'l1' })
-opt.completeopt = { 'menu', 'longest', 'noselect', 'preview' }
-opt.diffopt = { 'closeoff', 'filler', 'vertical', 'algorithm:patience' }
-opt.matchpairs:append({ '‘:’', '“:”' })
-opt.nrformats:remove({ 'octal' })
-opt.path:append({ 'src/**', 'include/**' })
-opt.shortmess:append('mrFI')
-opt.suffixes:append({ '' }) -- Rank files lower with no suffix.
-opt.wildignore:append({ '.git', '*.lock', '*~', 'node_modules' })
-opt.wildmode = { 'list:longest', 'full' }
 
 if fn.filewritable(fn.stdpath('config')) then
 	o.undofile = true
@@ -121,26 +116,11 @@ end
 o.list = true
 o.showbreak = '\\'
 if vim.env.TERM == 'linux' then
-	opt.listchars = {
-		eol = '$',
-		tab = '> ',
-		trail = '+',
-		extends = ':',
-		precedes = ':',
-		nbsp = '_',
-	}
+	o.listchars = 'eol:$,tab:> ,trail:+,extends::,precedes::,nbsp:_'
 else
 	o.termguicolors = true
-	opt.listchars = {
-		eol = '$',
-		tab = '│ ',
-		tab = '› ',
-		trail = '•',
-		extends = '⟩',
-		precedes = '⟨',
-		space = '·',
-		nbsp = '␣',
-	}
+	o.listchars =
+		'eol:$,tab:› ,trail:•,extends:⟩,precedes:⟨,nbsp:␣,space:·'
 end
 
 do
