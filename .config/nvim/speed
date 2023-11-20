@@ -1,6 +1,2 @@
-#!/bin/zsh
-time (
-for i in {0..50}; do
-	nvim -i NONE --startuptime /dev/null -cq
-done
-)
+#!/bin/dash
+hyperfine --warmup 5 'nvim -i NONE -cq'
