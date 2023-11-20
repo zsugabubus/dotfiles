@@ -63,6 +63,7 @@ set -g history-limit 20000
 set -gF prefix "#{?@nested,C-b,C-t}"
 set -g renumber-windows on
 set -g repeat-time 418
+set -g set-clipboard off
 set -g set-titles on
 set -g set-titles-string '[#S]:#W #T'
 set -g status-interval 20
