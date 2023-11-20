@@ -657,7 +657,10 @@ require('pack').setup({
 	},
 	{ 'textobjects.nvim' },
 	{ 'vim-tilde' },
-	{ 'vnicode.nvim' },
+	{
+		'vnicode.nvim',
+		opts = {},
+	},
 	{ 'vim-woman' },
 	{ 'wtf.nvim' },
 	{ 'vimdent.nvim' },

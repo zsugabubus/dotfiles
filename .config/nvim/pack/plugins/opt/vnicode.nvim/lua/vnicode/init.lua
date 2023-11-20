@@ -1,11 +1,49 @@
-local M = {
-	config = {
-		data_dir = vim.fn.stdpath('data') .. '/vnicode/',
-	},
-}
+local M = {}
 
 function M.setup(opts)
-	M.config.data_dir = opts.data_dir or M.config.data_dir
+	local default_config = {
+		data_dir = vim.fn.stdpath('data') .. '/vnicode/',
+	}
+
+	M.config = setmetatable(opts or {}, { __index = default_config })
+
+	local api = vim.api
+	local keymap = api.nvim_set_keymap
+	local user_command = api.nvim_create_user_command
+
+	keymap('', 'ga', '', {
+		callback = function()
+			require('vnicode.commands').ga()
+		end,
+	})
+
+	keymap('', 'g8', '', {
+		callback = function()
+			require('vnicode.commands').g8()
+		end,
+	})
+
+	user_command('Vnicode', function(...)
+		require('vnicode.commands').view(...)
+	end, {
+		nargs = '?',
+		complete = function(...)
+			return require('vnicode.commands').view_complete(...)
+		end,
+	})
+
+	user_command('VnicodeInstall', function(...)
+		require('vnicode.commands').install(...)
+	end, {
+		nargs = '?',
+		complete = function(...)
+			return require('vnicode.commands').install_complete(...)
+		end,
+	})
+
+	user_command('VnicodeUpdate', function(opts)
+		require('vnicode.commands').update(opts)
+	end, {})
 end
 
 return M
