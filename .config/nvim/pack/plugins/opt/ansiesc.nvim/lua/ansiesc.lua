@@ -1,54 +1,68 @@
 local M = {}
+
 local ns = vim.api.nvim_create_namespace('ansiesc')
+local group = vim.api.nvim_create_augroup('ansiesc', {})
+
 local hl_cache = {}
+local palette
 
-local function index2hex(i)
-	local r, g, b
-	if i < 16 then
-		if i == 7 then
-			r, g, b = 0xc0, 0xc0, 0xc0
-		elseif i == 8 then
-			r, g, b = 0x80, 0x80, 0x80
-		else
-			local c = i < 8 and 0x80 or 0xff
-
-			local function f(a)
-				return bit.band(i, a) ~= 0 and c or 0
-			end
-
-			r, g, b = f(1), f(2), f(4)
-		end
-	elseif i < 16 + 6 * 6 * 6 then
-		i = i - 16
-
-		local function f(a)
-			local k = math.floor(i / a) % 6
-			if k == 0 then
-				return 0
-			else
-				return 0x37 + 0x28 * k
-			end
-		end
-
-		r, g, b = f(36), f(6), f(1)
-	else
-		i = i - (16 + 6 * 6 * 6)
-		local c = 0x08 + 0x0a * i
-		r, g, b = c, c, c
-	end
+local function color(r, g, b)
 	return string.format('#%02x%02x%02x', r, g, b)
+end
+
+local function get_palette()
+	local palette = {}
+
+	for _, x in ipairs({ { 0, 0x80 }, { 0, 0xff } }) do
+		for _, b in ipairs(x) do
+			for _, g in ipairs(x) do
+				for _, r in ipairs(x) do
+					table.insert(palette, color(r, g, b))
+				end
+			end
+		end
+	end
+
+	palette[7] = color(0xc0, 0xc0, 0xc0)
+	palette[8] = color(0x80, 0x80, 0x80)
+
+	local cube = { 0 }
+	for i = 1, 5 do
+		table.insert(cube, 0x37 + 0x28 * i)
+	end
+
+	for _, r in ipairs(cube) do
+		for _, g in ipairs(cube) do
+			for _, b in ipairs(cube) do
+				table.insert(palette, color(r, g, b))
+			end
+		end
+	end
+
+	for i = 0, 23 do
+		local c = 0x08 + 0x0a * i
+		table.insert(palette, color(c, c, c))
+	end
+
+	return palette
+end
+
+local function get_palette_color(i)
+	if not palette then
+		palette = get_palette()
+	end
+	return palette[i + 1]
 end
 
 local function parse_sgr(s)
 	local params = {}
 
-	string.gsub(s, '%d+', function(n)
+	for n in string.gmatch(s, '%d+') do
 		table.insert(params, tonumber(n))
-	end)
+	end
 
-	-- Default.
 	if #params == 0 then
-		params[1] = 0
+		return { 0 }
 	end
 
 	return params
@@ -56,15 +70,9 @@ end
 
 local function parse_sgr_color(params, i)
 	if params[i] == 2 then
-		return i + 4,
-			string.format(
-				'#%02x%02x%02x',
-				params[i + 1],
-				params[i + 2],
-				params[i + 3]
-			)
+		return i + 4, color(params[i + 1], params[i + 2], params[i + 3])
 	elseif params[i] == 5 then
-		return i + 2, index2hex(params[i + 1])
+		return i + 2, get_palette_color(params[i + 1])
 	end
 	return i, nil
 end
@@ -97,13 +105,13 @@ local function apply_sgr(pen, params)
 		elseif Ps == 27 then
 			pen.reverse = nil
 		elseif 30 <= Ps and Ps <= 37 then
-			pen.fg = index2hex(Ps - 30)
+			pen.fg = get_palette_color(Ps - 30)
 		elseif Ps == 38 then
 			i, pen.fg = parse_sgr_color(params, i)
 		elseif Ps == 39 then
 			pen.fg = nil
 		elseif 40 <= Ps and Ps <= 47 then
-			pen.bg = index2hex(Ps - 40)
+			pen.bg = get_palette_color(Ps - 40)
 		elseif Ps == 48 then
 			i, pen.bg = parse_sgr_color(params, i)
 		elseif Ps == 49 then
@@ -111,21 +119,20 @@ local function apply_sgr(pen, params)
 		elseif Ps == 58 then
 			i, pen.sp = parse_sgr_color(params, i)
 		elseif 90 <= Ps and Ps <= 97 then
-			pen.bg = index2hex(8 + (Ps - 90))
+			pen.bg = get_palette_color(8 + (Ps - 90))
 		elseif 100 <= Ps and Ps <= 107 then
-			pen.bg = index2hex(8 + (Ps - 100))
+			pen.bg = get_palette_color(8 + (Ps - 100))
 		end
 	end
-
 	return pen
 end
 
-local function add_highlight(buffer, lnum, col_start, col_end, pen)
-	if col_start == col_end or vim.tbl_isempty(pen) then
-		return
-	end
+local function is_default_pen(pen)
+	return vim.tbl_isempty(pen)
+end
 
-	local hl_group = string.format(
+local function pen_to_hl_group(pen)
+	return string.format(
 		'_ansiesc_%s_%s_%s_%s%s%s%s',
 		pen.fg and string.sub(pen.fg, 2) or '',
 		pen.bg and string.sub(pen.bg, 2) or '',
@@ -135,6 +142,30 @@ local function add_highlight(buffer, lnum, col_start, col_end, pen)
 		pen.underline and 'u' or '',
 		pen.reverse and 'r' or ''
 	)
+end
+
+local function hl_group_to_pen(hl_group)
+	local fg, bg, sp, b, i, u, r = string.match(
+		hl_group,
+		'^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)$'
+	)
+	return {
+		fg = fg ~= '' and '#' .. fg or nil,
+		bg = bg ~= '' and '#' .. bg or nil,
+		sp = sp ~= '' and '#' .. sp or nil,
+		bold = b ~= '' or nil,
+		italic = i ~= '' or nil,
+		underline = u ~= '' or nil,
+		reverse = r ~= '' or nil,
+	}
+end
+
+local function add_highlight(buffer, lnum, col_start, col_end, pen)
+	if col_start == col_end or is_default_pen(pen) then
+		return
+	end
+
+	local hl_group = pen_to_hl_group(pen)
 	if not hl_cache[hl_group] then
 		hl_cache[hl_group] = true
 		vim.api.nvim_set_hl(0, hl_group, pen)
@@ -146,8 +177,7 @@ end
 function M.highlight_buffer(buffer)
 	local pen = {}
 
-	local lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
-	for lnum, line in ipairs(lines) do
+	for lnum, line in ipairs(vim.api.nvim_buf_get_lines(buffer, 0, -1, false)) do
 		local starts = {}
 		local sgrs = {}
 		local original = line
@@ -165,7 +195,7 @@ function M.highlight_buffer(buffer)
 				table.insert(starts, i - 1)
 				table.insert(sgrs, s)
 
-				line = (string.sub(line, 1, i - 1) .. string.sub(line, j + 1))
+				line = string.sub(line, 1, i - 1) .. string.sub(line, j + 1)
 				start = i
 			end
 
@@ -190,23 +220,12 @@ function M.highlight_buffer(buffer)
 	end
 end
 
-vim.api.nvim_create_autocmd('Colorscheme', {
+vim.api.nvim_create_autocmd('ColorScheme', {
+	group = group,
 	callback = function()
 		for hl_group in pairs(hl_cache) do
-			local _, _, fg, bg, sp, b, i, u, r = string.find(
-				hl_group,
-				'_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)'
-			)
-			local hl = {
-				fg = fg ~= '' and '#' .. fg or nil,
-				bg = bg ~= '' and '#' .. bg or nil,
-				sp = sp ~= '' and '#' .. sp or nil,
-				bold = b ~= '',
-				italic = i ~= '',
-				underline = u ~= '',
-				reverse = r ~= '',
-			}
-			vim.api.nvim_set_hl(0, hl_group, hl)
+			local pen = hl_group_to_pen(hl_group)
+			vim.api.nvim_set_hl(0, hl_group, pen)
 		end
 	end,
 })
