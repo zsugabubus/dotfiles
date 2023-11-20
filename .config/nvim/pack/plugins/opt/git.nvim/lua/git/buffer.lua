@@ -1,11 +1,11 @@
-local M = {}
-
 local cli = require('git.cli')
 local Repository = require('git.repository')
 local Revision = require('git.revision')
 local utils = require('git.utils')
 
 local api = vim.api
+
+local M = {}
 
 function M.buf_pipe(buf, opts)
 	assert(buf ~= 0)

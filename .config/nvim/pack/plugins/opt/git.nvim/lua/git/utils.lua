@@ -1,6 +1,6 @@
-local M = {}
-
 local api = vim.api
+
+local M = {}
 
 function M.gesc(pattern)
 	-- FIXME: May not be totally correct.

@@ -1,12 +1,14 @@
-local M = {}
-
 local Repository = require('git.repository')
 local Revision = require('git.revision')
 local buffer = require('git.buffer')
 local cli = require('git.cli')
 local utils = require('git.utils')
 
-local api, fn = vim.api, vim.fn
+local api = vim.api
+local fn = vim.fn
+
+local M = {}
+
 local ns = api.nvim_create_namespace('git/blame')
 
 function M.autocmd(opts)

@@ -2,12 +2,6 @@ local api = vim.api
 local fn = vim.fn
 local uv = vim.loop
 
-local get_lines = api.nvim_buf_get_lines
-local schedule = vim.schedule
-local set_extmark = api.nvim_buf_set_extmark
-local uv_is_active = uv.is_active
-local uv_timer_start = uv.timer_start
-
 local M = {}
 
 local ADDED = {
@@ -29,11 +23,12 @@ local LIMIT_1 = {
 	limit = 1,
 }
 
+local ns = api.nvim_create_namespace('git.sign')
+local timer = uv.new_timer()
+
 local a_buf, b_buf
 local attached = {}
-local ns = api.nvim_create_namespace('git.sign')
 local should_update
-local timer = uv.new_timer()
 
 local function detach()
 	a_buf = nil
@@ -50,10 +45,16 @@ local diff_opts = {
 	on_hunk = function(_, a_count, b_row, b_count)
 		b_row = b_row - 1
 		if b_count == 0 then
-			set_extmark(b_buf, ns, b_row, 0, DELETED)
+			api.nvim_buf_set_extmark(b_buf, ns, b_row, 0, DELETED)
 		else
 			for row = b_row, b_row + b_count - 1 do
-				set_extmark(b_buf, ns, row, 0, a_count == 0 and ADDED or CHANGED)
+				api.nvim_buf_set_extmark(
+					b_buf,
+					ns,
+					row,
+					0,
+					a_count == 0 and ADDED or CHANGED
+				)
 			end
 		end
 	end,
@@ -72,15 +73,15 @@ local function update()
 		return
 	end
 
-	local a = table.concat(get_lines(a_buf, 0, -1, true), '\n')
-	local b = table.concat(get_lines(b_buf, 0, -1, true), '\n')
+	local a = table.concat(api.nvim_buf_get_lines(a_buf, 0, -1, true), '\n')
+	local b = table.concat(api.nvim_buf_get_lines(b_buf, 0, -1, true), '\n')
 	vim.diff(a, b, diff_opts)
 end
 
 local function timer_callback()
 	if should_update then
 		should_update = false
-		schedule(update)
+		vim.schedule(update)
 	else
 		timer:stop()
 	end
@@ -92,7 +93,7 @@ local attach_opts = {
 			return true
 		end
 
-		if not uv_is_active(timer) then
+		if not timer:is_active() then
 			if
 				a_buf == buf
 				or #api.nvim_buf_get_extmarks(
@@ -104,7 +105,7 @@ local attach_opts = {
 					)
 					== 0
 			then
-				schedule(update)
+				vim.schedule(update)
 			else
 				should_update = true
 			end
@@ -113,7 +114,7 @@ local attach_opts = {
 		end
 
 		local timeout = api.nvim_get_mode().mode == 'n' and 50 or 1500
-		uv_timer_start(timer, timeout, 0, timer_callback)
+		timer:start(timeout, 0, timer_callback)
 	end,
 	on_detach = function(_, buf)
 		attached[buf] = nil
@@ -167,7 +168,7 @@ function M.is_enabled()
 	return a_buf ~= nil
 end
 
-function setup_highlights()
+local function setup_highlights()
 	local hl = vim.api.nvim_set_hl
 	hl(0, 'GitSignAdd', {
 		default = true,

@@ -1,8 +1,8 @@
-local M = {}
-
 local cli = require('git.cli')
 
 local uv = vim.loop
+
+local M = {}
 
 local redraw_timer = uv.new_timer()
 
@@ -21,42 +21,42 @@ local function redraw_status_callback()
 end
 
 local function redraw_status()
-	if not uv.is_active(redraw_timer) then
-		uv.timer_start(redraw_timer, 5, 0, redraw_status_callback)
+	if not redraw_timer:is_active() then
+		redraw_timer:start(5, 0, redraw_status_callback)
 	end
 end
 
-local function put_flag(buf, name, value)
+local function flag(name, value)
 	if value == true or value == 1 then
-		return buf:put(name)
+		return name
 	elseif value and value > 1 then
-		return buf:put(name, value)
+		return name .. value
 	end
+	return ''
 end
 
-function update_statusline(repo)
-	local buf = require('string.buffer').new()
+local function update_statusline(repo)
+	local s = ''
 
-	put_flag(buf, 'BARE:', repo.bare)
-	put_flag(buf, 'detached ', repo.detached)
-	buf:put(repo.head or 'undefined')
-	put_flag(buf, '+', repo.staged)
-	put_flag(buf, '*', repo.modified)
-	put_flag(buf, '$', repo.stashed)
+	s = s .. flag('BARE:', repo.bare)
+	s = s .. flag('detached ', repo.detached)
+	s = s .. (repo.head or 'undefined')
+	s = s .. flag('+', repo.staged)
+	s = s .. flag('*', repo.modified)
+	s = s .. flag('$', repo.stashed)
 	if repo.ahead == 0 and repo.behind == 0 then
-		buf:put('=')
+		s = s .. '='
 	else
-		put_flag(buf, '<', repo.behind)
-		put_flag(buf, '>', repo.ahead)
+		s = s .. flag('<', repo.behind)
+		s = s .. flag('>', repo.ahead)
 	end
 	if repo.operation then
-		buf:put('|', repo.operation)
+		s = s .. '|' .. repo.operation
 		if repo.step then
-			buf:put(' ', repo.step, '/', repo.total)
+			s = s .. ' ' .. repo.step .. '/' .. repo.total
 		end
 	end
 
-	local s = buf:tostring()
 	if s ~= repo.statusline then
 		repo.statusline = s
 		redraw_status()
@@ -298,8 +298,12 @@ function M.from_path(path)
 
 			local timer = uv.new_timer()
 
+			local function timer_callback()
+				update_outdated(repo)
+			end
+
 			repo.fs_event = uv.new_fs_event()
-			uv.fs_event_start(repo.fs_event, git_dir, {}, function(err, filename)
+			repo.fs_event:start(git_dir, {}, function(err, filename)
 				if filename == 'HEAD' or filename == 'HEAD.lock' then
 					repo.outdated.head = true
 				elseif filename == 'index' then
@@ -321,13 +325,9 @@ function M.from_path(path)
 					return
 				end
 
-				if uv.is_active(timer) then
-					return
+				if not timer:is_active() then
+					timer:start(100, 0, timer_callback)
 				end
-
-				uv.timer_start(timer, 100, 0, function()
-					update_outdated(repo)
-				end)
 			end)
 
 			update_head(repo)
@@ -370,7 +370,7 @@ function M.await(repo)
 	return repo_by_path[repo.dir]
 end
 
-function is_status_enabled(buf)
+local function is_status_enabled(buf)
 	local buftype = vim.bo[buf].buftype
 	if buftype == 'help' or buftype == 'quickfix' then
 		return false

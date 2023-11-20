@@ -1,10 +1,11 @@
-local M = {}
 local uv = vim.loop
+
+local M = {}
 
 local function read_start_buf(stream, mode, callback)
 	if mode == 'full' then
 		local buf = require('string.buffer'):new()
-		uv.read_start(stream, function(err, data)
+		stream:read_start(function(err, data)
 			assert(not err, err)
 			if data then
 				return buf:put(data)
@@ -13,13 +14,13 @@ local function read_start_buf(stream, mode, callback)
 			end
 		end)
 	elseif mode == 'stream' then
-		uv.read_start(stream, function(err, data)
+		stream:read_start(function(err, data)
 			assert(not err, err)
 			return callback(data)
 		end)
 	elseif mode == 'line' then
 		local partial = ''
-		uv.read_start(stream, function(err, data)
+		stream:read_start(function(err, data)
 			assert(not err, err)
 			if data then
 				for line, eol in string.gmatch(partial .. data, '([^\n]*)(\n?)') do
@@ -55,7 +56,7 @@ function M.make_args(repo, args, with_argv0)
 		table.insert(t, repo.dir)
 	else
 		table.insert(t, '--git-dir')
-		table.insert(t, repo.git_dir)
+		table.insert(t, assert(repo.git_dir))
 		if repo.work_tree then
 			table.insert(t, '--work-tree')
 			table.insert(t, repo.work_tree)
@@ -75,7 +76,7 @@ function M.run(repo, opts)
 	local stdout = uv.new_pipe()
 	local stderr = opts.on_stderr and uv.new_pipe() or nil
 
-	local handle = uv.spawn('git', {
+	local process = uv.spawn('git', {
 		args = args,
 		stdio = { nil, stdout, stderr },
 	}, function(code)
@@ -94,7 +95,7 @@ function M.run(repo, opts)
 		end)
 	end
 
-	return handle
+	return process
 end
 
 function M.buf_run(buf, repo, opts)
@@ -104,7 +105,7 @@ function M.buf_run(buf, repo, opts)
 		buffer = buf,
 		once = true,
 		callback = function()
-			uv.process_kill(process, 'KILL')
+			process:kill('KILL')
 		end,
 	})
 
