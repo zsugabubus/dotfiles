@@ -1,13 +1,6 @@
 local api = vim.api
 
-local M = {
-	default_config = {
-		library_path = vim.fn.stdpath('data') .. '/libnvim_plugin_colors.so',
-		max_lines_to_highlight = 2000,
-		max_highlights_per_line = 100,
-		debug = false,
-	},
-}
+local M = {}
 
 local hl_cache
 local attached_bufs
@@ -157,10 +150,17 @@ local function get_rust_dir()
 end
 
 function M.setup(opts)
-	M.config = setmetatable(opts or {}, { __index = M.default_config })
+	local default_config = {
+		library_path = vim.fn.stdpath('data') .. '/libnvim_plugin_colors.so',
+		max_lines_to_highlight = 2000,
+		max_highlights_per_line = 100,
+		debug = false,
+	}
+
+	M.config = setmetatable(opts or {}, { __index = default_config })
 
 	for k, v in pairs(M.config) do
-		local expected = type(rawget(M.default_config, k))
+		local expected = type(rawget(default_config, k))
 		if type(rawget(M.config, k)) ~= expected then
 			error(
 				string.format('invalid key: %s (should be a %s value)', k, expected)
