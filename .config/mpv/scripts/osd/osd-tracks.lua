@@ -265,11 +265,11 @@ function update()
 	osd:put_fsc(props, 3 * 3 + more_lines, 0.9)
 	osd:put('{\\fnmpv-osd-symbols}')
 
-	osd_put_track_list(osd.VIDEO .. ' Video', 'video', paginate)
+	osd_put_track_list(osd.VIDEO_ICON .. ' Video', 'video', paginate)
 	osd:put('\\N')
-	osd_put_track_list(osd.AUDIO .. ' Audio', 'audio', paginate)
+	osd_put_track_list(osd.AUDIO_ICON .. ' Audio', 'audio', paginate)
 	osd:put('\\N')
-	osd_put_track_list(osd.SUBTITLE .. ' Subtitle', 'sub', paginate)
+	osd_put_track_list(osd.SUBTITLE_ICON .. ' Subtitle', 'sub', paginate)
 
 	osd:update()
 end

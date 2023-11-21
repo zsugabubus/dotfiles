@@ -24,13 +24,11 @@ function M.new()
 		['Ctrl+l'] = 'F5',
 	}
 
-	local o = {
+	return setmetatable({
 		key_bindings = default_key_bindings,
 		binding_prefix = string.format('mode-%d-', serial),
 		added = false,
-	}
-	setmetatable(o, M)
-	return o
+	}, M)
 end
 
 function M:map(lhs, rhs)

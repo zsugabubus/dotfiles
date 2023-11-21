@@ -1,14 +1,10 @@
 -- https://aegi.vmoe.info/docs/3.1/ASS_Tags/
 local M = {
-	__newindex = function(self, key)
-		error(key)
-	end,
+	AUDIO_ICON = '\u{E106}',
+	VIDEO_ICON = '\u{E108}',
+	SUBTITLE_ICON = '\u{E107}',
 }
 M.__index = M
-
-M.AUDIO = '\u{E106}'
-M.VIDEO = '\u{E108}'
-M.SUBTITLE = '\u{E107}'
 
 local function update_size(self)
 	self.height = self.ass.res_y
@@ -18,15 +14,15 @@ end
 function M.new(opts)
 	opts = opts or {}
 
-	local o = {
+	local self = {
 		ass = mp.create_osd_overlay('ass-events'),
 		buf = require('string.buffer').new(),
 	}
 
-	o.ass.z = opts.z or 0
-	update_size(o)
+	self.ass.z = opts.z or 0
+	update_size(self)
 
-	return setmetatable(o, M)
+	return setmetatable(self, M)
 end
 
 function M:reset()
@@ -42,19 +38,19 @@ function M:putf(...)
 	self.buf:putf(...)
 end
 
-function M:put_cursor(active)
-	local RIGHT_ARROW = '\u{279C}'
+function M:put_cursor(visible)
+	local RIGHT_ARROW_ICON = '\u{279C}'
 
 	self:put(
-		active and '' or '{\\alpha&HFF}',
-		RIGHT_ARROW,
+		visible and '' or '{\\alpha&HFF}',
+		RIGHT_ARROW_ICON,
 		'{\\alpha&H00}\\h',
-		active and '{\\b1}' or '{\\b0}'
+		visible and '{\\b1}' or '{\\b0}'
 	)
 end
 
-function M:put_rcursor(active)
-	if active then
+function M:put_rcursor(visible)
+	if visible then
 		self:put('{\\b0}')
 	end
 end
@@ -108,13 +104,13 @@ function M:draw_rect_wh(x, y, width, height)
 	self:draw_rect(x, y, x + width, y + height)
 end
 
-local function deg2rad(angle)
-	return angle / 180 * math.pi
+local function deg2rad(deg)
+	return deg / 180 * math.pi
 end
 
-local function xy_offset(x, y, angle, length)
-	angle = deg2rad(angle)
-	return x + math.cos(angle) * length, y - math.sin(angle) * length
+local function xy_offset(x, y, deg, length)
+	local rad = deg2rad(deg)
+	return x + math.cos(rad) * length, y - math.sin(rad) * length
 end
 
 function M:draw_triangle(x, y, a0, l0, a1, l1)

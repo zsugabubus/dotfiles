@@ -161,9 +161,9 @@ function update()
 	osd:put_fsc(props, 1 + #props.af + 1 + 1 + #props.vf, 0.9)
 	osd:put('{\\fnmpv-osd-symbols}')
 
-	osd_put_filters(osd.VIDEO .. ' Video', 'vf')
+	osd_put_filters(osd.VIDEO_ICON .. ' Video', 'vf')
 	osd:put('\\N')
-	osd_put_filters(osd.AUDIO .. ' Audio', 'af')
+	osd_put_filters(osd.AUDIO_ICON .. ' Audio', 'af')
 
 	osd:update()
 end
