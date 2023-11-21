@@ -5,7 +5,7 @@ local opts = {
 }
 options.read_options(opts)
 
-local down = true
+local down = false
 
 -- script-binding push-to-fastforward
 mp.add_key_binding(nil, 'push-to-fastforward', function(event)
