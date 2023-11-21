@@ -31,21 +31,21 @@ end
 
 function M:reset()
 	self.ass.data = nil
-	return self.buf:reset()
+	self.buf:reset()
 end
 
 function M:put(...)
-	return self.buf:put(...)
+	self.buf:put(...)
 end
 
 function M:putf(...)
-	return self.buf:putf(...)
+	self.buf:putf(...)
 end
 
 function M:put_cursor(active)
 	local RIGHT_ARROW = '\u{279C}'
 
-	return self:put(
+	self:put(
 		active and '' or '{\\alpha&HFF}',
 		RIGHT_ARROW,
 		'{\\alpha&H00}\\h',
@@ -55,12 +55,12 @@ end
 
 function M:put_rcursor(active)
 	if active then
-		return self:put('{\\b0}')
+		self:put('{\\b0}')
 	end
 end
 
 function M:put_marker(active)
-	return self:put(active and '●' or '○', '\\h')
+	self:put(active and '●' or '○', '\\h')
 end
 
 function M.observe_fsc_properties(fn)
@@ -82,30 +82,30 @@ function M:put_fsc(props, line_count, max_scale)
 end
 
 function M:draw_begin()
-	return self:put('{\\p1}')
+	self:put('{\\p1}')
 end
 
 function M:draw_end()
-	return self:put('{\\p0}')
+	self:put('{\\p0}')
 end
 
 function M:draw_move(x, y)
-	return self:put('m ', x, ' ', y, ' ')
+	self:put('m ', x, ' ', y, ' ')
 end
 
 function M:draw_line(x, y)
-	return self:put('l ', x, ' ', y, ' ')
+	self:put('l ', x, ' ', y, ' ')
 end
 
 function M:draw_rect(x0, y0, x1, y1)
 	self:draw_move(x0, y0)
 	self:draw_line(x1, y0)
 	self:draw_line(x1, y1)
-	return self:draw_line(x0, y1)
+	self:draw_line(x0, y1)
 end
 
 function M:draw_rect_wh(x, y, width, height)
-	return self:draw_rect(x, y, x + width, y + height)
+	self:draw_rect(x, y, x + width, y + height)
 end
 
 local function deg2rad(angle)
@@ -120,36 +120,36 @@ end
 function M:draw_triangle(x, y, a0, l0, a1, l1)
 	self:draw_move(x, y)
 	self:draw_line(xy_offset(x, y, a0, l0))
-	return self:draw_line(xy_offset(x, y, a1, l1))
+	self:draw_line(xy_offset(x, y, a1, l1))
 end
 
 function M:update()
 	if not self.ass.data then
 		self.ass.data = self.buf:tostring()
 	end
-	return self.ass:update()
+	self.ass:update()
 end
 
 function M.update_wrap(update)
 	local function update_wrapper()
 		mp.unregister_idle(update_wrapper)
-		return update()
+		update()
 	end
 
 	local function schedule_update()
-		return mp.register_idle(update_wrapper)
+		mp.register_idle(update_wrapper)
 	end
 
 	return schedule_update
 end
 
 function M:remove()
-	return self.ass:remove()
+	self.ass:remove()
 end
 
 function M:set_res(w, h)
 	self.ass.res_x, self.ass.res_y = w, h
-	return update_size(self)
+	update_size(self)
 end
 
 function M.ass_escape(s)

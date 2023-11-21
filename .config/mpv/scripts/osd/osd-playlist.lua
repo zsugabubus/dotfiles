@@ -31,7 +31,7 @@ local function set_visible(action)
 		hide_timeout:resume()
 	end
 
-	return update()
+	update()
 end
 
 local function compute_layout()
@@ -64,7 +64,7 @@ local function update_property(name, value)
 
 	props[name] = value
 
-	return update()
+	update()
 end
 
 function update()

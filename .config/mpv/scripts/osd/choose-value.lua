@@ -15,7 +15,7 @@ local function build_chooser(name, choices_file)
 
 	local function set_visible(action)
 		visible = utils.reduce_bool(visible, action)
-		return update()
+		update()
 	end
 
 	local function update_choices()
@@ -43,12 +43,12 @@ local function build_chooser(name, choices_file)
 			end)
 		end
 
-		return update()
+		update()
 	end
 
 	local function update_property(name, value)
 		props[name] = value
-		return update()
+		update()
 	end
 
 	function update()
@@ -97,7 +97,7 @@ local function build_chooser(name, choices_file)
 		visibility = set_visible,
 	})
 
-	return update()
+	update()
 end
 
 for _, file in ipairs(require('mp.utils').readdir(utils.script_opts, 'files')) do

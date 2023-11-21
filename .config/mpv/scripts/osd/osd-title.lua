@@ -11,17 +11,17 @@ local update
 
 local function set_visible(action)
 	visible = utils.reduce_bool(visible, action)
-	return update()
+	update()
 end
 
 local function update_property(name, value)
 	props[name] = value
-	return update()
+	update()
 end
 
 local function osd_put_block(align, ...)
 	osd:put('\n{\\an', align, '\\c&H00ffFF\\bord2\\fscx70\\fscy70}')
-	return osd:putf(...)
+	osd:putf(...)
 end
 
 function update()

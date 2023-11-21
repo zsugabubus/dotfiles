@@ -21,7 +21,7 @@ local update
 
 local function set_visible(action)
 	visible = utils.reduce_bool(visible, action)
-	return update()
+	update()
 end
 
 local function load_default_presets()
@@ -35,7 +35,7 @@ local function load_default_presets()
 		end
 	end
 
-	return update()
+	update()
 end
 
 local function is_preset_active(preset)
@@ -126,7 +126,7 @@ local function set_cursor(action)
 		cursor_id = #PROPERTIES
 	end
 
-	return update()
+	update()
 end
 
 local function set_value(value, how)
@@ -137,7 +137,7 @@ end
 
 local function update_property(name, value)
 	props[name] = value
-	return update()
+	update()
 end
 
 for _, p in ipairs(PROPERTIES) do

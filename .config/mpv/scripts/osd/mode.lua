@@ -49,7 +49,7 @@ function M:map(lhs, rhs)
 		for c = string.byte(low), string.byte(high) do
 			local i = c - string.byte(low)
 			self:map(string.char(c), function(...)
-				return rhs(i, ...)
+				rhs(i, ...)
 			end)
 		end
 		return

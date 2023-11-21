@@ -13,7 +13,7 @@ local update
 
 local function set_visible(action)
 	visible = utils.reduce_bool(visible, action)
-	return update()
+	update()
 end
 
 local CURSOR_TYPE_UP = { video = 'sub', audio = 'video', sub = 'audio' }
@@ -87,7 +87,7 @@ local function update_property(name, value)
 		props['track-list/selected'] = x
 	end
 
-	return update()
+	update()
 end
 
 local TRACK_FLAGS = {
@@ -321,7 +321,7 @@ utils.register_script_messages('osd-tracks', {
 	visibility = set_visible,
 	cursor = function(action)
 		set_visible('show')
-		return set_cursor(action)
+		set_cursor(action)
 	end,
 })
 

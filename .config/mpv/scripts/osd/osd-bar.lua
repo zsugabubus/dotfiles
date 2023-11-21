@@ -75,7 +75,7 @@ local function set_visibility(action)
 		visible = true
 	end
 
-	return update()
+	update()
 end
 
 local function update_property(name, value)
@@ -83,7 +83,8 @@ local function update_property(name, value)
 		old_title = nil
 	elseif name == 'osd-dimensions' then
 		osd:set_res(value.w, value.h)
-		return update()
+		update()
+		return
 	end
 
 	local old = props[name]
@@ -124,11 +125,11 @@ local function update_property(name, value)
 		end
 	end
 
-	return update()
+	update()
 end
 
 local function handle_mouse_live_seek(event)
-	return mp.commandv(
+	mp.commandv(
 		'no-osd',
 		'seek',
 		mouse_time,
@@ -139,36 +140,37 @@ end
 local function handle_mouse_seek(event)
 	if event.event ~= 'up' then
 		mp.commandv('no-osd', 'seek', mouse_time, 'absolute+exact')
-		return mp.add_forced_key_binding(
+		mp.add_forced_key_binding(
 			'MOUSE_MOVE',
 			'osd-bar/MOUSE_MOVE',
 			handle_mouse_live_seek
 		)
 	else
-		return mp.remove_key_binding('osd-bar/MOUSE_MOVE')
+		mp.remove_key_binding('osd-bar/MOUSE_MOVE')
 	end
 end
 
 local function handle_mouse_live_seek_to_chapter(event)
 	if chapter_pos then
-		return mp.commandv('set', 'chapter', tostring(chapter_pos.id))
+		mp.commandv('set', 'chapter', tostring(chapter_pos.id))
 	end
 end
 
 local function handle_mouse_seek_to_chapter(event)
 	if event.event ~= 'up' then
 		if not chapter_pos then
-			return mp.commandv('no-osd', 'seek', '0', 'absolute+exact')
+			mp.commandv('no-osd', 'seek', '0', 'absolute+exact')
+			return
 		end
 
 		mp.commandv('set', 'chapter', tostring(chapter_pos.id))
-		return mp.add_forced_key_binding(
+		mp.add_forced_key_binding(
 			'MOUSE_MOVE',
 			'osd-bar/MOUSE_MOVE',
 			handle_mouse_live_seek_to_chapter
 		)
 	else
-		return mp.remove_key_binding('osd-bar/MOUSE_MOVE')
+		mp.remove_key_binding('osd-bar/MOUSE_MOVE')
 	end
 end
 
@@ -178,16 +180,16 @@ local function osd_put_human_time(time)
 	local hour = math.floor(time / 3600)
 	local min = math.floor(time / 60 % 60)
 	local sec = math.floor(time % 60)
-	return osd:putf('%s%02d:%02d:%02d', neg and '-' or '', hour, min, sec)
+	osd:putf('%s%02d:%02d:%02d', neg and '-' or '', hour, min, sec)
 end
 
 local function osd_put_human_duration(duration)
 	local min = math.floor(duration / 60)
 	local sec = math.floor(duration % 60)
 	if min > 0 then
-		return osd:putf('%dm%02ds', min, sec)
+		osd:putf('%dm%02ds', min, sec)
 	else
-		return osd:putf('%2ds', sec)
+		osd:putf('%2ds', sec)
 	end
 end
 
@@ -678,7 +680,7 @@ update = osd.update_wrap(update)
 
 hide_timeout = mp.add_timeout(1.5, function()
 	visible = false
-	return update()
+	update()
 end)
 hide_timeout:kill()
 
@@ -687,12 +689,12 @@ utils.register_script_messages('osd-bar', {
 		local old_visibility = visibility
 		set_visibility(action)
 		if old_visibility ~= visibility then
-			return mp.osd_message(string.format('Visibility: %s', visibility))
+			mp.osd_message(string.format('Visibility: %s', visibility))
 		end
 	end,
 	seek = function(...)
 		mp.commandv('no-osd', 'seek', ...)
-		return set_visibility('blink')
+		set_visibility('blink')
 	end,
 })
 

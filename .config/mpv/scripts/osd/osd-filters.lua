@@ -12,7 +12,7 @@ local update
 
 local function set_visible(action)
 	visible = utils.reduce_bool(visible, action)
-	return update()
+	update()
 end
 
 local function set_cursor(action)
@@ -87,7 +87,7 @@ local function update_property(name, value)
 		cursor_id = math.min(cursor_id, #value)
 	end
 
-	return update()
+	update()
 end
 
 local function osd_put_avdict(o)

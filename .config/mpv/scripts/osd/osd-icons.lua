@@ -16,7 +16,8 @@ end
 
 local function update()
 	if not props['pause'] and not props['mute'] then
-		return osd:remove()
+		osd:remove()
+		return
 	end
 
 	osd:reset()
@@ -44,7 +45,7 @@ local function update_property(name, value)
 
 	props[name] = value
 
-	return update()
+	update()
 end
 
 mp.observe_property('mute', 'native', update_property)
