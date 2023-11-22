@@ -262,8 +262,6 @@ map('v', '<', '<gv')
 map('o', '{', 'V{')
 map('o', '}', 'V}')
 
-map('n', 'z/', '<Plug>(FuzzySearchFizzy)')
-
 map('n', 'gr', ':GREP ')
 remap('n', 'gw', 'gr<C-r><C-w><CR>')
 map('x', '//', 'y:GREP -F <C-r>=shellescape(@", 1)<CR><CR>')
@@ -636,7 +634,6 @@ require('pack').setup({
 	},
 	{ 'vim-bufgrep' },
 	{ 'vim-fizzy' },
-	{ 'vim-fuzzysearch' },
 	{
 		'git.nvim',
 		after = function()
