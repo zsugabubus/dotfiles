@@ -687,6 +687,16 @@ require('pack').setup({
 	},
 	{ 'explorer.nvim' },
 	{
+		'multisearch.nvim',
+		opts = {
+			search_n = 5,
+			very_magic = true,
+		},
+		after = function()
+			map('n', 'gm', '<Cmd>MultiSearch<CR>')
+		end,
+	},
+	{
 		'nvim-treesitter',
 		enabled = false,
 		after = function(self)

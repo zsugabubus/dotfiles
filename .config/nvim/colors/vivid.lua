@@ -182,6 +182,12 @@ local theme = {
 	debugBreakpoint = { bg = '#f51030', fg = '#ffffff' },
 
 	changeLogError = {},
+
+	Search1 = { fg = '#000000', bg = '#58f0f0' },
+	Search2 = { fg = '#000000', bg = '#f085f0' },
+	Search3 = { fg = '#000000', bg = '#ffaa58' },
+	Search4 = { fg = '#000000', bg = '#aaff58' },
+	Search5 = { fg = '#000000', bg = '#58ccff' },
 }
 -- stylua: ignore end
 
