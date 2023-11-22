@@ -661,7 +661,6 @@ require('pack').setup({
 		'vnicode.nvim',
 		opts = {},
 	},
-	{ 'vim-woman' },
 	{ 'wtf.nvim' },
 	{ 'vimdent.nvim' },
 	{ 'capture.nvim' },
