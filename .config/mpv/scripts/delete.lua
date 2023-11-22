@@ -1,6 +1,6 @@
 local utils = require('mp.utils')
 
-mp.add_key_binding('Shift+DEL', 'delete-file', function()
+mp.add_key_binding(nil, 'delete-file', function()
 	local path = mp.get_property_native('path')
 	if not path then
 		return
