@@ -165,9 +165,10 @@ smap('n', '<M-n>', ':cnext<CR>:silent! normal! zOzz<CR>')
 smap('n', '<M-N>', ':cprev<CR>:silent! normal! zOzz<CR>')
 smap('n', '<M-f>', ':next<CR>')
 smap('n', '<M-F>', ':prev<CR>')
-smap('n', '<M-t>', ':wincmd p<CR>')
 smap('n', '<M-j>', ':wincmd W<CR>')
 smap('n', '<M-k>', ':wincmd w<CR>')
+smap('n', '<M-o>', ':buffer #<CR>')
+smap('n', '<Tab>', ':wincmd p<CR>')
 
 xmap('i', '<C-f>', function()
 	local s = fn.expand('%:t:r')
@@ -203,7 +204,6 @@ xmap('n', '<M-!>', function()
 	end
 	return ':edit ' .. xmapescape(fn.fnameescape(dirname)) .. '/<C-Z>'
 end)
-smap('n', '<M-o>', ':buffer #<CR>')
 smap('n', '<M-q>', ':quit<CR>')
 smap('n', '<M-w>', ':silent! wa<CR>')
 
@@ -223,6 +223,7 @@ map('n', '!', '<Cmd>FizzyBuffers<CR>')
 map('n', 'g/', '<Cmd>FizzyFiles<CR>')
 
 map('n', '<C-w>T', '<C-w>s<C-w>T')
+map('n', '<C-w>d', ':windo diffthis<CR>')
 
 xmap('n', 's;', function()
 	return 'A' .. (vim.o.filetype == 'python' and ':' or ';') .. '<Esc>'
@@ -264,6 +265,7 @@ map('o', '}', 'V}')
 map('n', 'z/', '<Plug>(FuzzySearchFizzy)')
 
 map('n', 'gr', ':GREP ')
+remap('n', 'gw', 'gr<C-r><C-w><CR>')
 map('x', '//', 'y:GREP -F <C-r>=shellescape(@", 1)<CR><CR>')
 remap('x', 'gr', '//')
 
@@ -272,6 +274,7 @@ cabbr('lcd', 'lcd %:p:h<C-Z>')
 cabbr('tcd', 'tcd %:p:h<C-Z>')
 
 cabbr('bg', 'BufGrep')
+cabbr('hg', 'helpgrep')
 cabbr('g', 'GREP')
 cabbr('gr', 'GREP')
 
