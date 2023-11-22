@@ -100,7 +100,9 @@ local function build_chooser(name, choices_file)
 	update()
 end
 
-for _, file in ipairs(require('mp.utils').readdir(utils.script_opts, 'files')) do
+for _, file in
+	ipairs(require('mp.utils').readdir(utils.script_opts, 'files') or {})
+do
 	local name = string.match(file, '^choose%-(.*)%.lua$')
 	if name then
 		build_chooser(name, file)
