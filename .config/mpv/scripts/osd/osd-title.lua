@@ -111,9 +111,7 @@ mp.add_key_binding('y', 'yank-title', function()
 		version and (' (%s)'):format(version) or ''
 	)
 	os.execute(
-		('printf %%s %s | xclip -l 1 -selection clipboard &'):format(
-			utils.shesc(title)
-		)
+		('printf %%s %s | xclip -selection clipboard &'):format(utils.shesc(title))
 	)
 	mp.osd_message('Yanked: ' .. title)
 end, { repeatable = false })
