@@ -60,6 +60,7 @@ local function confirm_if(cond, ...)
 		for key, fn in pairs(BINDINGS) do
 			mp.add_forced_key_binding(key, key, fn)
 		end
+		mp.flush_keybindings()
 	else
 		exec()
 	end
