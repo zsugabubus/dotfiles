@@ -95,25 +95,4 @@ utils.register_script_messages('osd-title', {
 	visibility = set_visible,
 })
 
---- Yank
-
-mp.add_key_binding('y', 'yank-title', function()
-	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
-	local title = (
-		mp.get_property_native('metadata/by-key/Title', nil)
-		or mp.get_property_native('media-title', nil)
-	)
-	local version = mp.get_property_native('metadata/by-key/Version', nil)
-	local title = ('%s%s%s%s'):format(
-		artist or '',
-		artist and ' - ' or '',
-		title,
-		version and (' (%s)'):format(version) or ''
-	)
-	os.execute(
-		('printf %%s %s | xclip -selection clipboard &'):format(utils.shesc(title))
-	)
-	mp.osd_message('Yanked: ' .. title)
-end, { repeatable = false })
-
 update()
