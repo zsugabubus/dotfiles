@@ -8,3 +8,6 @@ require('osd-metadata')
 require('osd-playlist')
 require('osd-title')
 require('osd-tracks')
+
+assert(mp.flush_keybindings)
+mp.unregister_idle(mp.flush_keybindings)

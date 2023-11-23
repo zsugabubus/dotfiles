@@ -78,6 +78,7 @@ function M:add_key_bindings()
 		for lhs, rhs in pairs(self.key_bindings) do
 			add_key_binding(self, lhs, rhs)
 		end
+		mp.flush_keybindings()
 	end
 end
 
@@ -87,6 +88,7 @@ function M:remove_key_bindings()
 		for lhs in pairs(self.key_bindings) do
 			remove_key_binding(self, lhs)
 		end
+		mp.flush_keybindings()
 	end
 end
 

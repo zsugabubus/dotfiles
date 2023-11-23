@@ -148,6 +148,7 @@ local function handle_mouse_seek(event)
 	else
 		mp.remove_key_binding('osd-bar/MOUSE_MOVE')
 	end
+	mp.flush_keybindings()
 end
 
 local function handle_mouse_live_seek_to_chapter(event)
@@ -172,6 +173,7 @@ local function handle_mouse_seek_to_chapter(event)
 	else
 		mp.remove_key_binding('osd-bar/MOUSE_MOVE')
 	end
+	mp.flush_keybindings()
 end
 
 local function osd_put_human_time(time)
@@ -334,6 +336,7 @@ function update()
 			mp.remove_key_binding('osd-bar/MBTN_RIGHT')
 			mp.remove_key_binding('osd-bar/MOUSE_MOVE')
 		end
+		mp.flush_keybindings()
 	end
 
 	if not visible then
