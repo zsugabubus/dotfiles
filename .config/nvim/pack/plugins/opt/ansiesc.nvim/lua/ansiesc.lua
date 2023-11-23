@@ -119,7 +119,7 @@ local function apply_sgr(pen, params)
 		elseif Ps == 58 then
 			i, pen.sp = parse_sgr_color(params, i)
 		elseif 90 <= Ps and Ps <= 97 then
-			pen.bg = get_palette_color(8 + (Ps - 90))
+			pen.fg = get_palette_color(8 + (Ps - 90))
 		elseif 100 <= Ps and Ps <= 107 then
 			pen.bg = get_palette_color(8 + (Ps - 100))
 		end
