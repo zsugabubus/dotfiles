@@ -175,9 +175,8 @@ local function add_highlight(buffer, lnum, col_start, col_end, pen)
 end
 
 function M.highlight_buffer(buffer)
-	local pen = {}
-
 	for lnum, line in ipairs(vim.api.nvim_buf_get_lines(buffer, 0, -1, false)) do
+		local pen = {}
 		local starts = {}
 		local sgrs = {}
 		local original = line
