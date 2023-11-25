@@ -643,7 +643,6 @@ require('pack').setup({
 			map('n', 'gf', '<Plug>(git-goto-file)')
 		end,
 	},
-	{ 'vim-mankey' },
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
 	{ 'vim-qf' },
