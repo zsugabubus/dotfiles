@@ -71,7 +71,10 @@ M.script_opts = mp.command_native({ 'expand-path', '~~/script-opts' })
 
 function M.do_script_opt(name)
 	local utils = require('mp.utils')
-	return select(2, pcall(dofile, utils.join_path(M.script_opts, name)))
+	local ok, content = pcall(dofile, utils.join_path(M.script_opts, name))
+	if ok then
+		return content
+	end
 end
 
 return M
