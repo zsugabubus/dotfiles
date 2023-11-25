@@ -17,6 +17,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 		pattern = patterns,
 		nested = true,
 		callback = function(opts)
+			vim.b.did_archive = true
 			local archive = opts.file
 			read_system(list_cmdline(archive))
 			api.nvim_buf_set_keymap(0, 'n', 'gf', '', {
@@ -35,6 +36,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 		pattern = string.gsub(patterns, ',', '/*,'),
 		nested = true,
 		callback = function(opts)
+			vim.b.did_archive = true
 			local match = opts.match
 			for pattern in string.gmatch(patterns, '[^,]+') do
 				local ext = vim.pesc(string.match(pattern, '^%*(.*)'))
@@ -66,6 +68,9 @@ local function compress(pattern, prog)
 		pattern = pattern,
 		nested = true,
 		callback = function(opts)
+			if vim.b.did_archive then
+				return
+			end
 			local file = opts.match
 			local cmdline = { prog, '-cd', '--', file }
 			api.nvim_buf_set_lines(0, 0, -1, true, fn.systemlist(cmdline))
