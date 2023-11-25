@@ -3,7 +3,11 @@ local pid = utils.getpid()
 
 local function oom_score_adj(n)
 	local path = ('/proc/%d/%s'):format(pid, 'oom_score_adj')
-	local f = assert(io.open(path, 'wb'))
+	local f, err = io.open(path, 'wb')
+	if not f then
+		mp.msg.error(err)
+		return
+	end
 	assert(f:write(tostring(n)))
 	assert(f:close())
 end
