@@ -13,7 +13,7 @@ end
 local function get_palette()
 	local palette = {}
 
-	for _, x in ipairs({ { 0, 0x80 }, { 0, 0xff } }) do
+	for _, x in ipairs({ { 0, 0xff }, { 0, 0xff } }) do
 		for _, b in ipairs(x) do
 			for _, g in ipairs(x) do
 				for _, r in ipairs(x) do
