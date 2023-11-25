@@ -123,7 +123,10 @@ function M:update()
 	if not self.ass.data then
 		self.ass.data = self.buf:tostring()
 	end
-	self.ass:update()
+	if self.on_screen_data ~= self.ass.data then
+		self.on_screen_data = self.ass.data
+		self.ass:update()
+	end
 end
 
 function M.update_wrap(update)
@@ -140,7 +143,10 @@ function M.update_wrap(update)
 end
 
 function M:remove()
-	self.ass:remove()
+	if self.on_screen_data then
+		self.on_screen_data = nil
+		self.ass:remove()
+	end
 end
 
 function M:set_res(w, h)
