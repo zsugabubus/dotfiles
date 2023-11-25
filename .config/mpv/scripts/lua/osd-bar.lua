@@ -17,8 +17,9 @@ local chapter_pos
 
 local old_visibility
 local old_visible
-local old_mouse_prog_hit
-local old_mouse_y = -1
+local old_prog_hover
+local old_hover
+local old_mouse_y = 0
 local old_title
 
 local fsx_cache = {}
@@ -204,17 +205,17 @@ function update()
 
 	local side_width = 11 * measure_text(main_fs)
 	local box_width = osd.width
-	local top_small = box_width < 4 * side_width
-	local prog_small = box_width < 3 * side_width
-	local box_height = top_fs + (top_small and top_fs or 0) + main_fs
+	local small = box_width < 4 * side_width
+	local very_small = box_width < 2 * side_width
+	local box_height = top_fs + (small and top_fs or 0) + main_fs
 	local box_x0 = 0
 	local box_x1 = box_x0 + box_width
 	local box_y1 = osd.height
 	local box_y0 = box_y1 - box_height
 
-	local main_width = box_width - (prog_small and 0 or 2 * side_width)
+	local main_width = box_width - (small and 0 or 2 * side_width)
 	local main_height = main_fs
-	local main_x0 = box_x0 + (prog_small and 0 or side_width)
+	local main_x0 = box_x0 + (small and 0 or side_width)
 	local main_x1 = main_x0 + main_width
 	local main_y0 = box_y1 - main_height
 	local main_y1 = main_y0 + main_height
@@ -232,41 +233,40 @@ function update()
 	local duration = props['duration'] or 0
 
 	local mouse = props['mouse-pos']
-	local mouse_hit = mouse.hover
+	local mouse_x = mouse.x
+	local mouse_y = mouse.y
+	local hover = mouse.hover
+	local box_hover = hover
 		and (
-			(box_x0 <= mouse.x and mouse.x <= box_x1)
-			and (box_y0 <= mouse.y and mouse.y <= box_y1)
+			(box_x0 <= mouse_x and mouse_x <= box_x1)
+			and (box_y0 <= mouse_y and mouse_y <= box_y1)
 		)
-	local mouse_main_hit = mouse_hit
-		and (main_y0 <= mouse.y and mouse.y < main_y0 + box_height)
-	local mouse_percent = (mouse.x - prog_x0) / prog_width
-	local mouse_prog_hit = mouse_main_hit
-		and (0 <= mouse_percent and mouse_percent < 1)
+	local main_hover = box_hover
+		and (main_y0 <= mouse_y and mouse_y < main_y0 + box_height)
+	local mouse_percent = (mouse_x - prog_x0) / prog_width
+	local prog_hover = main_hover and (0 <= mouse_percent and mouse_percent < 1)
 	mouse_time = duration * mouse_percent
 
 	if visibility == 'auto' then
-		if old_visibility ~= visibility then
-			-- Must be below `active_region` to make it work as expected.
-			old_mouse_y = math.huge
-		end
-
-		if mouse_hit then
+		local trigger_y = math.min(osd.height * 2 / 3, box_y0)
+		if box_hover then
 			visible = true
 			hide_timeout:kill()
-		elseif old_mouse_y ~= mouse.y then
-			local active_region = osd.height * 2 / 3
-			-- Entering the bottom third blinks bar.
-			if mouse.y >= active_region then
-				visible = true
-				hide_timeout:kill()
-				hide_timeout:resume()
-			-- Leaving the bottom third immediately hides bar.
-			elseif old_mouse_y >= active_region then
-				visible = false
-				hide_timeout:kill()
-			end
-			old_mouse_y = mouse.y
+		elseif old_hover and not hover then
+			visible = false
+		elseif
+			old_mouse_y ~= mouse_y
+			and mouse_y >= trigger_y
+			and (visible or mouse_y > old_mouse_y)
+		then
+			visible = true
+			hide_timeout:kill()
+			hide_timeout:resume()
+		elseif mouse_y < trigger_y and old_mouse_y >= trigger_y then
+			visible = false
 		end
+		old_mouse_y = mouse_y
+		old_hover = hover
 	end
 
 	if old_visibility ~= visibility or old_visible ~= visible then
@@ -301,14 +301,14 @@ function update()
 			hide_timeout:kill()
 			osd:remove()
 			set_sub_margin_y(base_sub_margin_y)
-			mouse_prog_hit = false
+			prog_hover = false
 		end
 	end
 
-	if old_mouse_prog_hit ~= mouse_prog_hit then
-		old_mouse_prog_hit = mouse_prog_hit
+	if old_prog_hover ~= prog_hover then
+		old_prog_hover = prog_hover
 
-		if mouse_prog_hit then
+		if prog_hover then
 			props['window-dragging'] = mp.get_property_native('window-dragging')
 			mp.set_property_native('window-dragging', false)
 			mp.add_forced_key_binding(
@@ -431,43 +431,33 @@ function update()
 		end
 	end
 
-	if not (prog_small and mouse_prog_hit) then
-		local fs = main_fs * (prog_small and 0.8 or 1)
+	if not (small and prog_hover) then
+		local fs = main_fs * (small and 0.8 or 1)
 		-- Left block.
 		osd:put(
 			'{\\r\\pos(',
-			box_x0 + (prog_small and 0 or side_width / 2),
+			box_x0 + (small and 0 or side_width / 2),
 			',',
 			main_yc,
 			')}'
 		)
-		osd:put(
-			'{\\bord2\\fs',
-			fs,
-			'\\fnmonospace\\an',
-			prog_small and '4}\\h' or '5}'
-		)
+		osd:put('{\\bord2\\fs', fs, '\\fnmonospace\\an', small and '4}\\h' or '5}')
 		osd_put_human_time(props['time-pos'] or 0)
 		osd:put('\n')
 
 		-- Right block.
 		osd:put(
 			'{\\r\\pos(',
-			box_x1 - (prog_small and 0 or side_width / 2),
+			box_x1 - (small and 0 or side_width / 2),
 			',',
 			main_yc,
 			')}'
 		)
-		osd:put(
-			'{\\bord2\\fs',
-			fs,
-			'\\fnmonospace\\an',
-			prog_small and '6}' or '5}'
-		)
-		if mouse_prog_hit then
+		osd:put('{\\bord2\\fs', fs, '\\fnmonospace\\an', small and '6}' or '5}')
+		if prog_hover then
 			osd_put_human_time(-(duration - mouse_time))
 		elseif
-			mouse_main_hit == (props['demuxer-via-network'] or props['speed'] ~= 1)
+			main_hover == (props['demuxer-via-network'] or props['speed'] ~= 1)
 		then
 			osd_put_human_time(duration)
 		else
@@ -476,7 +466,7 @@ function update()
 			local playtime_remaininig = time_remaininig / props['speed']
 			osd_put_human_time(-playtime_remaininig)
 		end
-		osd:put(prog_small and '\\h' or '', '\n')
+		osd:put(small and '\\h' or '', '\n')
 	end
 
 	-- Top left block.
@@ -494,7 +484,7 @@ function update()
 	end
 
 	-- Top right block.
-	if cache then
+	if cache and not very_small then
 		osd:put(
 			'{\\r\\pos(',
 			box_x1 - side_width / 2,
@@ -542,8 +532,7 @@ function update()
 			osd:draw_end()
 			osd:put('\n')
 
-			local chapter_at = mouse_prog_hit and mouse_time
-				or (props['time-pos'] or 0)
+			local chapter_at = prog_hover and mouse_time or (props['time-pos'] or 0)
 
 			for _, chapter in ipairs(chapters) do
 				if
@@ -595,21 +584,10 @@ function update()
 	end
 
 	-- Mouse position.
-	if mouse_prog_hit then
-		local mouse_align = mouse.x < osd.width / 2 and 4 or 6
-
-		-- A second, 2-width white outline so it is legible over cached ranges that
-		-- is also black.
+	if prog_hover then
+		local mouse_align = mouse_x < osd.width / 2 and 4 or 6
 		osd:put('{\\r\\1c&HFFFFFF&\\fs', main_fs, '\\fnmonospace}')
-		osd:put('{\\pos(', mouse.x, ',', main_yc, ')}')
-		osd_clip_main('left')
-		osd:put('{\\bord4\\an', mouse_align, '}')
-		osd:put('{\\3c&HFFFFFF&}\\h')
-		osd_put_human_time(mouse_time)
-		osd:put('\\h\n')
-
-		osd:put('{\\r\\1c&HFFFFFF&\\fs', main_fs, '\\fnmonospace}')
-		osd:put('{\\pos(', mouse.x, ',', main_yc, ')}')
+		osd:put('{\\pos(', mouse_x, ',', main_yc, ')}')
 		osd_clip_main()
 		osd:put('{\\bord2\\an', mouse_align, '}')
 		osd:put('{\\3c&H000000&}\\h')
@@ -619,10 +597,10 @@ function update()
 
 	-- Top center block.
 	do
-		local mouse_chapter = mouse_prog_hit and chapter_pos
-		local x0 = top_small and box_x0
+		local mouse_chapter = prog_hover and chapter_pos
+		local x0 = small and box_x0
 			or (mouse_chapter and prog_x0 + time2x(mouse_chapter.time) or main_x0)
-		local y0 = box_y0 + (top_small and top_fs or 0)
+		local y0 = box_y0 + (small and top_fs or 0)
 		local align = x0 < osd.width / 2 and 4 or 6
 		osd:put('{\\r\\pos(', x0, ',', y0 + top_fs / 2, ')}')
 		osd:put(
@@ -634,20 +612,20 @@ function update()
 		)
 		osd:put(
 			'{\\clip(',
-			top_small and box_x0 or main_x0,
+			small and box_x0 or main_x0,
 			',',
 			y0,
 			',',
-			top_small and box_x1 or main_x1,
+			small and box_x1 or main_x1,
 			',',
 			y0 + top_fs,
 			')}'
 		)
 		if mouse_chapter then
 			osd:put(
-				top_small and '' or '\\h',
+				small and '' or '\\h',
 				osd.ass_escape(mouse_chapter.title),
-				top_small and '' or '\\h'
+				small and '' or '\\h'
 			)
 		else
 			if not old_title then
@@ -660,7 +638,7 @@ function update()
 		end
 		osd:put('\n')
 
-		if mouse_chapter and not top_small then
+		if mouse_chapter and not small then
 			osd:put('{\\r\\pos(', x0, ',', y0, ')}', '{\\bord1\\3c&HFFFFFF&}')
 			osd:draw_begin()
 			osd:draw_move(0, 0)
