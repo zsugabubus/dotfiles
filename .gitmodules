@@ -1,6 +1,3 @@
-[submodule "mpv/fastforward"]
-	path = .config/mpv/scripts/fastforward
-	url = https://github.com/zsugabubus/mpv-fastforward
 [submodule ".config/nvim/pack/git/opt/nvim-treesitter"]
 	path = .config/nvim/pack/git/opt/nvim-treesitter
 	url = https://github.com/nvim-treesitter/nvim-treesitter
