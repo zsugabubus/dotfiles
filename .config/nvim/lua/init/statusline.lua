@@ -38,8 +38,8 @@ vim.api.nvim_create_autocmd(
 				'%= ',
 				'%1*%2*',
 				"%(  %{&spell?&spelllang:''} %)",
-				"%(  %{substitute(&binary?'bin':(!empty(&fenc)?&fenc:&enc).(&bomb?',bom':'').','.&fileformat,'^utf-8,unix$','','')} %)",
-				"%( %{!&binary&&!empty(&ft)?&ft:''} %)",
+				"%(  %{substitute((empty(&fileencoding)?'utf-8':&fileencoding).(&bomb?',bom':'').','.&fileformat,'^utf-8,unix$','','')} %)",
+				"%( %{&filetype} %)",
 				'%3* %l(%{lnum_status})/%L,%-3v',
 			})
 		end,
