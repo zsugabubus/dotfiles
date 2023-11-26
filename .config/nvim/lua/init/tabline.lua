@@ -31,11 +31,7 @@ local function render_tabpage(s, tabpage, current)
 	end
 
 	s:put('%', nr, 'T')
-	if current then
-		s:put('%#TabLineSel#')
-	else
-		s:put('%#TabLine#')
-	end
+	s:put(current and '%#TabLineSel#' or '%#TabLine#')
 	s:put(' ', nr, ':', name, flags, ' ')
 end
 
