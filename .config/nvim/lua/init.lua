@@ -618,53 +618,15 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_node_provider = 0
 
 require('pack').setup({
-	{ 'tmux.nvim' },
 	{ 'ansiesc.nvim' },
-	{
-		'cword.nvim',
-		after = function()
-			map('n', 'sc', '<Plug>(cword-toggle)')
-		end,
-	},
+	{ 'archive.nvim' },
+	{ 'capture.nvim' },
 	{
 		'colors.nvim',
 		after = function()
 			pcall(require('colors').setup)
 		end,
 	},
-	{ 'vim-bufgrep' },
-	{ 'vim-fizzy' },
-	{
-		'git.nvim',
-		after = function()
-			map('n', 'sd', ':Gdiff<CR>')
-			map('n', 'sgb', ':Gblame<CR>')
-			map('x', 'sgl', ':Glog<CR>')
-			map('n', 'gf', '<Plug>(git-goto-file)')
-		end,
-	},
-	{ 'vim-pastereindent' },
-	{ 'vim-pets' },
-	{ 'vim-qf' },
-	{ 'star.nvim' },
-	{
-		'surround.nvim',
-		after = function()
-			map('n', 'ds', '<Plug>(surround-delete)')
-			map('x', 's', '<Plug>(surround)')
-		end,
-	},
-	{ 'textobjects.nvim' },
-	{ 'vim-tilde' },
-	{
-		'vnicode.nvim',
-		opts = {},
-	},
-	{ 'wtf.nvim' },
-	{ 'vimdent.nvim' },
-	{ 'capture.nvim' },
-	{ 'register.nvim' },
-	{ 'archive.nvim' },
 	{
 		'commenter.nvim',
 		after = function()
@@ -679,12 +641,29 @@ require('pack').setup({
 		end,
 	},
 	{
+		'cword.nvim',
+		after = function()
+			map('n', 'sc', '<Plug>(cword-toggle)')
+		end,
+	},
+	{ 'editorconfig.lua' },
+	{ 'explorer.nvim' },
+	{
+		'git.nvim',
+		after = function()
+			map('n', 'sd', ':Gdiff<CR>')
+			map('n', 'sgb', ':Gblame<CR>')
+			map('x', 'sgl', ':Glog<CR>')
+			map('n', 'gf', '<Plug>(git-goto-file)')
+		end,
+	},
+	{
 		'jumpmotion.nvim',
 		after = function()
 			map('', '<space>', '<Plug>(jumpmotion)')
 		end,
 	},
-	{ 'explorer.nvim' },
+	{ 'man.lua' },
 	{
 		'multisearch.nvim',
 		opts = {
@@ -706,8 +685,29 @@ require('pack').setup({
 			})
 		end,
 	},
-	{ 'editorconfig.lua' },
-	{ 'man.lua' },
+	{ 'register.nvim' },
+	{ 'star.nvim' },
+	{
+		'surround.nvim',
+		after = function()
+			map('n', 'ds', '<Plug>(surround-delete)')
+			map('x', 's', '<Plug>(surround)')
+		end,
+	},
+	{ 'textobjects.nvim' },
+	{ 'tmux.nvim' },
+	{ 'vim-bufgrep' },
+	{ 'vim-fizzy' },
+	{ 'vim-pastereindent' },
+	{ 'vim-pets' },
+	{ 'vim-qf' },
+	{ 'vim-tilde' },
+	{ 'vimdent.nvim' },
+	{
+		'vnicode.nvim',
+		opts = {},
+	},
+	{ 'wtf.nvim' },
 })
 
 require('init.statusline')
