@@ -56,7 +56,7 @@ typeset -gA __zfiles_bindings_n=(
 	['\<C-L\>']='__zfiles_chpwd; zcurses refresh; __zfiles_dirty_prompt=1; __zfiles_render'
 	[zt]='__zfiles_scroll_select 0 $(( __zfiles_cur - __zfiles_scrolloff ))'
 	[zz]='__zfiles_scroll_select 0 $(( __zfiles_cur - __zfiles_lines / 2 ))'
-	[zb]='__zfiles_scroll_select 0 $(( __zfiles_cur + __zfiles_scrolloff - __zfiles_lines ))'
+	[zb]='__zfiles_scroll_select 0 $(( __zfiles_cur + __zfiles_scrolloff - __zfiles_lines + 1 ))'
 	[t]='__zfiles_toggle ZFile'
 	[m]='__zfiles_cmd "mkdir "'
 	[e]='__zfiles_cmd "$EDITOR "'
