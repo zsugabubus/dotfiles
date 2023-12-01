@@ -67,7 +67,6 @@ api.nvim_create_autocmd('BufEnter', {
 		})
 
 		local keymap = api.nvim_buf_set_keymap
-		keymap(0, 'n', '<CR>', 'gf', {})
 		keymap(0, 'n', '<Plug>(explorer-goto-parent)', '', {
 			callback = function()
 				edit(fn.expand('%:p:h:h'))

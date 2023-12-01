@@ -456,6 +456,7 @@ filetype('directory', function()
 	local keymap = api.nvim_buf_set_keymap
 	keymap(0, 'n', 'gu', '<Plug>(explorer-goto-parent)', SMAP_OPTS)
 	keymap(0, 'n', 'g.', '<Plug>(explorer-cd)', SMAP_OPTS)
+	keymap(0, 'n', '<CR>', 'Vgf', SMAP_OPTS)
 end)
 
 -- vim.treesitter pulls in lot's of Lua code.
