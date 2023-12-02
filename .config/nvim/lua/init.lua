@@ -209,7 +209,7 @@ smap('n', '<M-w>', ':silent! wa<CR>')
 
 -- Put the first line of the paragraph at the top of the window.
 xmap('n', 'z{', function()
-	return '{zt' .. (vim.o.scrolloff + 1) .. '<C-E>'
+	return '{zt' .. (o.scrolloff + 1) .. '<C-E>'
 end)
 
 smap('n', 'gss', ':setlocal spell!<CR>')
@@ -226,7 +226,7 @@ map('n', '<C-w>T', '<C-w>s<C-w>T')
 map('n', '<C-w>d', ':windo diffthis<CR>')
 
 xmap('n', 's;', function()
-	return 'A' .. (vim.o.filetype == 'python' and ':' or ';') .. '<Esc>'
+	return 'A' .. (o.filetype == 'python' and ':' or ';') .. '<Esc>'
 end)
 map('n', 's,', 'A,<Esc>')
 
