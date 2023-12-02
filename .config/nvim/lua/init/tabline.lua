@@ -18,16 +18,8 @@ local function render_tabpage(s, tabpage, current)
 	end
 
 	local flags = ''
-	if api.nvim_buf_get_option(buf, 'modified') then
+	if api.nvim_get_option_value('modified', { buf = buf }) then
 		flags = ' [+]'
-	else
-		for _, win in ipairs(api.nvim_tabpage_list_wins(tabpage)) do
-			local buf = api.nvim_win_get_buf(win)
-			if api.nvim_buf_get_option(buf, 'modified') then
-				flags = ' +'
-				break
-			end
-		end
 	end
 
 	s:put('%', nr, 'T')
