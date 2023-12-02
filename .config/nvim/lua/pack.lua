@@ -185,13 +185,17 @@ local function setup(opts)
 
 	local span = trace('find pack plugins')
 
-	for package_dir in string_gmatch(api.nvim_get_option('packpath'), '[^,]+') do
+	for package_dir in
+		string_gmatch(api.nvim_get_option_value('packpath', {}), '[^,]+')
+	do
 		find_package_plugins(package_dir, pack_plugin_dirs)
 	end
 
 	local span = trace(span, 'find rtp plugins')
 
-	for path in string_gmatch(api.nvim_get_option('runtimepath'), '[^,]+') do
+	for path in
+		string_gmatch(api.nvim_get_option_value('runtimepath', {}), '[^,]+')
+	do
 		table_insert(rtp_middle, path)
 
 		local plugin_dir = path .. '/plugin'
@@ -248,13 +252,13 @@ local function setup(opts)
 	for _, path in ipairs(rtp_after) do
 		table_insert(rtp, path)
 	end
-	api.nvim_set_option('runtimepath', table.concat(rtp, ','))
+	api.nvim_set_option_value('runtimepath', table.concat(rtp, ','), {})
 
 	local span = trace(span, 'initialize plugins')
 
 	if api.nvim_get_vvar('vim_did_enter') == 0 then
 		table_insert(package.loaders, 2, package_loader)
-		api.nvim_set_option('loadplugins', false)
+		api.nvim_set_option_value('loadplugins', false, {})
 	end
 
 	local lua_span = trace('initialize lua package cache')
