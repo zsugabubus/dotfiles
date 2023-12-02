@@ -440,7 +440,7 @@ filetype('awk,python,rust', function()
 end)
 
 filetype('gitcommit,markdown', function()
-	vim.wo.spell = true
+	api.nvim_set_option_value('spell', true, { scope = 'local' })
 end)
 
 filetype('json', function()
