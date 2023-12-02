@@ -69,7 +69,7 @@ local function update()
 
 	api.nvim_buf_clear_namespace(b_buf, ns, 0, -1)
 
-	if api.nvim_buf_get_option(a_buf, 'filetype') == 'giterror' then
+	if api.nvim_get_option_value('filetype', { buf = a_buf }) == 'giterror' then
 		return
 	end
 
