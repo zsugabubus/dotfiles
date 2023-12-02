@@ -24,16 +24,23 @@ mp.add_key_binding(nil, 'delete-file', function()
 	local dirname, _ = utils.split_path(path)
 
 	local log_path = utils.join_path(dirname, '.deleted.log')
-	local f = io.open(log_path, 'a')
+	local f, err = io.open(log_path, 'a')
+	if not f then
+		mp.msg.error(err)
+		mp.osd_message('Delete failed')
+		return
+	end
 	f:write(path .. '\n')
 	f:close()
 
 	local new_path = utils.join_path(dirname, '.deleted')
-	if os.rename(path, new_path) then
+	local ok, err = os.rename(path, new_path)
+	if ok then
 		mp.msg.info(('Moved: %s -> %s'):format(path, new_path))
 		mp.osd_message('File deleted')
 		mp.command('playlist_remove current')
 	else
+		mp.msg.error(err)
 		mp.osd_message('Delete failed')
 	end
 end, { repeatable = false })
