@@ -14,7 +14,7 @@ vim.api.nvim_create_autocmd('CursorMoved', {
 	end,
 })
 
-vim.api.nvim_create_autocmd({ 'WinLeave', 'FocusLost' }, {
+vim.api.nvim_create_autocmd('WinLeave', {
 	group = group,
 	callback = function()
 		vim.wo.statusline = table.concat({
@@ -26,7 +26,7 @@ vim.api.nvim_create_autocmd({ 'WinLeave', 'FocusLost' }, {
 })
 
 vim.api.nvim_create_autocmd(
-	{ 'VimEnter', 'WinEnter', 'BufWinEnter', 'FocusGained' },
+	{ 'VimEnter', 'WinEnter', 'BufWinEnter' },
 	{
 		group = group,
 		callback = function()
