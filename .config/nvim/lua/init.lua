@@ -670,6 +670,7 @@ require('pack').setup({
 	},
 	{ 'textobjects.nvim' },
 	{ 'tmux.nvim' },
+	{ 'undowizard.nvim' },
 	{ 'vim-bufgrep' },
 	{ 'vim-fizzy' },
 	{ 'vim-pastereindent' },
