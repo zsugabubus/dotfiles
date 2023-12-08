@@ -4,14 +4,12 @@ import:
 colors:
   primary:
     background: '0x202230'
-    foreground: '0xcfcfcf'
+    foreground: '0xd0d0d0'
 
-  normal:
-    green:   '0x2edd2e'
-    cyan:    '0x5ef0f1'
-    white:   '0xeaebef'
+  normal: &normal
+    red:     '0xff1010'
+    green:   '0x00d700'
+    cyan:    '0x00ffff'
+    white:   '0xc6c6c6'
 
-  bright:
-    green:   '0x2edd2e'
-    cyan:    '0x5ef0f1'
-    white:   '0xfefeff'
+  bright: *normal
