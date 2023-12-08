@@ -146,6 +146,50 @@ do
 	reload()
 end
 
+do
+	local function set_terminal_color(i, color)
+		vim.g['terminal_color_' .. i] = color
+	end
+
+	local function set_terminal_palette(palette)
+		for i = 1, 16 do
+			set_terminal_color(i - 1, palette[i] or palette[i - 8])
+		end
+	end
+
+	local function update()
+		set_terminal_palette(vim.go.background == 'light' and {
+			'#080808',
+			'#ff0000',
+			'#00af00',
+			'#ff8f00',
+			'#0087ff',
+			'#af00d7',
+			'#00d7ff',
+			'#949494',
+		} or {
+			'#080808',
+			'#ff1010',
+			'#00d700',
+			'#ff8f00',
+			'#0087ff',
+			'#af00d7',
+			'#00ffff',
+			'#c6c6c6',
+		})
+	end
+
+	autocmd('OptionSet', {
+		group = group,
+		pattern = 'background',
+		callback = function()
+			update()
+		end,
+	})
+
+	update()
+end
+
 map('c', '<C-a>', '<Home>')
 map('c', '<C-b>', '<Left>')
 map('c', '<C-e>', '<End>')
