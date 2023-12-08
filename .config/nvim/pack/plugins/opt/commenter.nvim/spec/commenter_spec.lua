@@ -197,3 +197,49 @@ describe('filetype', function()
 		end)
 	end)
 end)
+
+describe('dot repeat', function()
+	before_each(function()
+		vim.o.cms = '*%s'
+	end)
+
+	it('works in normal mode', function()
+		set_lines({
+			'aaa',
+			'bbb',
+			'* ccc',
+		})
+		feed('1gcc')
+		assert_lines({
+			'* aaa',
+			'* bbb',
+			'* ccc',
+		})
+		feed('j.')
+		assert_lines({
+			'* aaa',
+			'bbb',
+			'ccc',
+		})
+	end)
+
+	it('works in visual mode', function()
+		set_lines({
+			'aaa',
+			'bbb',
+			'* ccc',
+		})
+		feed('Vjgc')
+		assert_lines({
+			'* aaa',
+			'* bbb',
+			'* ccc',
+		})
+		feed('.')
+		assert_lines({
+			'* aaa',
+			'bbb',
+			'ccc',
+		})
+	end)
+end)
