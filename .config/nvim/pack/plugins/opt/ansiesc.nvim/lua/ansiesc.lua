@@ -26,6 +26,10 @@ local function get_palette()
 	palette[7] = color(0xc0, 0xc0, 0xc0)
 	palette[8] = color(0x80, 0x80, 0x80)
 
+	for i = 1, 16 do
+		palette[i] = vim.g['terminal_color_' .. (i - 1)] or palette[i]
+	end
+
 	local cube = { 0 }
 	for i = 1, 5 do
 		table.insert(cube, 0x37 + 0x28 * i)
