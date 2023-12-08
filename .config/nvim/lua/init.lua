@@ -596,6 +596,7 @@ require('pack').setup({
 		after = function()
 			map('n', 'gc', '<Plug>(commenter)')
 			map('n', 'gcc', '<Plug>(commenter-current-line)')
+			map('x', 'gc', '<Plug>(commenter)')
 		end,
 	},
 	{
