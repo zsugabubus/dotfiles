@@ -6,6 +6,14 @@ vim.api.nvim_set_keymap('n', '<Plug>(commenter)', '', {
 	end,
 })
 
+vim.api.nvim_set_keymap('x', '<Plug>(commenter)', '', {
+	expr = true,
+	callback = function()
+		vim.o.operatorfunc = 'v:lua._commenter_operatorfunc'
+		return 'g@\n'
+	end,
+})
+
 vim.api.nvim_set_keymap('n', '<Plug>(commenter-current-line)', '', {
 	expr = true,
 	replace_keycodes = true,
