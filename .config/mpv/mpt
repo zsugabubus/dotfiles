@@ -400,10 +400,12 @@ local function fzf_playlist()
 	local stdout = uv.new_pipe()
 	local reply = ''
 
-	uv.spawn('fzf', {
+	local process
+	process = uv.spawn('fzf', {
 		args = { '--read0', '--print0' },
 		stdio = { stdin, stdout, 2 },
 	}, function(code, signal)
+		process:close()
 		enter_program()
 
 		if code == 0 then
@@ -426,6 +428,8 @@ local function fzf_playlist()
 	stdout:read_start(function(err, data)
 		if data then
 			reply = reply .. data
+		else
+			stdout:close()
 		end
 	end)
 end
@@ -449,10 +453,12 @@ local function editor_playlist()
 		os.remove(filename)
 	end
 
-	uv.spawn(os.getenv('EDITOR') or 'vim', {
+	local process
+	process = uv.spawn(os.getenv('EDITOR') or 'vim', {
 		args = { string.format('+%d', props['playlist-pos-1']), '--', filename },
 		stdio = { 0, 1, 2 },
 	}, function(code, signal)
+		process:close()
 		enter_program()
 
 		if code ~= 0 then
