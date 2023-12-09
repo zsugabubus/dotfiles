@@ -69,10 +69,6 @@ ffi.metatype('WINDOW', {
 	},
 })
 
-local function assert_uv_ok(err)
-	-- assert(not err, err)
-end
-
 local Client = {}
 Client.__index = Client
 
@@ -93,7 +89,7 @@ function Client.new(cls, ipc_server)
 end
 
 function Client:close()
-	uv.close(self.pipe, assert_uv_ok)
+	self.pipe:close()
 end
 
 function Client:request(command, on_reply)
@@ -107,7 +103,7 @@ function Client:request(command, on_reply)
 
 	self.reply_handlers[self.request_id] = on_reply
 
-	uv.write(self.pipe, { json.encode(request), '\n' }, self.uv_cb)
+	self.pipe:write({ json.encode(request), '\n' }, self.uv_cb)
 end
 
 function Client:on(name, on_event)
@@ -117,13 +113,13 @@ end
 function Client:connect(on_connect)
 	self.request_id = 0
 	self.reply_handlers = {}
-	uv.pipe_connect(self.pipe, self.ipc_server, function(err)
+	self.pipe:connect(self.ipc_server, function(err)
 		if err then
 			return on_connect(self, err)
 		end
 
 		local buffer = ''
-		uv.read_start(self.pipe, function(err, data)
+		self.pipe:read_start(function(err, data)
 			if not data then
 				self:close()
 				return
@@ -156,16 +152,16 @@ end
 
 do
 	local signal = uv.new_signal()
-	uv.unref(signal)
-	uv.signal_start(signal, 'sigint', function()
+	signal:unref()
+	signal:start('sigint', function()
 		uv.stop()
 	end)
 end
 
 do
 	local signal = uv.new_signal()
-	uv.unref(signal)
-	uv.signal_start(signal, 'sigpipe', function() end)
+	signal:unref()
+	signal:start('sigpipe', function() end)
 end
 
 local client
@@ -183,9 +179,9 @@ local scrolloff = 5
 local top = 0
 local shellout
 local stdin = uv.new_poll(0)
-uv.unref(stdin)
+stdin:unref()
 local sigwinch = uv.new_signal()
-uv.unref(sigwinch)
+sigwinch:unref()
 
 curs.initscr()
 curs.noecho()
@@ -359,14 +355,14 @@ end
 
 local function enter_shell()
 	shellout = true
-	uv.poll_stop(stdin)
-	uv.signal_stop(sigwinch)
+	stdin:stop()
+	sigwinch:stop()
 	curs.endwin()
 end
 
 local function enter_program(b)
 	shellout = false
-	uv.poll_start(stdin, 'r', function(err)
+	stdin:start('r', function(err)
 		if err then
 			return uv.stop()
 		end
@@ -389,7 +385,7 @@ local function enter_program(b)
 			client:request({ 'keypress', key })
 		end
 	end)
-	uv.signal_start(sigwinch, 'sigwinch', function()
+	sigwinch:start('sigwinch', function()
 		curs.endwin()
 		curs.doupdate()
 		render(true)
@@ -422,12 +418,12 @@ local function fzf_playlist()
 	for i, entry in ipairs(props.playlist) do
 		buf:put(tostring(i), '\t', entry.filename, '\0')
 	end
-	uv.write(stdin, buf:tostring())
-	uv.shutdown(stdin, function()
-		uv.close(stdin, assert_uv_ok)
+	stdin:write(buf:tostring())
+	stdin:shutdown(function()
+		stdin:close()
 	end)
 
-	uv.read_start(stdout, function(err, data)
+	stdout:read_start(function(err, data)
 		if data then
 			reply = reply .. data
 		end
