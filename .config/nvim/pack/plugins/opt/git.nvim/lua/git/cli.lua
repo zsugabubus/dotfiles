@@ -6,22 +6,25 @@ local function read_start_buf(stream, mode, callback)
 	if mode == 'full' then
 		local buf = require('string.buffer'):new()
 		stream:read_start(function(err, data)
-			assert(not err, err)
 			if data then
-				return buf:put(data)
+				buf:put(data)
 			else
-				return callback(buf:tostring())
+				stream:close()
+				assert(not err, err)
+				callback(buf:tostring())
 			end
 		end)
 	elseif mode == 'stream' then
 		stream:read_start(function(err, data)
+			if not data then
+				stream:close()
+			end
 			assert(not err, err)
-			return callback(data)
+			callback(data)
 		end)
 	elseif mode == 'line' then
 		local partial = ''
 		stream:read_start(function(err, data)
-			assert(not err, err)
 			if data then
 				for line, eol in string.gmatch(partial .. data, '([^\n]*)(\n?)') do
 					if eol == '' then
@@ -32,8 +35,10 @@ local function read_start_buf(stream, mode, callback)
 					end
 				end
 			else
+				stream:close()
+				assert(not err, err)
 				callback(partial)
-				return callback()
+				callback()
 			end
 		end)
 	else
@@ -76,10 +81,12 @@ function M.run(repo, opts)
 	local stdout = uv.new_pipe()
 	local stderr = opts.on_stderr and uv.new_pipe() or nil
 
-	local process = uv.spawn('git', {
+	local process
+	process = uv.spawn('git', {
 		args = args,
 		stdio = { nil, stdout, stderr },
 	}, function(code)
+		process:close()
 		if opts.callback then
 			opts.callback(code == 0)
 		end
