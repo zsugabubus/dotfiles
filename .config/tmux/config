@@ -162,15 +162,6 @@ bind W if -F '#{@title}' \
 	{ set -w  @title 1 ; set -w window-status-format "#{E:@window-status-format}#T" } \;\
 	set -w window-status-current-format "#{E:window-status-format}"
 
-bind M if -F '#{!=:#{window_name},muck}' {
-	set -F @last_session "#{session_name}" ;
-	select-pane -m ;
-	attach-session -t home ;
-	select-window -t muck
-} {
-	run-shell "tmux switch-client -t #{@last_session}"
-}
-
 bind r source-file ~/.tmux.conf \; display-message -d250 "Reloaded."
 
 bind / set -s @copy_feedkeys '?' \; source ~/.config/tmux/editor-copy.tmux
