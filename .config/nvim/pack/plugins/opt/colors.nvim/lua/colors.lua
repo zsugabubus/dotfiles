@@ -82,8 +82,8 @@ int nvim_is_bright_background_color(uint32_t);
 		end
 		attached_bufs[buf] = true
 
-		local first_row = 0
-		local last_row = M.config.max_lines_to_highlight
+		local first_row
+		local last_row
 		local scheduled
 
 		local function commit()
@@ -92,6 +92,13 @@ int nvim_is_bright_background_color(uint32_t);
 				highlight_lines(buf, first_row, last_row)
 			end
 			first_row, last_row = math.huge, 0
+		end
+
+		local function reload()
+			api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+			first_row = 0
+			last_row = M.config.max_lines_to_highlight
+			commit()
 		end
 
 		assert(api.nvim_buf_attach(buf, false, {
@@ -106,12 +113,13 @@ int nvim_is_bright_background_color(uint32_t);
 					vim.schedule(commit)
 				end
 			end,
+			on_reload = reload,
 			on_detach = function(_, buf)
 				attached_bufs[buf] = nil
 			end,
 		}))
 
-		commit()
+		reload()
 	end
 
 	local function reset()
