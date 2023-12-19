@@ -16,6 +16,5 @@ tags
 /.gdb_history
 
 # Miscellaneous.
-*-private*
 /node_modules
 __pycache__
