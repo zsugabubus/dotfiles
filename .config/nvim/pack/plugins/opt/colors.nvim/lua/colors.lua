@@ -185,7 +185,7 @@ function M.setup(opts)
 			)
 		)
 		load_library()
-	end, { force = true })
+	end, {})
 
 	load_library()
 end
