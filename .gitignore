@@ -1,0 +1,16 @@
+*-private*
+
+/doc
+/mail
+/mem
+/mus
+/pix
+/pub
+/src
+/var
+
+/.*/
+/.cache
+/.cargo
+/.*history
+!/.config/
