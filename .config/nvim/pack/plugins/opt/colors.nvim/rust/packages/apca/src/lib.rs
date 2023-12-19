@@ -249,8 +249,8 @@ impl<T> Sealed for Background<T> {}
 
 impl<T: Float> TextOrBackgroundLightness for Text<Srgb<T>> {
     fn lightness(&self) -> Lightness {
-        if lightness_contrast(Text(self.0), Background(black()))
-            > lightness_contrast(Text(self.0), Background(white()))
+        if lightness_contrast(self.clone(), Background(black()))
+            > lightness_contrast(self.clone(), Background(white()))
         {
             Lightness::Light
         } else {
@@ -261,8 +261,8 @@ impl<T: Float> TextOrBackgroundLightness for Text<Srgb<T>> {
 
 impl<T: Float> TextOrBackgroundLightness for Background<Srgb<T>> {
     fn lightness(&self) -> Lightness {
-        if lightness_contrast(Text(black()), Background(self.0))
-            > lightness_contrast(Text(white()), Background(self.0))
+        if lightness_contrast(Text(black()), self.clone())
+            > lightness_contrast(Text(white()), self.clone())
         {
             Lightness::Light
         } else {
