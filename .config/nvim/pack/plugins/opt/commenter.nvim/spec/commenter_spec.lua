@@ -10,11 +10,11 @@ local function assert_lines(expected_lines)
 end
 
 local function feed(keys)
-	return vim.api.nvim_feedkeys(keys, 'xtim', true)
+	vim.api.nvim_feedkeys(keys, 'xtim', true)
 end
 
 local function set_lines(lines)
-	return vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 end
 
 describe('toggle single line', function()

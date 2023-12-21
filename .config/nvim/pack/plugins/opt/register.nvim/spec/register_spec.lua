@@ -4,7 +4,7 @@ local function assert_lines(expected)
 end
 
 local function set_lines(lines)
-	return vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 end
 
 test(':Register', function()

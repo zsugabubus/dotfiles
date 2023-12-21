@@ -1,5 +1,5 @@
 local function feed(keys)
-	return vim.api.nvim_feedkeys(keys, 'xtim', true)
+	vim.api.nvim_feedkeys(keys, 'xtim', true)
 end
 
 assert:register('matcher', 'chunk_text', function(_, arguments)
@@ -23,7 +23,7 @@ before_each(function()
 end)
 
 local function set_lines(lines)
-	return vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 end
 
 test('ga, visual mode, multi-line', function()

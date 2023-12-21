@@ -30,7 +30,7 @@ local function get_target(opts)
 end
 
 local function buf_read_system(buf, args)
-	return api.nvim_buf_set_lines(buf, 0, -1, true, fn.systemlist(args))
+	api.nvim_buf_set_lines(buf, 0, -1, true, fn.systemlist(args))
 end
 
 local function echo(...)
