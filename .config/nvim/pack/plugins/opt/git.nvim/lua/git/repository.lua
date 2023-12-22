@@ -1,5 +1,7 @@
 local cli = require('git.cli')
 
+local api = vim.api
+local fn = vim.fn
 local uv = vim.loop
 
 local M = {}
@@ -8,8 +10,10 @@ local redraw_timer = uv.new_timer()
 
 local repo_by_path = {}
 local repo_by_id = {}
+local status_cache = {}
 
 local function redraw_status_inner()
+	status_cache = {}
 	for _, repo in pairs(repo_by_id) do
 		repo.live = false
 	end
@@ -349,9 +353,9 @@ function M.from_current_buf()
 	local dir = vim.b.git_dir
 	if not dir then
 		if vim.bo.buftype == '' then
-			dir = vim.fn.expand('%:p:h')
+			dir = fn.expand('%:p:h')
 		else
-			dir = vim.fn.getcwd()
+			dir = fn.getcwd()
 		end
 		vim.b.git_dir = dir
 	end
@@ -370,13 +374,13 @@ function M.await(repo)
 	return repo_by_path[repo.dir]
 end
 
-local function is_status_enabled(buf)
-	local buftype = vim.bo[buf].buftype
+local function is_status_enabled()
+	local buftype = vim.bo.buftype
 	if buftype == 'help' or buftype == 'quickfix' then
 		return false
 	end
 
-	local bufname = vim.api.nvim_buf_get_name(buf)
+	local bufname = api.nvim_buf_get_name(0)
 	if
 		string.sub(bufname, 1, 6) == 'man://'
 		or string.sub(bufname, 1, 4) == '/tmp'
@@ -387,8 +391,8 @@ local function is_status_enabled(buf)
 	return true
 end
 
-function M.status()
-	if not is_status_enabled(0) then
+local function get_status()
+	if not is_status_enabled() then
 		return ''
 	end
 
@@ -400,6 +404,16 @@ function M.status()
 	end
 
 	return repo.statusline
+end
+
+function M.status()
+	local buf = api.nvim_get_current_buf()
+	local s = status_cache[buf]
+	if not s then
+		s = get_status()
+		status_cache[buf] = s
+	end
+	return s
 end
 
 return M
