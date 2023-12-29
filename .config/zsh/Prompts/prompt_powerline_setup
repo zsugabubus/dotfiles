@@ -7,6 +7,43 @@ zmodload -F zsh/stat b:zstat
 
 autoload -Uz add-zsh-hook
 
+# IGNOREFILE PATH
+function __git-is-dir-ignored() {
+	[[ -f $1 ]] || return 1
+
+	local pat=
+	integer include=1
+	for pat in ${${(f)"$(<$1)"}:#"#"*}; do
+		integer bang=0
+		if [[ ${pat:0:1} == ! ]]; then
+			pat=${pat:1}
+			bang=1
+		fi
+
+		pat=${pat%/}
+		[[ $pat == */* ]] || pat="**/$pat"
+		local re=${${(b)pat}//./\\.}
+		# "/**/"
+		re=${re//\/\\\*\\\*\///([^/]*/)*}
+		# ^"**/"
+		re=${re//#\\\*\\\*\//([^/]*/)*}
+		# "/**"$
+		re=${re//%\/\\\*\\\*//.*}
+		# "*"
+		re=${re//\\\*/[^/]*}
+		# "?"
+		re=${re//\\\?/[^/]?}
+		# "[...]"
+		re=${${re//\\\[/[}//\\\]/]}
+		re="^/${re#/}(/|$)"
+
+		if [[ $2 =~ $re ]]; then
+			include=$bang
+		fi
+	done
+	return $include
+}
+
 function __prompt_vcs_info() {
 	typeset -a st
 
@@ -25,58 +62,68 @@ function __prompt_vcs_info() {
 
 	zstat -sH st -F '' -- .
 	local cdev=${st[device]}
-	zstat -sH st -F '' -- /
-	local root=${st[device]}:${st[inode]}
 
-	local dir= cdup=./ segments=$PWD
+	local gitdir= workdir=$PWD updir=
 	while :; do
-		zstat -sH st -F '' -- $cdup
-		if [[ -z $GIT_DISCOVERY_ACROSS_FILESYSTEM ]]; then
-			[[ ${st[device]} == $cdev ]] || return
-		fi
-
-		dir=$cdup.git
-		[[ -d $dir ]] && break
-		if [[ -f $dir ]]; then
-			read dir <$dir
-			dir=${dir#gitdir: }
+		gitdir=$workdir/.git
+		if [[ -d $gitdir ]]; then
+			break
+		elif [[ -f $gitdir ]]; then
+			gitdir="${$(<$gitdir)#gitdir: }"
 			break
 		fi
-		[[ ${st[device]}:${st[inode]} == $root ]] && return
-		cdup+=../
 
-		# Testing whether file exists is faster than attempting to read it and 2>&- errors.
-		if [[ -f $cdup.gitignore ]]; then
-			typeset -a names=( ${${${${${(f)"$(<$cdup.gitignore)"}:#"#"*}#\/}%\/}//"#"/'\\'#} )
-			typeset -A pats=( ${names:^^names} )
-			[[ -n ${pats[(Ik)${segments##*/}]} ]] && return
+		updir=/${workdir##*/}$updir
+		workdir=${workdir%/*}
+		if [[ -z $workdir ]]; then
+			return
 		fi
-		segments=${segments%/*}
 
+		if [[ -z $GIT_DISCOVERY_ACROSS_FILESYSTEM ]]; then
+			zstat -sH st -F '' -- $workdir
+			if [[ ${st[device]} != $cdev ]]; then
+				return
+			fi
+		fi
+
+		if __git-is-dir-ignored $workdir/.gitignore $updir; then
+			return
+		fi
 	done
 
-	local head=undefined op=
-	if read head <$dir/HEAD; then
-		head=${head/ref: refs\/heads\//}
+	if __git-is-dir-ignored $gitdir/info/exclude $updir; then
+		return
 	fi
 
-	if [[ -d $dir/rebase-merge ]]; then
+	local config_home=
+	for config_home in ${XDG_CONFIG_HOME:-$HOME/.config}; do
+		if __git-is-dir-ignored $config_home/git/ignore $updir; then
+			return
+		fi
+	done
+
+	local head=$(<$gitdir/HEAD 2>/dev/null)
+	head=${head/ref: refs\/heads\//}
+	head=${head:-undefined}
+
+	local op=
+	if [[ -d $gitdir/rebase-merge ]]; then
 		op=REBASE
-	elif [[ -d $dir/rebase-apply ]]; then
-		if [[ -f $dir/rebase-apply/rebasing ]]; then
+	elif [[ -d $gitdir/rebase-apply ]]; then
+		if [[ -f $gitdir/rebase-apply/rebasing ]]; then
 			op=REBASE
-		elif [[ -f $dir/rebase-apply/applying ]]; then
+		elif [[ -f $gitdir/rebase-apply/applying ]]; then
 			op=AM
 		else
 			op=AM/REBASE
 		fi
-	elif [[ -f $dir/MERGE_HEAD ]]; then
+	elif [[ -f $gitdir/MERGE_HEAD ]]; then
 		op=MERGE
-	elif [[ -f $dir/CHERRY_PICK_HEAD ]]; then
+	elif [[ -f $gitdir/CHERRY_PICK_HEAD ]]; then
 		op=CHERRY-PICK
-	elif [[ -f $dir/REVERT_HEAD ]]; then
+	elif [[ -f $gitdir/REVERT_HEAD ]]; then
 		op=REVERT
-	elif [[ -f $dir/BISECT_LOG ]]; then
+	elif [[ -f $gitdir/BISECT_LOG ]]; then
 		op=BISECT
 	fi
 
@@ -84,8 +131,8 @@ function __prompt_vcs_info() {
 		head=$(git --no-optional-locks name-rev --name-only --always --no-undefined "$head")
 	fi
 
-	typeset -g __prompt_vcs_dir=$dir
-	typeset -g __prompt_vcs_path=${${PWD:(( ${#${:-$PWD/$cdup../}:a} + 1 ))}//\%/%%}
+	typeset -g __prompt_vcs_dir=$gitdir
+	typeset -g __prompt_vcs_path=${${PWD#${workdir%/*}/}//\%/%%}
 	typeset -g __prompt_vcs_status=${${:-$head${op:+|}$op}//\%/%%}
 }
 
