@@ -133,6 +133,9 @@ function __prompt_vcs_info() {
 
 	typeset -g __prompt_vcs_dir=$gitdir
 	typeset -g __prompt_vcs_path=${${PWD#${workdir%/*}/}//\%/%%}
+	if (( $#__prompt_path <= $#__prompt_vcs_path )); then
+		unset __prompt_vcs_path
+	fi
 	typeset -g __prompt_vcs_status=${${:-$head${op:+|}$op}//\%/%%}
 }
 
