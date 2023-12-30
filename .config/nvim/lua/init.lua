@@ -382,36 +382,13 @@ autocmd('BufNewFile', {
 	group = group,
 	callback = function()
 		local function once(event, callback)
-			return autocmd(event, {
+			autocmd(event, {
 				group = group,
 				buffer = 0,
 				once = true,
 				callback = callback,
 			})
 		end
-
-		once('FileType', function()
-			if fn.changenr() ~= 0 or not vim.bo.modifiable then
-				return
-			end
-
-			local ft = vim.bo.filetype
-			local interpreter = ({
-				javascript = 'node',
-				python = 'python3',
-			})[ft] or ft
-
-			local path = fn.exepath(interpreter)
-			if path == '' then
-				return
-			end
-
-			api.nvim_buf_set_lines(0, 0, -1, false, {
-				'#!' .. path,
-				'',
-			})
-			cmd.normal({ args = { 'G' }, bang = true })
-		end)
 
 		once('BufWritePre', function(opts)
 			fn.mkdir(vim.fs.dirname(opts.file), 'p')
