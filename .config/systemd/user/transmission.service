@@ -1,12 +1,15 @@
 [Unit]
 Description=Transmission BitTorrent Daemon
 After=network.target
-ConditionVirtualization=no
 
 [Service]
 Type=notify
-ExecStart=/usr/bin/env transmission-daemon -f --log-error
-ExecReload=/bin/kill -s HUP $MAINPID
+ExecStart=transmission-daemon --config-dir "%E/transmission" --foreground
+SystemCallFilter=@system-service
+NoNewPrivileges=yes
+PrivateUsers=yes
+PrivateTmp=yes
+ProtectSystem=full
 
 [Install]
 WantedBy=default.target
