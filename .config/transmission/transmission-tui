@@ -1,0 +1,3280 @@
+#!/usr/bin/luajit
+-- https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md
+
+local function load_curl_library()
+	local ffi = require('ffi')
+
+	ffi.cdef([[
+struct curl_slist;
+
+typedef struct CURL CURL;
+
+struct curl_header {
+	char *name;
+	char *value;
+};
+
+enum {
+	CURLH_HEADER = 1,
+};
+
+typedef enum {
+	CURLE_OK,
+} CURLcode;
+
+typedef enum {
+	CURLOPT_POSTFIELDSIZE = 0 + 60,
+	CURLOPT_URL = 10000 + 2,
+	CURLOPT_POSTFIELDS = 10000 + 15,
+	CURLOPT_HTTPHEADER = 10000 + 23,
+	CURLOPT_ACCEPT_ENCODING = 10000 + 102,
+	CURLOPT_USERNAME = 10000 + 173,
+	CURLOPT_PASSWORD = 10000 + 174,
+	CURLOPT_WRITEFUNCTION = 20000 + 11,
+} CURLoption;
+
+typedef enum {
+	CURLINFO_RESPONSE_CODE = 0x200000 + 2,
+} CURLINFO;
+
+typedef enum {
+	CURLHE_OK,
+	CURLHE_BADINDEX,
+	CURLHE_MISSING,
+} CURLHcode;
+
+CURL *curl_easy_init(void);
+CURLHcode curl_easy_header(CURL *, const char *, size_t, unsigned, int, struct curl_header **);
+CURLcode curl_easy_getinfo(CURL *, CURLINFO, ...);
+CURLcode curl_easy_perform(CURL *);
+CURLcode curl_easy_setopt(CURL *, CURLoption, ...);
+CURLcode curl_global_init(long);
+const char *curl_easy_strerror(CURLcode);
+struct curl_slist *curl_slist_append(struct curl_slist *, const char *);
+void curl_easy_cleanup(CURL *);
+void curl_easy_reset(CURL *);
+void curl_slist_free_all(void *);
+
+typedef size_t write_callback(char *, size_t, size_t, void *);
+	]])
+
+	return ffi.load('curl')
+end
+
+local function create_HttpSession()
+	local ffi = require('ffi')
+
+	local libcurl = load_curl_library()
+	local body = require('string.buffer').new()
+
+	global_ref_to_make_ffi_gc_work = libcurl
+
+	local function check(result)
+		if result ~= libcurl.CURLE_OK then
+			error(ffi.string(libcurl.curl_easy_strerror(result)))
+		end
+	end
+
+	local function write_callback(buffer, size, nmemb)
+		local len = size * nmemb
+		body:putcdata(buffer, len)
+		return len
+	end
+	local write_callback = ffi.cast('write_callback *', write_callback)
+
+	assert(libcurl.curl_global_init(0xff) == libcurl.CURLE_OK)
+
+	local long_ref = ffi.new('long[1]')
+	local header_ptr_ref = ffi.new('struct curl_header *[1]')
+
+	local M = {}
+	M.__index = M
+
+	local function make_header_list(t)
+		local list = nil
+		for k, v in pairs(t) do
+			local data = string.format('%s%s%s', k, v == '' and ';' or ':', v or '')
+			local new_list = libcurl.curl_slist_append(list, data)
+			assert(new_list ~= nil)
+			if list ~= nil then
+				ffi.gc(list, nil)
+			end
+			ffi.gc(new_list, libcurl.curl_slist_free_all)
+			list = new_list
+		end
+		return list
+	end
+
+	local function long(x)
+		return ffi.cast('long', x)
+	end
+
+	local function set_url(self, url)
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_URL, url))
+	end
+
+	local function set_body(self, body)
+		self._request_body = body
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_POSTFIELDSIZE, long(#body)))
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_POSTFIELDS, body))
+	end
+
+	local function set_headers(self, headers)
+		if self._headers ~= headers then
+			self._headers = headers
+			self._header_list = make_header_list(headers)
+		end
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_HTTPHEADER, self._header_list))
+	end
+
+	local function set_enable_compression(self)
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_ACCEPT_ENCODING, ''))
+	end
+
+	local function set_username(self, username)
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_USERNAME, username))
+	end
+
+	local function set_password(self, password)
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_PASSWORD, password))
+	end
+
+	function M.new(cls)
+		return setmetatable({
+			handle = ffi.gc(libcurl.curl_easy_init(), libcurl.curl_easy_cleanup),
+		}, cls)
+	end
+
+	function M:request(url, opts)
+		body:reset()
+		libcurl.curl_easy_reset(self.handle)
+
+		set_url(self, url)
+		set_enable_compression(self)
+		if opts then
+			if opts.body then
+				set_body(self, opts.body)
+			end
+			if opts.headers then
+				set_headers(self, opts.headers)
+			end
+			if opts.username then
+				set_username(self, opts.username)
+			end
+			if opts.password then
+				set_username(self, opts.password)
+			end
+		end
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_WRITEFUNCTION, write_callback))
+
+		check(libcurl.curl_easy_perform(self.handle))
+	end
+
+	function M:body()
+		return body:tostring()
+	end
+
+	function M:status()
+		check(libcurl.curl_easy_getinfo(self.handle, libcurl.CURLINFO_RESPONSE_CODE, long_ref))
+		return tonumber(long_ref[0])
+	end
+
+	function M:header(name)
+		local result =
+			libcurl.curl_easy_header(self.handle, name, 0, libcurl.CURLH_HEADER, -1, header_ptr_ref)
+		if result == libcurl.CURLHE_MISSING then
+			return nil
+		end
+		assert(result == libcurl.CURLHE_OK)
+		local header = header_ptr_ref[0]
+		return ffi.string(header.value)
+	end
+
+	return M
+end
+
+local function create_TransmissionSession()
+	local json = require('cjson')
+
+	local SESSION_ID_HEADER = 'X-Transmission-Session-Id'
+	local CONTENT_TYPE_HEADER = 'Content-Type'
+	local JSON_MIME_TYPE = 'application/json'
+
+	local M = {
+		RECENTLY_ACTIVE_MILLISECONDS = 60 * 1000,
+		DEFAULT_HOST = '127.0.0.1',
+		DEFAULT_PORT = 9091,
+		DEFAULT_PATH = '/transmission/',
+	}
+	M.__index = M
+
+	local function make_url(host, port, path)
+		return string.format('http://%s:%d%srpc', host, port, path)
+	end
+
+	local function make_headers(session_id)
+		return {
+			[SESSION_ID_HEADER] = session_id,
+			[CONTENT_TYPE_HEADER] = JSON_MIME_TYPE,
+		}
+	end
+
+	local function set_session_id(self, session_id)
+		self._headers = make_headers(session_id)
+	end
+
+	function M.new(cls, opts)
+		return setmetatable({
+			_http = assert(opts.http),
+			_url = make_url(
+				opts.host or cls.DEFAULT_HOST,
+				opts.port or cls.DEFAULT_PORT,
+				opts.path or cls.DEFAULT_PATH
+			),
+			_headers = make_headers(nil),
+			_username = opts.username,
+			_password = opts.password,
+		}, cls)
+	end
+
+	function M:request(body)
+		self._http:request(self._url, {
+			body = json.encode(body),
+			headers = self._headers,
+			username = self._username,
+			password = self._password,
+		})
+
+		local status = self._http:status()
+		if status == 409 then
+			set_session_id(self, assert(self._http:header(SESSION_ID_HEADER)))
+			return self:request(body)
+		end
+		assert(status == 200)
+
+		local body = json.decode(self._http:body())
+		if body.result == 'success' then
+			return true, body.arguments
+		else
+			return false, body.result
+		end
+	end
+
+	function M:call_unchecked(method, arguments)
+		return self:request({
+			method = assert(method),
+			arguments = arguments,
+		})
+	end
+
+	function M:call(...)
+		local ok, payload = self:call_unchecked(...)
+		assert(ok, payload)
+		return payload
+	end
+
+	return M
+end
+
+local function create_with_buffer()
+	local buf = require('string.buffer'):new()
+
+	local function with(callback)
+		buf:reset()
+		callback(buf)
+		return buf:tostring()
+	end
+
+	return with
+end
+
+local function create_TmpFile()
+	local M = {}
+	M.__index = M
+
+	function M.new(cls)
+		return setmetatable({
+			path = os.tmpname(),
+		}, cls)
+	end
+
+	function M.with_content(cls, data)
+		local self = cls:new()
+		self:set_content(data)
+		return self
+	end
+
+	function M:set_content(data)
+		local f = assert(io.open(self.path, 'w'))
+		assert(f:write(tostring(data)))
+		assert(f:close())
+	end
+
+	function M:remove()
+		os.remove(self.path)
+	end
+
+	function M:content()
+		local f = io.open(self.path, 'r')
+		if not f then
+			return ''
+		end
+		local content = assert(f:read('*a'))
+		assert(f:close())
+		return content
+	end
+
+	return M
+end
+
+local function load_ncurses_library()
+	local ffi = require('ffi')
+
+	local curs = ffi.load('ncursesw')
+
+	ffi.cdef([[
+typedef struct WINDOW WINDOW;
+
+enum {
+	A_NORMAL = 0,
+	A_REVERSE = 1 << 18,
+	A_BOLD = 1 << 21,
+};
+
+extern int LINES, COLS;
+
+WINDOW *initscr(void);
+WINDOW *newwin(int, int, int, int);
+char const *keyname(int);
+int curs_set(int);
+int doupdate(void);
+int endwin(void);
+int getcurx(const WINDOW *);
+int getcury(const WINDOW *);
+int getmaxx(const WINDOW *);
+int getmaxy(const WINDOW *);
+int keypad(WINDOW *win, bool);
+int mvwin(WINDOW *, int, int);
+int nodelay(WINDOW *, bool);
+int noecho(void);
+int waddnstr(WINDOW *, const char *, int);
+int wattr_set(WINDOW *, uint32_t, short, void *);
+int wclrtoeol(WINDOW *);
+int wgetch(WINDOW *);
+int wmove(WINDOW *, int, int);
+int wnoutrefresh(WINDOW *);
+int wresize(WINDOW *, int, int);
+int wscrl(WINDOW *, int);
+	]])
+
+	local Window = ffi.metatype('WINDOW', {
+		__index = {
+			new = function(...)
+				local win = curs.newwin(...)
+				assert(win ~= nil)
+				return win
+			end,
+			attr = function(self, attrs, pair)
+				return curs.wattr_set(self, attrs, pair, nil)
+			end,
+			clrtoeol = curs.wclrtoeol,
+			cols = curs.getmaxx,
+			cursor = curs.wmove,
+			getch = curs.wgetch,
+			keypad = curs.keypad,
+			lines = curs.getmaxy,
+			move = curs.mvwin,
+			nodelay = curs.nodelay,
+			put = function(self, s)
+				return curs.waddnstr(self, s, #s)
+			end,
+			putf = function(self, ...)
+				return self:put(string.format(...))
+			end,
+			refresh = curs.wnoutrefresh,
+			resize = curs.wresize,
+			scroll = curs.wscrl,
+			x = curs.getcurx,
+			y = curs.getcury,
+		},
+	})
+
+	return curs, Window
+end
+
+local function create_curs_width(curs, Window)
+	local win
+	local win_cols = 0
+
+	local mt = { __mode = 'kv' }
+	local cache
+	local cur_cols
+
+	return function(s)
+		local max = curs.COLS
+		if win_cols <= max then
+			cache = setmetatable({}, mt)
+			if not win then
+				win = Window.new(1, 1, 0, 0)
+			end
+			win_cols = max + 1
+			win:resize(1, win_cols)
+		end
+		local n = cache[s]
+		if n ~= nil then
+			return n
+		end
+		win:cursor(0, 0)
+		win:put(s)
+		n = math.min(max, win:x())
+		cache[s] = n
+		return n
+	end
+end
+
+local function create_Column()
+	local M = {}
+	M.__index = M
+
+	local function with(self, k, v)
+		self[k] = v
+		return self
+	end
+
+	function M.new(cls)
+		return setmetatable({}, cls)
+	end
+
+	function M:clone()
+		local o = {}
+		for k, v in pairs(self) do
+			o[k] = v
+		end
+		return setmetatable(o, M)
+	end
+
+	function M:with_optional(yes)
+		return with(self, 'optional', yes ~= false)
+	end
+
+	function M:with_title(s)
+		return with(self, 'title', s)
+	end
+
+	function M:with_width(n)
+		return with(self, 'width', n)
+	end
+
+	function M:with_display(fn, dependencies)
+		with(self, 'dependencies', dependencies)
+		return with(self, 'display', fn)
+	end
+
+	return M
+end
+
+local function create_Columns(string_width)
+	local M = {}
+	M.__index = M
+
+	local function compute_column_visible(column, data_list)
+		if not column.optional then
+			return true
+		end
+
+		for _, data in ipairs(data_list) do
+			if column.display(data) ~= '' then
+				return true
+			end
+		end
+
+		return false
+	end
+
+	local function compute_column_width(column, data_list)
+		local width = string_width(column.title)
+		for _, data in ipairs(data_list) do
+			local s = column.display(data)
+			local max_possible_width = #s * 2
+			if width < max_possible_width then
+				width = math.max(width, string_width(s))
+			end
+		end
+		return width
+	end
+
+	local function ipairs_any(x)
+		return ipairs(type(x) == 'table' and x or { x })
+	end
+
+	function M.new(cls, columns)
+		return setmetatable(columns, cls)
+	end
+
+	function M:render(data_list)
+		local t = {}
+		for i, column in ipairs(self) do
+			if compute_column_visible(column, data_list) then
+				local last = i == #self
+				if not column.width and not last then
+					local width = compute_column_width(column, data_list)
+					column = column:clone():with_width(width)
+				end
+				table.insert(t, column)
+			end
+		end
+		return M:new(t)
+	end
+
+	function M:build_dependency_list(default_dependencies)
+		local wanted = {}
+		for _, k in ipairs_any(default_dependencies) do
+			wanted[k] = true
+		end
+		for _, column in ipairs(self) do
+			for _, k in ipairs_any(column.dependencies) do
+				wanted[k] = true
+			end
+		end
+		local t = {}
+		for k in pairs(wanted) do
+			table.insert(t, k)
+		end
+		return t
+	end
+
+	return M
+end
+
+local function create_ListRenderer(curs)
+	local M = {}
+	M.__index = M
+
+	local function render_filler(win, y1, y2)
+		win:attr(curs.A_NORMAL, 0)
+		for y = y1, y2 - 1 do
+			win:cursor(y, 0)
+			win:put('~')
+			win:clrtoeol()
+		end
+	end
+
+	local function render_string(win, width, s)
+		if width < 0 then
+			-- Only numeric-like strings should be right aligned so length equals to
+			-- width.
+			win:put(string.rep(' ', -width - #s))
+			win:put(s)
+		elseif width > 0 then
+			local x = win:x()
+			win:put(s)
+			local s_width = win:x() - x
+			win:put(string.rep(' ', width - s_width))
+		else
+			win:put(s)
+		end
+	end
+
+	local function render_column_title(win, column)
+		render_string(win, column.width or 0, column.title)
+	end
+
+	local function render_header(win, columns)
+		win:attr(curs.A_BOLD, 0)
+		local space = false
+		for _, column in ipairs(columns) do
+			if space then
+				win:put(' ')
+			end
+			space = true
+			render_column_title(win, column)
+		end
+	end
+
+	local function render_cells(win, data, columns, current, focused)
+		if current and focused then
+			win:attr(curs.A_REVERSE + curs.A_BOLD, 0)
+		else
+			win:attr(curs.A_NORMAL, 0)
+		end
+
+		if current then
+			win:put('*')
+		else
+			win:put(' ')
+		end
+
+		local space = false
+		for _, column in ipairs(columns) do
+			if space then
+				win:put(' ')
+			end
+			space = true
+			render_string(win, column.width or 0, column.display(data))
+		end
+
+		win:clrtoeol()
+		win:attr(curs.A_NORMAL, 0)
+	end
+
+	function M.new(cls)
+		return setmetatable({
+			_old_top = 0,
+		}, cls)
+	end
+
+	function M:render(win, list_manager, columns, focused)
+		local lines = win:lines()
+		list_manager:set_height(lines - 1)
+
+		win:scroll(list_manager:top() - self._old_top)
+		self._old_top = list_manager:top()
+
+		win:cursor(0, 0)
+		win:put(' ')
+		render_header(win, columns)
+		win:clrtoeol()
+
+		local y = 1
+
+		for i = list_manager:top(), list_manager:len() do
+			y = self.render_item(win, y, list_manager, i, columns, focused)
+			if y >= lines then
+				break
+			end
+		end
+
+		render_filler(win, y, lines)
+	end
+
+	function M.render_item(win, y, list_manager, index, columns, focused)
+		local data = list_manager:get(index)
+		local current = list_manager:cursor() == index
+		M.render_row(win, y, data, columns, current, focused)
+		return y + 1
+	end
+
+	function M.render_row(win, y, data, columns, current, focused)
+		win:cursor(y, 0)
+		render_cells(win, data, columns, current, focused)
+	end
+
+	return M
+end
+
+local function create_ListManager()
+	local M = {}
+	M.__index = M
+
+	local function compute_cursor_view_range(self)
+		local m = self:half_height()
+		local n = self._scrolloff
+		return math.min(n, m), math.max(self._height - 1 - n, m)
+	end
+
+	local function sort(self)
+		assert(self._comp)
+		table.sort(self._list, self._comp)
+	end
+
+	local function invalidate_index_map(self)
+		self._map = nil
+	end
+
+	local function index_map(self)
+		local m = self._map
+		if m then
+			return m
+		end
+
+		m = {}
+		for i, item in ipairs(self._list) do
+			m[item.id] = i
+		end
+
+		self._map = m
+		return m
+	end
+
+	local function upsert_many(self, items, insert)
+		if #items == 0 then
+			return
+		end
+
+		local m = index_map(self)
+		local checks = {}
+
+		for _, item in ipairs(items) do
+			local i = m[item.id]
+			if insert and i == nil then
+				i = #self._list + 1
+				m[item.id] = i
+			end
+			if i ~= nil then
+				self._list[i] = item
+				checks[i] = item
+			end
+		end
+
+		sort(self)
+
+		for wanted_index, wanted_item in pairs(checks) do
+			if self._list[wanted_index] ~= wanted_item then
+				invalidate_index_map()
+				break
+			end
+		end
+	end
+
+	function M.new(cls)
+		return setmetatable({
+			_list = {},
+			_top = 1,
+			_cursor = 0,
+			_height = 0,
+			_scrolloff = 0,
+		}, cls)
+	end
+
+	function M:half_height()
+		return math.floor(self._height / 2)
+	end
+
+	function M:set_height(lines)
+		self._height = lines
+		self:scroll_cursor_into_view()
+	end
+
+	function M:list()
+		return self._list
+	end
+
+	function M:len()
+		return #self._list
+	end
+
+	function M:get(key)
+		return assert(self._list[key])
+	end
+
+	function M:find_index_by_id(id)
+		return index_map(self)[id]
+	end
+
+	function M:set(items)
+		self._list = items
+		invalidate_index_map(self)
+		self:move_cursor(self._cursor)
+		if self._comp then
+			sort(self)
+		end
+	end
+
+	function M:clear()
+		self:set({})
+	end
+
+	function M:upsert_many(items)
+		return upsert_many(self, items, true)
+	end
+
+	function M:update_many(items)
+		return upsert_many(self, items, false)
+	end
+
+	function M:updelete_many(items)
+		local m = {}
+		for _, item in ipairs(items) do
+			m[item.id] = item
+		end
+
+		local t = {}
+		for _, item in ipairs(self._list) do
+			t[#t + 1] = m[item.id]
+		end
+
+		self:set(t)
+	end
+
+	function M:remove_many_by_id(ids)
+		if next(ids) == nil then
+			return
+		end
+
+		local m = index_map(self)
+		local t = {}
+
+		for _, id in ipairs(ids) do
+			t[#t + 1] = m[id]
+			m[id] = nil
+		end
+
+		table.sort(t)
+
+		for i = #t, 1, -1 do
+			table.remove(self._list, t[i])
+		end
+		self:set_cursor(self._cursor)
+	end
+
+	function M:set_sort(comp)
+		self._comp = comp
+		if self._comp then
+			invalidate_index_map(self)
+			sort(self)
+		end
+	end
+
+	function M:set_scrolloff(n)
+		self._scrolloff = n
+	end
+
+	function M:cursor()
+		return self._cursor
+	end
+
+	function M:set_cursor(index)
+		index = math.max(index, 1)
+		index = math.min(index, #self._list)
+		self._cursor = index
+	end
+
+	function M:top()
+		return self._top
+	end
+
+	function M:bottom()
+		return self._top + self._height - 1
+	end
+
+	function M:set_top(index)
+		index = math.min(index, #self._list - self._height + 1)
+		index = math.max(index, 1)
+		self._top = index
+	end
+
+	function M:compute_view_top(index)
+		local a, b = compute_cursor_view_range(self)
+		local c = index - self._top
+		c = math.max(c, a)
+		c = math.min(c, b)
+		return index - c
+	end
+
+	function M:compute_nearest_view_line(index)
+		local a, b = compute_cursor_view_range(self)
+		local c = index
+		c = math.max(c, self._top + a)
+		c = math.min(c, self._top + b)
+		return c
+	end
+
+	function M:move_cursor(index)
+		self:set_cursor(index)
+		self:scroll_cursor_into_view()
+	end
+
+	function M:move_cursor_by(amount)
+		self:move_cursor(self._cursor + amount)
+	end
+
+	function M:move_cursor_first()
+		self:move_cursor(1)
+	end
+
+	function M:move_cursor_last()
+		self:move_cursor(#self._list)
+	end
+
+	function M:move_cursor_to_id(id)
+		local index = self:find_index_by_id(id)
+		if index == nil then
+			return false
+		end
+		self:move_cursor(index)
+		return true
+	end
+
+	function M:move_cursor_into_view()
+		self:set_cursor(self:compute_nearest_view_line(self._cursor))
+	end
+
+	function M:scroll_into_view(index)
+		self:set_top(self:compute_view_top(index))
+	end
+
+	function M:scroll_cursor_into_view()
+		self:scroll_into_view(self._cursor)
+	end
+
+	function M:scroll_by(amount)
+		self:set_top(self._top + amount)
+		self:move_cursor_into_view()
+	end
+
+	function M:scroll_by_page(amount)
+		self:scroll_by(amount * self._height)
+	end
+
+	function M:scroll_and_move_by(amount)
+		self:set_top(self._top + amount)
+		self:set_cursor(self._cursor + amount)
+	end
+
+	function M:scroll_and_move_by_half_page(amount)
+		self:scroll_and_move_by(amount * self:half_height())
+	end
+
+	function M:scroll_cursor_to_view_line(index)
+		self:set_top(self._cursor - index)
+	end
+
+	function M:scroll_cursor_to_top()
+		local a = compute_cursor_view_range(self)
+		self:scroll_cursor_to_view_line(a)
+	end
+
+	function M:scroll_cursor_to_bottom()
+		local _, b = compute_cursor_view_range(self)
+		self:scroll_cursor_to_view_line(b)
+	end
+
+	function M:scroll_cursor_to_middle()
+		local m = self:half_height()
+		self:scroll_cursor_to_view_line(m)
+	end
+
+	function M:cursor_id()
+		local item = self._list[self._cursor]
+		if item == nil then
+			return
+		end
+		return item.id
+	end
+
+	function M:ids()
+		local t = {}
+		for _, item in ipairs(self._list) do
+			table.insert(t, item.id)
+		end
+		return t
+	end
+
+	return M
+end
+
+local function create_escaper()
+	local ESC_TABLE = {
+		['\n'] = '\\n',
+		['\r'] = '\\r',
+		['\t'] = '\\t',
+		['\\'] = '\\\\',
+	}
+
+	local UNESC_TABLE = {
+		['\\n'] = '\n',
+		['\\r'] = '\r',
+		['\\t'] = '\t',
+		['\\\\'] = '\\',
+	}
+
+	local function esc(s)
+		return (string.gsub(s, '[\n\r\t\\]', ESC_TABLE))
+	end
+
+	local function unesc(s)
+		return (string.gsub(s, '\\.', UNESC_TABLE))
+	end
+
+	return esc, unesc
+end
+
+local function create_KeyHandler()
+	local M = {}
+	M.__index = M
+
+	function M.new(cls)
+		return setmetatable({}, cls)
+	end
+
+	function M:set_key_table(key_table)
+		self._ground = key_table
+		self._state = key_table
+	end
+
+	function M:push_key(key)
+		local next_state = self._state[key]
+
+		if next_state == nil then
+			self._state = self._ground
+			return nil
+		end
+
+		if type(next_state) == 'table' then
+			self._state = next_state
+			return nil
+		end
+
+		self._state = self._ground
+		return next_state
+	end
+
+	return M
+end
+
+local function list_equal(a, b)
+	if #a ~= #b then
+		return false
+	end
+	for i = 1, #a do
+		if a[i] ~= b[i] then
+			return false
+		end
+	end
+	return true
+end
+
+local function create_TransmissionTui()
+	local ffi = require('ffi')
+	local uv = require('luv')
+
+	local curs, Window = load_ncurses_library()
+	local curs_width = create_curs_width(curs, Window)
+	local TmpFile = create_TmpFile()
+	local HttpSession = create_HttpSession()
+	local TransmissionSession = create_TransmissionSession()
+	local ListManager = create_ListManager()
+	local ListRenderer = create_ListRenderer(curs)
+	local Columns = create_Columns(curs_width)
+	local Column = create_Column()
+	local esc, unesc = create_escaper()
+	local with_buffer = create_with_buffer()
+	local KeyHandler = create_KeyHandler()
+
+	local function dir_empty()
+		-- Do nothing.
+	end
+
+	local function dir(path)
+		local handle = uv.fs_scandir(path)
+		if handle then
+			return uv.fs_scandir_next, handle
+		end
+		return dir_empty
+	end
+
+	local M = {}
+	M.__index = M
+
+	local SESSION_INFO_FIELDS = {
+		'alt-speed-down',
+		'alt-speed-enabled',
+		'alt-speed-up',
+		'download-dir',
+		'rpc-version',
+		'speed-limit-down',
+		'speed-limit-down-enabled',
+		'speed-limit-up',
+		'speed-limit-up-enabled',
+		'version',
+	}
+
+	local TORRENT_STATUS_NAME = {
+		[0] = 'Paused',
+		'Check-Q',
+		'Check',
+		'Queued',
+		'Download',
+		'Seed-Q',
+		'Seed',
+	}
+
+	local MESSAGE_NAME = {
+		'Tracker warning',
+		'Tracker error',
+		'Error',
+	}
+
+	local TRACKER_STATUS_NAME = {
+		[0] = 'Inactive',
+		'Waiting',
+		'Queued',
+		'Active',
+	}
+
+	local FILE_PRIORITY_NAME = {
+		[-1] = 'Low',
+		[0] = 'Normal',
+		[1] = 'High',
+	}
+
+	local function display_key(name)
+		local x = string.match(name, '^^([A-Z])$')
+		if x then
+			return string.format('<C-%s>', x)
+		end
+
+		local x = string.match(name, '^KEY_(.+)')
+		if x then
+			return string.format('<%s>', x)
+		end
+
+		return name
+	end
+
+	local function display_bytes(n)
+		local K = 1024
+		local M = 1024 * K
+		local G = 1024 * M
+
+		if n <= 0 then
+			return ''
+		elseif n < K then
+			return string.format('%dB', n)
+		elseif n < M then
+			return string.format('%.1fK', n / K)
+		elseif n < G then
+			return string.format('%.1fM', n / M)
+		elseif n < 100 * G then
+			return string.format('%.1fG', n / G)
+		else
+			return string.format('%dG', n / G)
+		end
+	end
+
+	local function display_seconds(n)
+		local M = 60
+		local H = 60 * M
+		local D = 24 * H
+
+		if n <= 0 then
+			return ''
+		elseif n < M then
+			return string.format('%ds', n)
+		elseif n < 2 * H then
+			return string.format('%dm', n / M)
+		elseif n < 2 * D then
+			return string.format('%dh', n / H)
+		else
+			return string.format('%dd', n / D)
+		end
+	end
+
+	local function display_number(n)
+		if n <= 0 then
+			return ''
+		elseif n < 100000 then
+			return string.format('%d', n)
+		else
+			return string.format('%dK', n / 1000)
+		end
+	end
+
+	local function display_speed_and_peers(speed, peer_count)
+		if peer_count <= 0 then
+			return ''
+		else
+			return string.format('%s (%5s)', display_bytes(speed), display_number(peer_count))
+		end
+	end
+
+	local function display_speed_limit(speed, limited)
+		if not limited then
+			return ''
+		else
+			return display_bytes(speed)
+		end
+	end
+
+	local function display_percent(n)
+		if n <= 0 then
+			return ''
+		elseif n < 0.1 then
+			return string.format('%.2f%%', n * 100)
+		elseif n < 1 then
+			return string.format('%.1f%%', n * 100)
+		else
+			return '100%'
+		end
+	end
+
+	local function display_ratio(n)
+		if n <= 0 then
+			return ''
+		elseif n < 10 then
+			return string.format('%.2fx', n)
+		elseif n < 100 then
+			return string.format('%.1fx', n)
+		else
+			return string.format('%dx', n)
+		end
+	end
+
+	local function display_timestamp(n)
+		if n <= 0 then
+			return ''
+		else
+			return os.date('%b %d %H:%M', n)
+		end
+	end
+
+	local function make_column(title, width, display, dependencies)
+		if width then
+			if width < 0 then
+				width = math.min(width, -#title)
+			else
+				width = math.max(width, #title)
+			end
+		end
+		return Column:new():with_title(title):with_width(width):with_display(display, dependencies)
+	end
+
+	local function make_display_column(title, width, display_fn, field_name)
+		return make_column(title, width, function(data)
+			return display_fn(data[field_name])
+		end, field_name)
+	end
+
+	local function make_bytes_column(title, field_name)
+		return make_display_column(title, -7, display_bytes, field_name)
+	end
+
+	local function make_seconds_column(title, field_name)
+		return make_display_column(title, -5, display_seconds, field_name)
+	end
+
+	local function make_timestamp_column(title, field_name)
+		return make_display_column(title, -12, display_timestamp, field_name)
+	end
+
+	local function make_number_column(title, field_name)
+		return make_display_column(title, -5, display_number, field_name)
+	end
+
+	local function make_ordinal_column(title, field_name)
+		return make_column(title, -5, function(data)
+			return '' .. data[field_name]
+		end, field_name)
+	end
+
+	local function make_ratio_column(title, field_name)
+		return make_display_column(title, -5, display_ratio, field_name)
+	end
+
+	local function make_percent_column(title, field_name)
+		return make_display_column(title, -5, display_percent, field_name)
+	end
+
+	local function make_speed_with_peers_column(title, speed_field_name, peer_field_name)
+		return make_column(title, -15, function(data)
+			return display_speed_and_peers(data[speed_field_name], data[peer_field_name])
+		end, { speed_field_name, peer_field_name })
+	end
+
+	local function make_speed_limit_column(title, speed_field_name, limited_field_name)
+		return make_column(title, -7, function(data)
+			return display_speed_limit(data[speed_field_name], data[limited_field_name])
+		end, { speed_field_name, limited_field_name })
+	end
+
+	local function make_string_column(title, width, field_name)
+		return make_column(title, width, function(data)
+			return esc(data[field_name])
+		end, field_name)
+	end
+
+	local function make_string_array_column(title, field_name)
+		return make_column(title, nil, function(data)
+			return esc(table.concat(data[field_name], ', '))
+		end, field_name)
+	end
+
+	local function make_choices_column(title, choices, field_name)
+		local width = 0
+		for _, s in pairs(choices) do
+			width = math.max(width, #s)
+		end
+		return make_column(title, width, function(data)
+			return choices[data[field_name]] or ''
+		end, field_name)
+	end
+
+	local function update_list(self, list_manager, field_names)
+		assert(#field_names ~= 0)
+
+		local ids = self:selected_torrent_ids()
+		self._details_ids = ids
+		if #ids == 0 then
+			list_manager:clear()
+			return
+		end
+
+		local local_torrents = self.transmission:call('torrent-get', {
+			ids = ids,
+			fields = field_names,
+		}).torrents
+
+		local t = {}
+		for i, torrent in ipairs(local_torrents) do
+			local list = torrent[field_names[1]]
+
+			-- Merge lists.
+			for field_index = 2, #field_names do
+				local src_list = torrent[field_names[field_index]]
+				for item_index, src in ipairs(src_list) do
+					local dest = list[item_index]
+					for k, v in pairs(src) do
+						dest[k] = v
+					end
+				end
+			end
+
+			if i == 1 then
+				t = list
+			else
+				for _, v in ipairs(list) do
+					table.insert(t, v)
+				end
+			end
+		end
+		list_manager:set(t)
+	end
+
+	local function update_trackers(self)
+		update_list(self, self._trackers, { 'trackerStats' })
+	end
+
+	local function update_peers(self)
+		update_list(self, self._peers, { 'peers' })
+	end
+
+	local function update_files(self)
+		update_list(self, self._files, { 'files', 'fileStats' })
+	end
+
+	local function update_details(self)
+		local update = self._details_update
+		if update then
+			update(self)
+		end
+	end
+
+	function M.new(cls)
+		local self = setmetatable({
+			transmission = TransmissionSession:new({
+				http = HttpSession:new(),
+			}),
+			_key_handler = KeyHandler:new(),
+			_shellout = 1,
+			_status_message = '',
+			_session_info = {},
+			_session_stats = {},
+			_details_ids = {},
+			_stdin = uv.new_poll(0),
+			_sigwinch = uv.new_signal(),
+			_update_timer = uv.new_timer(),
+			_torrents_filtered = false,
+			_torrents_all_selected = false,
+			_torrents_updated_at = 0,
+			_torrents = ListManager:new(),
+			_torrents_renderer = ListRenderer:new(),
+			_trackers = ListManager:new(),
+			_trackers_renderer = ListRenderer:new(),
+			_peers = ListManager:new(),
+			_peers_renderer = ListRenderer:new(),
+			_files = ListManager:new(),
+			_files_renderer = ListRenderer:new(),
+		}, cls)
+
+		self._torrents:set_sort(function(a, b)
+			return a.name < b.name
+		end)
+
+		self._peers:set_sort(function(a, b)
+			return a.address < b.address
+		end)
+
+		self:set_default_torrent_columns()
+		self:set_default_tracker_columns()
+		self:set_default_peer_columns()
+		self:set_default_file_columns()
+
+		self:set_default_torrents_keys()
+		self:set_default_trackers_keys()
+		self:set_default_peers_keys()
+		self:set_default_files_keys()
+
+		return self
+	end
+
+	M._help = setmetatable({}, { __mode = 'k' })
+	local _help_description
+
+	setmetatable(M, {
+		__newindex = function(self, k, v)
+			if type(v) == 'function' and _help_description then
+				self:set_help(v, _help_description, k)
+				_help_description = nil
+			end
+			rawset(self, k, v)
+		end,
+	})
+
+	local function help(description)
+		_help_description = description
+	end
+
+	function M:set_help(fn, description, name)
+		self._help[fn] = {
+			description = description,
+			name = name,
+		}
+	end
+
+	function M:set_torrent_columns(columns)
+		self._torrent_columns = Columns:new(columns)
+		self._torrent_fields = self._torrent_columns:build_dependency_list({ 'id', 'name' })
+	end
+
+	function M:make_torrent_columns()
+		return {
+			check = make_percent_column('Check', 'recheckProgress'),
+			done = make_percent_column('Done', 'percentDone'),
+			down = make_bytes_column('Down', 'rateDownload'),
+			down_limit = make_speed_limit_column('Down Limit', 'downloadLimit', 'downloadLimited'),
+			down_peers = make_speed_with_peers_column('Down (Peers)', 'rateDownload', 'peersSendingToUs'),
+			down_time = make_seconds_column('Down Time', 'secondsDownloading'),
+			error = make_column('Error', nil, function(data)
+				if data.error == 0 then
+					return ''
+				end
+				return string.format('%s: %s', MESSAGE_NAME[data.error], esc(data.errorString))
+			end, { 'error', 'errorString' }),
+			eta = make_seconds_column('ETA', 'eta'),
+			files = make_number_column('Files', 'file-count'),
+			id = make_ordinal_column('ID', 'id'),
+			labels = make_string_array_column('Labels', 'labels'),
+			dir = make_string_column('Dir', nil, 'downloadDir'),
+			name = make_string_column('Name', nil, 'name'),
+			peer_limit = make_number_column('Peer Limit', 'peer-limit'),
+			peers = make_number_column('Peers', 'peersConnected'),
+			queue = make_ordinal_column('Queue', 'queuePosition'),
+			ratio = make_ratio_column('Ratio', 'uploadRatio'),
+			ratio_limit = make_column('Ratio Limit', -8, function(data)
+				if data.seedRatioMode == 1 then
+					return display_ratio(data.seedRatioLimit)
+				elseif data.seedRatioMode == 2 then
+					return 'inf'
+				else
+					return ''
+				end
+			end, { 'seedRatioLimit', 'seedRatioMode' }),
+			seed_time = make_seconds_column('Seed Time', 'secondsSeeding'),
+			size = make_bytes_column('Size', 'sizeWhenDone'),
+			status = make_column('Status', 8, function(data)
+				if data.isStalled then
+					return 'Stalled'
+				elseif data.isFinished then
+					return 'Finished'
+				else
+					return TORRENT_STATUS_NAME[data.status] or ''
+				end
+			end, { 'isStalled', 'isFinished', 'status' }),
+			up = make_bytes_column('Up', 'rateUpload'),
+			up_limit = make_speed_limit_column('Up Limit', 'uploadLimit', 'uploadLimited'),
+			up_peers = make_speed_with_peers_column('Up (Peers)', 'rateUpload', 'peersGettingFromUs'),
+		}
+	end
+
+	function M:set_default_torrent_columns()
+		local c = self:make_torrent_columns()
+		self:set_torrent_columns({
+			c.done,
+			c.eta:clone():with_optional(),
+			c.down_peers:clone():with_optional(),
+			c.down_limit:clone():with_optional(),
+			c.up_peers,
+			c.up_limit:clone():with_optional(),
+			c.peers,
+			c.ratio,
+			c.ratio_limit:clone():with_optional(),
+			c.status,
+			c.check:clone():with_optional(),
+			c.error:clone():with_optional(),
+			c.size,
+			c.labels:clone():with_optional(),
+			c.name,
+		})
+	end
+
+	function M:set_tracker_columns(columns)
+		self._tracker_columns = Columns:new(columns)
+	end
+
+	function M:make_tracker_columns()
+		return {
+			announce = make_string_column('Announce', nil, 'announce'),
+			announce_status = make_choices_column(
+				'Announce Status',
+				TRACKER_STATUS_NAME,
+				'announceState'
+			),
+			host = make_string_column('Host', nil, 'host'),
+			last_announce = make_timestamp_column('Last Announce', 'lastAnnounceTime'),
+			last_scrape = make_timestamp_column('Last Scrape', 'lastScrapeTime'),
+			leechers = make_number_column('Leechers', 'leecherCount'),
+			next_announce = make_timestamp_column('Next Announce', 'nextAnnounceTime'),
+			next_scrape = make_timestamp_column('Next Scrape', 'nextScrapeTime'),
+			scrape = make_string_column('Scrape', nil, 'scrape'),
+			scrape_status = make_choices_column('Scrape Status', TRACKER_STATUS_NAME, 'scrapeState'),
+			scrape_result = make_string_column('Scrape Result', nil, 'lastScrapeResult'),
+			announce_result = make_string_column('Announce Result', nil, 'lastAnnounceResult'),
+			seeders = make_number_column('Seeders', 'seederCount'),
+			tier = make_ordinal_column('Tier', 'tier'),
+		}
+	end
+
+	function M:set_default_tracker_columns()
+		local c = self:make_tracker_columns()
+		self:set_tracker_columns({
+			c.tier,
+			c.leechers,
+			c.seeders,
+			c.last_announce,
+			c.next_announce:clone():with_optional(),
+			c.announce_status,
+			c.scrape_status,
+			c.scrape_result,
+			c.announce_result,
+			c.host,
+		})
+	end
+
+	function M:set_peer_columns(columns)
+		self._peer_columns = Columns:new(columns)
+	end
+
+	function M:make_peer_columns()
+		return {
+			address = make_string_column('Address', 40, 'address'),
+			client = make_string_column('Client', nil, 'clientName'),
+			done = make_percent_column('Done', 'progress'),
+			down = make_bytes_column('Down', 'rateToClient'),
+			flags = make_string_column('Flags', 10, 'flagStr'),
+			up = make_bytes_column('Up', 'rateToPeer'),
+		}
+	end
+
+	function M:set_default_peer_columns()
+		local c = self:make_peer_columns()
+		self:set_peer_columns({
+			c.address,
+			c.flags,
+			c.done,
+			c.down:clone():with_optional(),
+			c.up,
+			c.client,
+		})
+	end
+
+	function M:set_file_columns(columns)
+		self._file_columns = Columns:new(columns)
+	end
+
+	function M:make_file_columns()
+		return {
+			done = make_column('Done', -5, function(data)
+				return display_percent(data.bytesCompleted / data.length)
+			end, { 'bytesCompleted', 'length' }),
+			name = make_string_column('Name', nil, 'name'),
+			priority = make_choices_column('Priority', FILE_PRIORITY_NAME, 'priority'),
+			size = make_bytes_column('Size', 'length'),
+			wanted = make_column('Wanted', 3, function(data)
+				return data.wanted and 'Yes' or 'No'
+			end, 'wanted'),
+		}
+	end
+
+	function M:set_default_file_columns()
+		local c = M:make_file_columns()
+		self:set_file_columns({
+			c.done,
+			c.priority,
+			c.wanted,
+			c.size,
+			c.name,
+		})
+	end
+
+	local function key_table_bindings(key_table)
+		return coroutine.wrap(function()
+			local function walk(t, prefix)
+				for k, v in pairs(t) do
+					local keys = prefix .. display_key(k)
+					if type(v) == 'table' then
+						walk(v, keys)
+					else
+						coroutine.yield({
+							fn = v,
+							keys = keys,
+						})
+					end
+				end
+			end
+			walk(key_table, '')
+		end)
+	end
+
+	function M:set_keys(key_table)
+		self._key_handler:set_key_table(key_table)
+	end
+
+	local function update_keys(self)
+		if self._details_focused then
+			self:set_keys(self._details_keys)
+		else
+			self:set_keys(self._torrents_keys)
+		end
+	end
+
+	local function make_keys_setter(field)
+		return function(self, key_table)
+			self[field] = key_table
+			update_keys(self)
+		end
+	end
+
+	function M.merge_keys(ts)
+		local result = {}
+		for _, t in ipairs(ts) do
+			for k, v in pairs(t) do
+				result[k] = v
+			end
+		end
+		return result
+	end
+
+	function M:make_global_keys()
+		return {
+			q = M.escape,
+			['?'] = M.show_help,
+			Q = {
+				Q = M.close_session,
+			},
+		}
+	end
+
+	function M:make_global_list_keys()
+		return {
+			g = M.select_first,
+			G = M.select_last,
+			j = M.select_down,
+			KEY_DOWN = M.select_down,
+			k = M.select_up,
+			KEY_UP = M.select_up,
+			['^B'] = M.scroll_page_up,
+			['^D'] = M.scroll_half_page_down,
+			['^E'] = M.scroll_down,
+			['^F'] = M.scroll_page_down,
+			['^I'] = M.focus_next_window,
+			['^U'] = M.scroll_half_page_up,
+			['^Y'] = M.scroll_up,
+		}
+	end
+
+	function M:make_torrent_list_keys()
+		return {
+			a = M.show_add_torrents,
+			A = M.show_add_torrents_then_delete,
+			c = M.show_check_torrents,
+			C = M.check_port,
+			d = M.show_remove_torrents,
+			D = M.show_remove_torrents_with_data,
+			KEY_DC = M.show_remove_torrents,
+			KEY_SDC = M.show_remove_torrents_with_data,
+			e = M.show_filter_torrents,
+			f = M.show_torrent_files,
+			l = {
+				a = M.enable_session_alt_speed_limit,
+				u = M.disable_session_speed_limit,
+			},
+			m = M.show_move_torrents,
+			o = M.open_torrent_location,
+			p = M.stop_torrent,
+			P = M.stop_all_torrents,
+			r = M.reload_all_torrents,
+			s = M.start_torrent,
+			S = M.start_all_torrents,
+			t = M.show_torrent_trackers,
+			u = M.show_torrent_queue,
+			w = {
+				c = M.quit_details_window,
+				f = M.show_torrent_files_window,
+				o = M.quit_details_window,
+				p = M.show_torrent_peers_window,
+				t = M.show_torrent_trackers_window,
+				w = M.focus_next_window,
+			},
+			['%'] = M.toggle_select_all_torrents,
+			['/'] = M.select_torrent_fuzzy,
+		}
+	end
+
+	M.set_torrents_keys = make_keys_setter('_torrents_keys')
+
+	function M:make_torrents_keys()
+		return self.merge_keys({
+			self:make_global_keys(),
+			self:make_global_list_keys(),
+			self:make_torrent_list_keys(),
+		})
+	end
+
+	function M:set_default_torrents_keys()
+		self:set_torrents_keys(self:make_torrents_keys())
+	end
+
+	M.set_trackers_keys = make_keys_setter('_trackers_keys')
+
+	function M:make_trackers_keys()
+		return self.merge_keys({
+			self:make_global_keys(),
+			self:make_global_list_keys(),
+		})
+	end
+
+	function M:set_default_trackers_keys()
+		self:set_trackers_keys(self:make_trackers_keys())
+	end
+
+	M.set_peers_keys = make_keys_setter('_peers_keys')
+
+	function M:make_peers_keys()
+		return self.merge_keys({
+			self:make_global_keys(),
+			self:make_global_list_keys(),
+		})
+	end
+
+	function M:set_default_peers_keys()
+		self:set_peers_keys(self:make_peers_keys())
+	end
+
+	M.set_files_keys = make_keys_setter('_files_keys')
+
+	function M:make_files_keys()
+		return self.merge_keys({
+			self:make_global_keys(),
+			self:make_global_list_keys(),
+		})
+	end
+
+	function M:set_default_files_keys()
+		self:set_files_keys(self:make_files_keys())
+	end
+
+	help('Show help.')
+	function M:show_help()
+		local stdin = uv.new_pipe()
+
+		self:spawn_shell('man', {
+			args = { '-l', '-' },
+			stdio = { stdin, 1, 2 },
+		}, function() end)
+
+		stdin:write(with_buffer(function(buf)
+			local function h1(s)
+				buf:putf('.SH "%s"\n', string.upper(s))
+			end
+
+			local function h2(s)
+				buf:putf('.SS "%s"\n', s)
+			end
+
+			buf:put([[
+.TH TRANSMISSION-TUI "1"
+.SH "NAME"
+transmission-tui \- ncurses transmisson client
+.SH "SYNOPSIS"
+.B transmission-tui
+.SH "DESCRIPTION"
+.B transmission-tui
+is a hackable Transmission client made for Vim-lovers.
+]])
+
+			h1('Configuration')
+			buf:put('Editor:\n')
+			buf:put('.B ', self:editor(), '\n')
+
+			local function keys_section(key_table)
+				local t = {}
+
+				for binding in key_table_bindings(key_table) do
+					table.insert(t, binding)
+				end
+
+				table.sort(t, function(a, b)
+					return string.lower(a.keys) < string.lower(b.keys)
+				end)
+
+				for _, binding in ipairs(t) do
+					buf:put('.TP\n')
+					buf:put('.B ', binding.keys, '\n')
+					local help = self._help[binding.fn]
+					if help then
+						if help.description then
+							buf:put(help.description, '\n')
+							buf:put('.sp\n')
+						end
+						if help.name then
+							buf:put('Function:\n')
+							buf:put('.B ', help.name, '\n')
+						end
+					end
+				end
+			end
+
+			h1('Keys')
+
+			h2('Torrents')
+			keys_section(self._torrents_keys)
+
+			h2('Trackers')
+			keys_section(self._trackers_keys)
+
+			h2('Peers')
+			keys_section(self._peers_keys)
+
+			h2('Files')
+			keys_section(self._files_keys)
+
+			local function columns_section(columns, all_columns)
+				local all_columns_by_title = {}
+
+				for k, column in pairs(all_columns) do
+					column.key = k
+					all_columns_by_title[column.title] = column
+				end
+
+				buf:put([[
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.B Visible columns.
+.TS
+allbox tab(:);
+lB lB lB lB.
+Title:Width:Always:Transmission Data Source
+.T&
+l r c l.
+]])
+
+				for _, column in ipairs(columns) do
+					all_columns_by_title[column.title] = nil
+					buf:putf(
+						'%s:%s:%s:%s\n',
+						column.title,
+						column.width == nil and 'auto' or math.abs(column.width),
+						column.optional and '' or 'X',
+						table.concat(
+							type(column.dependencies) == 'table' and column.dependencies
+								or { column.dependencies },
+							', '
+						)
+					)
+				end
+
+				buf:put('.TE\n')
+
+				buf:put([[
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.B Hidden columns.
+.TS
+allbox tab(:);
+lB lB lB lB.
+Title:Key:Width:Transmission Data Source
+.T&
+l l r l.
+]])
+
+				if next(all_columns_by_title) ~= nil then
+					for _, column in pairs(all_columns_by_title) do
+						buf:putf(
+							'%s:%s:%s:%s\n',
+							column.title,
+							column.key,
+							column.width == nil and 'auto' or math.abs(column.width),
+							table.concat(
+								type(column.dependencies) == 'table' and column.dependencies
+									or { column.dependencies },
+								', '
+							)
+						)
+					end
+				else
+					buf:put('-:-:-:-\n')
+				end
+
+				buf:put('.TE\n')
+			end
+
+			h1('Columns')
+
+			h2('Torrent')
+			columns_section(self._torrent_columns, self:make_torrent_columns())
+
+			h2('Tracker')
+			columns_section(self._tracker_columns, self:make_tracker_columns())
+
+			h2('Peer')
+			columns_section(self._peer_columns, self:make_peer_columns())
+
+			h2('File')
+			columns_section(self._file_columns, self:make_file_columns())
+
+			buf:put([[
+.SH "SEE ALSO"
+.PP
+transmission-daemon(1), transmission-remote(1).
+]])
+		end))
+		stdin:shutdown(function()
+			stdin:close()
+		end)
+	end
+
+	function M:selected_torrent_ids()
+		if self._torrents_all_selected then
+			return self._torrents:ids()
+		else
+			return { self._torrents:cursor_id() }
+		end
+	end
+
+	local function will_update_torrents(self)
+		local now = uv.now()
+		local elapsed_milliseconds = now - self._torrents_updated_at
+		self._torrents_updated_at = now
+		return elapsed_milliseconds
+	end
+
+	help('Reload all torrents.')
+	function M:reload_all_torrents()
+		self._torrents_filtered = false
+		will_update_torrents(self)
+		self._torrents:set(self.transmission:call('torrent-get', {
+			fields = self._torrent_fields,
+		}).torrents)
+		update_details(self)
+	end
+
+	help('Clear torrent filter.')
+	function M:clear_torrent_filter()
+		if self._torrents_filtered then
+			self:reload_all_torrents()
+		end
+	end
+
+	function M:set_torrent_filter_by_ids(ids)
+		self._torrents_filtered = true
+		will_update_torrents(self)
+		if #ids == 0 then
+			self._torrents:clear()
+		else
+			self._torrents:set(self.transmission:call('torrent-get', {
+				ids = ids,
+				fields = self._torrent_fields,
+			}).torrents)
+		end
+		update_details(self)
+	end
+
+	help('Toggle select all torrents.')
+	function M:toggle_select_all_torrents()
+		self._torrents_all_selected = not self._torrents_all_selected
+		update_details(self)
+	end
+
+	help('Select all torrents.')
+	function M:select_all_torrents()
+		self._torrents_all_selected = true
+		update_details(self)
+	end
+
+	help('De-select all torrents.')
+	function M:deselect_all_torrents()
+		self._torrents_all_selected = false
+		update_details(self)
+	end
+
+	local function update_torrents(self)
+		if will_update_torrents(self) < self.transmission.RECENTLY_ACTIVE_MILLISECONDS - 1000 then
+			local response = self.transmission:call('torrent-get', {
+				fields = self._torrent_fields,
+				ids = 'recently-active',
+			})
+			self._torrents:remove_many_by_id(response.removed)
+			if self._torrents_filtered then
+				self._torrents:update_many(response.torrents)
+			else
+				self._torrents:upsert_many(response.torrents)
+			end
+		else
+			local response = self.transmission:call('torrent-get', {
+				fields = self._torrent_fields,
+			})
+			if self._torrents_filtered then
+				self._torrents:updelete_many(response.torrents)
+			else
+				self._torrents:set(response.torrents)
+			end
+		end
+	end
+
+	local function update_session_stats(self)
+		self._session_stats = self.transmission:call('session-stats')
+	end
+
+	local function update_session_info(self)
+		self._session_info = self.transmission:call('session-get', {
+			fields = SESSION_INFO_FIELDS,
+		})
+	end
+
+	local function parse_fields(s, pat)
+		local lines = string.gmatch(s, '([^\n]*)\n?')
+
+		return function()
+			for line in lines do
+				if string.sub(line, 1, 1) ~= '#' then
+					if string.find(line, pat) then
+						return string.match(line, pat)
+					end
+				end
+			end
+		end
+	end
+
+	local function parse_ids(s)
+		local t = {}
+		for id in parse_fields(s, '^%d+') do
+			table.insert(t, assert(tonumber(id)))
+		end
+		return t
+	end
+
+	local function render_updown_block(
+		win,
+		title,
+		speed,
+		current_bytes,
+		cumulative_bytes,
+		speed_limit_enabled,
+		speed_limit_kbyps,
+		alt_speed_limit_enabled,
+		alt_speed_limit_kbyps
+	)
+		win:put(title)
+		win:put(' ')
+		if current_bytes ~= 0 then
+			win:putf('%7s', display_bytes(speed))
+			if alt_speed_limit_enabled then
+				win:put('/')
+				win:put(display_bytes(alt_speed_limit_kbyps * 1024))
+			elseif speed_limit_enabled then
+				win:put('/')
+				win:put(display_bytes(speed_limit_kbyps * 1024))
+			end
+			win:put('  ')
+			win:put(display_bytes(current_bytes))
+			win:put('  ')
+		end
+		win:put(display_bytes(cumulative_bytes))
+	end
+
+	local function render_status(self)
+		local win = self._status_win
+
+		local info = self._session_info
+		local stats = self._session_stats
+		local current = stats['current-stats']
+		local cumulative = stats['cumulative-stats']
+
+		win:cursor(0, 0)
+		win:attr(curs.A_NORMAL, 0)
+
+		local list_manager = self:focused_list()
+
+		win:putf('[%d/%d', list_manager:cursor(), list_manager:len())
+		if self._torrents_filtered and list_manager == self._torrents then
+			win:putf(' (%d)', stats.torrentCount)
+		end
+		win:put(']')
+
+		local paused = stats.pausedTorrentCount
+		if paused ~= 0 then
+			win:putf(' %d paused', paused)
+		end
+
+		if self._torrents_all_selected then
+			win:put(' ')
+			win:attr(curs.A_BOLD + curs.A_REVERSE, 0)
+			win:put(' ALL SELECTED ')
+			win:attr(curs.A_NORMAL, 0)
+		end
+
+		win:put(' | ')
+		render_updown_block(
+			win,
+			'Down',
+			stats.downloadSpeed,
+			current.downloadedBytes,
+			cumulative.downloadedBytes,
+			info['speed-limit-down-enabled'],
+			info['speed-limit-down'],
+			info['alt-speed-enabled'],
+			info['alt-speed-down']
+		)
+		win:put(' | ')
+		render_updown_block(
+			win,
+			'Up',
+			stats.uploadSpeed,
+			current.uploadedBytes,
+			cumulative.uploadedBytes,
+			info['speed-limit-up-enabled'],
+			info['speed-limit-up'],
+			info['alt-speed-enabled'],
+			info['alt-speed-up']
+		)
+		win:put(' | ')
+		win:attr(curs.A_BOLD, 0)
+		win:put(self._status_message)
+		win:clrtoeol()
+
+		win:refresh()
+	end
+
+	local function render_list_win(win, renderer, list_manager, columns, focused)
+		renderer:render(win, list_manager, columns:render(list_manager:list()), focused)
+		win:refresh()
+	end
+
+	local function render_torrents(self, win, focused)
+		render_list_win(win, self._torrents_renderer, self._torrents, self._torrent_columns, focused)
+	end
+
+	local function render_trackers(self, win, focused)
+		render_list_win(win, self._trackers_renderer, self._trackers, self._tracker_columns, focused)
+	end
+
+	local function render_peers(self, win, focused)
+		render_list_win(win, self._peers_renderer, self._peers, self._peer_columns, focused)
+	end
+
+	local function render_files(self, win, focused)
+		render_list_win(win, self._files_renderer, self._files, self._file_columns, focused)
+	end
+
+	local function render_main(self)
+		render_torrents(self, self._main_win, not self._details_focused)
+	end
+
+	local function render_details(self)
+		local render = self._details_render
+		if render then
+			render(self, self._details_win, self._details_focused)
+		end
+	end
+
+	local function render(self)
+		if self._details_render then
+			local lines = curs.LINES - 1
+			local split = math.floor(lines * 1 / 3)
+
+			self._main_win:move(0, 0)
+			self._main_win:resize(split, curs.COLS)
+
+			self._details_win:move(split, 0)
+			self._details_win:resize(lines - split, curs.COLS)
+		else
+			self._main_win:move(0, 0)
+			self._main_win:resize(curs.LINES - 1, curs.COLS)
+		end
+
+		self._status_win:move(curs.LINES - 1, 0)
+		self._status_win:resize(1, curs.COLS)
+
+		render_main(self)
+		render_details(self)
+		render_status(self)
+
+		curs.doupdate()
+	end
+
+	function M:set_messagef(...)
+		self._status_message = string.format(...)
+	end
+
+	local function set_torrent_action_message(self, count, action)
+		if count == 0 then
+			self:set_messagef('No torrents %s', action)
+		elseif count == 1 then
+			self:set_messagef('1 torrent %s', action)
+		else
+			self:set_messagef('%d torrents %s', count, action)
+		end
+	end
+
+	local function set_all_torrent_action_message(self, action)
+		self:set_messagef('All torrents %s', action)
+	end
+
+	local function set_torrent_action_abort_message(self, action)
+		self:set_messagef('Aborted, no torrents %s', action)
+	end
+
+	function M:enter_shell()
+		self._shellout = self._shellout + 1
+		if self._shellout ~= 1 then
+			return
+		end
+
+		self._stdin:stop()
+		self._sigwinch:stop()
+		self._update_timer:stop()
+
+		curs.endwin()
+	end
+
+	function M:enter_program()
+		self._shellout = self._shellout - 1
+		if self._shellout ~= 0 then
+			return
+		end
+
+		self._stdin:start('r', function(err)
+			if err then
+				self._stdin:close()
+				return
+			end
+
+			local c = self._status_win:getch()
+			local key = ffi.string(curs.keyname(c))
+
+			-- Not a real key.
+			if key == 'KEY_RESIZE' then
+				return
+			end
+
+			local handler = self._key_handler:push_key(key)
+			if handler then
+				handler(self)
+			end
+
+			if self._shellout == 0 then
+				render(self)
+			end
+		end)
+
+		self._sigwinch:start('sigwinch', function()
+			curs.endwin()
+			curs.doupdate()
+			render(self)
+			-- After hours and hours of fucking around with NCurses I still fucking
+			-- do not know how to properly handle SIGWINCH or why erase, clear, touch
+			-- and their friends does not work, but this bitch second render()
+			-- seemingly fixes everything, so I will stop here before committing
+			-- suicide.
+			render(self)
+		end)
+
+		self._update_timer:start(1500, 1500, function()
+			update_session_stats(self)
+			update_session_info(self)
+			update_torrents(self)
+			update_details(self)
+			render(self)
+		end)
+
+		render(self)
+	end
+
+	function M:spawn(path, options, callback)
+		local process, err
+		process, err = uv.spawn(path, options, function(code)
+			process:close()
+
+			if code == 0 then
+				callback()
+			else
+				self:set_messagef('%s exited non-zero', path)
+				callback('non-zero exit code')
+			end
+		end)
+
+		if not process then
+			self:set_messagef('%s failed: %s', path, err)
+			callback(err)
+		end
+
+		return process
+	end
+
+	function M:spawn_shell(path, options, callback)
+		self:enter_shell()
+		return self:spawn(path, options, function(...)
+			callback(...)
+			self:enter_program()
+		end)
+	end
+
+	function M:editor()
+		return os.getenv('EDITOR') or 'vim'
+	end
+
+	local function edit(self, opts, callback)
+		local f = TmpFile:with_content(with_buffer(opts.input))
+		self:spawn_shell(M:editor(), {
+			args = { '--', f.path },
+			stdio = { 0, 1, 2 },
+		}, function(err)
+			if err then
+				callback(err)
+			else
+				callback(nil, f:content())
+			end
+			f:remove()
+		end)
+	end
+
+	local function set_details_window(self, name)
+		local VIEWS = {
+			trackers = { self._trackers, render_trackers, update_trackers, self._trackers_keys },
+			peers = { self._peers, render_peers, update_peers, self._peers_keys },
+			files = { self._files, render_files, update_files, self._files_keys },
+		}
+		self._details_list, self._details_render, self._details_update, self._details_keys =
+			unpack(name and assert(VIEWS[name]) or {})
+		if not self._details_list then
+			self._details_focused = false
+		end
+		update_keys(self)
+		update_details(self)
+	end
+
+	help('Quit torrent details window.')
+	function M:quit_details_window()
+		set_details_window(self, nil)
+	end
+
+	help('Show torrent trackers window.')
+	function M:show_torrent_trackers_window()
+		set_details_window(self, 'trackers')
+	end
+
+	help('Show torrent peers window.')
+	function M:show_torrent_peers_window()
+		set_details_window(self, 'peers')
+	end
+
+	help('Show torrent files window.')
+	function M:show_torrent_files_window()
+		set_details_window(self, 'files')
+	end
+
+	help('Focus next window.')
+	function M:focus_next_window()
+		if self._details_list then
+			self._details_focused = not self._details_focused
+		end
+		update_keys(self)
+	end
+
+	function M:focused_list()
+		if self._details_focused then
+			return assert(self._details_list)
+		else
+			return self._torrents
+		end
+	end
+
+	function M:set_scrolloff(n)
+		for _, list_manager in ipairs({ self._torrents, self._trackers, self._peers, self._files }) do
+			list_manager:set_scrolloff(n)
+		end
+	end
+
+	help('Quit client.')
+	function M:quit()
+		self:enter_shell()
+	end
+
+	help('Quit details window. Clear filtering and select-all. Quit program.')
+	function M:escape()
+		if self._details_render then
+			self:quit_details_window()
+		elseif self._torrents_filtered or self._torrents_all_selected then
+			self:clear_torrent_filter()
+			self:deselect_all_torrents()
+		else
+			self:quit()
+		end
+	end
+
+	local function update_details_if_changed(self)
+		local ids = self:selected_torrent_ids()
+		if not list_equal(self._details_ids, ids) then
+			update_details(self)
+		end
+	end
+
+	help('Select first item in focused list.')
+	function M:select_first()
+		self:focused_list():move_cursor_first()
+		update_details_if_changed(self)
+	end
+
+	help('Select last item in focused list.')
+	function M:select_last()
+		self:focused_list():move_cursor_last()
+		update_details_if_changed(self)
+	end
+
+	help('Select previous item in focused list.')
+	function M:select_up()
+		self:focused_list():move_cursor_by(-1)
+		update_details_if_changed(self)
+	end
+
+	help('Select next item in focused list.')
+	function M:select_down()
+		self:focused_list():move_cursor_by(1)
+		update_details_if_changed(self)
+	end
+
+	help('Select torrent using an external finder.')
+	function M:select_torrent_fuzzy()
+		local stdin = uv.new_pipe()
+		local stdout = uv.new_pipe()
+		local reply = ''
+
+		self:spawn_shell('fzf', {
+			args = { '--read0', '--print0' },
+			stdio = { stdin, stdout, 2 },
+		}, function(err)
+			if err then
+				return
+			end
+
+			local id = tonumber(string.match(reply, '^%d+'))
+			assert(self._torrents:move_cursor_to_id(id))
+		end)
+
+		stdin:write(with_buffer(function(buf)
+			for _, torrent in ipairs(self._torrents:list()) do
+				buf:put(tostring(torrent.id), '\t', torrent.name, '\0')
+			end
+		end))
+		stdin:shutdown(function()
+			stdin:close()
+		end)
+
+		stdout:read_start(function(err, data)
+			if data then
+				reply = reply .. data
+			else
+				stdout:close()
+			end
+		end)
+	end
+
+	help('Scroll up in focused list.')
+	function M:scroll_up()
+		self:focused_list():scroll_by(-1)
+		update_details_if_changed(self)
+	end
+
+	help('Scroll down in focused list.')
+	function M:scroll_down()
+		self:focused_list():scroll_by(1)
+		update_details_if_changed(self)
+	end
+
+	help('Scroll page up in focused list.')
+	function M:scroll_page_up()
+		self:focused_list():scroll_by_page(-1)
+		update_details_if_changed(self)
+	end
+
+	help('Scroll page down in focused list.')
+	function M:scroll_page_down()
+		self:focused_list():scroll_by_page(1)
+		update_details_if_changed(self)
+	end
+
+	help('Scroll half page up in focused list.')
+	function M:scroll_half_page_up()
+		self:focused_list():scroll_and_move_by_half_page(-1)
+		update_details_if_changed(self)
+	end
+
+	help('Scroll half page down in focused list.')
+	function M:scroll_half_page_down()
+		self:focused_list():scroll_and_move_by_half_page(1)
+		update_details_if_changed(self)
+	end
+
+	help('Close Transmission session.')
+	function M:close_session()
+		self.transmission:call('session-close')
+		self:quit()
+	end
+
+	help('Enable alt session speed limit.')
+	function M:enable_session_alt_speed_limit()
+		self.transmission:call('session-set', { ['alt-speed-enabled'] = true })
+		self:set_messagef('Alternate speed limit')
+		update_session_info(self)
+	end
+
+	help('Disable session speed limit.')
+	function M:disable_session_speed_limit()
+		self.transmission:call('session-set', { ['alt-speed-enabled'] = false })
+		self:set_messagef('Speed unlimited')
+		update_session_info(self)
+	end
+
+	help('Check port.')
+	function M:check_port()
+		self:set_messagef('Port: (...)')
+		render(self)
+		local response = self.transmission:call('port-test')
+		self:set_messagef('Port: %s', response['port-is-open'] and 'Open' or 'Closed')
+	end
+
+	function M:call_method_on_torrents(method, action)
+		local ids = self:selected_torrent_ids()
+		if #ids ~= 0 then
+			self.transmission:call(method, {
+				ids = ids,
+			})
+		end
+		set_torrent_action_message(self, #ids, action)
+	end
+
+	function M:call_method_on_all_torrents(method, action)
+		self.transmission:call(method)
+		set_all_torrent_action_message(self, action)
+	end
+
+	help('Start torrent.')
+	function M:start_torrent()
+		self:call_method_on_torrents('torrent-start', 'started')
+	end
+
+	help('Start all torrents.')
+	function M:start_all_torrents()
+		self:call_method_on_all_torrents('torrent-start', 'started')
+	end
+
+	function M:force_start_torrents()
+		self:call_method_on_torrents('torrent-start-now', 'force started')
+	end
+
+	help('Stop torrent.')
+	function M:stop_torrent()
+		self:call_method_on_torrents('torrent-stop', 'stopped')
+	end
+
+	help('Stop all torrents.')
+	function M:stop_all_torrents()
+		self:call_method_on_all_torrents('torrent-stop', 'stopped')
+	end
+
+	function M:torrents_iter(fields)
+		local ids = self:selected_torrent_ids()
+		if #ids == 0 then
+			return ipairs({})
+		end
+
+		local local_torrents = self.transmission:call('torrent-get', {
+			ids = ids,
+			fields = fields,
+		}).torrents
+
+		local i = 0
+
+		return function()
+			i = i + 1
+			local x = local_torrents[i]
+			if x ~= nil then
+				return x
+			end
+		end
+	end
+
+	help('Edit torrent queue position.')
+	function M:show_torrent_queue()
+		local local_torrents = self.transmission:call('torrent-get', {
+			fields = { 'id', 'queuePosition', 'name' },
+		}).torrents
+
+		table.sort(local_torrents, function(a, b)
+			return a.queuePosition < b.queuePosition
+		end)
+
+		edit(self, {
+			input = function(buf)
+				for _, torrent in ipairs(local_torrents) do
+					buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
+				end
+
+				buf:put('\n')
+
+				buf:putf([[
+# Re-queue torrents.
+#
+# Move lines to change torrent queue position.
+#
+# Top line has the highest priority.
+#
+# Deleted torrents will be implicitly re-queued at the end.
+#
+]])
+			end,
+		}, function(err, data)
+			if err then
+				set_torrent_action_abort_message(self, 're-queued')
+				return
+			end
+
+			local ids = parse_ids(data)
+
+			for i, id in ipairs(ids) do
+				self.transmission:call('torrent-set', {
+					ids = id,
+					queuePosition = i - 1,
+				})
+			end
+
+			set_torrent_action_message(self, #ids, 're-queued')
+		end)
+	end
+
+	help('Edit torrent trackers.')
+	function M:show_torrent_trackers()
+		local function tracker_stats_to_tracker_list(tracker_stats)
+			local t = {}
+			local current_tier
+			for _, tracker in ipairs(tracker_stats) do
+				if current_tier and current_tier ~= tracker.tier then
+					table.insert(t, '')
+				end
+				current_tier = tracker.tier
+				table.insert(t, tracker.announce)
+			end
+			return t
+		end
+
+		local torrents_tracker_list = {}
+
+		edit(self, {
+			input = function(buf)
+				local torrents_by_trackers = {}
+
+				for torrent in self:torrents_iter({ 'id', 'name', 'trackerStats' }) do
+					local tracker_list = tracker_stats_to_tracker_list(torrent.trackerStats)
+					local s = table.concat(tracker_list, '\n')
+
+					torrents_by_trackers[s] = torrents_by_trackers[s] or {}
+					table.insert(torrents_by_trackers[s], torrent)
+
+					torrents_tracker_list[torrent.id] = s
+				end
+
+				for s, torrents in pairs(torrents_by_trackers) do
+					for _, torrent in ipairs(torrents) do
+						buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
+					end
+					buf:put('\n', s, '\n\n')
+				end
+
+				buf:putf([[
+# Edit torrent trackers.
+#
+# Torrents followed by their trackers.
+#
+# Tiers are separated by a blank line.
+#
+]])
+			end,
+		}, function(err, data)
+			if err then
+				set_torrent_action_abort_message(self, 'changed')
+				return
+			end
+
+			local ids = {}
+			local tracker_list = {}
+			local count = 0
+
+			local function commit()
+				if #tracker_list == 0 then
+					return
+				end
+
+				local s = table.concat(tracker_list, '\n')
+
+				for i = #ids, 1, -1 do
+					local id = ids[i]
+					if torrents_tracker_list[id] == s then
+						table.remove(ids, i)
+					end
+				end
+
+				count = count + #ids
+
+				if #ids ~= 0 then
+					self.transmission:call('torrent-set', {
+						ids = ids,
+						trackerList = s,
+					})
+				end
+
+				ids = {}
+				tracker_list = {}
+			end
+
+			local new_tier = false
+
+			for s in parse_fields(data, '.*') do
+				local id = tonumber(string.match(s, '^%d+'))
+				if id then
+					commit()
+					table.insert(ids, id)
+				elseif s == '' then
+					new_tier = true
+				else
+					if new_tier and #tracker_list ~= 0 then
+						table.insert(tracker_list, '')
+					end
+					new_tier = false
+					table.insert(tracker_list, s)
+				end
+			end
+
+			commit()
+
+			set_torrent_action_message(self, count, 'changed')
+		end)
+	end
+
+	help('Filter torrents.')
+	function M:show_filter_torrents()
+		edit(self, {
+			input = function(buf)
+				local columns = self._torrent_columns:render(self._torrents:list())
+
+				buf:putf('# ID (1)')
+				for i, column in ipairs(columns) do
+					buf:putf('\t%s (%d)', column.title, i + 1)
+				end
+
+				buf:put('\n\n')
+
+				for _, torrent in ipairs(self._torrents:list()) do
+					buf:putf('%d', torrent.id)
+					for _, column in ipairs(columns) do
+						buf:put('\t', column.display(torrent))
+					end
+					buf:put('\n')
+				end
+
+				buf:put('\n')
+				buf:putf([[
+# Filter torrents.
+#
+# Delete lines you want to remove from listing.
+#
+]])
+			end,
+		}, function(err, data)
+			if err then
+				set_torrent_action_abort_message(self, 'filtered')
+				return
+			end
+
+			local ids = parse_ids(data)
+
+			if #ids == 0 then
+				self:deselect_all_torrents()
+				self:clear_torrent_filter()
+				self:set_messagef('Filter reset')
+			else
+				self:select_all_torrents()
+				self:set_torrent_filter_by_ids(ids)
+				set_torrent_action_message(self, #ids, 'filtered')
+			end
+		end)
+	end
+
+	help('Select torrent files.')
+	function M:show_torrent_files()
+		local local_torrents = {}
+
+		edit(self, {
+			input = function(buf)
+				for torrent in self:torrents_iter({ 'id', 'name', 'files', 'fileStats' }) do
+					table.insert(local_torrents, torrent)
+
+					local wanted_count = 0
+					local all_count = #torrent.files
+					for _, stat in ipairs(torrent.fileStats) do
+						if stat.wanted then
+							wanted_count = wanted_count + 1
+						end
+					end
+
+					buf:putf('# %s\n', esc(torrent.name))
+					buf:putf('# %d/%d files selected\n', wanted_count, all_count)
+
+					for i, file in ipairs(torrent.files) do
+						local stat = torrent.fileStats[i]
+						local file_id = i - 1
+						buf:putf(
+							'%s%d_%d\t%s\t%s\n',
+							stat.wanted and '' or '# ',
+							torrent.id,
+							file_id,
+							display_percent(stat.bytesCompleted / file.length),
+							esc(file.name)
+						)
+					end
+
+					buf:put('\n')
+				end
+				buf:putf([[
+# Select torrent files.
+#
+# To unselect a file comment or delete the line.
+#
+# To select a file uncomment the line.
+#
+# Lines can be re-ordered.
+#
+]])
+			end,
+		}, function(err, data)
+			if err then
+				set_torrent_action_abort_message(self, 'changed')
+				return
+			end
+
+			local selected_files_by_id = {}
+
+			for id, file_id in parse_fields(data, '^(%d+)_(%d+)') do
+				id = assert(tonumber(id))
+				file_id = assert(tonumber(file_id))
+
+				selected_files_by_id[id] = selected_files_by_id[id] or {}
+				selected_files_by_id[id][file_id] = true
+			end
+
+			local count = 0
+
+			for _, torrent in ipairs(local_torrents) do
+				local files_unwanted = {}
+				local files_wanted = {}
+
+				local selected_files = selected_files_by_id[torrent.id] or {}
+
+				for i, stat in ipairs(torrent.fileStats) do
+					local file_id = i - 1
+					local selected = selected_files[file_id] == true
+					if selected ~= stat.wanted then
+						table.insert(selected and files_wanted or files_unwanted, file_id)
+					end
+				end
+
+				if #files_wanted > 0 or #files_unwanted > 0 then
+					count = count + 1
+					self.transmission:call('torrent-set', {
+						ids = torrent.id,
+						['files-unwanted'] = #files_unwanted > 0 and files_unwanted or nil,
+						['files-wanted'] = #files_wanted > 0 and files_wanted or nil,
+					})
+				end
+			end
+
+			update_details(self)
+
+			set_torrent_action_message(self, count, 'changed')
+		end)
+	end
+
+	help('Open torrent location.')
+	function M:open_torrent_location()
+		for torrent in self:torrents_iter({ 'downloadDir', 'name' }) do
+			local path = torrent.downloadDir .. '/' .. torrent.name
+			local dir
+			if uv.fs_stat(path).type == 'directory' then
+				dir = path
+			else
+				dir = torrent.downloadDir
+			end
+			if os.getenv('TMUX') then
+				self:spawn('tmux', {
+					args = { 'new-window', '-c', dir },
+					stdio = { nil, nil, 2 },
+				}, function() end)
+			end
+		end
+	end
+
+	help('Move torrent.')
+	function M:show_move_torrents()
+		local torrents_location = {}
+
+		edit(self, {
+			input = function(buf)
+				local torrents_by_location = {}
+
+				for torrent in self:torrents_iter({ 'id', 'name', 'downloadDir' }) do
+					local location = torrent.downloadDir
+					local s = esc(location)
+
+					torrents_by_location[s] = torrents_by_location[s] or {}
+					table.insert(torrents_by_location[s], torrent)
+
+					torrents_location[torrent.id] = location
+				end
+
+				for s, torrents in pairs(torrents_by_location) do
+					for _, torrent in ipairs(torrents) do
+						buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
+					end
+					buf:put('\n', s, '\n\n')
+				end
+
+				buf:putf(
+					[[
+# Set torrent location.
+#
+# Torrents followed by their location.
+#
+# Default location:
+#
+# %s
+#
+]],
+					esc(self._session_info['download-dir'])
+				)
+			end,
+		}, function(err, data)
+			if err then
+				set_torrent_action_abort_message(self, 'moved')
+				return
+			end
+
+			local ids = {}
+			local location
+			local count = 0
+
+			local function commit()
+				if not location then
+					return
+				end
+
+				for i = #ids, 1, -1 do
+					local id = ids[i]
+					if torrents_location[id] == location then
+						table.remove(ids, i)
+					end
+				end
+
+				count = count + #ids
+
+				if #ids ~= 0 then
+					self.transmission:call('torrent-set-location', {
+						ids = ids,
+						location = location,
+						move = true,
+					})
+				end
+
+				ids = {}
+				location = nil
+			end
+
+			for s in parse_fields(data, '.+') do
+				local id = tonumber(string.match(s, '^%d+'))
+				if id then
+					commit()
+					table.insert(ids, id)
+				else
+					assert(not location)
+					location = unesc(s)
+				end
+			end
+
+			commit()
+
+			set_torrent_action_message(self, count, 'moved')
+		end)
+	end
+
+	local function remove_torrents(self, delete_local_data)
+		edit(self, {
+			input = function(buf)
+				if delete_local_data then
+					buf:putf('# Local data PERMANENTLY DELETED.\n\n')
+				end
+
+				for torrent in self:torrents_iter({ 'id', 'name' }) do
+					buf:putf('# %d\t%s\n', torrent.id, esc(torrent.name))
+				end
+
+				buf:put('\n')
+				buf:putf(
+					[[
+# Remove torrents from Transmission. Local data %s.
+#
+# To confirm removal uncomment the line.
+#
+# To abort the operation terminate editor with failure.
+#
+]],
+					delete_local_data and 'PERMANENTLY DELETED' or 'KEPT'
+				)
+			end,
+		}, function(err, data)
+			if err then
+				set_torrent_action_abort_message(self, 'removed')
+				return
+			end
+
+			local ids = parse_ids(data)
+
+			if #ids ~= 0 then
+				self.transmission:call('torrent-remove', {
+					ids = ids,
+					delete_local_data = delete_local_data,
+				})
+			end
+
+			set_torrent_action_message(
+				self,
+				#ids,
+				delete_local_data and 'removed and local data deleted' or 'removed'
+			)
+		end)
+	end
+
+	help('Remove torrent.')
+	function M:show_remove_torrents()
+		remove_torrents(self, false)
+	end
+
+	help('Remove torrent and delete local data.')
+	function M:show_remove_torrents_with_data()
+		remove_torrents(self, true)
+	end
+
+	help('Check torrent.')
+	function M:show_check_torrents()
+		edit(self, {
+			input = function(buf)
+				for torrent in self:torrents_iter({ 'id', 'name' }) do
+					buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
+				end
+
+				buf:put('\n')
+				buf:putf([[
+# Check torrents.
+#
+# To avoid checking a torrent comment or delete the line.
+#
+]])
+			end,
+		}, function(err, data)
+			if err then
+				set_torrent_action_abort_message(self, 'checked')
+				return
+			end
+
+			local ids = parse_ids(data)
+
+			if #ids ~= 0 then
+				self.transmission:call('torrent-verify', {
+					ids = ids,
+				})
+			end
+
+			set_torrent_action_message(self, #ids, 'started checking')
+		end)
+	end
+
+	local function add_torrents(self, collect_torrent_files, delete_after_add)
+		local new_ids = {}
+
+		local function callback()
+			set_torrent_action_message(self, #new_ids, 'added')
+			if #new_ids > 1 then
+				self:set_torrent_filter_by_ids(new_ids)
+			elseif #new_ids == 1 then
+				update_torrents(self)
+				self._torrents:move_cursor_to_id(new_ids[1])
+			end
+		end
+
+		local function transform(s)
+			-- Is relative file path?
+			if not string.match(s, '^[a-z]+:') and not string.match(s, '^/') then
+				return uv.cwd() .. '/' .. s
+			end
+			return s
+		end
+
+		local function prompt(initial_items)
+			edit(self, {
+				input = function(buf)
+					for _, item in ipairs(initial_items) do
+						if item.comment then
+							buf:putf('# %s\n', esc(item.comment))
+						end
+						buf:putf('%s\n', esc(item.filename))
+					end
+
+					if #initial_items == 0 then
+						buf:put('\n')
+					end
+
+					local first = true
+					for name in dir('.') do
+						if string.match(name, '.%.torrent$') then
+							if first then
+								buf:put('\n')
+								first = false
+							end
+							buf:putf('%s%s\n', collect_torrent_files and '' or '# ', name)
+						end
+					end
+
+					buf:put('\n')
+					buf:putf(
+						[[
+# Add torrents.
+#
+# Place one item per line.%s
+#
+# Torrents added paused.
+#
+]],
+						delete_after_add and ' Local files PERMANENTLY DELETED after add.' or ''
+					)
+				end,
+			}, function(err, data)
+				if err then
+					set_torrent_action_abort_message(self, 'added')
+					return
+				end
+
+				local errored_items = {}
+
+				for s in parse_fields(data, '.+') do
+					s = transform(s)
+
+					local ok, payload = self.transmission:call_unchecked('torrent-add', {
+						filename = s,
+						paused = true,
+					})
+					if ok then
+						table.insert(
+							new_ids,
+							assert((payload['torrent-added'] or payload['torrent-duplicate']).id)
+						)
+						if delete_after_add then
+							os.remove(s)
+						end
+					else
+						table.insert(errored_items, {
+							filename = s,
+							comment = string.format('Error: %s', payload),
+						})
+					end
+				end
+
+				if #errored_items > 0 then
+					prompt(errored_items)
+				else
+					callback()
+				end
+			end)
+		end
+
+		prompt({})
+	end
+
+	help('Add torrents.')
+	function M:show_add_torrents()
+		add_torrents(self, false, false)
+	end
+
+	help('Add torrents and delete files after adding.')
+	function M:show_add_torrents_then_delete()
+		add_torrents(self, true, true)
+	end
+
+	function M:run()
+		local sigint = uv.new_signal()
+		sigint:unref()
+		sigint:start('sigint', function()
+			uv.stop()
+		end)
+
+		local sigpipe = uv.new_signal()
+		sigpipe:unref()
+		sigpipe:start('sigpipe', function() end)
+
+		curs.initscr()
+		curs.noecho()
+		curs.curs_set(0)
+
+		self._main_win = Window.new(1, 0, 0, 0)
+		self._details_win = Window.new(1, 0, 0, 0)
+		self._status_win = Window.new(1, 0, 0, 0)
+		self._status_win:nodelay(true)
+		self._status_win:keypad(true)
+
+		update_session_info(self)
+		update_session_stats(self)
+		self:reload_all_torrents()
+
+		self:set_messagef(
+			'Transmission v%s, RPC v%d, press ? for help',
+			self._session_info.version,
+			self._session_info['rpc-version']
+		)
+
+		self:enter_program()
+		uv.run()
+		self:enter_shell()
+	end
+
+	setmetatable(M, nil)
+
+	return M
+end
+
+os.setlocale('')
+
+local TransmissionTui = create_TransmissionTui()
+local app = TransmissionTui:new()
+app:set_scrolloff(5)
+app:run()
