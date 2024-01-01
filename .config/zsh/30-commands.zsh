@@ -461,7 +461,6 @@ function tnt() {
 # Programs.
 #
 
-alias a=aria2t
 alias cal='cal -m'
 alias dc='docker compose'
 alias dn='DOTNET_CLI_TELEMETRY_OPTOUT=1 ht dotnet'

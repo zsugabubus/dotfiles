@@ -1,8 +1,0 @@
-#!/usr/bin/env python3
-import os
-from shlex import join
-import aria2t
-
-file = aria2t.chcwd()
-shell = os.environ.get('SHELL', 'sh')
-os.execlp(shell, shell, '-ic', join(['mp', '--', file]))

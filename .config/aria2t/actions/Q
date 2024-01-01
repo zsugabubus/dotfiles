@@ -1,2 +1,0 @@
-#!/usr/bin/zsh
-read -q '?Surely exit? [y/N]'
