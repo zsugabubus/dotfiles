@@ -243,3 +243,83 @@ describe('dot repeat', function()
 		})
 	end)
 end)
+
+describe('Comment command', function()
+	it('without range comments single line', function()
+		set_lines({
+			'aaa',
+			'bbb',
+			'ccc',
+		})
+		vim.cmd('Comment')
+		assert_lines({
+			'# aaa',
+			'bbb',
+			'ccc',
+		})
+	end)
+
+	it('with range comments multiple lines', function()
+		set_lines({
+			'aaa',
+			'bbb',
+			'ccc',
+		})
+		vim.cmd('2,3Comment')
+		assert_lines({
+			'aaa',
+			'# bbb',
+			'# ccc',
+		})
+	end)
+
+	it('does not uncomment lines', function()
+		set_lines({
+			'# aaa',
+		})
+		vim.cmd('Comment')
+		assert_lines({
+			'# # aaa',
+		})
+	end)
+end)
+
+describe('Uncomment command', function()
+	it('without range uncomments single line', function()
+		set_lines({
+			'# aaa',
+			'# bbb',
+			'# ccc',
+		})
+		vim.cmd('Uncomment')
+		assert_lines({
+			'aaa',
+			'# bbb',
+			'# ccc',
+		})
+	end)
+
+	it('with range uncomments multiple lines', function()
+		set_lines({
+			'# aaa',
+			'# bbb',
+			'# ccc',
+		})
+		vim.cmd('2,3Uncomment')
+		assert_lines({
+			'# aaa',
+			'bbb',
+			'ccc',
+		})
+	end)
+
+	it('does not comment lines', function()
+		set_lines({
+			'aaa',
+		})
+		vim.cmd('Uncomment')
+		assert_lines({
+			'aaa',
+		})
+	end)
+end)

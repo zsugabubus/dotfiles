@@ -7,7 +7,7 @@ local function expand(c)
 	return ''
 end
 
-function M.comment_lines(start_lnum, end_lnum)
+function M.comment_lines(start_lnum, end_lnum, op)
 	local cms = vim.bo.commentstring
 	if cms == '' then
 		cms = '#%s'
@@ -47,7 +47,6 @@ function M.comment_lines(start_lnum, end_lnum)
 		indent = math.min(indent, (string.find(line, '%S') or math.huge) - 1)
 	end
 
-	local op
 	for i, line in ipairs(lines) do
 		local lnum = start_lnum + i - 1
 		local prefix_offset, prefix, suffix, suffix_offset =
