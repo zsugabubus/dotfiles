@@ -360,7 +360,7 @@ local function enter_shell()
 	curs.endwin()
 end
 
-local function enter_program(b)
+local function enter_program()
 	shellout = false
 	stdin:start('r', function(err)
 		if err then
