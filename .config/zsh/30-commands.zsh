@@ -520,7 +520,7 @@ compdef mpn=mpv_hack
 alias mpc='mpv --player-operation-mode=cplayer --no-video'
 compdef mpc=mpv_hack
 function mpd() {
-	mpv 2>/dev/null --no-terminal --no-video ${@:-.}
+	ARGV0=mpd mpv 2>/dev/null --no-terminal --no-video ${@:-.}
 }
 alias mpom='mp --script-opts=sort=none *(om)'
 
