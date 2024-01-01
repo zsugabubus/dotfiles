@@ -525,7 +525,7 @@ function mpd() {
 alias mpom='mp --script-opts=sort=none *(om)'
 
 function mpt() {
-	~c/mpv/mpt ${@:-/tmp/mpv*}
+	ARGV0=mpt luajit ~c/mpv/mpt ${@:-/tmp/mpv*}
 }
 
 function mutt n() {
