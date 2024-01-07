@@ -31,6 +31,7 @@ int endwin(void);
 int getcurx(const WINDOW *);
 int getmaxx(const WINDOW *);
 int getmaxy(const WINDOW *);
+int keypad(WINDOW *win, bool);
 int mvwin(WINDOW *, int, int);
 int nodelay(WINDOW *, bool);
 int noecho(void);
@@ -53,6 +54,7 @@ ffi.metatype('WINDOW', {
 		cols = curs.getmaxx,
 		cursor = curs.wmove,
 		getch = curs.wgetch,
+		keypad = curs.keypad,
 		lines = curs.getmaxy,
 		move = curs.mvwin,
 		nodelay = curs.nodelay,
@@ -189,6 +191,7 @@ curs.curs_set(0)
 local playlist_win = curs.newwin(1, 0, 0, 0)
 local status_win = curs.newwin(1, 0, 0, 0)
 status_win:nodelay(true)
+status_win:keypad(true)
 
 local function render_playlist()
 	local win = playlist_win
@@ -353,6 +356,32 @@ local function set_client(client_)
 	end
 end
 
+local function mpv_keyname(key)
+	if key == '^[' then
+		return 'ESC'
+	elseif key == '^I' then
+		return 'TAB'
+	elseif key == 'KEY_DC' then
+		return 'DEL'
+	elseif key == 'KEY_SDC' then
+		return 'Shift+DEL'
+	elseif key == 'KEY_IC' then
+		return 'INSERT'
+	end
+
+	local x = string.match(key, '^^([A-Z])$')
+	if x then
+		return 'Ctrl+' .. string.lower(x)
+	end
+
+	local x = string.match(key, 'KEY_([A-Z]+)')
+	if x then
+		return x
+	end
+
+	return key
+end
+
 local function enter_shell()
 	shellout = true
 	stdin:stop()
@@ -364,21 +393,18 @@ local function enter_program()
 	shellout = false
 	stdin:start('r', function(err)
 		if err then
-			return uv.stop()
+			stdin:close()
+			return
 		end
+
 		local c = status_win:getch()
 		local key = ffi.string(curs.keyname(c))
-
-		local x = string.match(key, '^^([A-Z])$')
-		if x then
-			key = 'Ctrl+' .. string.lower(x)
-		elseif key == '^[' then
-			key = 'ESC'
-		end
+		local key = mpv_keyname(key)
 
 		local handler = local_bindings[key]
 		if handler then
-			return handler()
+			handler()
+			return
 		end
 
 		if client then
