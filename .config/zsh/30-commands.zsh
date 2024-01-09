@@ -33,6 +33,10 @@ alias g=git
 compdef g=git
 alias git='noglob git'
 
+function gb() {
+	git switch $(git branch --format '%(refname:short)' | fzf)
+}
+
 function mkcd md() {
 	mkdir -p -- $1 && cd -- $1
 }
