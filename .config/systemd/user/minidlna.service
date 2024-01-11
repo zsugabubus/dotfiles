@@ -1,14 +1,17 @@
 [Unit]
 Description=MiniDLNA Media Server Daemon
 After=network.target
-RequiresMountsFor=/home
 
 [Service]
 Type=forking
-ExecStartPre=/bin/sh -c '/usr/bin/envsubst <"%E/minidlna/config.in" >"%E/minidlna/config"'
-ExecStart=/usr/bin/env minidlnad -f "%E/minidlna/config"
-# -P "%t/minidlnad.pid"
-# ExecReload=/bin/kill -s HUP $MAINPID
+ExecStartPre=sh -c 'envsubst <$1 >$2' sh "%E/minidlna/config" "/tmp/config"
+ExecStart=minidlnad -f /tmp/config -R
+SystemCallFilter=@system-service
+NoNewPrivileges=yes
+PrivateUsers=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
 
 [Install]
 WantedBy=default.target
