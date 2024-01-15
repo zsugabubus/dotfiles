@@ -40,7 +40,7 @@ local function keep_visual(win, callback)
 
 	api.nvim_win_set_cursor(win, { start_row + 1, start_col })
 	cmd.normal({ bang = true, args = { 'o' } })
-	api.nvim_win_set_cursor(win, { end_row + 1, end_col - 1 })
+	api.nvim_win_set_cursor(win, { end_row + 1, math.max(end_col - 1, 0) })
 
 	api.nvim_buf_del_extmark(buf, ns, id)
 end
@@ -51,8 +51,8 @@ end
 
 function M.surround_visual_linewise(before, after)
 	keep_visual(0, function(buf, start_row, start_col, end_row, end_col)
-		api.nvim_buf_set_lines(buf, end_row, end_row, true, { after })
-		api.nvim_buf_set_lines(buf, start_row - 1, start_row - 1, true, { before })
+		api.nvim_buf_set_lines(buf, end_row, end_row, true, after)
+		api.nvim_buf_set_lines(buf, start_row - 1, start_row - 1, true, before)
 	end)
 end
 
@@ -64,7 +64,7 @@ function M.surround_visual_charwise(before, after)
 			end_col,
 			end_row - 1,
 			end_col,
-			{ after }
+			after
 		)
 		api.nvim_buf_set_text(
 			buf,
@@ -72,7 +72,7 @@ function M.surround_visual_charwise(before, after)
 			start_col,
 			start_row - 1,
 			start_col,
-			{ before }
+			before
 		)
 	end)
 end
@@ -84,11 +84,18 @@ local function leave_visual()
 	})
 end
 
+local function split_lines(s)
+	return vim.split(s, '\n')
+end
+
 function M.surround_visual(before, after, line_before, line_after)
 	if M.is_visual_line() then
-		M.surround_visual_linewise(line_before or before, line_after or after)
+		M.surround_visual_linewise(
+			split_lines(line_before or before),
+			split_lines(line_after or after)
+		)
 	else
-		M.surround_visual_charwise(before, after)
+		M.surround_visual_charwise(split_lines(before), split_lines(after))
 	end
 	leave_visual()
 end

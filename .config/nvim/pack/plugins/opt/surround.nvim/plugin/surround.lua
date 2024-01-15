@@ -12,7 +12,12 @@ local function c(c)
 end
 
 c('|')
-c('<CR>')
+
+keymap('v', '<Plug>(surround)<CR>', '', {
+	callback = function()
+		require('surround').surround_visual('\n', '\n', '', '')
+	end,
+})
 
 local function quote(c)
 	keymap('v', '<Plug>(surround)' .. c, '', {
