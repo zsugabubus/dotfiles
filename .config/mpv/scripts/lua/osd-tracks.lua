@@ -59,9 +59,12 @@ end
 
 local function set_enabled(action)
 	local selected_track = props['track-list/selected'][cursor_type]
-	local enable = selected_track and selected_track.id == cursor_id
-	enable = utils.reduce_bool(enable, action)
-	mp.set_property_native(cursor_type, enable and cursor_id or 0)
+	local enabled = selected_track and selected_track.id == cursor_id
+	enabled = utils.reduce_bool(enabled, action)
+	mp.set_property_native(cursor_type, enabled and cursor_id or 0)
+	if cursor_type == 'sub' then
+		mp.set_property_native('sub-visibility', true)
+	end
 end
 
 local function update_property(name, value)
