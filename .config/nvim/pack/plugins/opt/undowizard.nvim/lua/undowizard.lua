@@ -498,8 +498,8 @@ function M.read_undotree(opts)
 
 	local buf = api.nvim_get_current_buf()
 	local target_buf = get_target_buf(buf)
-	local group =
-		api.nvim_create_augroup(string.format('undotree/%d', target_buf), {})
+
+	local group = api.nvim_create_augroup(string.format('undotree/%d', buf), {})
 
 	api.nvim_create_autocmd('TextChanged', {
 		group = group,
