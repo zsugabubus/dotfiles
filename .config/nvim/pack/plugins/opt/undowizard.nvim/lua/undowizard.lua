@@ -223,6 +223,7 @@ local function undotree_to_repo(undotree)
 	repo.saved = root
 
 	table.insert(repo.commits, root)
+	repo.commit_by_number[root.number] = root
 
 	process_branch(undotree.entries, root, 0)
 
