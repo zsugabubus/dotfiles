@@ -150,7 +150,7 @@ bind F choose-tree -Z
 bind "'" select-pane -m
 bind C-z resize-pane -Z
 
-bind ' ' display-menu -T 'Layout' \
+bind = display-menu -T 'Layout' \
 	'k-master' k { select-layout main-horizontal } \
 	'h-master' h { select-layout main-vertical } \
 	'grid' g { select-layout tiled } \
@@ -165,6 +165,7 @@ bind W if -F '#{@title}' \
 bind r source-file ~/.tmux.conf \; display-message -d250 "Reloaded."
 
 bind / set -s @copy_feedkeys '?' \; source ~/.config/tmux/editor-copy.tmux
+bind ' ' set -s @copy_feedkeys ' ' \; source ~/.config/tmux/editor-copy.tmux
 bind C-u copy-mode \; send-keys -X halfpage-up
 bind v set -s @copy_feedkeys 'v' \; source ~/.config/tmux/editor-copy.tmux
 bind y set -su @copy_feedkeys \; source ~/.config/tmux/editor-copy.tmux
@@ -173,6 +174,7 @@ bind e capture-pane -e -J -S- \; split-window -vZ "tmux show-buffer | sed 's/\\s
 bind -T copy-mode-vi [ send-keys -X previous-prompt
 bind -T copy-mode-vi ] send-keys -X next-prompt
 bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+bind -T copy-mode-vi Y send-keys -X copy-selection
 bind -T copy-mode-vi v send-keys -X begin-selection
 bind -T copy-mode-vi + \
 	send-keys -X copy-selection-and-cancel \;\
