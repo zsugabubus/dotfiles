@@ -23,7 +23,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 			api.nvim_buf_set_keymap(0, 'n', 'gf', '', {
 				callback = function()
 					vim.cmd.edit(
-						string.format('%s/%s', archive, api.nvim_get_current_line())
+						string.format('%s//%s', archive, api.nvim_get_current_line())
 					)
 				end,
 			})
@@ -33,14 +33,14 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 
 	api.nvim_create_autocmd('BufReadCmd', {
 		group = group,
-		pattern = string.gsub(patterns, ',', '/*,'),
+		pattern = string.gsub(patterns, ',', '//*,'),
 		nested = true,
 		callback = function(opts)
 			vim.b.did_archive = true
 			local match = opts.match
 			for pattern in string.gmatch(patterns, '[^,]+') do
 				local ext = vim.pesc(string.match(pattern, '^%*(.*)'))
-				local pattern = string.format('^(.-%s)/(.*)', ext)
+				local pattern = string.format('^(.-%s)//(.*)', ext)
 				local archive, member = string.match(match, pattern)
 				if archive and member == '' then
 					read_system(extract_cmdline(archive))
