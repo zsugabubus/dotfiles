@@ -60,16 +60,9 @@ function _G.loadfile(path)
 		uv.fs_mkdir(bytecode_dir, tonumber('700', 8), function()
 			local tmp_path = string.format('%s.%d~', cache_path, uv.os_getpid())
 			uv.fs_open(tmp_path, 'wx', tonumber('600', 8), function(err, fd)
-				-- Maybe another loadfile() would like to cache concurrently, or maybe
-				-- something below failed so do not try again.
-				if err and string.find(err, '^EEXIST:') then
+				if err then
 					return
 				end
-				-- Cannot do much about it.
-				if err and string.find(err, '^EROFS:') then
-					return
-				end
-				assert(not err, err)
 				-- LuaJIT accepts a second argument "strip". When set, the produced
 				-- bytecode will be free from debug information that results in smaller
 				-- size and faster loading.
