@@ -650,4 +650,12 @@ function sx start_x() {
 	wait
 }
 
+function zd() {
+	zebra dark
+}
+
+function zl() {
+	zebra light
+}
+
 autoload -Uz ${:-$ZDOTDIR/Misc/*(N.:t)}
