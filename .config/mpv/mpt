@@ -4,12 +4,7 @@ local uv = require('luv')
 local json = require('cjson')
 local curs = ffi.load('ncursesw')
 
-ffi.cdef([[
-enum { LC_ALL = 6 };
-char *setlocale(int, const char *);
-]])
-
-ffi.C.setlocale(ffi.C.LC_ALL, '')
+os.setlocale('')
 
 ffi.cdef([[
 typedef struct WINDOW WINDOW;
