@@ -37,7 +37,7 @@ bind index o sort-mailbox
 bind index O sort-reverse
 
 macro index ~ <limit>~
-bind index l limit
+bind index = limit
 
 bind generic t tag-entry
 bind pager t tag-message
@@ -55,6 +55,7 @@ bind attach t view-text
 bind attach v view-attach
 macro attach <return> v
 bind attach s save-entry
+macro attach S <save-entry><return>
 bind attach,compose | pipe-entry
 bind attach - collapse-parts
 macro attach e <pipe-message>$EDITOR||:<return>
@@ -84,7 +85,6 @@ bind index,pager m mail
 bind index,pager M resend-message
 bind index,pager r reply
 bind index,pager R group-reply
-bind index,pager \cR noop
 
 bind index,pager ! flag-message
 bind index,pager L edit-label
@@ -100,8 +100,6 @@ bind index,pager w display-address
 
 bind index,pager $ sync-mailbox
 bind index q quit
-macro index Q <enter-command>set maildir_trash<return><quit>
-# bind attach,generic,browser,pager,index Z quit
 
 macro index S "<enter-command>set index_format=\"%Z %@date@ %?M?(%M) ?%s (%?l?%4l&%4c?)%\"<return>"
 
@@ -150,7 +148,7 @@ bind compose - toggle-unlink
 bind compose A attach-message
 bind compose J move-down
 bind compose K move-up
-bind compose T get-attachment
+bind compose S get-attachment
 bind compose a attach-file
 bind compose b edit-bcc
 bind compose c edit-cc
@@ -164,12 +162,10 @@ bind compose n rename-attachment
 bind compose o edit-description
 bind compose p postpone-message
 bind compose r edit-reply-to
-bind compose s edit-subject
+bind compose s copy-file
 bind compose t edit-to
 bind compose v view-attach
-bind compose w copy-file
 bind compose y send-message
-macro compose <return> m
 
 bind postpone d delete-entry
 bind postpone u undelete-entry
