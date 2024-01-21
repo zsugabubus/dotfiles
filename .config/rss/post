@@ -1,0 +1,4 @@
+#!/bin/dash -eu
+cd -- "$MAIL/feeds"
+exec 2>/dev/null
+. ../post

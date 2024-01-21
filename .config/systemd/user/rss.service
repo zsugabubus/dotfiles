@@ -1,0 +1,9 @@
+[Unit]
+Description=RSS to Mailbox
+
+[Service]
+Type=oneshot
+ExecStart=luajit "%E/rss/rss"
+ExecStopPost=%E/rss/post
+OOMScoreAdjust=1000
+SyslogIdentifier=rss

@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+from datetime import datetime
+from xml.etree.cElementTree import Element, ElementTree, SubElement
+import html
+import re
+import sys
+import urllib.request
+
+URL = "https://portal.nebih.gov.hu/termekvisszahivas"
+# Same as clicking "Megtekintés" except &*_redirect=... removed because it
+# conflicts with urlview's redirect removal.
+ENTRY_URL_TEMPLATE = (
+	URL
+	+ "?p_p_id=com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI&p_p_lifecycle=0&p_p_state=maximized&p_p_mode=view&_com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI_recordId={id}&_com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI_mvcPath=%2Fview_record.jsp&_com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI_editable=false&_com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI_displayDDMTemplateId=0&_com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI_spreadsheet=false&_com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI_formDDMTemplateId=0&_com_liferay_dynamic_data_lists_web_portlet_DDLDisplayPortlet_INSTANCE_V7CbHUFUlkoI_version=1.0"
+)
+
+ENTRY_RE = (
+	r'<td class="col"> *(?P<date>.*?) *</td>'
+	+ r"\s*"
+	+ r'<td class="col"> *(?P<name>.*?) *</td>'
+	+ r"\s*"
+	+ r'<td class="col"> *(?P<reason>.*?) *</td>'
+	+ r"\s*"
+	+ r'<td class="col"> .*?"[^"]*_(?P<id>\d+)'
+)
+
+text = (
+	urllib.request.urlopen(
+		urllib.request.Request(
+			URL,
+			headers={
+				"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36",
+			},
+		),
+	)
+	.read()
+	.decode("utf-8")
+)
+
+rss = Element("rss", version="2.0")
+channel = SubElement(rss, "channel")
+SubElement(channel, "language").text = "hu"
+SubElement(channel, "title").text = "Nébih - Termékvisszahívás"
+SubElement(channel, "link").text = URL
+
+for entry in re.finditer(ENTRY_RE, text):
+	try:
+		item = SubElement(channel, "item")
+		SubElement(item, "pubDate").text = datetime.strptime(
+			entry["date"], "%Y.%m.%d."
+		).strftime("%F")
+		SubElement(item, "title").text = html.unescape(html.unescape(entry["name"]))
+		SubElement(item, "guid", isPermaLink="true").text = ENTRY_URL_TEMPLATE.format(
+			id=entry["id"]
+		)
+		SubElement(item, "description").text = entry["reason"]
+	except ValueError as e:
+		channel.remove(item)
+		print(e, file=sys.stderr)
+
+ElementTree(rss).write(
+	sys.stdout.buffer,
+	encoding="utf-8",
+	xml_declaration=True,
+)
