@@ -110,6 +110,7 @@ local function update()
 				row = i - 1,
 			})
 			local wo = vim.wo[win]
+			wo.foldenable = false
 			if wo.number or wo.relativenumber then
 				wo.number = true
 				wo.relativenumber = false
