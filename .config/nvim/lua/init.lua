@@ -413,7 +413,7 @@ vim.filetype.add({
 })
 
 filetype(
-	'vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*,*sh,json',
+	'vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*,*sh,json,jsonc',
 	function()
 		vim.bo.tabstop = 2
 	end
