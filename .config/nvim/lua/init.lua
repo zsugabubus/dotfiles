@@ -602,6 +602,12 @@ user_command(
 	{ nargs = '*', range = '%' }
 )
 
+fmap('n', 'cd', function()
+	cmd.cd(vim.fn.expand('%:p' .. string.rep(':h', vim.v.count1)))
+end)
+
+map('n', 'c-', ':cd -<CR>')
+
 require('pack').setup({
 	{ 'ansiesc.nvim' },
 	{ 'archive.nvim' },
