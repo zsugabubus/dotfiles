@@ -596,6 +596,12 @@ autocmd('FocusLost', {
 
 user_command('Rm', '! rm %', {})
 
+user_command(
+	'Cut',
+	[[execute '<line1>,<line2>!cut -f'.join([1, <f-args>], ',')]],
+	{ nargs = '*', range = '%' }
+)
+
 require('pack').setup({
 	{ 'ansiesc.nvim' },
 	{ 'archive.nvim' },
