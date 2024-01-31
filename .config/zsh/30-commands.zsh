@@ -388,23 +388,12 @@ function pacman_history() {
 }
 
 function poweroff reboot() {
-	if ! find -H ~m -mindepth 1 -name '.*' -prune -o -empty -o -type f -print -quit | awk '{exit 1}'; then
-		print -rP "zsh: ~m is not empty."
-		tree -C ~m | less
-	fi &&
-	() {
-		local x=
-		for x in tmux nvim firefox; do
-			if pgrep -ax $x &>/dev/null; then
-				print -rP "zsh: $x is running"
-				return 1
-			fi
-		done
-	} &&
+	tree -L 2 -C ~m | less -r &&
+	! ps -f -C nvim -C firefox -C transmission-daemon &&
 	sync &&
 	print -rnP "zsh: confirm? [y/N]%b " &&
 	read -srq &&
-	command "$0"
+	sudo "$0"
 }
 
 function usb_rebind() {
