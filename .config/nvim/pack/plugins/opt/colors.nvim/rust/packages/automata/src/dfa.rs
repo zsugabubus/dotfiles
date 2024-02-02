@@ -70,10 +70,10 @@ where
     /// Converts NFA to DFA.
     ///
     /// Reverse of [`Nfa::from_dfa`].
-    pub fn from_nfa(
+    pub fn from_nfa<F: Fn(A, A) -> Option<A>>(
         nfa: &Nfa<A>,
         start: nfa::StateId,
-        accept_strategy: impl Fn(A, A) -> Option<A>,
+        accept_strategy: F,
     ) -> Result<(Self, StateId)> {
         let mut dfa = Self::new();
         let mut to_be_mapped: Vec<(StateId, BTreeSet<nfa::StateId>)> = Vec::new();
@@ -158,11 +158,11 @@ where
     }
 
     /// Sets accept value of a state with custom conflict resolver.
-    pub fn set_accept_with(
+    pub fn set_accept_with<F: Fn(A, A) -> Option<A>>(
         &mut self,
         state: StateId,
         value: A,
-        strategy: impl Fn(A, A) -> Option<A>,
+        strategy: F,
     ) -> Result<()> {
         match self.accepts.entry(state) {
             Occupied(mut entry) => {
@@ -260,7 +260,7 @@ where
     }
 
     /// Writes DOT representation of the automaton for debugging purposes.
-    pub fn write_dot(&self, mut writer: impl Write) -> std::io::Result<()> {
+    pub fn write_dot<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         writeln!(writer, "digraph {{")?;
         writeln!(writer, "\trankdir=LR")?;
 
@@ -334,9 +334,9 @@ where
     }
 
     /// Writes implementation of [`Config`].
-    pub fn write_config(
+    pub fn write_config<W: Write>(
         &self,
-        mut writer: impl Write,
+        mut writer: W,
         struct_name: &str,
         alphabet_len: usize,
         start: StateId,

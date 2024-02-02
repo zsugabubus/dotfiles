@@ -129,7 +129,7 @@ where
     }
 
     /// Creates a terminal transition between `from` and `to`.
-    pub fn insert_transition(&mut self, from: StateId, via: impl Into<Terminal>, to: StateId) {
+    pub fn insert_transition<T: Into<Terminal>>(&mut self, from: StateId, via: T, to: StateId) {
         self.states[from.as_usize()]
             .transitions
             .entry(via.into())
@@ -162,7 +162,7 @@ where
     /// ```sh
     /// dot -Tsvg a.dot > a.svg
     /// ```
-    pub fn write_dot(&self, mut writer: impl Write) -> std::io::Result<()> {
+    pub fn write_dot<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
         writeln!(writer, "digraph {{")?;
         writeln!(writer, "\trankdir=LR")?;
 
