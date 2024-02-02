@@ -58,7 +58,7 @@ where
     }
 
     fn extend_from_dfa(&mut self, src: &Dfa<A>) {
-        let base = self.new_states(src.states.len());
+        let base = self.new_state_many(src.states.len());
 
         for (from_id, from) in src.states.iter().enumerate() {
             for (term, to) in from.transitions.iter() {
@@ -82,7 +82,7 @@ where
     }
 
     fn extend_from_rev_nfa(&mut self, src: &Self) {
-        let base = self.new_states(src.states.len());
+        let base = self.new_state_many(src.states.len());
 
         for (from_id, from) in src.states.iter().enumerate() {
             for (term, tos) in from.transitions.iter() {
@@ -98,7 +98,7 @@ where
 
         for (from_id, tos) in src.epsilon_transitions.iter() {
             for to in tos {
-                self.add_epsilon_transition(
+                self.insert_epsilon_transition(
                     StateId::from(to.as_usize() + base),
                     StateId::from(from_id.as_usize() + base),
                 );
@@ -116,7 +116,7 @@ where
         StateId::from(self.states.len() - 1)
     }
 
-    fn new_states(&mut self, count: usize) -> usize {
+    fn new_state_many(&mut self, count: usize) -> usize {
         let base = self.states.len();
         self.states
             .resize_with(self.states.len() + count, State::new);
@@ -138,7 +138,7 @@ where
     }
 
     /// Creates an empty/epsilon transition between `from` and `to`.
-    pub fn add_epsilon_transition(&mut self, from: StateId, to: StateId) {
+    pub fn insert_epsilon_transition(&mut self, from: StateId, to: StateId) {
         self.epsilon_transitions.entry(from).or_default().insert(to);
     }
 
