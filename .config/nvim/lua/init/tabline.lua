@@ -5,6 +5,10 @@ local middle = require('string.buffer').new()
 local right = require('string.buffer').new()
 local output = require('string.buffer').new()
 
+local function esc(s)
+	return string.gsub(s, '%%', '%%%%')
+end
+
 local function render_tabpage(s, tabpage, current)
 	local nr = api.nvim_tabpage_get_number(tabpage)
 	local win = api.nvim_tabpage_get_win(tabpage)
@@ -24,7 +28,7 @@ local function render_tabpage(s, tabpage, current)
 
 	s:put('%', nr, 'T')
 	s:put(current and '%#TabLineSel#' or '%#TabLine#')
-	s:put(' ', nr, ':', name, flags, ' ')
+	s:put(' ', nr, ':', esc(name), flags, ' ')
 end
 
 return function()
