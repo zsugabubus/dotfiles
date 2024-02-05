@@ -462,7 +462,7 @@ autocmd('TextChanged', {
 	end,
 })
 
-autocmd('BufHidden,BufUnload', {
+autocmd({ 'BufHidden', 'BufUnload' }, {
 	group = group,
 	callback = function()
 		if not vim.bo.buflisted then
@@ -534,7 +534,7 @@ do
 	local IGNORE_WHITESPACE_RE =
 		vim.regex([[\v^(|text|markdown|mail)$|git|diff|log]])
 
-	autocmd('FileType,BufWinEnter,WinNew,ColorScheme', {
+	autocmd({ 'FileType', 'BufWinEnter', 'WinNew', 'ColorScheme' }, {
 		group = group,
 		callback = function()
 			api.nvim_set_hl(0, 'WhitespaceError', {
@@ -547,7 +547,7 @@ do
 		end,
 	})
 
-	autocmd('FileType,BufWinEnter,WinNew', {
+	autocmd({ 'FileType', 'BufWinEnter', 'WinNew' }, {
 		group = group,
 		callback = function()
 			if vim.w.japan then
