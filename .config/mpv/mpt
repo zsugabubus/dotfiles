@@ -494,9 +494,6 @@ local function editor_playlist()
 end
 
 local_bindings = {
-	q = function()
-		uv.stop()
-	end,
 	['/'] = fzf_playlist,
 	['Ctrl+w'] = editor_playlist,
 }
