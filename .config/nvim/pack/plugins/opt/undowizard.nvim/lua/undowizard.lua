@@ -509,6 +509,9 @@ function M.read_undotree(opts)
 			if not api.nvim_buf_is_valid(buf) then
 				return true
 			end
+			if api.nvim_buf_get_option(buf, 'readonly') then
+				return
+			end
 			update(buf)
 		end,
 	})
