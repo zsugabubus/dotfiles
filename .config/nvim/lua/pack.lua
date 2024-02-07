@@ -266,15 +266,22 @@ local function setup(opts)
 	for _, plugin_dir in ipairs(rtp) do
 		local plugin = path2plugin[plugin_dir]
 		local lua_dir = plugin_dir .. '/lua'
+		local main, main2 = not plugin or plugin.main
 		for name, kind in dir(lua_dir) do
-			lua2path[name] = string_format('%s/%s', lua_dir, name)
-			if plugin and not plugin.main then
+			local path = string_format('%s/%s', lua_dir, name)
+			lua2path[name] = path
+			if not main then
 				if kind == 'directory' then
-					plugin.main = name
+					if not main2 or uv.fs_access(path .. '/init.lua', 'r') then
+						main2 = name
+					end
 				else
-					plugin.main = string_sub(name, 1, -5)
+					main = string_sub(name, 1, -5)
 				end
 			end
+		end
+		if plugin then
+			plugin.main = main or main2
 		end
 	end
 
