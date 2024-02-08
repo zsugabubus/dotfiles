@@ -47,7 +47,7 @@ api.nvim_create_autocmd('BufEnter', {
 					})
 				do
 					local path = dirpath .. name
-					lines[#lines + 1] = path .. (is_dir(path) and '/' or '')
+					table.insert(lines, path .. (is_dir(path) and '/' or ''))
 				end
 				table.sort(lines)
 				api.nvim_buf_set_lines(0, 0, -1, true, lines)
