@@ -1,8 +1,8 @@
 local M = {}
 
 local function expand(c)
-	if c == '*' or c == '/' then
-		return vim.pesc(c) .. '*'
+	if c == '*' or c == '/' or c == '-' then
+		return '%' .. c .. '*'
 	end
 	return ''
 end
