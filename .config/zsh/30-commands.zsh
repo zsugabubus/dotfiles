@@ -455,7 +455,7 @@ function tnt() {
 #
 
 alias cal='cal -m'
-alias dc='docker compose'
+alias dc='BUILDKIT_PROGRESS=plain docker compose'
 alias dn='DOTNET_CLI_TELEMETRY_OPTOUT=1 ht dotnet'
 alias info='info --vi-keys'
 alias info_all='info --subnodes'
