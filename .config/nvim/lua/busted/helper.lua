@@ -1,9 +1,11 @@
 local busted = require('busted')
 
 local function reset_all()
+	-- Buffers must be deleted before resetting 'undolevels' otherwise we may get
+	-- "E439: undo list corrupt".
 	vim.cmd([[
-		set all&
 		%bdelete!
+		set all&
 		clearjumps
 		mapclear
 		mapclear!
