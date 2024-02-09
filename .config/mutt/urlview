@@ -37,8 +37,10 @@ else:
         match action:
             case "open":
                 if is_running("firefox"):
+                    import shlex
                     Popen(
-                        ["firefox", url],
+                        shlex.join(["firefox", url.decode('utf-8')]),
+                        shell=True,
                         stdin=DEVNULL,
                     )
                     break
