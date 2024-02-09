@@ -284,6 +284,7 @@ fmap('n', 'sb', function()
 	end
 end)
 smap('n', 'sp', [[vip:sort /\v^(#!)@!\A*\zs/<CR>]])
+smap('n', 'sq', ':Qread<CR>')
 smap('n', 'sw', ':set wrap!<CR>')
 
 map('n', 'Q', ':normal n.<CR>zz')
@@ -345,6 +346,54 @@ end, { nargs = '+' })
 user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
 
 user_command('Gconflicts', 'GREP ^<<<<<<<', {})
+
+do
+	local buf
+
+	user_command('Qread', function(opts)
+		if not buf or opts.bang then
+			if api.nvim_buf_get_name(0) == '' then
+				cmd.edit('tmux://pane/{last}')
+			end
+			buf = api.nvim_get_current_buf()
+		end
+
+		api.nvim_echo({
+			{
+				string.format('%s qread', vim.inspect(api.nvim_buf_get_name(buf))),
+				'Normal',
+			},
+		}, false, {})
+
+		api.nvim_buf_call(buf, function()
+			cmd.edit()
+
+			local saved = bo.errorformat
+			bo.errorformat = table.concat({
+				-- rust
+				'%Eerror[E%n]: %m',
+				'%Eerror: %m',
+				'%Wwarning: %m',
+				'%Nnote: %m',
+				'%C%*[ ]--> %f:%l:%c',
+				-- flake8
+				'%f:%l:%c: %m',
+				-- pytest
+				'%f:%l: %m',
+				-- vitest
+				'\\ FILE  %f:%l:%c',
+				-- git status
+				'\\        %m:   %f',
+			}, ',')
+
+			cmd.cgetbuffer()
+
+			bo.errorformat = saved
+		end)
+
+		cmd.cnext()
+	end, { bang = true })
+end
 
 autocmd({ 'FocusGained', 'VimEnter' }, {
 	group = group,
