@@ -1,4 +1,5 @@
 local api = vim.api
+local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
 local o = vim.o
@@ -415,12 +416,12 @@ vim.filetype.add({
 filetype(
 	'vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*,*sh,json,jsonc',
 	function()
-		vim.bo.tabstop = 2
+		bo.tabstop = 2
 	end
 )
 
 filetype('awk,python,rust', function()
-	vim.bo.tabstop = 4
+	bo.tabstop = 4
 end)
 
 filetype('gitcommit,markdown', function()
@@ -428,12 +429,11 @@ filetype('gitcommit,markdown', function()
 end)
 
 filetype('json', function()
-	vim.bo.equalprg = 'jq'
+	bo.equalprg = 'jq'
 end)
 
 filetype('xml,html', function()
-	vim.bo.equalprg =
-		'xmllint --encode UTF-8 --html --nowrap --dropdtd --format -'
+	bo.equalprg = 'xmllint --encode UTF-8 --html --nowrap --dropdtd --format -'
 end)
 
 filetype('directory', function()
@@ -465,7 +465,7 @@ autocmd('TextChanged', {
 autocmd({ 'BufHidden', 'BufUnload' }, {
 	group = group,
 	callback = function()
-		if not vim.bo.buflisted then
+		if not bo.buflisted then
 			cmd.diffoff({ bang = true })
 		end
 	end,
@@ -481,9 +481,9 @@ autocmd('VimResized', {
 autocmd('StdinReadPost', {
 	group = group,
 	callback = function()
-		vim.bo.buftype = 'nofile'
-		vim.bo.bufhidden = 'hide'
-		vim.bo.swapfile = false
+		bo.buftype = 'nofile'
+		bo.bufhidden = 'hide'
+		bo.swapfile = false
 	end,
 })
 
@@ -497,7 +497,7 @@ autocmd('BufReadPost', {
 			buffer = 0,
 			once = true,
 			callback = function()
-				if IGNORE_RE:match_str(vim.bo.filetype) then
+				if IGNORE_RE:match_str(bo.filetype) then
 					return
 				end
 
@@ -555,10 +555,10 @@ do
 				vim.w.japan = nil
 			end
 			if
-				vim.bo.buftype == ''
-				and not vim.bo.readonly
-				and vim.bo.modifiable
-				and not IGNORE_WHITESPACE_RE:match_str(vim.bo.filetype)
+				bo.buftype == ''
+				and not bo.readonly
+				and bo.modifiable
+				and not IGNORE_WHITESPACE_RE:match_str(bo.filetype)
 			then
 				vim.w.japan = fn.matchadd('WhitespaceError', [[\v +\t+|\s+%#@!$]], 10)
 			end
@@ -584,7 +584,7 @@ autocmd('TermClose', {
 autocmd('FocusLost', {
 	group = group,
 	callback = function(opts)
-		if vim.bo[opts.buf].buftype == '' then
+		if bo[opts.buf].buftype == '' then
 			pcall(
 				fn.writefile,
 				{ fn.expand('%:p') },
