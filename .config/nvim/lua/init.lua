@@ -344,6 +344,8 @@ end, { nargs = '+' })
 
 user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
 
+user_command('Gconflicts', 'GREP ^<<<<<<<', {})
+
 autocmd({ 'FocusGained', 'VimEnter' }, {
 	group = group,
 	callback = function()
