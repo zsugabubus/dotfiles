@@ -329,7 +329,7 @@ pub unsafe fn check_matches(teddy: &[__m128i], input: __m128i) -> u32 {
     }
 
     let mask = len! { 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
-    return !_mm_movemask_epi8(_mm_cmpeq_epi8(mask, _mm_setzero_si128())) as u32;
+    !_mm_movemask_epi8(_mm_cmpeq_epi8(mask, _mm_setzero_si128())) as u32
 }
 
 /*
