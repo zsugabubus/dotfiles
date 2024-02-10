@@ -1,7 +1,33 @@
+[package]
+name = "nvim-plugin-colors"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
 [workspace]
-members = ["packages/*"]
-default-members = ["packages/nvim-plugin-colors"]
+members = [
+	"apca",
+	"automata",
+	"build",
+	"nvim",
+	"strlen",
+	"teddy",
+]
 resolver = "2"
+
+[dependencies]
+apca = { path = "apca" }
+automata = { path = "automata" }
+build = { path = "build" }
+fast-float = "0.2"
+nvim = { path = "nvim" }
+palette = { version = "0.7.3", default-features = false, features = ["std"] }
+teddy = { path = "teddy" }
+
+[build-dependencies]
+build = { path = "build" }
 
 [profile.release]
 strip = true
