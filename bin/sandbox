@@ -348,6 +348,7 @@ do
 		o:ro_bind_user('.rustup', rustup_home)
 
 		o:copyenv('RUST_BACKTRACE')
+		o:copyenv('RUST_LOG')
 
 		o:program(...)
 		o:exec()
