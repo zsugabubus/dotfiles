@@ -1,9 +1,14 @@
 use std::os::raw::*;
 
 pub struct Server;
+
+#[repr(transparent)]
 pub struct Row(pub c_int);
+
+#[repr(transparent)]
 pub struct BufferId(pub c_int);
 
+#[repr(transparent)]
 pub struct Buffer<'a>(&'a c_void);
 
 impl Buffer<'_> {
