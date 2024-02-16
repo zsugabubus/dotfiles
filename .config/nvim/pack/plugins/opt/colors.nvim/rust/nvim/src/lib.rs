@@ -16,10 +16,11 @@ impl Buffer<'_> {
     pub unsafe fn get_line(&self, row: Row) -> &[u8] {
         extern "C" {
             pub fn ml_get_buf(_: *const c_void, _: i32) -> *const u8;
+            pub fn strlen(_: *const u8) -> usize;
         }
 
         let ptr = ml_get_buf(self.0, row.0);
-        std::slice::from_raw_parts(ptr, strlen::strlen(ptr) + 1)
+        std::slice::from_raw_parts(ptr, strlen(ptr) + 1)
     }
 }
 

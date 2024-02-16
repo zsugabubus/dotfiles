@@ -12,7 +12,6 @@ members = [
 	"automata",
 	"build",
 	"nvim",
-	"strlen",
 	"teddy",
 ]
 resolver = "2"
