@@ -8,7 +8,6 @@ crate-type = ["cdylib"]
 
 [workspace]
 members = [
-	"apca",
 	"automata",
 	"build",
 	"nvim",
@@ -17,7 +16,7 @@ members = [
 resolver = "2"
 
 [dependencies]
-apca = { path = "apca" }
+apca = { git = "https://github.com/zsugabubus/apca-rs" }
 automata = { path = "automata" }
 build = { path = "build" }
 fast-float = "0.2"
