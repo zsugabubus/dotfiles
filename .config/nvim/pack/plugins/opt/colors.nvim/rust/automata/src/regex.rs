@@ -7,7 +7,7 @@ use std::ops::Range;
 /// # Examples
 ///
 /// ```
-/// # use automata::{nfa::Nfa, regex::{Regex, Flags, Error}};
+/// # use automata::{nfa::Nfa, regex::{Regex, Flags, ParseError}};
 /// let mut nfa = Nfa::new();
 /// let start = nfa.new_state();
 ///
@@ -19,7 +19,7 @@ use std::ops::Range;
 /// let state = re.insert_literal("Hello World", &Flags::new());
 /// re.set_accept(state, "A colorful world");
 ///
-/// # Ok::<(), Error>(())
+/// # Ok::<(), ParseError>(())
 /// ```
 #[derive(Debug)]
 pub struct Regex<'a, A>
