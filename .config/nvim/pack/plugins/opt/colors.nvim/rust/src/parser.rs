@@ -27,13 +27,11 @@ macro_rules! convert_lossless {
 
 type Result<T> = core::result::Result<(usize, T), ()>;
 
-#[inline]
-pub fn peek(input: &[u8], pos: usize) -> Option<u8> {
+fn peek(input: &[u8], pos: usize) -> Option<u8> {
     input.get(pos).copied()
 }
 
-#[inline]
-pub fn map<T, U>(lhs: Result<T>, f: impl FnOnce(T) -> U) -> Result<U> {
+fn map<T, U>(lhs: Result<T>, f: impl FnOnce(T) -> U) -> Result<U> {
     lhs.map(|(pos, x)| (pos, f(x)))
 }
 
