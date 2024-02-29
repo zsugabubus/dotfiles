@@ -45,6 +45,7 @@
 	log-formatted = log --date-order --date=human-local --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset) %s %C(dim white)(%cd, %cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	log-vim = l
 	lp = ll --patch --stat
+	lpc = lp --ignore-all-space --word-diff --word-diff-regex=.
 	ls = l --stat
 	lu = l @{upstream}
 	lud = l @...@{upstream}
