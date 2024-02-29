@@ -436,11 +436,6 @@ local function create_Column()
 	local M = {}
 	M.__index = M
 
-	local function with(self, k, v)
-		self[k] = v
-		return self
-	end
-
 	function M.new(cls)
 		return setmetatable({}, cls)
 	end
@@ -454,20 +449,24 @@ local function create_Column()
 	end
 
 	function M:with_optional(yes)
-		return with(self, 'optional', yes ~= false)
+		self.optional = yes ~= false
+		return self
 	end
 
 	function M:with_title(s)
-		return with(self, 'title', s)
+		self.title = s
+		return self
 	end
 
 	function M:with_width(n)
-		return with(self, 'width', n)
+		self.width = n
+		return self
 	end
 
 	function M:with_display(fn, dependencies)
-		with(self, 'dependencies', dependencies)
-		return with(self, 'display', fn)
+		self.display = fn
+		self.dependencies = dependencies
+		return self
 	end
 
 	return M
