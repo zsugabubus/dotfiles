@@ -476,12 +476,13 @@ local function create_Columns(string_width)
 	local M = {}
 	M.__index = M
 
-	local function compute_column_visible(column, data_list)
+	local function compute_column_visible(column, data_list, i, j)
 		if not column.optional then
 			return true
 		end
 
-		for _, data in ipairs(data_list) do
+		for i = i, j do
+			local data = data_list[i]
 			if column.display(data) ~= '' then
 				return true
 			end
@@ -490,9 +491,10 @@ local function create_Columns(string_width)
 		return false
 	end
 
-	local function compute_column_width(column, data_list)
+	local function compute_column_width(column, data_list, i, j)
 		local width = string_width(column.title)
-		for _, data in ipairs(data_list) do
+		for i = i, j do
+			local data = data_list[i]
 			local s = column.display(data)
 			local max_possible_width = #s * 2
 			if width < max_possible_width then
@@ -510,13 +512,13 @@ local function create_Columns(string_width)
 		return setmetatable(columns, cls)
 	end
 
-	function M:render(data_list)
+	function M:render(data_list, i, j)
 		local t = {}
-		for i, column in ipairs(self) do
-			if compute_column_visible(column, data_list) then
-				local last = i == #self
+		for k, column in ipairs(self) do
+			if compute_column_visible(column, data_list, i, j) then
+				local last = k == #self
 				if not column.width and not last then
-					local width = compute_column_width(column, data_list)
+					local width = compute_column_width(column, data_list, i, j)
 					column = column:clone():with_width(width)
 				end
 				table.insert(t, column)
@@ -628,6 +630,8 @@ local function create_ListRenderer(curs)
 
 		win:scroll(list_manager:top() - self._old_top)
 		self._old_top = list_manager:top()
+
+		local columns = columns:render(list_manager:list(), list_manager:top(), list_manager:last())
 
 		win:cursor(0, 0)
 		win:put(' ')
@@ -844,6 +848,10 @@ local function create_ListManager()
 
 	function M:bottom()
 		return self._top + self._height - 1
+	end
+
+	function M:last()
+		return math.min(#self._list, self:bottom())
 	end
 
 	function M:set_top(index)
@@ -2160,7 +2168,7 @@ transmission-daemon(1), transmission-remote(1).
 	end
 
 	local function render_list_win(win, renderer, list_manager, columns, focused)
-		renderer:render(win, list_manager, columns:render(list_manager:list()), focused)
+		renderer:render(win, list_manager, columns, focused)
 		win:refresh()
 	end
 
@@ -2778,7 +2786,7 @@ transmission-daemon(1), transmission-remote(1).
 	function M:show_filter_torrents()
 		edit(self, {
 			input = function(buf)
-				local columns = self._torrent_columns:render(self._torrents:list())
+				local columns = self._torrent_columns:render(self._torrents:list(), 1, self._torrents:len())
 
 				buf:putf('# ID (1)')
 				for i, column in ipairs(columns) do
