@@ -238,9 +238,9 @@ describe('dot repeat', function()
 		})
 		feed('.')
 		assert_lines({
-			'* aaa',
+			'aaa',
 			'bbb',
-			'ccc',
+			'* ccc',
 		})
 	end)
 end)

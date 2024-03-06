@@ -3,19 +3,11 @@ local api = vim.api
 local keymap = api.nvim_set_keymap
 local user_command = api.nvim_create_user_command
 
-keymap('n', '<Plug>(commenter)', '', {
+keymap('', '<Plug>(commenter)', '', {
 	expr = true,
 	callback = function()
 		vim.o.operatorfunc = 'v:lua._commenter_operatorfunc'
 		return 'g@'
-	end,
-})
-
-keymap('x', '<Plug>(commenter)', '', {
-	expr = true,
-	callback = function()
-		vim.o.operatorfunc = 'v:lua._commenter_operatorfunc'
-		return 'g@\n'
 	end,
 })
 
