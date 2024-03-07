@@ -25,7 +25,7 @@ setopt pushd_ignore_dups
 setopt pushd_silent
 setopt rm_star_wait
 
-WORDCHARS=${WORDCHARS//[\/.-_]}
+WORDCHARS=${WORDCHARS//[\/.-^]}
 
 # Delay after mode change.
 KEYTIMEOUT=1
