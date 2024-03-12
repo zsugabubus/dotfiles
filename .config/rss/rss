@@ -212,28 +212,12 @@ local function dir(path)
 end
 
 local function create_Node()
-	local function is_match(node, tag, attribs)
-		if node.tag ~= tag then
-			return false
-		end
-
-		if attribs ~= nil then
-			for k, v in pairs(attribs) do
-				if node.attribs[k] ~= v then
-					return false
-				end
-			end
-		end
-
-		return true
-	end
-
 	local M = {}
 	M.__index = M
 
-	function M:find(tag, attribs)
+	function M:find(tag)
 		for _, child in ipairs(self) do
-			if is_match(child, tag, attribs) then
+			if child.tag == tag then
 				return child
 			end
 		end
@@ -249,10 +233,10 @@ local function create_Node()
 		return t
 	end
 
-	function M:find_all(tag, attribs)
+	function M:find_all(tag)
 		return function(self, i)
 			for i, child in next, self, i do
-				if is_match(child, tag, attribs) then
+				if child.tag == tag then
 					return i, child
 				end
 			end
@@ -603,6 +587,14 @@ local function create_feed_parser(parse_date)
 		end
 	end
 
+	local function parse_atom_alternate_link(node)
+		for _, link in node:find_all('link') do
+			if (link.attribs.rel or 'alternate') == 'alternate' then
+				return link.attribs.href
+			end
+		end
+	end
+
 	local function parse_atom(root)
 		local entries = {}
 
@@ -611,7 +603,7 @@ local function create_feed_parser(parse_date)
 			id = assert(x.id),
 			title = assert(x.title or ''),
 			content = x.subtitle and mime_payload(TEXT_PLAIN, x.subtitle),
-			link = assert(assert(root:find('link', { rel = 'alternate' })).attribs.href),
+			link = assert(parse_atom_alternate_link(root)),
 			categories = parse_atom_categories(root),
 		}
 
