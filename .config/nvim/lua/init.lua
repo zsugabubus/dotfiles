@@ -333,6 +333,21 @@ user_command('Sweep', function()
 	end
 end, {})
 
+user_command('Changes', function()
+	local buf = api.nvim_get_current_buf()
+	local change_list = fn.getchangelist(buf)
+	fn.setloclist(
+		0,
+		vim.tbl_map(function(v)
+			v.bufnr = buf
+			v.text = api.nvim_buf_get_lines(buf, v.lnum - 1, v.lnum, true)[1]
+			return v
+		end, change_list[1])
+	)
+	cmd.lopen()
+	cmd.lfirst({ count = change_list[2] })
+end, {})
+
 user_command('GREP', function(opts)
 	local DO_NOT_QUOTE_RE = vim.regex([=[\v\c(^| )-[a-z-]|^['"]]=])
 
