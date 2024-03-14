@@ -12,7 +12,10 @@ vim.api.nvim_create_autocmd('BufReadCmd', {
 		vim.api.nvim_buf_set_lines(0, 0, -1, true, vim.fn.systemlist(cmdline))
 		local filetype, on_detect = vim.filetype.match({
 			buf = 0,
-			filename = string.match(string.match(opts.match, '^[^?]+'), '[^/]+$'),
+			filename = string.match(
+				string.match(opts.match, '//([^?#]*)'),
+				'/([^/]+)$'
+			) or '',
 		})
 		vim.bo.filetype = filetype or ''
 		if on_detect then
