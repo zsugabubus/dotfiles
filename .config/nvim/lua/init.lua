@@ -660,6 +660,13 @@ end)
 map('n', 'c-', ':cd -<CR>')
 
 require('pack').setup({
+	{
+		'align.nvim',
+		after = function()
+			map('', 'gl', '<Plug>(align)')
+			remap('n', 'gL', 'viigl|')
+		end,
+	},
 	{ 'ansiesc.nvim' },
 	{ 'archive.nvim' },
 	{ 'capture.nvim' },
