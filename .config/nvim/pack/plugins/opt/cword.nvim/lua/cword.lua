@@ -9,7 +9,7 @@ local cword
 local wins = {}
 
 local function clear_win(win)
-	fn.matchdelete(vim.w[win].hicword_id, win)
+	fn.matchdelete(vim.w[win].cword_match_id, win)
 end
 
 local function clear()
@@ -34,9 +34,10 @@ local function update()
 	local pattern = string.format([[\<\V%s\>]], string.gsub(cword, [[\]], [[\\]]))
 	for _, win in ipairs(wins) do
 		local w = vim.w[win]
-		w.hicword_id = fn.matchadd('Cword', pattern, -1, w.hicword_id or -1, {
-			window = win,
-		})
+		w.cword_match_id =
+			fn.matchadd('Cword', pattern, -1, w.cword_match_id or -1, {
+				window = win,
+			})
 	end
 end
 
