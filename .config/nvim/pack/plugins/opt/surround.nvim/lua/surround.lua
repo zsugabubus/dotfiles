@@ -6,8 +6,7 @@ local M = {}
 
 local ns = api.nvim_create_namespace('surround')
 
-local function keep_visual(win, callback)
-	local buf = api.nvim_win_get_buf(win)
+local function get_visual_range(win)
 	local start_row, start_col = unpack(api.nvim_win_get_cursor(win))
 	cmd.normal({ bang = true, args = { 'o' } })
 	local end_row, end_col = unpack(api.nvim_win_get_cursor(win))
@@ -17,11 +16,31 @@ local function keep_visual(win, callback)
 		not (start_row < end_row or (start_row == end_row and start_col <= end_col))
 	then
 		end_mark = 'v'
-		start_row, start_col, end_row, end_col =
-			end_row, end_col, start_row, start_col
+		start_row, start_col, end_row = end_row, end_col, start_row
 	end
 
+	-- cursor() returns start of the character. We need the end column.
 	end_col = fn.virtcol2col(win, end_row, fn.virtcol(end_mark))
+
+	return start_row, start_col, end_row, end_col
+end
+
+local function set_visual_range(win, start_row, start_col, end_row, end_col)
+	api.nvim_win_set_cursor(win, { start_row, start_col })
+	cmd.normal({ bang = true, args = { 'o' } })
+	api.nvim_win_set_cursor(win, { end_row, math.max(end_col - 1, 0) })
+end
+
+local function get_extmark_range(buf, ns, id)
+	local start_row, start_col, details =
+		unpack(api.nvim_buf_get_extmark_by_id(buf, ns, id, { details = true }))
+	return start_row + 1, start_col, details.end_row + 1, details.end_col
+end
+
+local function keep_visual(win, callback)
+	local buf = api.nvim_win_get_buf(win)
+
+	local start_row, start_col, end_row, end_col = get_visual_range(win)
 
 	local id = api.nvim_buf_set_extmark(buf, ns, start_row - 1, start_col, {
 		end_row = end_row - 1,
@@ -32,21 +51,13 @@ local function keep_visual(win, callback)
 
 	callback(buf, start_row, start_col, end_row, end_col)
 
-	local start_row, start_col, details =
-		unpack(api.nvim_buf_get_extmark_by_id(buf, ns, id, {
-			details = true,
-		}))
-	local end_row, end_col = details.end_row, details.end_col
-
-	api.nvim_win_set_cursor(win, { start_row + 1, start_col })
-	cmd.normal({ bang = true, args = { 'o' } })
-	api.nvim_win_set_cursor(win, { end_row + 1, math.max(end_col - 1, 0) })
+	set_visual_range(win, get_extmark_range(buf, ns, id))
 
 	api.nvim_buf_del_extmark(buf, ns, id)
 end
 
 function M.is_visual_line()
-	return vim.api.nvim_get_mode().mode == 'V'
+	return api.nvim_get_mode().mode == 'V'
 end
 
 function M.surround_visual_linewise(before, after)
@@ -78,9 +89,9 @@ function M.surround_visual_charwise(before, after)
 end
 
 local function leave_visual()
-	vim.cmd.normal({
+	cmd.normal({
 		bang = true,
-		args = { vim.api.nvim_replace_termcodes('<Esc>', true, false, true) },
+		args = { api.nvim_replace_termcodes('<Esc>', true, false, true) },
 	})
 end
 
