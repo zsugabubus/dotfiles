@@ -1,19 +1,9 @@
-local function assert_lines(expected)
-	local got = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-	assert.are.same(expected, got)
-end
-
-local function feed(keys)
-	vim.api.nvim_feedkeys(keys, 'xtim', true)
-end
-
-local function set_lines(lines)
-	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-end
-
-before_each(function()
-	vim.keymap.set('x', 's', '<Plug>(surround)')
-end)
+local vim = create_vim({
+	isolate = false,
+	on_setup = function(vim)
+		vim.keymap.set('x', 's', '<Plug>(surround)')
+	end,
+})
 
 describe('text', function()
 	local function case(input, keys)
@@ -25,20 +15,20 @@ describe('text', function()
 
 		test(keys, function()
 			-- Set line without markers.
-			set_lines({ template('', '') })
+			vim:set_lines({ template('', '') })
 
-			feed(keys)
+			vim:feed(keys)
 
 			-- Makers are there.
-			assert_lines({ template("'", "'") })
+			vim:assert_lines({ template("'", "'") })
 
 			-- In normal mode and cursor sits at the right end.
-			feed('rX')
-			assert_lines({ template("'", 'X') })
+			vim:feed('rX')
+			vim:assert_lines({ template("'", 'X') })
 
 			-- Visual selection is correct.
-			feed('gvd')
-			assert_lines({ (string.gsub(input, '<.*>', '')) })
+			vim:feed('gvd')
+			vim:assert_lines({ (string.gsub(input, '<.*>', '')) })
 		end)
 	end
 
@@ -89,11 +79,11 @@ describe('text', function()
 	end)
 
 	test('multi-line', function()
-		set_lines({ 'a', 'b', '.' })
-		feed("Vjsc'")
-		assert_lines({ "'", 'a', 'b', "'", '.' })
-		feed('rX')
-		assert_lines({ "'", 'a', 'X', "'", '.' })
+		vim:set_lines({ 'a', 'b', '.' })
+		vim:feed("Vjsc'")
+		vim:assert_lines({ "'", 'a', 'b', "'", '.' })
+		vim:feed('rX')
+		vim:assert_lines({ "'", 'a', 'X', "'", '.' })
 	end)
 end)
 
@@ -101,22 +91,22 @@ describe('map', function()
 	local function case(map, expected_charwise, expected_linewise)
 		describe(vim.inspect(map), function()
 			test('charwise', function()
-				set_lines({ '_' })
-				feed('vs' .. map)
-				assert_lines(expected_charwise)
+				vim:set_lines({ '_' })
+				vim:feed('vs' .. map)
+				vim:assert_lines(expected_charwise)
 			end)
 
 			if expected_linewise then
 				test('single-line', function()
-					set_lines({ '_' })
-					feed('Vs' .. map)
-					assert_lines({ expected_linewise[1], '_', expected_linewise[2] })
+					vim:set_lines({ '_' })
+					vim:feed('Vs' .. map)
+					vim:assert_lines({ expected_linewise[1], '_', expected_linewise[2] })
 				end)
 
 				test('multi-line', function()
-					set_lines({ '>', 'a', 'b', 'c', '<' })
-					feed('jVjjs' .. map)
-					assert_lines({
+					vim:set_lines({ '>', 'a', 'b', 'c', '<' })
+					vim:feed('jVjjs' .. map)
+					vim:assert_lines({
 						'>',
 						expected_linewise[1],
 						'a',

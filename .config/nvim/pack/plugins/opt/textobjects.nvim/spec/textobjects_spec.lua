@@ -1,29 +1,18 @@
-local function assert_lines(expected)
-	local got = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-	assert.are.same(expected, got)
-end
-
-local function feed(keys)
-	vim.api.nvim_feedkeys(keys, 'xtim', true)
-end
-
-local function set_lines(lines)
-	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-end
+local vim = create_vim({ isolate = false })
 
 local function case_modes(init_lhs, lhs, input, expected)
 	test('visual mode', function()
-		set_lines(input)
-		feed(init_lhs)
-		feed(string.format('v%sd', lhs))
-		assert_lines(expected)
+		vim:set_lines(input)
+		vim:feed(init_lhs)
+		vim:feed(string.format('v%sd', lhs))
+		vim:assert_lines(expected)
 	end)
 
 	test('operator-pending mode', function()
-		set_lines(input)
-		feed(init_lhs)
-		feed(string.format('d%s', lhs))
-		assert_lines(expected)
+		vim:set_lines(input)
+		vim:feed(init_lhs)
+		vim:feed(string.format('d%s', lhs))
+		vim:assert_lines(expected)
 	end)
 end
 

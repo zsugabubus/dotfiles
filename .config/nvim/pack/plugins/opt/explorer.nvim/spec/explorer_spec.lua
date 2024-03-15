@@ -1,3 +1,5 @@
+local vim = create_vim({ isolate = false })
+
 describe('dir', function()
 	test(':edit', function()
 		vim.cmd.edit('/')

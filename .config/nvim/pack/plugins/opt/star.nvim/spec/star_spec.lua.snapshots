@@ -1,0 +1,10 @@
+return {
+["* displays error when cannot find current word"] = [[
+
+abc
+~
+~
+~
+1,0
+E348: No string under cursor]]
+}

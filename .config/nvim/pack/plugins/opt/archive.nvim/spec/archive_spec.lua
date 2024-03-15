@@ -1,15 +1,4 @@
-local function assert_lines(expected)
-	local got = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-	assert.are.same(expected, got)
-end
-
-local function feed(keys)
-	vim.api.nvim_feedkeys(keys, 'xtim', true)
-end
-
-local function set_lines(lines)
-	vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-end
+local vim = create_vim({ isolate = false })
 
 local function system(cmd)
 	local output = vim.fn.system(cmd)
@@ -43,35 +32,35 @@ describe('zip', function()
 
 	describe('list', function()
 		test('rendered', function()
-			assert_lines({ string.sub(c_path, 2) })
+			vim:assert_lines({ string.sub(c_path, 2) })
 		end)
 
 		test(':edit', function()
 			system({ 'zip', zip_path, foo_path })
 			vim.cmd.edit()
-			assert_lines({ string.sub(c_path, 2), string.sub(foo_path, 2) })
+			vim:assert_lines({ string.sub(c_path, 2), string.sub(foo_path, 2) })
 		end)
 
 		test('gf', function()
 			local bufnr = vim.fn.bufnr()
-			feed('gf')
+			vim:feed('gf')
 			assert.are_not.same(bufnr, vim.fn.bufnr())
 		end)
 
 		test('<CR>', function()
 			local bufnr = vim.fn.bufnr()
-			feed('\r')
+			vim:feed('\r')
 			assert.are_not.same(bufnr, vim.fn.bufnr())
 		end)
 	end)
 
 	describe('file', function()
 		before_each(function()
-			feed('gf')
+			vim:feed('gf')
 		end)
 
 		test('content', function()
-			assert_lines(CONTENT)
+			vim:assert_lines(CONTENT)
 		end)
 
 		test('&filetype', function()
@@ -82,7 +71,7 @@ describe('zip', function()
 			vim.fn.writefile(OTHER_CONTENT, c_path)
 			system({ 'zip', zip_path, c_path })
 			vim.cmd.edit()
-			assert_lines(OTHER_CONTENT)
+			vim:assert_lines(OTHER_CONTENT)
 		end)
 
 		test(':write', function()
@@ -108,7 +97,7 @@ describe('xz', function()
 	end)
 
 	test('content', function()
-		assert_lines(CONTENT)
+		vim:assert_lines(CONTENT)
 	end)
 
 	test('&filetype', function()
@@ -120,24 +109,19 @@ describe('xz', function()
 		vim.fn.delete(xz_path)
 		system({ 'xz', input_path })
 		vim.cmd.edit()
-		assert_lines(OTHER_CONTENT)
+		vim:assert_lines(OTHER_CONTENT)
 	end)
 
 	test(':write', function()
-		local nvim_echo = spy.on(vim.api, 'nvim_echo')
-		set_lines(OTHER_CONTENT)
+		vim:set_lines(OTHER_CONTENT)
 		assert.True(vim.bo.modified)
 		vim.cmd.write()
+		vim:unblock()
 		assert.False(vim.bo.modified)
 		assert.are.same(
 			system({ 'xzcat', xz_path }),
 			table.concat(OTHER_CONTENT, '\n') .. '\n'
 		)
-		assert.spy(nvim_echo).was_called_with({
-			{
-				string.format('"%s" written with xz', xz_path),
-				'Normal',
-			},
-		}, true, {})
+		vim:assert_messages(string.format('"%s" written with xz', xz_path))
 	end)
 end)

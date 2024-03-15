@@ -1,0 +1,50 @@
+return {
+["g8, normal mode: '\r'"] = [[
+^M
+1,1
+< ^M >13, U+000D, 0x0D, Cc/CR (<control>)
+
+]],
+["g8, normal mode: ''"] = [[
+
+1,0
+(nothing to show)
+
+]],
+["g8, normal mode: 'a'"] = [[
+a
+1,1
+< a >97, U+0061, 0x61, Ll/LATIN SMALL LETTER A
+
+]],
+["g8, normal mode: 'ő'"] = [[
+ő
+1,1
+< ő >337, U+0151, 0xC5 0x91, Ll/LATIN SMALL LETTER O WITH DOUBLE ACUTE = < o >+< ◌ >
+
+]],
+["g8, normal mode: 'ﬁ'"] = [[
+ﬁ
+1,1
+< ﬁ >64257, U+FB01, 0xEF 0xAC 0x81, Ll/LATIN SMALL LIGATURE FI = < f >+< i >
+
+]],
+["g8, normal mode: '🌍'"] = [[
+🌍
+1,1
+< 🌍 >127757, U+1F30D, 0xF0 0x9F 0x8C 0x8D, So/EARTH GLOBE EUROPE-AFRICA
+
+]],
+["g8, normal mode: '􏿿'"] = [[
+􏿿
+1,1
+< <10ffff> >1114111, U+10FFFF, 0xF4 0x8F 0xBF 0xBF, Cn/NO NAME
+
+]],
+["ga, visual mode, multi-line"] = [[
+a
+1,1
+< a >97, U+0061, Ll/LATIN SMALL LETTER A
+< ^J >10, U+000A, Cc/EOL (<control>)
+< b >98, U+0062, Ll/LATIN SMALL LETTER B]]
+}
