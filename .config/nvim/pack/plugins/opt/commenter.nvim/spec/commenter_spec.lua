@@ -35,16 +35,16 @@ describe('toggle single line', function()
 		helper(string.gsub(input, '%%s', ' %s '))
 	end
 
-	case('/*%s*/', 'abc', '/* abc */')
-	case('/*%s*/', '/* abc */', 'abc')
-	case('/*%s*/', '/*abc*/', 'abc')
-	case('/*%s*/', '/*  abc  */', ' abc ')
-	case('/*%s*/', '/**//*def*/', '//*def') -- BAD
-	case('/*%s*/', '/* *//*def*/', '/*def*/')
-	case('/*%s*/', '/*** abc ***/', 'abc')
-	case('//%s', '//// abc', 'abc')
-	case('#%s', '#  abc ', ' abc ')
-	case('--%s', 'abc--def', '-- abc--def')
+	case('/*%s*/', 'a', '/* a */')
+	case('/*%s*/', '/* a */', 'a')
+	case('/*%s*/', '/*a*/', 'a')
+	case('/*%s*/', '/*  a  */', ' a ')
+	case('/*%s*/', '/**//*a*/', '//*a') -- BAD
+	case('/*%s*/', '/* *//*a*/', '/*a*/')
+	case('/*%s*/', '/*** a ***/', 'a')
+	case('//%s', '//// a', 'a')
+	case('#%s', '#  a ', ' a ')
+	case('--%s', 'a--b', '-- a--b')
 	case('--%s', '----', '')
 	case('//%s', '', '')
 	case('//%s', ' ', ' ')
@@ -54,19 +54,19 @@ describe('toggle multiple lines', function()
 	local function case(keys)
 		test(keys, function()
 			local UNCOMMENTED = {
-				'    aaa',
+				'    a',
 				'',
 				'     ',
-				'  bbb',
-				'\t   ccc',
+				'  b',
+				'\t   c',
 			}
 
 			local COMMENTED = {
-				'  //   aaa',
+				'  //   a',
 				'',
 				'     ',
-				'  // bbb',
-				'\t //   ccc',
+				'  // b',
+				'\t //   c',
 			}
 
 			vim.o.cms = '//%s'
@@ -91,28 +91,28 @@ describe('toggle mixed lines', function()
 	it('should do comment', function()
 		set_lines({
 			'',
-			'aaa*',
-			'*bbb',
+			'a*',
+			'*b',
 		})
 		feed('2gcc')
 		assert_lines({
 			'',
-			'* aaa*',
-			'* *bbb',
+			'* a*',
+			'* *b',
 		})
 	end)
 
 	it('should do uncomment', function()
 		set_lines({
 			'',
-			'* aaa',
-			'ccc*',
+			'* a',
+			'c*',
 		})
 		feed('2gcc')
 		assert_lines({
 			'',
-			'aaa',
-			'ccc*',
+			'a',
+			'c*',
 		})
 	end)
 end)
@@ -206,41 +206,41 @@ describe('dot repeat', function()
 
 	it('works in normal mode', function()
 		set_lines({
-			'aaa',
-			'bbb',
-			'* ccc',
+			'a',
+			'b',
+			'* c',
 		})
 		feed('1gcc')
 		assert_lines({
-			'* aaa',
-			'* bbb',
-			'* ccc',
+			'* a',
+			'* b',
+			'* c',
 		})
 		feed('j.')
 		assert_lines({
-			'* aaa',
-			'bbb',
-			'ccc',
+			'* a',
+			'b',
+			'c',
 		})
 	end)
 
 	it('works in visual mode', function()
 		set_lines({
-			'aaa',
-			'bbb',
-			'* ccc',
+			'a',
+			'b',
+			'* c',
 		})
 		feed('Vjgc')
 		assert_lines({
-			'* aaa',
-			'* bbb',
-			'* ccc',
+			'* a',
+			'* b',
+			'* c',
 		})
 		feed('.')
 		assert_lines({
-			'aaa',
-			'bbb',
-			'* ccc',
+			'a',
+			'b',
+			'* c',
 		})
 	end)
 end)
@@ -248,39 +248,39 @@ end)
 describe('Comment command', function()
 	it('without range comments single line', function()
 		set_lines({
-			'aaa',
-			'bbb',
-			'ccc',
+			'a',
+			'b',
+			'c',
 		})
 		vim.cmd('Comment')
 		assert_lines({
-			'# aaa',
-			'bbb',
-			'ccc',
+			'# a',
+			'b',
+			'c',
 		})
 	end)
 
 	it('with range comments multiple lines', function()
 		set_lines({
-			'aaa',
-			'bbb',
-			'ccc',
+			'a',
+			'b',
+			'c',
 		})
 		vim.cmd('2,3Comment')
 		assert_lines({
-			'aaa',
-			'# bbb',
-			'# ccc',
+			'a',
+			'# b',
+			'# c',
 		})
 	end)
 
 	it('does not uncomment lines', function()
 		set_lines({
-			'# aaa',
+			'# a',
 		})
 		vim.cmd('Comment')
 		assert_lines({
-			'# # aaa',
+			'# # a',
 		})
 	end)
 end)
@@ -288,39 +288,39 @@ end)
 describe('Uncomment command', function()
 	it('without range uncomments single line', function()
 		set_lines({
-			'# aaa',
-			'# bbb',
-			'# ccc',
+			'# a',
+			'# b',
+			'# c',
 		})
 		vim.cmd('Uncomment')
 		assert_lines({
-			'aaa',
-			'# bbb',
-			'# ccc',
+			'a',
+			'# b',
+			'# c',
 		})
 	end)
 
 	it('with range uncomments multiple lines', function()
 		set_lines({
-			'# aaa',
-			'# bbb',
-			'# ccc',
+			'# a',
+			'# b',
+			'# c',
 		})
 		vim.cmd('2,3Uncomment')
 		assert_lines({
-			'# aaa',
-			'bbb',
-			'ccc',
+			'# a',
+			'b',
+			'c',
 		})
 	end)
 
 	it('does not comment lines', function()
 		set_lines({
-			'aaa',
+			'a',
 		})
 		vim.cmd('Uncomment')
 		assert_lines({
-			'aaa',
+			'a',
 		})
 	end)
 end)
