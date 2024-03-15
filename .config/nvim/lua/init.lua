@@ -83,6 +83,7 @@ o.ignorecase = true
 o.joinspaces = false -- No double space.
 o.laststatus = 2
 o.lazyredraw = true
+o.modelines = 1
 o.more = false
 o.mouse = ''
 o.number = true
