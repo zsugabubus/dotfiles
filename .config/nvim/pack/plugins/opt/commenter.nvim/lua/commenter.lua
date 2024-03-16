@@ -14,9 +14,7 @@ function M.comment_lines(start_lnum, end_lnum, op)
 	end
 
 	pcall(function()
-		local ft = vim.bo.filetype
-		local lang = vim.treesitter.language.get_lang(ft) or ft
-		local tree = vim.treesitter.get_parser(0, lang)
+		local tree = vim.treesitter.get_parser()
 		tree:parse()
 		local ty =
 			tree:named_node_for_range({ start_lnum - 1, 0, start_lnum - 1, 0 }):type()
