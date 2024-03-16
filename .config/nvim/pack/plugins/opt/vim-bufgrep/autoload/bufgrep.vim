@@ -1,9 +1,15 @@
 function! bufgrep#BufGrep(pattern, add) abort
 	let tmpfile = tempname()
+	let snail = @/
 	try
 		doautocmd QuickFixCmdPre vimgrep //j <buffers>
+
 		if !a:add
 			call setqflist([])
+		endif
+
+		if !empty(a:pattern)
+			let @/ = a:pattern
 		endif
 
 		for buf in getbufinfo({'buflisted': 1})
@@ -21,7 +27,7 @@ function! bufgrep#BufGrep(pattern, add) abort
 				endif
 			endif
 			try
-				noautocmd silent execute 'vimgrepadd' '/'.escape(a:pattern, '/').'/jg' fnameescape(grepfile)
+				noautocmd silent execute 'vimgrepadd' '//jg' fnameescape(grepfile)
 			catch 'No match:'
 				continue
 			endtry
@@ -43,5 +49,6 @@ function! bufgrep#BufGrep(pattern, add) abort
 	finally
 		noautocmd silent! execute 'bwipeout' tmpfile
 		call delete(tmpfile)
+		let @/ = snail
 	endtry
 endfunction
