@@ -6,29 +6,29 @@ local vim = create_vim({
 })
 
 describe('text', function()
-	local function case(input, keys)
-		local function template(a, b)
-			return (string.gsub(string.gsub(input, '<', a), '>', b))
+	local function case(template, keys)
+		local function make_template(left, right)
+			return (string.gsub(string.gsub(template, '<', left), '>', right))
 		end
 
-		assert(not string.find(input, 'X'))
+		assert(not string.find(template, 'X'))
 
 		test(keys, function()
 			-- Set line without markers.
-			vim:set_lines({ template('', '') })
+			vim:set_lines({ make_template('', '') })
 
 			vim:feed(keys)
 
-			-- Makers are there.
-			vim:assert_lines({ template("'", "'") })
+			-- Typing keys correctly surrounds.
+			vim:assert_lines({ make_template("'", "'") })
 
 			-- In normal mode and cursor sits at the right end.
 			vim:feed('rX')
-			vim:assert_lines({ template("'", 'X') })
+			vim:assert_lines({ make_template("'", 'X') })
 
 			-- Visual selection is correct.
 			vim:feed('gvd')
-			vim:assert_lines({ (string.gsub(input, '<.*>', '')) })
+			vim:assert_lines({ (string.gsub(template, '<.*>', '')) })
 		end)
 	end
 
@@ -88,35 +88,33 @@ describe('text', function()
 end)
 
 describe('map', function()
-	local function case(map, expected_charwise, expected_linewise)
-		describe(vim.inspect(map), function()
+	local function case(keys, expected_charwise, expected_linewise)
+		describe(vim.inspect(keys), function()
 			test('charwise', function()
 				vim:set_lines({ '_' })
-				vim:feed('vs' .. map)
+				vim:feed('vs' .. keys)
 				vim:assert_lines(expected_charwise)
 			end)
 
-			if expected_linewise then
-				test('single-line', function()
-					vim:set_lines({ '_' })
-					vim:feed('Vs' .. map)
-					vim:assert_lines({ expected_linewise[1], '_', expected_linewise[2] })
-				end)
+			test('single-line', function()
+				vim:set_lines({ '_' })
+				vim:feed('Vs' .. keys)
+				vim:assert_lines({ expected_linewise[1], '_', expected_linewise[2] })
+			end)
 
-				test('multi-line', function()
-					vim:set_lines({ '>', 'a', 'b', 'c', '<' })
-					vim:feed('jVjjs' .. map)
-					vim:assert_lines({
-						'>',
-						expected_linewise[1],
-						'a',
-						'b',
-						'c',
-						expected_linewise[2],
-						'<',
-					})
-				end)
-			end
+			test('multi-line', function()
+				vim:set_lines({ '>', 'a', 'b', 'c', '<' })
+				vim:feed('jVjjs' .. keys)
+				vim:assert_lines({
+					'>',
+					expected_linewise[1],
+					'a',
+					'b',
+					'c',
+					expected_linewise[2],
+					'<',
+				})
+			end)
 		end)
 	end
 
