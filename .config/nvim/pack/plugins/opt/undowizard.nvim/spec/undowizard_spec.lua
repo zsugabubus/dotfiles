@@ -11,7 +11,7 @@ describe(':Undotree', function()
 	test('opens undotree://X', function()
 		local target_buf = vim.fn.bufnr()
 		vim.cmd.Undotree()
-		assert.same(vim.fn.bufname(), string.format('undotree://%d', target_buf))
+		assert.same(string.format('undotree://%d', target_buf), vim.fn.bufname())
 	end)
 end)
 
@@ -33,58 +33,58 @@ describe('undotree://', function()
 
 	test('undo to', function()
 		vim:feed('ju')
-		assert.same(vim.fn.bufname(), string.format('undotree://%d', target_buf))
+		assert.same(string.format('undotree://%d', target_buf), vim.fn.bufname())
 		assert.same(
-			vim.fn.getbufline(0, 1, '$'),
-			{ '1-1', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' }
+			{ '1-1', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' },
+			vim.fn.getbufline(0, 1, '$')
 		)
 		vim:feed('ju')
-		assert.same(vim.fn.getbufline(0, 1, '$'), { '1-1', '2-1' })
+		assert.same({ '1-1', '2-1' }, vim.fn.getbufline(0, 1, '$'))
 	end)
 
 	test('preview deletions', function()
 		vim:feed('-')
 		vim.cmd.buffer(string.format('undo://%d/2', target_buf))
 		assert.same(
-			vim.fn.getline(1, '$'),
-			{ '1-1', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' }
+			{ '1-1', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' },
+			vim.fn.getline(1, '$')
 		)
 		vim:feed('gvy')
-		assert.same(enew_paste(), { 'x', '3-22', '4-22', '5-22', '6-22', '7-22' })
+		assert.same({ 'x', '3-22', '4-22', '5-22', '6-22', '7-22' }, enew_paste())
 	end)
 
 	test('preview additions', function()
 		vim:feed('+')
 		vim.cmd.buffer(string.format('undo://%d/3', target_buf))
 		assert.same(
-			vim.fn.getline(1, '$'),
-			{ '1-1', '2-22', '3-333', '4-22', '5-22', '6-22', '7-333' }
+			{ '1-1', '2-22', '3-333', '4-22', '5-22', '6-22', '7-333' },
+			vim.fn.getline(1, '$')
 		)
 		vim:feed('gvy')
-		assert.same(enew_paste(), { 'x', '3-333', '4-22', '5-22', '6-22', '7-333' })
+		assert.same({ 'x', '3-333', '4-22', '5-22', '6-22', '7-333' }, enew_paste())
 	end)
 
 	test('copy deletions; single hunk', function()
 		vim:feed('jy-')
-		assert.same(enew_paste(), { 'x', '2-1' })
+		assert.same({ 'x', '2-1' }, enew_paste())
 	end)
 
 	test('copy additions; single hunk', function()
 		vim:feed('jy+')
 		assert.same(
-			enew_paste(),
-			{ 'x', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' }
+			{ 'x', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' },
+			enew_paste()
 		)
 	end)
 
 	test('copy deletions; multiple hunks', function()
 		vim:feed('y-')
-		assert.same(enew_paste(), { 'x', '3-22', '4-22', '5-22', '6-22', '7-22' })
+		assert.same({ 'x', '3-22', '4-22', '5-22', '6-22', '7-22' }, enew_paste())
 	end)
 
 	test('copy additions; multiple hunks', function()
 		vim:feed('y+')
-		assert.same(enew_paste(), { 'x', '3-333', '4-22', '5-22', '6-22', '7-333' })
+		assert.same({ 'x', '3-333', '4-22', '5-22', '6-22', '7-333' }, enew_paste())
 	end)
 
 	test('undo diff folded by default', function()
@@ -94,8 +94,8 @@ describe('undotree://', function()
 
 	test('undo diff toggle', function()
 		vim:feed(' j')
-		assert.is_same(vim.fn.line('.'), 3)
+		assert.same(3, vim.fn.line('.'))
 		vim:feed(' jk')
-		assert.is_same(vim.fn.line('.'), 2)
+		assert.same(2, vim.fn.line('.'))
 	end)
 end)
