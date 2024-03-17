@@ -1,3 +1,40 @@
+local function make_bo()
+	local DEFAULT = { buf = 0 }
+
+	local type = type
+	local setmetatable = setmetatable
+	local rawget = rawget
+	local rawset = rawset
+	local get = vim.api.nvim_get_option_value
+	local set = vim.api.nvim_set_option_value
+
+	local mt = {
+		__index = function(t, k)
+			return get(k, rawget(t, DEFAULT))
+		end,
+		__newindex = function(t, k, v)
+			return set(k, v, rawget(t, DEFAULT))
+		end,
+	}
+
+	return setmetatable({}, {
+		__mode = 'kv',
+		__index = function(t, k)
+			if type(k) == 'string' then
+				return get(k, DEFAULT)
+			end
+			local o = setmetatable({ [DEFAULT] = { buf = k } }, mt)
+			rawset(t, k, o)
+			return o
+		end,
+		__newindex = function(_, k, v)
+			return set(k, v, DEFAULT)
+		end,
+	})
+end
+
+vim.bo = make_bo()
+
 local api = vim.api
 local bo = vim.bo
 local cmd = vim.cmd
