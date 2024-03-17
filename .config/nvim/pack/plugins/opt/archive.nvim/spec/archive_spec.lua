@@ -3,7 +3,7 @@ local vim = create_vim({ isolate = false })
 local function system(cmd)
 	local output = vim.fn.system(cmd)
 	if vim.v.shell_error ~= 0 then
-		assert.are.same({ vim.v.shell_error, output }, { 0, '' })
+		assert.same({ 0, '' }, { vim.v.shell_error, output })
 	end
 	return output
 end
@@ -64,7 +64,7 @@ describe('zip', function()
 		end)
 
 		test('&filetype', function()
-			assert.are.same(vim.bo.filetype, 'c')
+			assert.same('c', vim.bo.filetype)
 		end)
 
 		test(':edit', function()
@@ -75,7 +75,7 @@ describe('zip', function()
 		end)
 
 		test(':write', function()
-			assert.are.same(vim.bo.buftype, 'nofile')
+			assert.same('nofile', vim.bo.buftype)
 			assert.has.error(vim.cmd.write)
 		end)
 	end)
@@ -101,7 +101,7 @@ describe('xz', function()
 	end)
 
 	test('&filetype', function()
-		assert.are.same(vim.bo.filetype, 'c')
+		assert.same('c', vim.bo.filetype)
 	end)
 
 	test(':edit', function()
@@ -118,9 +118,9 @@ describe('xz', function()
 		vim.cmd.write()
 		vim:unblock()
 		assert.False(vim.bo.modified)
-		assert.are.same(
-			system({ 'xzcat', xz_path }),
-			table.concat(OTHER_CONTENT, '\n') .. '\n'
+		assert.same(
+			table.concat(OTHER_CONTENT, '\n') .. '\n',
+			system({ 'xzcat', xz_path })
 		)
 		vim:assert_messages(string.format('"%s" written with xz', xz_path))
 	end)
