@@ -234,8 +234,8 @@ describe('dot repeat', function()
 	end)
 end)
 
-describe('Comment command', function()
-	it('without range comments single line', function()
+describe(':Comment', function()
+	it('comments current line without range', function()
 		vim:set_lines({
 			'a',
 			'b',
@@ -249,7 +249,7 @@ describe('Comment command', function()
 		})
 	end)
 
-	it('with range comments multiple lines', function()
+	it('comments range', function()
 		vim:set_lines({
 			'a',
 			'b',
@@ -274,8 +274,8 @@ describe('Comment command', function()
 	end)
 end)
 
-describe('Uncomment command', function()
-	it('without range uncomments single line', function()
+describe(':Uncomment', function()
+	it('uncomments current line without range', function()
 		vim:set_lines({
 			'# a',
 			'# b',
@@ -289,7 +289,7 @@ describe('Uncomment command', function()
 		})
 	end)
 
-	it('with range uncomments multiple lines', function()
+	it('uncomments range', function()
 		vim:set_lines({
 			'# a',
 			'# b',
