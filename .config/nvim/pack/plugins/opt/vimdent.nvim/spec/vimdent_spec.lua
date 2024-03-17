@@ -4,38 +4,38 @@ test('options unchanged when detection fails', function()
 	vim.cmd('setlocal tabstop=42')
 	vim.cmd.Vimdent()
 
-	assert.same(vim.b.did_vimdent, nil)
-	assert.same(vim.bo.tabstop, 42)
+	assert.same(nil, vim.b.did_vimdent)
+	assert.same(42, vim.bo.tabstop)
 end)
 
 test('buffer with single-space indentation ignored', function()
 	vim:set_lines({ 'a', ' b', '  c' })
 	vim.cmd.Vimdent()
 
-	assert.same(vim.b.did_vimdent, nil)
-	assert.same(vim.bo.tabstop, 8)
-	assert.same(vim.bo.expandtab, false)
-	assert.same(vim.bo.shiftwidth, 8)
+	assert.same(nil, vim.b.did_vimdent)
+	assert.same(8, vim.bo.tabstop)
+	assert.same(false, vim.bo.expandtab)
+	assert.same(8, vim.bo.shiftwidth)
 end)
 
 test('buffer with double-space indentation correctly detected', function()
 	vim:set_lines({ 'a', '  b', '    c' })
 	vim.cmd.Vimdent()
 
-	assert.same(vim.b.did_vimdent, 1)
-	assert.same(vim.bo.tabstop, 8)
-	assert.same(vim.bo.expandtab, true)
-	assert.same(vim.bo.shiftwidth, 2)
+	assert.same(1, vim.b.did_vimdent)
+	assert.same(8, vim.bo.tabstop)
+	assert.same(true, vim.bo.expandtab)
+	assert.same(2, vim.bo.shiftwidth)
 end)
 
 test('buffer with tabs correctly detected', function()
 	vim:set_lines({ 'a', '\tb', '\t\tc' })
 	vim.cmd.Vimdent()
 
-	assert.same(vim.b.did_vimdent, 1)
-	assert.same(vim.bo.tabstop, 8)
-	assert.same(vim.bo.expandtab, false)
-	assert.same(vim.bo.shiftwidth, 0)
+	assert.same(1, vim.b.did_vimdent)
+	assert.same(8, vim.bo.tabstop)
+	assert.same(false, vim.bo.expandtab)
+	assert.same(0, vim.bo.shiftwidth)
 end)
 
 test(
@@ -44,10 +44,10 @@ test(
 		vim:set_lines({ 'a', '  b', '\tc' })
 		vim.cmd.Vimdent()
 
-		assert.same(vim.b.did_vimdent, 1)
-		assert.same(vim.bo.tabstop, 4)
-		assert.same(vim.bo.expandtab, false)
-		assert.same(vim.bo.shiftwidth, 2)
+		assert.same(1, vim.b.did_vimdent)
+		assert.same(4, vim.bo.tabstop)
+		assert.same(false, vim.bo.expandtab)
+		assert.same(2, vim.bo.shiftwidth)
 	end
 )
 
@@ -56,12 +56,12 @@ test('options re-detected on &filetype set', function()
 	vim:set_lines({ 'a', '  b', '    c' })
 
 	vim.cmd('setlocal filetype=c')
-	assert.same(vim.b.did_vimdent, 1)
+	assert.same(1, vim.b.did_vimdent)
 
 	-- Once only.
 	vim.b.did_vimdent = nil
 	vim.cmd('setlocal filetype=c')
-	assert.same(vim.b.did_vimdent, nil)
+	assert.same(nil, vim.b.did_vimdent)
 end)
 
 test('options re-detected on :write', function()
@@ -69,12 +69,12 @@ test('options re-detected on :write', function()
 	vim:set_lines({ 'a', '  b', '    c' })
 
 	vim.cmd('doautocmd BufWritePost')
-	assert.same(vim.b.did_vimdent, 1)
+	assert.same(1, vim.b.did_vimdent)
 
 	-- Once only.
 	vim.b.did_vimdent = nil
 	vim.cmd('doautocmd BufWritePost')
-	assert.same(vim.b.did_vimdent, nil)
+	assert.same(nil, vim.b.did_vimdent)
 end)
 
 test('options detected only in file-backed buffers', function()
@@ -82,7 +82,7 @@ test('options detected only in file-backed buffers', function()
 	vim:set_lines({ 'a', '  b', '    c' })
 	vim.cmd.Vimdent()
 
-	assert.same(vim.b.did_vimdent, nil)
+	assert.same(nil, vim.b.did_vimdent)
 end)
 
 test('&filetype fallback copies options from detected buffer', function()
@@ -105,9 +105,9 @@ let b:did_vimdent = 1
 new test
 	]])
 
-	assert.same(vim.bo.tabstop, 8)
+	assert.same(8, vim.bo.tabstop)
 
 	vim.cmd('setlocal filetype=c')
 
-	assert.same(vim.bo.tabstop, 42)
+	assert.same(42, vim.bo.tabstop)
 end)
