@@ -1,5 +1,7 @@
 local api = vim.api
 
+local EVAL_TABLINE_WIDTH = { use_tabline = true }
+
 local left = require('string.buffer').new()
 local middle = require('string.buffer').new()
 local right = require('string.buffer').new()
@@ -31,6 +33,10 @@ local function render_tabpage(s, tabpage, current)
 	s:put(' ', nr, ':', esc(name), flags, ' ')
 end
 
+local function get_width(s)
+	return api.nvim_eval_statusline(s:tostring(), EVAL_TABLINE_WIDTH).width
+end
+
 return function()
 	left:reset()
 	middle:reset()
@@ -51,9 +57,9 @@ return function()
 	right:put('%T%#TabLineFill#%<')
 
 	local term_width = vim.o.columns
-	local left_width = api.nvim_eval_statusline(left:tostring(), {}).width
-	local middle_width = api.nvim_eval_statusline(middle:tostring(), {}).width
-	local right_width = api.nvim_eval_statusline(right:tostring(), {}).width
+	local left_width = get_width(left)
+	local middle_width = get_width(middle)
+	local right_width = get_width(right)
 
 	if left_width + middle_width + right_width <= term_width then
 		left:put(middle, right)
@@ -70,8 +76,6 @@ return function()
 	)
 
 	output:reset()
-	output:put('%', trim_width, '.', trim_width, '(', left, '%)')
-	output:put(middle)
-	output:put(right)
+	output:put('%', trim_width, '.', trim_width, '(', left, '%)', middle, right)
 	return output:tostring()
 end
