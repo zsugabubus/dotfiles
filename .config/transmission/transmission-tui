@@ -785,20 +785,6 @@ local function create_ListManager()
 		return upsert_many(self, items, false)
 	end
 
-	function M:updelete_many(items)
-		local m = {}
-		for _, item in ipairs(items) do
-			m[item.id] = item
-		end
-
-		local t = {}
-		for _, item in ipairs(self._list) do
-			t[#t + 1] = m[item.id]
-		end
-
-		self:set(t)
-	end
-
 	function M:remove_many_by_id(ids)
 		if next(ids) == nil then
 			return
@@ -2034,12 +2020,9 @@ transmission-daemon(1), transmission-remote(1).
 		else
 			local response = self.transmission:call('torrent-get', {
 				fields = self._torrent_fields,
+				ids = self._torrents_filtered and self._torrents:ids() or nil
 			})
-			if self._torrents_filtered then
-				self._torrents:updelete_many(response.torrents)
-			else
-				self._torrents:set(response.torrents)
-			end
+			self._torrents:set(response.torrents)
 		end
 	end
 
