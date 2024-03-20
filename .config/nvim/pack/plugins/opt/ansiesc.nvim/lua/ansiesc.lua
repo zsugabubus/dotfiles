@@ -1,7 +1,9 @@
+local api = vim.api
+
 local M = {}
 
-local ns = vim.api.nvim_create_namespace('ansiesc')
-local group = vim.api.nvim_create_augroup('ansiesc', {})
+local ns = api.nvim_create_namespace('ansiesc')
+local group = api.nvim_create_augroup('ansiesc', {})
 
 local hl_cache = {}
 local palette
@@ -172,14 +174,14 @@ local function add_highlight(buffer, lnum, col_start, col_end, pen)
 	local hl_group = pen_to_hl_group(pen)
 	if not hl_cache[hl_group] then
 		hl_cache[hl_group] = true
-		vim.api.nvim_set_hl(0, hl_group, pen)
+		api.nvim_set_hl(0, hl_group, pen)
 	end
 
-	vim.api.nvim_buf_add_highlight(buffer, ns, hl_group, lnum, col_start, col_end)
+	api.nvim_buf_add_highlight(buffer, ns, hl_group, lnum, col_start, col_end)
 end
 
 function M.highlight_buffer(buffer)
-	for lnum, line in ipairs(vim.api.nvim_buf_get_lines(buffer, 0, -1, false)) do
+	for lnum, line in ipairs(api.nvim_buf_get_lines(buffer, 0, -1, false)) do
 		local pen = {}
 		local starts = {}
 		local sgrs = {}
@@ -203,7 +205,7 @@ function M.highlight_buffer(buffer)
 			end
 
 			if line ~= original then
-				vim.api.nvim_buf_set_lines(buffer, lnum - 1, lnum, true, { line })
+				api.nvim_buf_set_lines(buffer, lnum - 1, lnum, true, { line })
 			end
 		end
 
@@ -223,12 +225,12 @@ function M.highlight_buffer(buffer)
 	end
 end
 
-vim.api.nvim_create_autocmd('ColorScheme', {
+api.nvim_create_autocmd('ColorScheme', {
 	group = group,
 	callback = function()
 		for hl_group in pairs(hl_cache) do
 			local pen = hl_group_to_pen(hl_group)
-			vim.api.nvim_set_hl(0, hl_group, pen)
+			api.nvim_set_hl(0, hl_group, pen)
 		end
 	end,
 })
