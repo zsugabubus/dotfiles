@@ -725,8 +725,9 @@ require('pack').setup({
 	{ 'capture.nvim' },
 	{
 		'colors.nvim',
+		opts = {},
 		after = function()
-			pcall(require('colors').setup)
+			pcall(require('colors').load_library)
 		end,
 	},
 	{
