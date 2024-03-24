@@ -11,13 +11,8 @@ vim.api.nvim_create_autocmd('BufReadCmd', {
 	pattern = 'reg://*',
 	callback = function(opts)
 		local regname = string.sub(opts.match, 7)
-		vim.api.nvim_buf_set_lines(
-			opts.buf,
-			0,
-			-1,
-			true,
-			vim.fn.getreg(regname, 1, true)
-		)
+		local lines = vim.split(vim.fn.getreg(regname, 1, false), '\n')
+		vim.api.nvim_buf_set_lines(opts.buf, 0, -1, true, lines)
 	end,
 })
 
@@ -26,7 +21,8 @@ vim.api.nvim_create_autocmd('BufWriteCmd', {
 	pattern = 'reg://*',
 	callback = function(opts)
 		local regname = string.sub(opts.match, 7)
-		vim.fn.setreg(regname, vim.api.nvim_buf_get_lines(opts.buf, 0, -1, true))
+		local lines = vim.api.nvim_buf_get_lines(opts.buf, 0, -1, true)
+		vim.fn.setreg(regname, table.concat(lines, '\n'))
 		vim.bo[opts.buf].modified = false
 		vim.api.nvim_echo({
 			{
