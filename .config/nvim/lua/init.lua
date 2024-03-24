@@ -514,6 +514,15 @@ autocmd('BufNewFile', {
 vim.filetype.add({
 	pattern = {
 		['/tmp/fstab%.'] = 'fstab',
+		['.*'] = {
+			priority = -math.huge,
+			function(path, bufnr)
+				local content = vim.filetype.getlines(bufnr, 1)
+				if vim.filetype.matchregex(content, [[\v^[* ]*\x{6,}]]) then
+					return 'git'
+				end
+			end,
+		},
 	},
 })
 
