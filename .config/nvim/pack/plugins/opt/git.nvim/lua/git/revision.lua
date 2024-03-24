@@ -3,9 +3,9 @@ local M = {}
 function M.canonical(rev)
 	return rev
 		:gsub('~(%d+)', function(n)
-			return string.rep('~', tonumber(n))
+			return string.rep('~', n)
 		end)
-		:gsub('(%^%d*)', function(s)
+		:gsub('%^%d*', function(s)
 			return (s == '^' or s == '^1') and '~' or s
 		end)
 		:gsub('~+', function(s)
@@ -17,22 +17,20 @@ function M.split_path(rev)
 	return string.match(rev, '^(:?[^:]*):?(.-)/?$')
 end
 
-local REVISION_RE = vim.regex([[\v^\x{4,}$|^refs/]])
-
 function M.join(base, rev)
-	if REVISION_RE:match_str(rev) then
+	if string.find(rev, '^refs/') or string.find(rev, '^%x%x%x%x%x*$') then
 		return rev
-	else
-		local base_rev, base_path = M.split_path(base)
-
-		if base_path ~= '' then
-			base_path = base_path .. '/' .. rev
-		else
-			base_path = rev
-		end
-
-		return string.format('%s:%s', base_rev, base_path)
 	end
+
+	local base_rev, base_path = M.split_path(base)
+
+	if base_path ~= '' then
+		base_path = base_path .. '/' .. rev
+	else
+		base_path = rev
+	end
+
+	return string.format('%s:%s', base_rev, base_path)
 end
 
 function M.parent_tree(rev)
