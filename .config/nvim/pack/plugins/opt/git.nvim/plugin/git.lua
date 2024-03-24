@@ -98,19 +98,6 @@ command_edit('Gsplit')
 command_edit('Gvs')
 command_edit('Gvsplit')
 
-local command_grep = command_factory('git.command.show', {
-	nargs = '*',
-	bang = true,
-})
-command_grep('Ggr')
-command_grep('Ggrep')
-command_grep('Ggrepa')
-command_grep('Ggrepadd')
-command_grep('Glgr')
-command_grep('Glgrep')
-command_grep('Glgrepa')
-command_grep('Glgrepadd')
-
 keymap('n', '<Plug>(git-goto-file)', '', {
 	callback = function()
 		require('git.buffer').goto_object()
