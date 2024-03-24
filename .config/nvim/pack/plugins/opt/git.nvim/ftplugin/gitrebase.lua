@@ -8,8 +8,6 @@ local opts = {
 
 vim.b.git_use_preview = true
 
-keymap(0, 'n', 'cb', 'Obreak<Esc>0', opts)
-
 local function change_command(lhs, command)
 	keymap(
 		0,
