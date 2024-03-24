@@ -418,6 +418,7 @@ local function update(buf)
 		callback = function()
 			open_current_undo_preview(repo)
 		end,
+		desc = 'Preview additions',
 	})
 
 	keymap(buf, 'n', '-', '', {
@@ -425,6 +426,7 @@ local function update(buf)
 		callback = function()
 			open_current_undo_preview(repo, true)
 		end,
+		desc = 'Preview deletions',
 	})
 
 	keymap(buf, 'n', 'gf', '-', {
@@ -436,6 +438,7 @@ local function update(buf)
 		callback = function()
 			yank_undo_patch(repo)
 		end,
+		desc = 'Copy additions',
 	})
 
 	keymap(buf, 'n', 'y-', '', {
@@ -443,6 +446,7 @@ local function update(buf)
 		callback = function()
 			yank_undo_patch(repo, true)
 		end,
+		desc = 'Copy deletions',
 	})
 
 	keymap(buf, 'n', 'u', '', {
@@ -450,6 +454,7 @@ local function update(buf)
 		callback = function()
 			undo_to()
 		end,
+		desc = 'Undo to',
 	})
 
 	keymap(buf, 'n', '<CR>', 'u', {
