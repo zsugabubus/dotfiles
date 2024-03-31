@@ -1,6 +1,7 @@
 return function(opts)
-	if opts.args == '' then
-		opts.args = '@'
+	local object = opts.args
+	if object == '' then
+		object = '@'
 	end
-	vim.cmd.edit('git://' .. opts.args)
+	vim.cmd.edit(vim.fn.fnameescape('git://' .. object))
 end

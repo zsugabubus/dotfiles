@@ -10,17 +10,12 @@ return function(opts)
 	local repo = Repository.await(Repository.from_current_buf())
 	utils.ensure_work_tree(repo)
 
-	vim.cmd.diffthis()
-	vim.cmd.vsplit(
+	local path = string.sub(vim.fn.expand('%:p'), #repo.work_tree + 2)
+	local name = string.format('git://%s:%s', rev, path)
+	vim.cmd(
 		string.format(
-			'git://%s:%s',
-			rev,
-			string.sub(vim.fn.expand('%:p'), #repo.work_tree + 2)
+			'diffthis | leftabove vsplit %s | diffthis | wincmd p',
+			vim.fn.fnameescape(name)
 		)
 	)
-
-	vim.cmd.diffthis()
-
-	vim.cmd.wincmd('p')
-	vim.cmd.wincmd('L')
 end
