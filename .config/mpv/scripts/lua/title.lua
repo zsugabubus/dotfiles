@@ -1,17 +1,10 @@
-local M = {}
 local Osd = require('osd')
 
 local SPACE_PATTERNS = { '%.', '%-', '%_' }
 
-local cache, cache_size = {}, 0
+local M = {}
 
-local function add_cache(key, s)
-	if cache_size > 250 then
-		cache, cache_size = {}, 0
-	end
-	cache_size = cache_size + 1
-	cache[key] = s
-end
+local cache = setmetatable({}, { __mode = 'kv' })
 
 function M.from_playlist_entry(entry)
 	local s = cache[entry.filename]
@@ -38,7 +31,7 @@ function M.from_playlist_entry(entry)
 	s = string.gsub(s, ' [1-9][0-9][0-9][0-9] [A-Za-z0-9][^/]', '')
 
 	s = Osd.ass_escape_nl(s)
-	add_cache(entry.filename, s)
+	cache[entry.filename] = s
 	return s
 end
 
@@ -59,9 +52,8 @@ function M.get_current_ass()
 			version and ')',
 		})
 	else
-		local current = mp.get_property_native(
-			'playlist/' .. mp.get_property_native('playlist-pos')
-		)
+		local pos = mp.get_property_native('playlist-pos')
+		local current = mp.get_property_native('playlist/' .. pos)
 		if
 			current and (not title or title == current.filename:gsub('^.*/', ''))
 		then
