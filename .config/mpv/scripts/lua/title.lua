@@ -14,14 +14,8 @@ local function add_cache(key, s)
 end
 
 function M.from_playlist_entry(entry)
-	local s = cache[entry.title or entry.filename]
+	local s = cache[entry.filename]
 	if s then
-		return s
-	end
-
-	if entry.title then
-		local s = Osd.ass_escape_nl(entry.title)
-		add_cache(entry.title, s)
 		return s
 	end
 
