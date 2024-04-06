@@ -347,7 +347,7 @@ map('o', '{', 'V{')
 map('o', '}', 'V}')
 
 map('n', 'gr', ':GREP ')
-remap('n', 'gw', 'gr<C-r><C-w><CR>')
+map('n', 'gw', ':GREP -swF <C-r>=shellescape(expand("<cword>"))<CR><CR>')
 map('x', '//', 'y:GREP -F <C-r>=shellescape(@", 1)<CR><CR>')
 remap('x', 'gr', '//')
 
