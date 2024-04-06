@@ -6,15 +6,15 @@ local NOREMAP_SILENT = {
 }
 
 -- Inner line.
-keymap('v', 'il', '_og_', NOREMAP_SILENT)
+keymap('x', 'il', '_og_', NOREMAP_SILENT)
 keymap('o', 'il', ':normal vil<CR>', NOREMAP_SILENT)
 
 -- Outer line.
-keymap('v', 'al', '0o$h', NOREMAP_SILENT)
+keymap('x', 'al', '0o$h', NOREMAP_SILENT)
 keymap('o', 'al', ':normal val<CR>', NOREMAP_SILENT)
 
 -- Indentation.
-keymap('v', 'ii', '', {
+keymap('x', 'ii', '', {
 	callback = function()
 		local normal = vim.cmd.normal
 		local search = vim.fn.search
