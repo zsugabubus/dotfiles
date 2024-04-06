@@ -52,8 +52,15 @@ local function map(mode, lhs, rhs)
 	return keymap(mode, lhs, rhs, MAP_OPTS)
 end
 
+local function nxo_map(lhs, rhs)
+	map('n', lhs, rhs)
+	map('x', lhs, rhs)
+	map('o', lhs, rhs)
+end
+
+local REMAP_OPTS = {}
 local function remap(mode, lhs, rhs)
-	return keymap(mode, lhs, rhs, { noremap = false })
+	return keymap(mode, lhs, rhs, REMAP_OPTS)
 end
 
 local SMAP_OPTS = { silent = true }
@@ -339,8 +346,8 @@ end)
 remap('n', '>i', '>%<<$%<<$%')
 remap('n', '<i', '<%>>$%>>$%')
 
-map('v', '>', '>gv')
-map('v', '<', '<gv')
+map('x', '>', '>gv')
+map('x', '<', '<gv')
 
 -- Linewise {, }.
 map('o', '{', 'V{')
@@ -725,7 +732,7 @@ require('pack').setup({
 	{
 		'align.nvim',
 		after = function()
-			map('', 'gl', '<Plug>(align)')
+			nxo_map('gl', '<Plug>(align)')
 			remap('n', 'gL', 'viigl|')
 		end,
 	},
@@ -742,7 +749,7 @@ require('pack').setup({
 	{
 		'commenter.nvim',
 		after = function()
-			map('', 'gc', '<Plug>(commenter)')
+			nxo_map('gc', '<Plug>(commenter)')
 			map('n', 'gcc', '<Plug>(commenter-current-line)')
 		end,
 	},
@@ -772,7 +779,7 @@ require('pack').setup({
 	{
 		'jumpmotion.nvim',
 		after = function()
-			map('', '<space>', '<Plug>(jumpmotion)')
+			nxo_map('<space>', '<Plug>(jumpmotion)')
 		end,
 	},
 	{ 'man.lua' },
