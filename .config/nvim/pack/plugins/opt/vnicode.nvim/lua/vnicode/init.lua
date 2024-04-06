@@ -11,13 +11,13 @@ function M.setup(opts)
 	local keymap = api.nvim_set_keymap
 	local user_command = api.nvim_create_user_command
 
-	keymap('', 'ga', '', {
+	keymap('', '<Plug>(vnicode-unicode)', '', {
 		callback = function()
 			require('vnicode.commands').ga()
 		end,
 	})
 
-	keymap('', 'g8', '', {
+	keymap('', '<Plug>(vnicode-utf8)', '', {
 		callback = function()
 			require('vnicode.commands').g8()
 		end,
