@@ -1,127 +1,12 @@
+local api = vim.api
+local fn = vim.fn
+
 local M = {}
-local api, fn = vim.api, vim.fn
-local ns = api.nvim_create_namespace('jumpmotion')
 
-local function update_highlights()
-	api.nvim_set_hl(0, 'JumpMotionHead', {
-		default = true,
-		bold = true,
-		ctermfg = 196,
-		ctermbg = 226,
-		fg = '#ff0000',
-		bg = '#ffff00',
-	})
-	api.nvim_set_hl(0, 'JumpMotionTail', {
-		default = true,
-		ctermfg = 196,
-		ctermbg = 226,
-		fg = '#ff0000',
-		bg = '#ffff00',
-	})
-end
+local ns = api.nvim_create_namespace('')
 
-local function update_extmarks(targets)
-	for _, target in ipairs(targets) do
-		target.extmark_id =
-			api.nvim_buf_set_extmark(target.buf, ns, target.line - 1, target.col, {
-				id = target.extmark_id,
-				virt_text = {
-					{ string.sub(target.key, 1, 1), 'JumpMotionHead' },
-						-- Empty virtual text makes Nvim confused.
-					#target.key > 1 and { string.sub(target.key, 2), 'JumpMotionTail' }
-						or nil,
-				},
-				virt_text_pos = 'overlay',
-				priority = 1000 + #targets,
-			})
-	end
-end
-
-local function generate_word(n)
-	local word = ''
-	local a, z = string.byte('a'), string.byte('z')
-	local len = z - a + 1
-	local k = n
-	while k > 0 do
-		k = k - 1
-		word = string.char(a + k % len) .. word
-		k = math.floor(k / len)
-	end
-	return word
-end
-
-local function generate_keys(targets)
-	local target_by_key = {}
-
-	local n = 1
-	for _, target in ipairs(targets) do
-		while true do
-			local key = generate_word(n)
-			n = n + 1
-
-			local conflict = target_by_key[string.sub(key, 1, -2)]
-			if conflict then
-				target_by_key[conflict.key] = nil
-				conflict.key = key
-				target_by_key[conflict.key] = conflict
-			else
-				target.key = key
-				target_by_key[key] = target
-				break
-			end
-		end
-	end
-end
-
-local function pick_target(targets)
-	update_highlights()
-
-	while #targets > 1 do
-		update_extmarks(targets)
-
-		api.nvim_echo({
-			{
-				string.format('jumpmotion (%d targets): ', #targets),
-				'Question',
-			},
-		}, false, {})
-		vim.cmd.redraw()
-
-		local ok, c = pcall(fn.getcharstr)
-		if not ok then
-			c = ' '
-		end
-
-		api.nvim_echo({
-			{ '', 'Normal' },
-		}, false, {})
-
-		local new_targets = {}
-		for _, target in ipairs(targets) do
-			if string.sub(target.key, 1, #c) == c then
-				target.key = string.sub(target.key, #c + 1)
-				table.insert(new_targets, target)
-			else
-				api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
-			end
-		end
-		targets = new_targets
-	end
-
-	local target = targets[1]
-	if not target then
-		api.nvim_echo({
-			{ 'jumpmotion: No matches', 'ErrorMsg' },
-		}, false, {})
-		return
-	end
-
-	-- Single target will have no extmark set.
-	if target.extmark_id ~= nil then
-		api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
-	end
-
-	return target
+local function echo(text, hl_group)
+	api.nvim_echo({ { text, hl_group } }, false, {})
 end
 
 local function find_targets(pattern)
@@ -231,13 +116,131 @@ local function find_targets(pattern)
 	return targets
 end
 
+local function make_word(n)
+	local a, z = string.byte('a'), string.byte('z')
+	local len = z - a + 1
+
+	local word = ''
+	local k = n
+
+	while k > 0 do
+		k = k - 1
+		word = string.char(a + k % len) .. word
+		k = math.floor(k / len)
+	end
+
+	return word
+end
+
+local function assign_keys(targets)
+	local target_by_key = {}
+	local n = 1
+
+	for _, target in ipairs(targets) do
+		while true do
+			local key = make_word(n)
+			n = n + 1
+
+			local conflict = target_by_key[string.sub(key, 1, -2)]
+			if conflict then
+				target_by_key[conflict.key] = nil
+				conflict.key = key
+				target_by_key[conflict.key] = conflict
+			else
+				target.key = key
+				target_by_key[key] = target
+				break
+			end
+		end
+	end
+end
+
+local function set_default_highlights()
+	api.nvim_set_hl(0, 'JumpMotionHead', {
+		default = true,
+		bold = true,
+		ctermfg = 196,
+		ctermbg = 226,
+		fg = '#ff0000',
+		bg = '#ffff00',
+	})
+
+	api.nvim_set_hl(0, 'JumpMotionTail', {
+		default = true,
+		link = 'JumpMotionHead',
+	})
+end
+
+local function update_extmarks(targets)
+	for _, target in ipairs(targets) do
+		target.extmark_id =
+			api.nvim_buf_set_extmark(target.buf, ns, target.line - 1, target.col, {
+				id = target.extmark_id,
+				virt_text = {
+					{ string.sub(target.key, 1, 1), 'JumpMotionHead' },
+						-- Empty virtual text makes Nvim confused.
+					#target.key > 1 and { string.sub(target.key, 2), 'JumpMotionTail' }
+						or nil,
+				},
+				virt_text_pos = 'overlay',
+				priority = 1000,
+			})
+	end
+end
+
+local function pick_target(targets)
+	set_default_highlights()
+
+	while #targets > 1 do
+		update_extmarks(targets)
+
+		echo('jumpmotion: ', 'Question')
+		vim.cmd.redraw()
+
+		local ok, c = pcall(fn.getcharstr)
+		if not ok then
+			c = ' '
+		end
+
+		echo('', 'Normal')
+
+		local new_targets = {}
+
+		for _, target in ipairs(targets) do
+			if string.sub(target.key, 1, #c) == c then
+				target.key = string.sub(target.key, #c + 1)
+				table.insert(new_targets, target)
+			else
+				api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
+			end
+		end
+
+		targets = new_targets
+	end
+
+	local target = targets[1]
+
+	if not target then
+		echo('jumpmotion: No matches', 'ErrorMsg')
+		return
+	end
+
+	-- Single target will have no extmark set.
+	if target.extmark_id ~= nil then
+		api.nvim_buf_del_extmark(target.buf, ns, target.extmark_id)
+	end
+
+	return target
+end
+
 function M.jump(pattern)
 	local mode = api.nvim_get_mode().mode
 
 	local targets = find_targets(pattern)
-	generate_keys(targets)
+	assign_keys(targets)
 
 	local target = pick_target(targets)
+
 	if not target then
 		return false
 	end

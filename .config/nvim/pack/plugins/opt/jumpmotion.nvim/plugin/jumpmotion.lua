@@ -1,23 +1,24 @@
 vim.api.nvim_set_keymap('', '<Plug>(jumpmotion)', '', {
 	callback = function()
-		local function rchar(c)
-			return (c == '\\' and '\\\\' or c) .. '\\+'
-		end
-
 		local ok, c = pcall(vim.fn.getcharstr)
 		if not ok then
 			return
 		end
-		local pattern
-		if c == '\r' then
-			pattern = vim.fn.getreg('/')
-		elseif c == ';' and vim.fn.getcharsearch().char ~= '' then
-			pattern = '\\V' .. rchar(vim.fn.getcharsearch().char) .. '\\|' .. rchar(c)
-		elseif c == '$' then
-			pattern = '\\V\\$\\|' .. rchar(c)
-		else
-			pattern = '\\V' .. rchar(c)
+
+		local function pat(c)
+			return (c == '\\' and '\\\\' or c) .. '\\+'
 		end
-		require('jumpmotion').jump(pattern)
+
+		local jump = require('jumpmotion').jump
+
+		if c == '/' then
+			jump(vim.fn.getreg('/') .. '\\V\\|' .. pat(c))
+		elseif c == ';' and vim.fn.getcharsearch().char ~= '' then
+			jump('\\V' .. pat(vim.fn.getcharsearch().char) .. '\\|' .. pat(c))
+		elseif c == '$' then
+			jump('\\V\\$\\|' .. pat(c))
+		else
+			jump('\\V' .. pat(c))
+		end
 	end,
 })
