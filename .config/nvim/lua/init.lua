@@ -650,42 +650,6 @@ user_command('SourceSession', function()
 	cmd.source('Session.vim')
 end, {})
 
-do
-	local IGNORE_WHITESPACE_RE =
-		vim.regex([[\v^(|text|markdown|mail)$|git|diff|log]])
-
-	autocmd({ 'FileType', 'BufWinEnter', 'WinNew', 'ColorScheme' }, {
-		group = group,
-		callback = function()
-			api.nvim_set_hl(0, 'WhitespaceError', {
-				default = true,
-				ctermbg = 197,
-				ctermfg = 231,
-				bg = '#ff005f',
-				fg = '#ffffff',
-			})
-		end,
-	})
-
-	autocmd({ 'FileType', 'BufWinEnter', 'WinNew' }, {
-		group = group,
-		callback = function()
-			if vim.w.japan then
-				fn.matchdelete(vim.w.japan)
-				vim.w.japan = nil
-			end
-			if
-				bo.buftype == ''
-				and not bo.readonly
-				and bo.modifiable
-				and not IGNORE_WHITESPACE_RE:match_str(bo.filetype)
-			then
-				vim.w.japan = fn.matchadd('WhitespaceError', [[\v +\t+|\s+%#@!$]], 10)
-			end
-		end,
-	})
-end
-
 user_command(
 	'Japan',
 	[[keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e]],
