@@ -2820,6 +2820,8 @@ transmission-daemon(1), transmission-remote(1).
 
 		edit(self, {
 			input = function(buf)
+				buf:put('# ID (1)\tDone (2)\tPath (3)\n\n')
+
 				for torrent in self:torrents_iter({ 'id', 'name', 'files', 'fileStats' }) do
 					table.insert(local_torrents, torrent)
 
