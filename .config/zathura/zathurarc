@@ -15,6 +15,9 @@ map	D	set "pages-per-row 2"
 map	T	set "pages-per-row 3"
 map	Q	set "pages-per-row 4"
 
+map	H	set "first-page-column 1"
+map	L	set "first-page-column 2"
+
 map	u	scroll half-up
 map	d	scroll half-down
 map	<S-Space>	scroll full-up
