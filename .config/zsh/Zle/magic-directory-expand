@@ -31,6 +31,7 @@ case ${match[1]} in
 (P|T) __zle-insert-dynamic-dir tmux-pane ;;
 (H) __zle-insert-dynamic-dir here ;;
 (N) LBUFFER=${LBUFFER%?}${(D)$(<$XDG_RUNTIME_DIR/nvim_here)} ;;
+(V) LBUFFER=${LBUFFER%?}${(D)$(<$XDG_RUNTIME_DIR/mpv_here)} ;;
 esac &&
 return
 
