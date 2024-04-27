@@ -3114,6 +3114,10 @@ transmission-daemon(1), transmission-remote(1).
 	end
 
 	local function add_torrents(self, collect_torrent_files, delete_after_add)
+		local function shesc(s)
+			return "'" .. string.gsub(s, "'", [['"'"']]) .. "'"
+		end
+
 		local new_ids = {}
 
 		local function callback()
@@ -3124,14 +3128,6 @@ transmission-daemon(1), transmission-remote(1).
 				update_torrents(self)
 				self._torrents:move_cursor_to_id(new_ids[1])
 			end
-		end
-
-		local function transform(s)
-			-- Is relative file path?
-			if not string.match(s, '^[a-z]+:') and not string.match(s, '^/') then
-				return uv.cwd() .. '/' .. s
-			end
-			return s
 		end
 
 		local function prompt(initial_items)
@@ -3181,12 +3177,14 @@ transmission-daemon(1), transmission-remote(1).
 				local errored_items = {}
 
 				for s in parse_fields(data, '.+') do
-					s = transform(s)
+					local output = io.popen('base64 2>/dev/null -- ' .. shesc(s)):read('*a')
 
 					local ok, payload = self.transmission:call_unchecked('torrent-add', {
-						filename = s,
+						filename = output == '' and s or nil,
+						metainfo = output ~= '' and output or nil,
 						paused = true,
 					})
+
 					if ok then
 						table.insert(
 							new_ids,
