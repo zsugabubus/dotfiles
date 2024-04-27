@@ -1302,13 +1302,13 @@ local function create_TransmissionTui()
 			return
 		end
 
-		local local_torrents = self.transmission:call('torrent-get', {
+		local torrents = self.transmission:call('torrent-get', {
 			ids = ids,
 			fields = field_names,
 		}).torrents
 
 		local t = {}
-		for i, torrent in ipairs(local_torrents) do
+		for i, torrent in ipairs(torrents) do
 			local list = torrent[field_names[1]]
 
 			-- Merge lists.
@@ -2020,7 +2020,7 @@ transmission-daemon(1), transmission-remote(1).
 		else
 			local response = self.transmission:call('torrent-get', {
 				fields = self._torrent_fields,
-				ids = self._torrents_filtered and self._torrents:ids() or nil
+				ids = self._torrents_filtered and self._torrents:ids() or nil,
 			})
 			self._torrents:set(response.torrents)
 		end
@@ -2587,41 +2587,32 @@ transmission-daemon(1), transmission-remote(1).
 		self:call_method_on_all_torrents('torrent-stop', 'stopped')
 	end
 
-	function M:torrents_iter(fields)
+	function M:selected_torrents(fields)
 		local ids = self:selected_torrent_ids()
+
 		if #ids == 0 then
-			return ipairs({})
+			return {}
 		end
 
-		local local_torrents = self.transmission:call('torrent-get', {
+		return self.transmission:call('torrent-get', {
 			ids = ids,
 			fields = fields,
 		}).torrents
-
-		local i = 0
-
-		return function()
-			i = i + 1
-			local x = local_torrents[i]
-			if x ~= nil then
-				return x
-			end
-		end
 	end
 
 	help('Edit torrent queue position.')
 	function M:show_torrent_queue()
-		local local_torrents = self.transmission:call('torrent-get', {
+		local torrents = self.transmission:call('torrent-get', {
 			fields = { 'id', 'queuePosition', 'name' },
 		}).torrents
 
-		table.sort(local_torrents, function(a, b)
+		table.sort(torrents, function(a, b)
 			return a.queuePosition < b.queuePosition
 		end)
 
 		edit(self, {
 			input = function(buf)
-				for _, torrent in ipairs(local_torrents) do
+				for _, torrent in ipairs(torrents) do
 					buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
 				end
 
@@ -2672,22 +2663,23 @@ transmission-daemon(1), transmission-remote(1).
 			return t
 		end
 
+		local torrents = self:selected_torrents({ 'id', 'name', 'trackerStats' })
+
 		local torrents_tracker_list = {}
+		local torrents_by_trackers = {}
+
+		for _, torrent in ipairs(torrents) do
+			local tracker_list = tracker_stats_to_tracker_list(torrent.trackerStats)
+			local s = table.concat(tracker_list, '\n')
+
+			torrents_by_trackers[s] = torrents_by_trackers[s] or {}
+			table.insert(torrents_by_trackers[s], torrent)
+
+			torrents_tracker_list[torrent.id] = s
+		end
 
 		edit(self, {
 			input = function(buf)
-				local torrents_by_trackers = {}
-
-				for torrent in self:torrents_iter({ 'id', 'name', 'trackerStats' }) do
-					local tracker_list = tracker_stats_to_tracker_list(torrent.trackerStats)
-					local s = table.concat(tracker_list, '\n')
-
-					torrents_by_trackers[s] = torrents_by_trackers[s] or {}
-					table.insert(torrents_by_trackers[s], torrent)
-
-					torrents_tracker_list[torrent.id] = s
-				end
-
 				for s, torrents in pairs(torrents_by_trackers) do
 					for _, torrent in ipairs(torrents) do
 						buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
@@ -2816,17 +2808,16 @@ transmission-daemon(1), transmission-remote(1).
 
 	help('Select torrent files.')
 	function M:show_torrent_files()
-		local local_torrents = {}
+		local torrents = self:selected_torrents({ 'id', 'name', 'files', 'fileStats' })
 
 		edit(self, {
 			input = function(buf)
 				buf:put('# ID (1)\tDone (2)\tPath (3)\n\n')
 
-				for torrent in self:torrents_iter({ 'id', 'name', 'files', 'fileStats' }) do
-					table.insert(local_torrents, torrent)
-
+				for _, torrent in ipairs(torrents) do
 					local wanted_count = 0
 					local all_count = #torrent.files
+
 					for _, stat in ipairs(torrent.fileStats) do
 						if stat.wanted then
 							wanted_count = wanted_count + 1
@@ -2880,7 +2871,7 @@ transmission-daemon(1), transmission-remote(1).
 
 			local count = 0
 
-			for _, torrent in ipairs(local_torrents) do
+			for _, torrent in ipairs(torrents) do
 				local files_unwanted = {}
 				local files_wanted = {}
 
@@ -2912,7 +2903,9 @@ transmission-daemon(1), transmission-remote(1).
 
 	help('Open torrent location.')
 	function M:open_torrent_location()
-		for torrent in self:torrents_iter({ 'downloadDir', 'name' }) do
+		local torrents = self:selected_torrents({ 'downloadDir', 'name' })
+
+		for _, torrent in ipairs(torrents) do
 			local path = torrent.downloadDir .. '/' .. torrent.name
 			local dir
 			if uv.fs_stat(path).type == 'directory' then
@@ -2920,6 +2913,7 @@ transmission-daemon(1), transmission-remote(1).
 			else
 				dir = torrent.downloadDir
 			end
+
 			if os.getenv('TMUX') then
 				self:spawn('tmux', {
 					args = { 'new-window', '-c', dir },
@@ -2931,22 +2925,23 @@ transmission-daemon(1), transmission-remote(1).
 
 	help('Move torrent.')
 	function M:show_move_torrents()
+		local torrents = self:selected_torrents({ 'id', 'name', 'downloadDir' })
+
 		local torrents_location = {}
+		local torrents_by_location = {}
+
+		for _, torrent in ipairs(torrents) do
+			local location = torrent.downloadDir
+			local s = esc(location)
+
+			torrents_by_location[s] = torrents_by_location[s] or {}
+			table.insert(torrents_by_location[s], torrent)
+
+			torrents_location[torrent.id] = location
+		end
 
 		edit(self, {
 			input = function(buf)
-				local torrents_by_location = {}
-
-				for torrent in self:torrents_iter({ 'id', 'name', 'downloadDir' }) do
-					local location = torrent.downloadDir
-					local s = esc(location)
-
-					torrents_by_location[s] = torrents_by_location[s] or {}
-					table.insert(torrents_by_location[s], torrent)
-
-					torrents_location[torrent.id] = location
-				end
-
 				for s, torrents in pairs(torrents_by_location) do
 					for _, torrent in ipairs(torrents) do
 						buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
@@ -3022,13 +3017,15 @@ transmission-daemon(1), transmission-remote(1).
 	end
 
 	local function remove_torrents(self, delete_local_data)
+		local torrents = self:selected_torrents({ 'id', 'name' })
+
 		edit(self, {
 			input = function(buf)
 				if delete_local_data then
 					buf:putf('# Local data PERMANENTLY DELETED.\n\n')
 				end
 
-				for torrent in self:torrents_iter({ 'id', 'name' }) do
+				for _, torrent in ipairs(torrents) do
 					buf:putf('# %d\t%s\n', torrent.id, esc(torrent.name))
 				end
 
@@ -3080,9 +3077,11 @@ transmission-daemon(1), transmission-remote(1).
 
 	help('Check torrent.')
 	function M:show_check_torrents()
+		local torrents = self:selected_torrents({ 'id', 'name' })
+
 		edit(self, {
 			input = function(buf)
-				for torrent in self:torrents_iter({ 'id', 'name' }) do
+				for _, torrent in ipairs(torrents) do
 					buf:putf('%d\t%s\n', torrent.id, esc(torrent.name))
 				end
 
