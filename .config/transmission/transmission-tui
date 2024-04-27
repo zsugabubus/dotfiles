@@ -2956,8 +2956,13 @@ transmission-daemon(1), transmission-remote(1).
 #
 # %s
 #
+# Current location:
+#
+# %s
+#
 ]],
-					esc(self._session_info['download-dir'])
+					esc(self._session_info['download-dir']),
+					esc(uv.cwd())
 				)
 			end,
 		}, function(err, data)
