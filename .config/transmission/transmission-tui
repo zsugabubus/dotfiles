@@ -2906,11 +2906,8 @@ transmission-daemon(1), transmission-remote(1).
 		local torrents = self:selected_torrents({ 'downloadDir', 'name' })
 
 		for _, torrent in ipairs(torrents) do
-			local path = torrent.downloadDir .. '/' .. torrent.name
-			local dir
-			if uv.fs_stat(path).type == 'directory' then
-				dir = path
-			else
+			local dir = torrent.downloadDir .. '/' .. torrent.name
+			if (uv.fs_stat(dir) or {}).type ~= 'directory' then
 				dir = torrent.downloadDir
 			end
 
