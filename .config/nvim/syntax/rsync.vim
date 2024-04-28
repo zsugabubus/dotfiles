@@ -1,7 +1,3 @@
-" Vim syntax file
-" Language: rsync output
-" Maintainer: zsugabubus
-
 if exists("b:current_syntax")
   finish
 endif
