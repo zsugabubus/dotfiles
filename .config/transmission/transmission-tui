@@ -440,14 +440,6 @@ local function create_Column()
 		return setmetatable({}, cls)
 	end
 
-	function M:clone()
-		local o = {}
-		for k, v in pairs(self) do
-			o[k] = v
-		end
-		return setmetatable(o, M)
-	end
-
 	function M:with_optional(yes)
 		self.optional = yes ~= false
 		return self
@@ -519,7 +511,11 @@ local function create_Columns(string_width)
 				local last = k == #self
 				if not column.width and not last then
 					local width = compute_column_width(column, data_list, i, j)
-					column = column:clone():with_width(width)
+					column = {
+						title = column.title,
+						display = column.display,
+						width = width,
+					}
 				end
 				table.insert(t, column)
 			end
@@ -529,18 +525,23 @@ local function create_Columns(string_width)
 
 	function M:build_dependency_list(default_dependencies)
 		local wanted = {}
+
 		for _, k in ipairs_any(default_dependencies) do
 			wanted[k] = true
 		end
+
 		for _, column in ipairs(self) do
 			for _, k in ipairs_any(column.dependencies) do
 				wanted[k] = true
 			end
 		end
+
 		local t = {}
+
 		for k in pairs(wanted) do
 			table.insert(t, k)
 		end
+
 		return t
 	end
 
@@ -582,12 +583,10 @@ local function create_ListRenderer(curs)
 
 	local function render_header(win, columns)
 		win:attr(curs.A_BOLD, 0)
-		local space = false
-		for _, column in ipairs(columns) do
-			if space then
+		for i, column in ipairs(columns) do
+			if i > 1 then
 				win:put(' ')
 			end
-			space = true
 			render_column_title(win, column)
 		end
 	end
@@ -605,12 +604,10 @@ local function create_ListRenderer(curs)
 			win:put(' ')
 		end
 
-		local space = false
-		for _, column in ipairs(columns) do
-			if space then
+		for i, column in ipairs(columns) do
+			if i > 1 then
 				win:put(' ')
 			end
-			space = true
 			render_string(win, column.width or 0, column.display(data))
 		end
 
@@ -681,22 +678,22 @@ local function create_ListManager()
 	end
 
 	local function invalidate_index_map(self)
-		self._map = nil
+		self._index_map = nil
 	end
 
-	local function index_map(self)
-		local m = self._map
-		if m then
-			return m
-		end
-
-		m = {}
+	local function make_index_map(self)
+		local t = {}
 		for i, item in ipairs(self._list) do
-			m[item.id] = i
+			t[item.id] = i
 		end
+		return t
+	end
 
-		self._map = m
-		return m
+	local function get_index_map(self)
+		if not self._index_map then
+			self._index_map = make_index_map(self)
+		end
+		return self._index_map
 	end
 
 	local function upsert_many(self, items, insert)
@@ -704,15 +701,17 @@ local function create_ListManager()
 			return
 		end
 
-		local m = index_map(self)
+		local index_of = get_index_map(self)
 		local checks = {}
 
 		for _, item in ipairs(items) do
-			local i = m[item.id]
+			local i = index_of[item.id]
+
 			if insert and i == nil then
 				i = #self._list + 1
-				m[item.id] = i
+				index_of[item.id] = i
 			end
+
 			if i ~= nil then
 				self._list[i] = item
 				checks[i] = item
@@ -761,7 +760,7 @@ local function create_ListManager()
 	end
 
 	function M:find_index_by_id(id)
-		return index_map(self)[id]
+		return get_index_map(self)[id]
 	end
 
 	function M:set(items)
@@ -786,16 +785,19 @@ local function create_ListManager()
 	end
 
 	function M:remove_many_by_id(ids)
-		if next(ids) == nil then
+		if #ids == 0 then
 			return
 		end
 
-		local m = index_map(self)
+		local index_of = get_index_map(self)
 		local t = {}
 
 		for _, id in ipairs(ids) do
-			t[#t + 1] = m[id]
-			m[id] = nil
+			t[#t + 1] = index_of[id]
+		end
+
+		if #t == 0 then
+			return
 		end
 
 		table.sort(t)
@@ -1483,19 +1485,19 @@ local function create_TransmissionTui()
 		local c = self:make_torrent_columns()
 		self:set_torrent_columns({
 			c.done,
-			c.eta:clone():with_optional(),
-			c.down_peers:clone():with_optional(),
-			c.down_limit:clone():with_optional(),
+			c.eta:with_optional(),
+			c.down_peers:with_optional(),
+			c.down_limit:with_optional(),
 			c.up_peers,
-			c.up_limit:clone():with_optional(),
+			c.up_limit:with_optional(),
 			c.peers,
 			c.ratio,
-			c.ratio_limit:clone():with_optional(),
+			c.ratio_limit:with_optional(),
 			c.status,
-			c.check:clone():with_optional(),
-			c.error:clone():with_optional(),
+			c.check:with_optional(),
+			c.error:with_optional(),
 			c.size,
-			c.labels:clone():with_optional(),
+			c.labels:with_optional(),
 			c.name,
 		})
 	end
@@ -1534,7 +1536,7 @@ local function create_TransmissionTui()
 			c.leechers,
 			c.seeders,
 			c.last_announce,
-			c.next_announce:clone():with_optional(),
+			c.next_announce:with_optional(),
 			c.announce_status,
 			c.scrape_status,
 			c.scrape_result,
@@ -1564,7 +1566,7 @@ local function create_TransmissionTui()
 			c.address,
 			c.flags,
 			c.done,
-			c.down:clone():with_optional(),
+			c.down:with_optional(),
 			c.up,
 			c.client,
 		})
@@ -2038,7 +2040,6 @@ transmission-daemon(1), transmission-remote(1).
 
 	local function parse_fields(s, pat)
 		local lines = string.gmatch(s, '([^\n]*)\n?')
-
 		return function()
 			for line in lines do
 				if string.sub(line, 1, 1) ~= '#' then
@@ -2395,9 +2396,10 @@ transmission-daemon(1), transmission-remote(1).
 	end
 
 	function M:set_scrolloff(n)
-		for _, list_manager in ipairs({ self._torrents, self._trackers, self._peers, self._files }) do
-			list_manager:set_scrolloff(n)
-		end
+		self._torrents:set_scrolloff(n)
+		self._trackers:set_scrolloff(n)
+		self._peers:set_scrolloff(n)
+		self._files:set_scrolloff(n)
 	end
 
 	help('Quit client.')
