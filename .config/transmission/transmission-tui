@@ -805,6 +805,9 @@ local function create_ListManager()
 		for i = #t, 1, -1 do
 			table.remove(self._list, t[i])
 		end
+
+		invalidate_index_map(self)
+
 		self:set_cursor(self._cursor)
 	end
 
