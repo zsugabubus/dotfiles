@@ -34,7 +34,7 @@ compdef g=git
 alias git='noglob git'
 
 function gb() {
-	git switch $(git branch --format '%(refname:short)' | fzf)
+	git switch $(git branch --format '%(refname:short)' | fzr -r)
 }
 
 function mkcd md() {
@@ -265,7 +265,7 @@ function fkill() {
 
 	local line=$(
 		ps fx -o pid,tty,stat,time,pcpu,command |
-		fzf --tac --header-lines=1 --no-hscroll --bind space:jump
+		fzr --header-lines=1
 	)
 	[[ $line =~ '([0-9]+)' ]]
 	local pid=${match[1]}

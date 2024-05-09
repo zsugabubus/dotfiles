@@ -4,42 +4,50 @@ emulate -L zsh
 setopt extended_glob
 
 zmodload zsh/attr
+autoload -U zargs
 
-local files
-while :; do
+{
 	if [[ $LBUFFER =~ '\S$' ]]; then
 		local dir=${~${(zA)LBUFFER}[-1]}
 	else
 		local dir=
 	fi
 
-	files=( ${${(f)"$(
-		[[ -z $dir ]] || cd -q -- $dir
-		# exec 2>/dev/null does not work. Why?
-		rg --files -0 2>/dev/null |
-		xargs -0r ls -UbNd --color -- 2>/dev/null |
-		fizzy
-	)"}} ) && (( $#files )) || break
+	local files=(
+		${(ps/\0/)"$(
+			[[ -z $dir ]] || cd -q -- $dir &&
+			exec rg --files -0 2>/dev/null
+		)"}
+	)
+
+	local accepted=()
+
+	for i in ${${(f)"$(l -x1Udq --color -- $files | fzr -ir)"}}; do
+		accepted+=( "${files[$(( i + 1 ))]}" )
+	done
+
+	(( #accepted )) || break
 
 	if [[ ! zle || -z $BUFFER ]]; then
 		autoload -Uz open
-		open $files
-		break
-	else
-		if [[ -n $dir && ! $LBUFFER =~ /$ ]]; then
-			LBUFFER+='/'
-		elif [[ -z $dir && $LBUFFER =~ \\S$ ]]; then
-			LBUFFER+=' '
-		fi
-		LBUFFER+=${(q-@)files}
-		if [[ $#files == 1 && -d $dir/$files[1] ]]; then
-			LBUFFER+=/
-		else
-			LBUFFER+=' '
-			break
-		fi
+		open $accepted
+		return
 	fi
-done
 
-zle reset-prompt
-_zsh_autosuggest_clear
+	if [[ -n $dir && ! $LBUFFER =~ /$ ]]; then
+		LBUFFER+='/'
+	elif [[ -z $dir && $LBUFFER =~ \\S$ ]]; then
+		LBUFFER+=' '
+	fi
+
+	LBUFFER+=${(q-@)accepted}
+
+	if [[ $#accepted == 1 && -d $dir/$accepted[1] ]]; then
+		LBUFFER+=/
+	else
+		LBUFFER+=' '
+	fi
+} always {
+	zle reset-prompt
+	_zsh_autosuggest_clear
+}

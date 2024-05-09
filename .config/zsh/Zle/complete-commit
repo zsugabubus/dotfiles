@@ -6,7 +6,7 @@ setopt err_return pipe_fail extended_glob
 
 local line=$(
 	git log-formatted --all --graph --color=always |
-	fzf --ansi --layout=reverse --no-sort
+	fzr --no-sort
 )
 [[ $line =~ '([0-9a-f]{4,})' ]]
 local commit=${match[1]}
