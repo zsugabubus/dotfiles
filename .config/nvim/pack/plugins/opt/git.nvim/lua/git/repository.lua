@@ -291,8 +291,10 @@ function M.from_path(path)
 
 			local id = repo.git_dir .. '\0' .. (repo.work_tree or '')
 			local existing_repo = repo_by_id[id]
+
 			if existing_repo then
 				repo_by_path[path] = existing_repo
+				redraw_status()
 				return
 			end
 
