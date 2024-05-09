@@ -414,7 +414,7 @@ local function enter_program()
 	render(true)
 end
 
-local function fzf_playlist()
+local function fuzzy_playlist()
 	enter_shell()
 
 	local stdin = uv.new_pipe()
@@ -422,8 +422,8 @@ local function fzf_playlist()
 	local reply = ''
 
 	local process
-	process = uv.spawn('fzf', {
-		args = { '--read0', '--print0' },
+	process = uv.spawn('fzr', {
+		args = { '--read0', '--print-index', '--reverse' },
 		stdio = { stdin, stdout, 2 },
 	}, function(code, signal)
 		process:close()
@@ -432,14 +432,14 @@ local function fzf_playlist()
 		if code == 0 then
 			local index = tonumber(string.match(reply, '^%d+'))
 			if client then
-				client:request({ 'playlist-play-index', index - 1 })
+				client:request({ 'playlist-play-index', index })
 			end
 		end
 	end)
 
 	local buf = require('string.buffer').new()
 	for i, entry in ipairs(props.playlist) do
-		buf:put(tostring(i), '\t', entry.filename, '\0')
+		buf:put(entry.filename, '\0')
 	end
 	stdin:write(buf:tostring())
 	stdin:shutdown(function()
@@ -494,7 +494,7 @@ local function editor_playlist()
 end
 
 local_bindings = {
-	['/'] = fzf_playlist,
+	['/'] = fuzzy_playlist,
 	['Ctrl+w'] = editor_playlist,
 }
 
