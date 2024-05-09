@@ -12,8 +12,10 @@ class MyURLList(URLList):
 
 try:
     url = check_output(
-        ["fizzy", "-1"], input="\n".join(MyURLList.from_mail()).encode("utf-8")
+        ["fzr", "-1"], input="\n".join(MyURLList.from_mail()).encode("utf-8")
     )
+except CalledProcessError:
+    pass
 except KeyboardInterrupt:
     pass
 else:
