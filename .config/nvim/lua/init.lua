@@ -563,6 +563,10 @@ filetype('directory', function()
 	keymap(0, 'n', '<CR>', 'Vgf', SMAP_OPTS)
 end)
 
+filetype('cucumber', function()
+	cmd.Varign()
+end)
+
 -- vim.treesitter pulls in lot's of Lua code.
 autocmd('FileType', {
 	group = group,
@@ -686,6 +690,12 @@ user_command(
 	{ nargs = '*', range = '%' }
 )
 
+user_command(
+	'Csv',
+	[[set buftype=nowrite|silent keeppattern %s/\v("[^"]*"|[^",]*),/\1\t/g|Varign]],
+	{}
+)
+
 fmap('n', 'cd', function()
 	cmd.cd(vim.fn.expand('%:p' .. string.rep(':h', vim.v.count1)))
 end)
@@ -790,6 +800,10 @@ require('pack').setup({
 	{ 'textobjects.nvim' },
 	{ 'tmux.nvim' },
 	{ 'undowizard.nvim' },
+	{
+		'varign.nvim',
+		opts = {},
+	},
 	{ 'vim-bufgrep' },
 	{ 'vim-fizzy' },
 	{ 'vim-pastereindent' },
