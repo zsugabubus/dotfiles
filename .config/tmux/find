@@ -1,7 +1,7 @@
 #!/bin/dash -eu
 target=$(
 	tmux list-panes -a -F "$(printf '#{pane_id}\t#{session_name}:#{window_name}:#{window_flags}\t#{pane_title}')" |
-	fizzy -aj0 |
+	fzr |
 	cut -f1
 )
 test -n "$target"
