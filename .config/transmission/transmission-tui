@@ -2473,7 +2473,7 @@ transmission-daemon(1), transmission-remote(1).
 		local stdout = uv.new_pipe()
 		local reply = ''
 
-		self:spawn_shell('fzf', {
+		self:spawn_shell('fzr', {
 			args = { '--read0', '--print0' },
 			stdio = { stdin, stdout, 2 },
 		}, function(err)
