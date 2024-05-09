@@ -309,9 +309,6 @@ smap('n', 'gsh', ':setlocal spell spelllang=hu<CR>')
 map('n', '+', 'g+')
 map('n', '-', 'g-')
 
-map('n', '!', '<Cmd>FizzyBuffers<CR>')
-map('n', 'g/', '<Cmd>FizzyFiles<CR>')
-
 map('n', '<C-w>T', '<C-w>s<C-w>T')
 map('n', '<C-w>d', ':windo diffthis<CR>')
 
@@ -742,6 +739,13 @@ require('pack').setup({
 	{ 'editorconfig.lua' },
 	{ 'explorer.nvim' },
 	{
+		'fuzzy.nvim',
+		after = function()
+			map('n', '!', '<Cmd>Fuzzy buffers<CR>')
+			map('n', 'g/', '<Cmd>Fuzzy files<CR>')
+		end,
+	},
+	{
 		'git.nvim',
 		after = function()
 			map('n', 'sd', ':Gdiff<CR>')
@@ -805,7 +809,6 @@ require('pack').setup({
 		opts = {},
 	},
 	{ 'vim-bufgrep' },
-	{ 'vim-fizzy' },
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
 	{ 'vim-qf' },
