@@ -345,8 +345,9 @@ do
 		o:chdir('/build')
 		o:bind_if_symlink('target')
 
-		o:bind_user('.cargo', cargo_home)
-		o:ro_bind_user('.rustup', rustup_home)
+		o:bind_user('.cargo')
+		o:ro_bind_user('.rustup')
+		o:ro_bind_user('.kani')
 
 		o:copyenv('RUST_BACKTRACE')
 		o:copyenv('RUST_LOG')
