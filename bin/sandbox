@@ -191,9 +191,10 @@ do
 
 	local function setup_base(self)
 		self:setenv('PATH', '/usr/local/bin:/usr/bin')
-		self:setenv('TERM', os.getenv('TERM'))
-		self:setenv('LANG', os.getenv('LANG'))
-		self:setenv('TZ', os.getenv('TZ'))
+		self:copyenv('TERM')
+		self:copyenv('LANG')
+		self:copyenv('TZ')
+		self:copyenv('EDITOR')
 		self:ro_bind('/usr')
 		self:symlink('usr/bin', '/sbin')
 		self:symlink('usr/bin', '/bin')
