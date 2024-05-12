@@ -108,7 +108,6 @@
 	lineNumber = yes
 
 [include]
-	path = config.user
 	path = config.credential
 
 [init]
