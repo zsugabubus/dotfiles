@@ -12,6 +12,7 @@ local function c(c)
 end
 
 c('|')
+c('_')
 
 keymap('v', '<Plug>(surround)<CR>', '', {
 	callback = function()
