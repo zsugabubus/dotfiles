@@ -1,0 +1,2 @@
+#!/usr/bin/dash -eu
+python -m my.pass print "$1" | sed 's/^git\.\([a-z.]\+\):\(.*\)$/\1\n\2/;t;d' | xargs -L2 git config --local
