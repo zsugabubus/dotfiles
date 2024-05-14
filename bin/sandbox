@@ -351,6 +351,8 @@ do
 
 		o:copyenv('RUST_BACKTRACE')
 		o:copyenv('RUST_LOG')
+		o:copyenv('RUSTDOCFLAGS')
+		o:copyenv('RUSTFLAGS')
 
 		o:program(...)
 		o:exec()
