@@ -722,7 +722,7 @@ local function create_ListManager()
 
 		for wanted_index, wanted_item in pairs(checks) do
 			if self._list[wanted_index] ~= wanted_item then
-				invalidate_index_map()
+				invalidate_index_map(self)
 				break
 			end
 		end
