@@ -1697,6 +1697,8 @@ local function create_TransmissionTui()
 				u = M.disable_session_speed_limit,
 			},
 			m = M.show_move_torrents,
+			n = M.reannounce_torrent,
+			N = M.reannounce_all_torrents,
 			o = M.open_torrent_location,
 			p = M.stop_torrent,
 			P = M.stop_all_torrents,
@@ -2590,6 +2592,16 @@ transmission-daemon(1), transmission-remote(1).
 	help('Stop all torrents.')
 	function M:stop_all_torrents()
 		self:call_method_on_all_torrents('torrent-stop', 'stopped')
+	end
+
+	help('Reannounce torrent.')
+	function M:reannounce_torrent()
+		self:call_method_on_torrents('torrent-reannounce', 'reannounced')
+	end
+
+	help('Reannounce all torrents.')
+	function M:reannounce_all_torrents()
+		self:call_method_on_all_torrents('torrent-reannounce', 'reannounced')
 	end
 
 	function M:selected_torrents(fields)
