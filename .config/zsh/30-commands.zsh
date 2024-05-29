@@ -505,6 +505,7 @@ function mp() {
 }
 compdef mp=mpv_hack
 alias mp.='mp -- *(.)'
+alias mp..='mp -- ***(.)'
 alias mpm='() { eval mp "*(m-${1:-1}/)" }'
 compdef mpm=mpv_hack
 alias mpn='() { eval mp "*(.om[1,${1:-100}])" }'
