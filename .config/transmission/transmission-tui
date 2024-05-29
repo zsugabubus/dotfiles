@@ -591,9 +591,11 @@ local function create_ListRenderer(curs)
 		end
 	end
 
-	local function render_cells(win, data, columns, current, focused)
+	local function render_cells(win, data, columns, current, selected, focused)
 		if current and focused then
 			win:attr(curs.A_REVERSE + curs.A_BOLD, 0)
+		elseif selected and focused then
+			win:attr(curs.A_REVERSE, 0)
 		else
 			win:attr(curs.A_NORMAL, 0)
 		end
@@ -621,7 +623,7 @@ local function create_ListRenderer(curs)
 		}, cls)
 	end
 
-	function M:render(win, list_manager, columns, focused)
+	function M:render(win, list_manager, columns, all_selected, focused)
 		local lines = win:lines()
 		list_manager:set_height(lines - 1)
 
@@ -636,9 +638,14 @@ local function create_ListRenderer(curs)
 		win:clrtoeol()
 
 		local y = 1
+		local cursor = list_manager:cursor()
 
 		for i = list_manager:top(), list_manager:len() do
-			y = self.render_item(win, y, list_manager, i, columns, focused)
+			local data = list_manager:get(i)
+			local current = cursor == i
+
+			y = self.render_item(win, y, data, columns, current, all_selected, focused)
+
 			if y >= lines then
 				break
 			end
@@ -647,16 +654,14 @@ local function create_ListRenderer(curs)
 		render_filler(win, y, lines)
 	end
 
-	function M.render_item(win, y, list_manager, index, columns, focused)
-		local data = list_manager:get(index)
-		local current = list_manager:cursor() == index
-		M.render_row(win, y, data, columns, current, focused)
+	function M.render_item(win, y, data, columns, current, selected, focused)
+		M.render_row(win, y, data, columns, current, selected, focused)
 		return y + 1
 	end
 
-	function M.render_row(win, y, data, columns, current, focused)
+	function M.render_row(win, y, data, columns, current, selected, focused)
 		win:cursor(y, 0)
-		render_cells(win, data, columns, current, focused)
+		render_cells(win, data, columns, current, selected, focused)
 	end
 
 	return M
@@ -2117,13 +2122,6 @@ transmission-daemon(1), transmission-remote(1).
 			win:putf(' %d paused', paused)
 		end
 
-		if self._torrents_all_selected then
-			win:put(' ')
-			win:attr(curs.A_BOLD + curs.A_REVERSE, 0)
-			win:put(' ALL SELECTED ')
-			win:attr(curs.A_NORMAL, 0)
-		end
-
 		win:put(' | ')
 		render_updown_block(
 			win,
@@ -2156,25 +2154,39 @@ transmission-daemon(1), transmission-remote(1).
 		win:refresh()
 	end
 
-	local function render_list_win(win, renderer, list_manager, columns, focused)
-		renderer:render(win, list_manager, columns, focused)
+	local function render_list_win(win, renderer, list_manager, columns, all_selected, focused)
+		renderer:render(win, list_manager, columns, all_selected, focused)
 		win:refresh()
 	end
 
 	local function render_torrents(self, win, focused)
-		render_list_win(win, self._torrents_renderer, self._torrents, self._torrent_columns, focused)
+		render_list_win(
+			win,
+			self._torrents_renderer,
+			self._torrents,
+			self._torrent_columns,
+			self._torrents_all_selected,
+			focused
+		)
 	end
 
 	local function render_trackers(self, win, focused)
-		render_list_win(win, self._trackers_renderer, self._trackers, self._tracker_columns, focused)
+		render_list_win(
+			win,
+			self._trackers_renderer,
+			self._trackers,
+			self._tracker_columns,
+			false,
+			focused
+		)
 	end
 
 	local function render_peers(self, win, focused)
-		render_list_win(win, self._peers_renderer, self._peers, self._peer_columns, focused)
+		render_list_win(win, self._peers_renderer, self._peers, self._peer_columns, false, focused)
 	end
 
 	local function render_files(self, win, focused)
-		render_list_win(win, self._files_renderer, self._files, self._file_columns, focused)
+		render_list_win(win, self._files_renderer, self._files, self._file_columns, false, focused)
 	end
 
 	local function render_main(self)
