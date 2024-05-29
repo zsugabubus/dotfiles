@@ -459,16 +459,16 @@ local function editor_playlist()
 	enter_shell()
 
 	local filename = os.tmpname()
-	local f = io.open(filename, 'w')
+	local f = assert(io.open(filename, 'w'))
 	local cwd = props['working-directory'] .. '/'
 	for _, entry in ipairs(props.playlist) do
 		local path = entry.filename
 		if not string.find(path, '://') and string.sub(path, 1, 1) ~= '/' then
 			path = cwd .. path
 		end
-		f:write(path, '\n')
+		assert(f:write(path, '\n'))
 	end
-	f:close()
+	assert(f:close())
 
 	local function cleanup()
 		os.remove(filename)
