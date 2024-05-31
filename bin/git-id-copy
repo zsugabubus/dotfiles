@@ -3,5 +3,5 @@ eval "$(
 	git log --pretty="git config --local user.name '%an' && git config --local user.email '%ae'" |
 	sort |
 	uniq |
-	fizzy -l10
+	fzr
 )"
