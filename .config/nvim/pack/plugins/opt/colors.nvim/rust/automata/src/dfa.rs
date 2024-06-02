@@ -59,7 +59,7 @@ impl<A> Dfa<A>
 where
     A: Accept,
 {
-    /// Constructs a new DFA.
+    /// Constructs an empty DFA.
     pub fn new() -> Self {
         Self {
             states: Vec::new(),
@@ -76,45 +76,61 @@ where
         accept_strategy: F,
     ) -> Result<(Self, StateId)> {
         let mut dfa = Self::new();
-        let mut to_be_mapped: Vec<(StateId, BTreeSet<nfa::StateId>)> = Vec::new();
-        let mut mapped: HashMap<BTreeSet<nfa::StateId>, StateId> = HashMap::new();
+        let start = dfa.insert_nfa(nfa, start, accept_strategy)?;
+        Ok((dfa, start))
+    }
+
+    /// Inserts NFA.
+    ///
+    /// Returns start state.
+    pub fn insert_nfa<F: Fn(A, A) -> Option<A>>(
+        &mut self,
+        nfa: &Nfa<A>,
+        start: nfa::StateId,
+        accept_strategy: F,
+    ) -> Result<StateId> {
+        type SuperStates = Vec<nfa::StateId>;
+
+        let mut state_map = HashMap::<SuperStates, StateId>::new();
+        let mut queue = Vec::<(StateId, SuperStates)>::new();
+
+        let mut super_states = HashSet::<nfa::StateId>::new();
+        let mut super_transitions = HashMap::new();
 
         // TODO: Use function.
-        let dfa_start_state = dfa.new_state();
+        let dfa_start = self.new_state();
         {
-            let tos = {
-                let mut x = BTreeSet::new();
-                x.insert(start);
-                x
-            };
-            mapped.insert(tos.clone(), dfa_start_state);
-            to_be_mapped.push((dfa_start_state, tos));
+            let tos = vec![start];
+            state_map.insert(tos.clone(), dfa_start);
+            queue.push((dfa_start, tos));
         }
 
-        while let Some((mapped_state, mut to_be_visited_states)) = to_be_mapped.pop() {
-            let mut states_to_merge: HashSet<nfa::StateId> = HashSet::new();
-            assert!(!to_be_visited_states.is_empty());
-            while !to_be_visited_states.is_empty() {
-                for state_id in take(&mut to_be_visited_states) {
-                    if !states_to_merge.insert(state_id) {
-                        continue;
-                    }
-                    if let Some(found) = nfa.epsilon_transitions.get(&state_id) {
-                        to_be_visited_states.extend(found);
-                    }
+        while let Some((dfa_state, mut nfa_states)) = queue.pop() {
+            debug_assert!(!nfa_states.is_empty());
+            debug_assert!(super_states.is_empty());
+
+            while let Some(i) = nfa_states.pop() {
+                if !super_states.insert(i) {
+                    continue;
+                }
+
+                if let Some(epsilons) = nfa.epsilon_transitions.get(&i) {
+                    nfa_states.extend(epsilons);
                 }
             }
 
-            for merge_state in states_to_merge.iter() {
-                if let Some(with) = nfa.accepts.get(merge_state) {
-                    dfa.set_accept_with(mapped_state, (*with).clone(), &accept_strategy)?;
+            for i in &super_states {
+                if let Some(value) = nfa.accepts.get(i).cloned() {
+                    self.set_accept_with(dfa_state, value, &accept_strategy)?;
                 }
             }
 
-            let mut super_transitions = HashMap::new();
-            for merge_state in states_to_merge {
-                for (term, tos) in &nfa.states[merge_state.as_usize()].transitions {
+            debug_assert!(super_transitions.is_empty());
+
+            for i in super_states.drain() {
+                for (term, tos) in &nfa.states[i.as_usize()].transitions {
                     debug_assert!(!tos.is_empty());
+
                     super_transitions
                         .entry(*term)
                         .or_insert_with(BTreeSet::new)
@@ -122,27 +138,222 @@ where
                 }
             }
 
-            for (term, tos) in super_transitions {
+            for (term, tos) in super_transitions.drain() {
                 debug_assert!(!tos.is_empty());
-                if let Some(visited_next_state) = mapped.get(&tos) {
-                    dfa.insert_transition(mapped_state, term, *visited_next_state)?;
+
+                let tos = tos.into_iter().collect::<Vec<_>>();
+
+                if let Some(existing) = state_map.get(&tos) {
+                    self.insert_transition(dfa_state, term, *existing)?;
                 } else {
-                    let next_state = dfa.new_state();
-                    mapped.insert(
-                        {
-                            let mut x = BTreeSet::new();
-                            x.extend(tos.iter());
-                            x
-                        },
-                        next_state,
-                    );
-                    dfa.insert_transition(mapped_state, term, next_state)?;
-                    to_be_mapped.push((next_state, tos));
+                    let new = self.new_state();
+                    state_map.insert(tos.clone(), new);
+                    self.insert_transition(dfa_state, term, new)?;
+                    queue.push((new, tos));
                 }
             }
         }
 
-        Ok((dfa, dfa_start_state))
+        Ok(dfa_start)
+    }
+
+    /// Minimize DFA.
+    ///
+    /// - Evict states not reachable from `starts`.
+    /// - Evict states that do not lead to accept states.
+    /// - Evict duplicated states.
+    pub fn minimize(&mut self, starts: &mut [StateId]) {
+        const UNREACHABLE: u32 = u32::MAX;
+
+        let mut queue = Vec::<StateId>::with_capacity(self.accepts.len());
+
+        let reachable = {
+            let mut reachable = vec![false; self.states.len()].into_boxed_slice();
+
+            queue.extend(starts.iter());
+
+            while let Some(i) = queue.pop() {
+                if !replace(&mut reachable[i.as_usize()], true) {
+                    queue.extend(self.states[i.as_usize()].transitions.values());
+                }
+            }
+
+            reachable
+        };
+
+        let backward = {
+            let mut backward = vec![Vec::new(); self.states.len()].into_boxed_slice();
+
+            for (from, state) in self.states.iter().enumerate() {
+                for to in state.transitions.values() {
+                    // By using `Vec` a state can be repeated but this overhead in further
+                    // processing is neglectable compared to using `HashSet`.
+                    backward[to.as_usize()].push(StateId::from(from));
+                }
+            }
+
+            backward
+        };
+
+        let mut depths = {
+            let mut depths = vec![UNREACHABLE; self.states.len()].into_boxed_slice();
+
+            for i in self.accepts.keys().copied() {
+                if reachable[i.as_usize()] {
+                    queue.push(i);
+                    depths[i.as_usize()] = 0;
+                }
+            }
+
+            // FIXME: Maybe use `VecDeque`.
+            while let Some(i) = queue.pop() {
+                let depth = depths[i.as_usize()];
+                debug_assert!(depth != UNREACHABLE);
+                let depth = depth + 1;
+
+                for from in &backward[i.as_usize()] {
+                    let cur = &mut depths[from.as_usize()];
+                    if *cur > depth && reachable[from.as_usize()] {
+                        *cur = depth;
+                        queue.push(*from);
+                    }
+                }
+            }
+
+            depths
+        };
+
+        for (i, depth) in depths.iter().enumerate() {
+            if *depth == UNREACHABLE {
+                for from in &backward[i] {
+                    if depths[from.as_usize()] == UNREACHABLE {
+                        continue;
+                    }
+
+                    self.states[from.as_usize()]
+                        .transitions
+                        .retain(|_, to| to.as_usize() != i);
+                }
+            }
+        }
+
+        let _ = backward;
+
+        let mut eq = HashSet::new();
+        let mut groups = HashMap::<_, Vec<StateId>>::new();
+
+        for i in 0..self.states.len() {
+            if depths[i] == UNREACHABLE {
+                continue;
+            }
+
+            let shape = self.states[i]
+                .transitions
+                .keys()
+                .collect::<Vec<_>>()
+                .into_boxed_slice();
+
+            // Apart from shape, consider depth factor to produce more unique groups.
+            groups
+                .entry((depths[i], shape))
+                .or_insert_with(Vec::new)
+                .push(StateId::from(i));
+        }
+
+        let mut queue = Vec::new();
+        let mut maybe_eq = HashSet::new();
+
+        for mut group in groups.into_values().filter(|group| group.len() > 1) {
+            'a: while let Some(a) = group.pop() {
+                'b: for b in group.iter().copied() {
+                    queue.clear();
+                    maybe_eq.clear();
+
+                    debug_assert!(a > b);
+
+                    let ab = (a, b);
+
+                    if eq.contains(&ab) {
+                        continue 'a;
+                    }
+
+                    maybe_eq.insert(ab);
+                    queue.push(ab);
+
+                    while let Some((a, b)) = queue.pop() {
+                        if self.accepts.get(&a) != self.accepts.get(&b) {
+                            continue 'b;
+                        }
+
+                        let a = &self.states[a.as_usize()].transitions;
+                        let b = &self.states[b.as_usize()].transitions;
+
+                        if a.len() != b.len() {
+                            continue 'b;
+                        }
+
+                        for (term, a) in a {
+                            let ab = match (*a, b.get(term).copied()) {
+                                (_, None) => continue 'b,
+                                (a, Some(b)) if a == b => continue,
+                                (a, Some(b)) if a > b => (a, b),
+                                (a, Some(b)) => (b, a),
+                            };
+
+                            if !eq.contains(&ab) && maybe_eq.insert(ab) {
+                                queue.push(ab);
+                            }
+                        }
+                    }
+
+                    eq.extend(&maybe_eq);
+                    continue 'a;
+                }
+            }
+        }
+
+        let mut state_map = vec![0; self.states.len()].into_boxed_slice();
+
+        for (a, _) in &eq {
+            depths[a.as_usize()] = UNREACHABLE;
+        }
+
+        let mut n = 0;
+
+        for i in 0..self.states.len() {
+            if depths[i] != UNREACHABLE {
+                state_map[i] = n;
+                n += 1;
+            }
+        }
+
+        for (a, b) in eq {
+            state_map[a.as_usize()] = state_map[b.as_usize()];
+        }
+
+        for i in (0..self.states.len()).rev() {
+            if depths[i] == UNREACHABLE {
+                self.states.remove(i);
+                self.accepts.remove(&StateId::from(i));
+            }
+        }
+
+        debug_assert_eq!(self.states.len(), n);
+
+        for state in self.states.iter_mut() {
+            for to in state.transitions.values_mut() {
+                *to = StateId::from(state_map[to.as_usize()]);
+            }
+        }
+
+        self.accepts = take(&mut self.accepts)
+            .into_iter()
+            .map(|(k, v)| (StateId::from(state_map[k.as_usize()]), v))
+            .collect();
+
+        for start in starts.iter_mut() {
+            *start = StateId::from(state_map[start.as_usize()]);
+        }
     }
 
     /// Creates a new state.
@@ -194,13 +405,13 @@ where
     }
 
     /// Turns alphabet into "equivalence classes of the alphabet".
-    fn compress_alphabet(&self, alphabet_len: usize) -> Result<Box<[usize]>> {
-        struct CompressedAlphabetBuilder {
+    fn minimize_alphabet(&self, alphabet_len: usize) -> Result<Box<[usize]>> {
+        struct MinimalAlphabetBuilder {
             classes: Vec<HashSet<Terminal>>,
             terminal_class: Box<[usize]>,
         }
 
-        impl CompressedAlphabetBuilder {
+        impl MinimalAlphabetBuilder {
             pub fn new(len: usize) -> Self {
                 Self {
                     classes: vec![{
@@ -241,7 +452,7 @@ where
             }
         }
 
-        let mut alphabet = CompressedAlphabetBuilder::new(alphabet_len);
+        let mut alphabet = MinimalAlphabetBuilder::new(alphabet_len);
         let mut classes = HashMap::new();
 
         for state in self.states.iter() {
@@ -266,12 +477,12 @@ where
 
         writeln!(writer)?;
         writeln!(writer, "\tnode [shape=doublecircle, width=1.5, height=1.5]")?;
-        for (state_id, value) in self.accepts.iter() {
+        for (i, value) in self.accepts.iter() {
             writeln!(
                 writer,
                 "\t{} [label={:?}]",
-                state_id.0,
-                format!("{}\n{:?}", state_id.0, value)
+                i.as_usize(),
+                format!("{}\n{:?}", i.as_usize(), value)
             )?;
         }
         writeln!(writer)?;
@@ -280,12 +491,12 @@ where
             writer,
             "\tnode [shape=circle, width=.75, height=.75, fixedsize=true]"
         )?;
-        for (from_id, from) in self.states.iter().enumerate() {
-            for (term, to) in from.transitions.iter() {
+        for (from, state) in self.states.iter().enumerate() {
+            for (term, to) in state.transitions.iter() {
                 writeln!(
                     writer,
                     "\t{} -> {} [label={:?}]",
-                    from_id,
+                    from,
                     to.as_usize(),
                     (*term as u8 as char).to_string()
                 )?;
@@ -315,10 +526,9 @@ where
     /// When `max` is given, it can be used to restrict maximum search distance.
     ///
     /// If search ends without reaching an accepting state, `None` is returned.
-    // TODO: Dead state elimination should happen in a similar way.
     pub fn shortest_word_len(&self, start: StateId, max_len: Option<usize>) -> Option<usize> {
-        for (depth, state_id) in self.breadth_first_states(start, max_len) {
-            if self.accepts.contains_key(&state_id) {
+        for (depth, i) in self.breadth_first_states(start, max_len) {
+            if self.accepts.contains_key(&i) {
                 return Some(depth);
             }
         }
@@ -327,8 +537,8 @@ where
 
     pub fn collect_terminals(&self, start: StateId, max_depth: Option<usize>) -> HashSet<Terminal> {
         let mut terminals = HashSet::new();
-        for (_, state_id) in self.breadth_first_states(start, max_depth) {
-            terminals.extend(self.states[state_id.as_usize()].transitions.keys());
+        for (_, i) in self.breadth_first_states(start, max_depth) {
+            terminals.extend(self.states[i.as_usize()].transitions.keys());
         }
         terminals
     }
@@ -341,7 +551,7 @@ where
         alphabet_len: usize,
         start: StateId,
     ) -> std::io::Result<()> {
-        let alphabet = self.compress_alphabet(alphabet_len).unwrap();
+        let alphabet = self.minimize_alphabet(alphabet_len).unwrap();
 
         let alphabet_len = alphabet.iter().max().unwrap() + 1;
 
@@ -366,7 +576,7 @@ where
         let state_map = state_map;
 
         // Assume we can use pre-multiplied states.
-        assert!(state_map.len() * alphabet_len < (1 << 16));
+        assert!(state_map.len() * alphabet_len <= u16::MAX.into());
 
         let mut gtransitions = Vec::new();
         gtransitions.resize(
@@ -374,10 +584,10 @@ where
             state_map[start.as_usize()] * alphabet_len,
         );
 
-        for (from_id, from) in self.states.iter().enumerate() {
-            let mapped_from_id = state_map[from_id];
-            let base = mapped_from_id * alphabet_len;
-            for (term, to) in from.transitions.iter() {
+        for (from, state) in self.states.iter().enumerate() {
+            let from = state_map[from];
+            let base = from * alphabet_len;
+            for (term, to) in &state.transitions {
                 let to = state_map[to.as_usize()];
                 gtransitions[base + alphabet[*term]] = to * alphabet_len;
             }
@@ -527,7 +737,7 @@ where
     dfa: &'a Dfa<A>,
     current_level: Vec<StateId>,
     next_level: Vec<StateId>,
-    has_visited: Box<[bool]>,
+    visited: Box<[bool]>,
     depth: usize,
     max_depth: Option<usize>,
     latest_state: Option<StateId>,
@@ -542,7 +752,7 @@ where
             dfa,
             current_level: vec![start],
             next_level: Vec::new(),
-            has_visited: vec![false; dfa.states.len()].into_boxed_slice(),
+            visited: vec![false; dfa.states.len()].into_boxed_slice(),
             depth: 0,
             max_depth,
             latest_state: None,
@@ -559,25 +769,21 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             // Save some cycles and add next states only if we are still running.
-            if let Some(state_id) = self.latest_state.take() {
-                self.next_level.extend(
-                    self.dfa.states[state_id.as_usize()]
-                        .transitions
-                        .values()
-                        .copied(),
-                );
+            if let Some(i) = self.latest_state.take() {
+                self.next_level
+                    .extend(self.dfa.states[i.as_usize()].transitions.values().copied());
             }
 
-            while let Some(state_id) = self.current_level.pop() {
-                if replace(&mut self.has_visited[state_id.as_usize()], true) {
+            while let Some(i) = self.current_level.pop() {
+                if replace(&mut self.visited[i.as_usize()], true) {
                     continue;
                 }
 
                 if self.max_depth.map_or(true, |x| self.depth < x) {
-                    self.latest_state = Some(state_id)
+                    self.latest_state = Some(i)
                 }
 
-                return Some((self.depth, state_id));
+                return Some((self.depth, i));
             }
 
             self.depth += 1;

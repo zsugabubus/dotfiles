@@ -53,60 +53,60 @@ where
     /// Reverse of [`Dfa::from_nfa`].
     pub fn from_dfa(dfa: &Dfa<A>) -> Self {
         let mut nfa = Self::new();
-        nfa.extend_from_dfa(dfa);
+        nfa.insert_dfa(dfa);
         nfa
     }
 
-    fn extend_from_dfa(&mut self, src: &Dfa<A>) {
-        let base = self.new_state_many(src.states.len());
+    pub fn insert_dfa(&mut self, dfa: &Dfa<A>) {
+        let base = self.new_state_many(dfa.states.len());
 
-        for (from_id, from) in src.states.iter().enumerate() {
-            for (term, to) in from.transitions.iter() {
+        for (from, state) in dfa.states.iter().enumerate() {
+            for (term, to) in state.transitions.iter() {
                 self.insert_transition(
-                    StateId::from(from_id + base),
+                    StateId::from(from + base),
                     *term,
                     StateId::from(to.as_usize() + base),
                 );
             }
         }
 
-        for (state_id, value) in src.accepts.iter() {
-            self.set_accept(StateId::from(state_id.as_usize() + base), value.clone());
+        for (i, value) in dfa.accepts.iter() {
+            self.set_accept(StateId::from(i.as_usize() + base), value.clone());
         }
     }
 
     pub fn rev(&self) -> Self {
         let mut nfa = Self::new();
-        nfa.extend_from_rev_nfa(self);
+        nfa.insert_rev_nfa(self);
         nfa
     }
 
-    fn extend_from_rev_nfa(&mut self, src: &Self) {
-        let base = self.new_state_many(src.states.len());
+    fn insert_rev_nfa(&mut self, other: &Self) {
+        let base = self.new_state_many(other.states.len());
 
-        for (from_id, from) in src.states.iter().enumerate() {
-            for (term, tos) in from.transitions.iter() {
+        for (from, state) in other.states.iter().enumerate() {
+            for (term, tos) in state.transitions.iter() {
                 for to in tos {
                     self.insert_transition(
                         StateId::from(to.as_usize() + base),
                         *term,
-                        StateId::from(from_id + base),
+                        StateId::from(from + base),
                     );
                 }
             }
         }
 
-        for (from_id, tos) in src.epsilon_transitions.iter() {
+        for (from, tos) in other.epsilon_transitions.iter() {
             for to in tos {
                 self.insert_epsilon_transition(
                     StateId::from(to.as_usize() + base),
-                    StateId::from(from_id.as_usize() + base),
+                    StateId::from(from.as_usize() + base),
                 );
             }
         }
 
-        for (state_id, value) in src.accepts.iter() {
-            self.set_accept(StateId::from(state_id.as_usize() + base), value.clone());
+        for (i, value) in other.accepts.iter() {
+            self.set_accept(StateId::from(i.as_usize() + base), value.clone());
         }
     }
 
@@ -168,12 +168,12 @@ where
 
         writeln!(writer)?;
         writeln!(writer, "\tnode [shape=doublecircle, width=1.5, height=1.5]")?;
-        for (state_id, value) in self.accepts.iter() {
+        for (i, value) in self.accepts.iter() {
             writeln!(
                 writer,
                 "\t{} [label={:?}]",
-                state_id.0,
-                format!("{}\n{:?}", state_id.0, value)
+                i.as_usize(),
+                format!("{}\n{:?}", i.as_usize(), value)
             )?;
         }
         writeln!(writer)?;
@@ -182,21 +182,21 @@ where
             writer,
             "\tnode [shape=circle, width=.75, height=.75, fixedsize=true]"
         )?;
-        for (from_id, from) in self.states.iter().enumerate() {
-            for (term, tos) in from.transitions.iter() {
+        for (from, state) in self.states.iter().enumerate() {
+            for (term, tos) in state.transitions.iter() {
                 for to in tos {
                     writeln!(
                         writer,
                         "\t{} -> {} [label={:?}]",
-                        from_id,
-                        to.0,
+                        from,
+                        to.as_usize(),
                         (*term as u8 as char).to_string()
                     )?;
                 }
             }
-            if let Some(eps_to) = self.epsilon_transitions.get(&StateId::from(from_id)) {
-                for to in eps_to {
-                    writeln!(writer, "\t{} -> {} [label={:?}]", from_id, to.0, "ε")?;
+            if let Some(tos) = self.epsilon_transitions.get(&StateId::from(from)) {
+                for to in tos {
+                    writeln!(writer, "\t{} -> {} [label={:?}]", from, to.0, "ε")?;
                 }
             }
         }

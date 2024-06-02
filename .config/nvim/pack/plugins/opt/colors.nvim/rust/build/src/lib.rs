@@ -93,10 +93,6 @@ fn generate(writer: impl Write) {
         re.set_accept(state, action);
     }
 
-    // let _ = re;
-    // let dot = BufWriter::new(File::create("../../target/a.dot").unwrap());
-    // nfa.write_dot(dot).unwrap();
-
     /*
     if false {
         let dot = BufWriter::new(File::create("../../target/a.dot").unwrap());
@@ -122,7 +118,15 @@ fn generate(writer: impl Write) {
     }
     */
 
-    let (dfa, start) = Dfa::from_nfa(&nfa, start, |_, _| None).unwrap();
+    let (mut dfa, start) = Dfa::from_nfa(&nfa, start, |_, _| None).unwrap();
+
+    let mut starts = [start];
+    dfa.minimize(&mut starts);
+    let [start] = starts;
+
+    // let dot = BufWriter::new(File::create("target/a.dot").unwrap());
+    // dfa.write_dot(dot).unwrap();
+
     dfa.write_config(writer, "MyDfa", 256, start).unwrap();
 
     // println!("{:?}", dfa.collect_terminals(start, Some(3)).len());
