@@ -30,4 +30,3 @@ build = { path = "build" }
 [profile.release]
 strip = true
 lto = true
-debug = true
