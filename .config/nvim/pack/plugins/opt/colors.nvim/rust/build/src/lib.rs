@@ -42,11 +42,11 @@ fn generate(writer: impl Write) {
     let mut nfa = Nfa::new();
     let start = nfa.new_state();
 
-    let mut re = Regex::new(&mut nfa, start);
+    let mut re = Regex::new(&mut nfa);
     let flags = {
-        let mut x = Flags::new();
-        x.caseless(true);
-        x
+        let mut flags = Flags::new();
+        flags.caseless(true);
+        flags
     };
 
     let parse_color = |s: &str| {
@@ -66,7 +66,7 @@ fn generate(writer: impl Write) {
             let [name, hex] = &line.split(',').collect::<Vec<_>>().into_boxed_slice()[..] else {
                 panic!();
             };
-            let state = re.insert_literal(name, &flags);
+            let state = re.insert_literal(start, name, &flags);
             re.set_accept(state, Action::Named(parse_color(hex)));
         }
     }
@@ -89,7 +89,7 @@ fn generate(writer: impl Write) {
         ("0x[0-9a-f]{3}", Action::XXrgb),
         ("0x[0-9a-f]{6}", Action::XXrrggbb),
     ] {
-        let state = re.insert_pattern(name, &flags).unwrap();
+        let state = re.insert_pattern(start, name, &flags).unwrap();
         re.set_accept(state, action);
     }
 

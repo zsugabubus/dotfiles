@@ -1,22 +1,22 @@
 use crate::automaton::*;
 use crate::nfa::{Nfa, StateId};
-use std::ops::Range;
+use std::ops::{Deref, DerefMut, Range};
 
 /// A high-level [NFA][`Nfa`] builder.
 ///
 /// # Examples
 ///
 /// ```
-/// # use automata::{nfa::Nfa, regex::{Regex, Flags, ParseError}};
+/// # use automata::{nfa::Nfa, regex::*};
 /// let mut nfa = Nfa::new();
 /// let start = nfa.new_state();
 ///
-/// let mut re = Regex::new(&mut nfa, start);
+/// let mut re = Regex::new(&mut nfa);
 ///
-/// let state = re.insert_pattern("#[0-9a-f]{6}", &Flags::new().caseless(true))?;
+/// let state = re.insert_pattern(start, "#[0-9a-f]{6}", &Flags::new().caseless(true))?;
 /// re.set_accept(state, "A color");
 ///
-/// let state = re.insert_literal("Hello World", &Flags::new());
+/// let state = re.insert_literal(start, "Hello World", &Flags::new());
 /// re.set_accept(state, "A colorful world");
 ///
 /// # Ok::<(), ParseError>(())
@@ -27,31 +27,36 @@ where
     A: Accept,
 {
     nfa: &'a mut Nfa<A>,
-    start: StateId,
 }
 
-impl<'a, A> Regex<'a, A>
-where
-    A: Accept,
-{
+impl<'a, A: Accept> Regex<'a, A> {
     /// Constructs a new `Regex`.
-    pub fn new(nfa: &'a mut Nfa<A>, start: StateId) -> Self {
-        Self { nfa, start }
+    pub fn new(nfa: &'a mut Nfa<A>) -> Self {
+        Self { nfa }
     }
 
-    /// Creates new transitions from pattern.
-    pub fn insert_pattern(&mut self, pattern: &str, flags: &Flags) -> Result<StateId, ParseError> {
-        Ok(self.insert_node(self.start, &parse(pattern)?, flags))
+    /// Inserts regex.
+    ///
+    /// Returns end state.
+    pub fn insert_pattern(
+        &mut self,
+        start: StateId,
+        pattern: &str,
+        flags: &Flags,
+    ) -> Result<StateId, ParseError> {
+        Ok(self.insert_node(start, &parse(pattern)?, flags))
     }
 
-    /// Creates new transitions from literal.
-    pub fn insert_literal<T: AsRef<[u8]>>(&mut self, literal: T, flags: &Flags) -> StateId {
-        self.insert_node(self.start, &Node::ByteSeq(literal.as_ref()), flags)
-    }
-
-    /// Sets accept value of a state.
-    pub fn set_accept(&mut self, state: StateId, value: A) {
-        self.nfa.set_accept(state, value);
+    /// Inserts literal.
+    ///
+    /// Returns end state.
+    pub fn insert_literal<T: AsRef<[u8]>>(
+        &mut self,
+        start: StateId,
+        literal: T,
+        flags: &Flags,
+    ) -> StateId {
+        self.insert_node(start, &Node::ByteSeq(literal.as_ref()), flags)
     }
 
     fn insert_node(&mut self, start: StateId, node: &Node, flags: &Flags) -> StateId {
@@ -86,10 +91,6 @@ where
         }
     }
 
-    fn new_state(&mut self) -> StateId {
-        self.nfa.new_state()
-    }
-
     fn insert_transition(&mut self, from: StateId, terminal: u8, to: StateId, flags: &Flags) {
         if flags.caseless && terminal.is_ascii_alphabetic() {
             self.nfa
@@ -99,6 +100,20 @@ where
         } else {
             self.nfa.insert_transition(from, terminal, to);
         }
+    }
+}
+
+impl<'a, A: Accept> Deref for Regex<'a, A> {
+    type Target = Nfa<A>;
+
+    fn deref(&self) -> &Self::Target {
+        self.nfa
+    }
+}
+
+impl<'a, A: Accept> DerefMut for Regex<'a, A> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.nfa
     }
 }
 
