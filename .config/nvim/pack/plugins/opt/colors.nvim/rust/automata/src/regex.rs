@@ -73,7 +73,7 @@ impl<'a, A: Accept> Regex<'a, A> {
             }),
             Node::ByteClass(ranges) => {
                 let end = self.new_state();
-                for range in ranges {
+                for range in ranges.iter() {
                     for x in range.clone() {
                         self.insert_transition(start, x, end, flags);
                     }
@@ -148,7 +148,7 @@ impl Default for Flags {
 enum Node<'a> {
     Byte(u8),
     ByteSeq(&'a [u8]),
-    ByteClass(Vec<Range<u8>>),
+    ByteClass(Box<[Range<u8>]>),
     Seq(Box<Node<'a>>, Box<Node<'a>>),
     Repeat(Box<Node<'a>>, u64),
     #[allow(dead_code)]
@@ -206,7 +206,7 @@ fn parse(input: &str) -> Result<Node<'static>, ParseError> {
 
         loop {
             let low = match peek(input, pos) {
-                Some(b']') => return Ok((pos + 1, Node::ByteClass(v))),
+                Some(b']') => return Ok((pos + 1, Node::ByteClass(v.into_boxed_slice()))),
                 Some(x) => {
                     pos += 1;
                     x
