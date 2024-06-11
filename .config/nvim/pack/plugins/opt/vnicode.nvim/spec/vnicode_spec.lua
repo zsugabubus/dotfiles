@@ -8,6 +8,8 @@ local vim = create_vim({
 		vim:lua(function()
 			require('vnicode').setup()
 		end)
+		vim.keymap.set('', 'ga', '<Plug>(vnicode-unicode)')
+		vim.keymap.set('', 'g8', '<Plug>(vnicode-utf8)')
 	end,
 })
 
