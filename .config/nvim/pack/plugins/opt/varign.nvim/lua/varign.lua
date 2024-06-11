@@ -81,12 +81,7 @@ local function setup(opts)
 
 		local function is_buffer_enabled(buf)
 			local s = api.nvim_buf_get_lines(buf, 0, 1, false)[1]
-
-			if string.find(s, '^[^\t]+\t[^\t]+\t[^\t]+') then
-				return true
-			end
-
-			return false
+			return string.find(s, '^[^\t]+\t[^\t]+\t[^\t]+')
 		end
 
 		api.nvim_create_autocmd('BufReadPost', {
