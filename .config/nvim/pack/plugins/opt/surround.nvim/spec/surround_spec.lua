@@ -32,7 +32,7 @@ describe('text', function()
 		end)
 	end
 
-	describe('singe-byte', function()
+	describe('single-byte', function()
 		describe('empty', function()
 			case('<>', "vs'")
 		end)

@@ -5,6 +5,7 @@ local cmd = vim.cmd
 local M = {}
 
 local ns = api.nvim_create_namespace('surround')
+local virtcol2col_returns_start = fn.has('nvim-0.10') == 1
 
 local function get_visual_range(win)
 	local start_row, start_col = unpack(api.nvim_win_get_cursor(win))
@@ -20,7 +21,16 @@ local function get_visual_range(win)
 	end
 
 	-- cursor() returns start of the character. We need the end column.
-	end_col = fn.virtcol2col(win, end_row, fn.virtcol(end_mark))
+	if virtcol2col_returns_start then
+		local end_vcol = fn.virtcol(end_mark)
+		if end_vcol + 1 >= fn.virtcol('$') then
+			end_col = #fn.getline(end_mark)
+		else
+			end_col = fn.virtcol2col(win, end_row, end_vcol + 1) - 1
+		end
+	else
+		end_col = fn.virtcol2col(win, end_row, fn.virtcol(end_mark))
+	end
 
 	return start_row, start_col, end_row, end_col
 end
