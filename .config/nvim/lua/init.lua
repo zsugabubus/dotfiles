@@ -144,7 +144,6 @@ o.switchbuf = ''
 o.tabline = '%!v:lua.tabline()'
 o.timeoutlen = 600
 o.title = true
-o.wildcharm = '<C-Z>'
 o.wildignore = '.git,*.lock,*~,node_modules'
 o.wildignorecase = true
 o.wildmenu = true
@@ -519,16 +518,20 @@ vim.filetype.add({
 	pattern = {
 		['/tmp/fstab%.'] = 'fstab',
 		['.*'] = {
-			priority = -math.huge,
 			function(path, bufnr)
-				local content = vim.filetype.getlines(bufnr, 1)
-				if vim.filetype.matchregex(content, [[\v^[* ]*\x{6,}]]) then
+				local content = api.nvim_buf_get_lines(bufnr, 0, 1, false)[1]
+				if string.match(content, '^[* ]*%x%x%x%x%x%x') then
 					return 'git'
 				end
 			end,
+			{ priority = -math.huge },
 		},
 	},
 })
+
+filetype('lua,help', function()
+	vim.treesitter.stop()
+end)
 
 filetype(
 	'vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*,*sh,json,jsonc',
