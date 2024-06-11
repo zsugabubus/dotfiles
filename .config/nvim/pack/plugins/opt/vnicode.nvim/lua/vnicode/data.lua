@@ -31,11 +31,11 @@ function M.get_default_ucds()
 end
 
 function M.get_installed_ucds()
-	local result = {}
+	local t = {}
 	for name in vim.fs.dir(M.get_data_dir()) do
-		result[#result + 1] = string.match(name, '(.*)%.xz$')
+		table.insert(t, string.match(name, '(.*)%.xz$'))
 	end
-	return result
+	return t
 end
 
 function M.install(ucd)
