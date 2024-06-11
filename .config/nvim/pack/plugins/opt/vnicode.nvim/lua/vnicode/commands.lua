@@ -74,7 +74,7 @@ function M.install_complete(prefix)
 	return filter_completions(prefix, all)
 end
 
-function M.update(opts)
+function M.update()
 	for _, ucd in ipairs(data.get_installed_ucds()) do
 		data.install(ucd)
 	end

@@ -23,14 +23,14 @@ function M.get_ucd_filename(ucd)
 	return string.format('%s%s.xz', M.get_data_dir(), ucd)
 end
 
-function M.get_default_ucds(ucd)
+function M.get_default_ucds()
 	return {
 		'UnicodeData.txt',
 		'NameAliases.txt',
 	}
 end
 
-function M.get_installed_ucds(ucd)
+function M.get_installed_ucds()
 	local result = {}
 	for name in vim.fs.dir(M.get_data_dir()) do
 		result[#result + 1] = string.match(name, '(.*)%.xz$')
