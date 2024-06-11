@@ -96,7 +96,7 @@ local function setup(opts)
 		})
 	end
 
-	api.nvim_create_user_command('Varign', function(opts)
+	api.nvim_create_user_command('Varign', function()
 		attach_to_buffer(api.nvim_get_current_buf())
 	end, {})
 end
