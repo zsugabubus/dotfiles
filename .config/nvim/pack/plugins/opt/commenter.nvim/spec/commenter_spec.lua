@@ -8,20 +8,15 @@ local vim = create_vim({
 
 describe('toggle single line', function()
 	local function case(cms, input, expected_output)
-		local function helper(input)
-			test(
-				string.format("[%s] '%s' -> '%s'", cms, input, expected_output),
-				function()
-					vim.o.cms = cms
-					vim:set_lines({ input })
-					vim:feed('gcc')
-					vim:assert_lines({ expected_output })
-				end
-			)
-		end
-
-		helper(input)
-		helper(string.gsub(input, '%%s', ' %s '))
+		test(
+			string.format("[%s] '%s' -> '%s'", cms, input, expected_output),
+			function()
+				vim.o.cms = cms
+				vim:set_lines({ input })
+				vim:feed('gcc')
+				vim:assert_lines({ expected_output })
+			end
+		)
 	end
 
 	case('/*%s*/', 'a', '/* a */')
@@ -37,6 +32,10 @@ describe('toggle single line', function()
 	case('--%s', '----', '')
 	case('//%s', '', '')
 	case('//%s', ' ', ' ')
+	case('/*  %s  */', 'a', '/* a */')
+	case('/*  %s  */', '/*a*/', 'a')
+	case('//  %s', 'a', '// a')
+	case('//  %s', '//a', 'a')
 end)
 
 describe('toggle multiple lines', function()
