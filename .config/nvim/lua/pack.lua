@@ -118,20 +118,12 @@ local function package_loader(name)
 	end
 end
 
-local function plugin_before(plugin)
-	if plugin.before then
-		local ok, err = pcall(plugin.before, plugin)
+local function plugin_hook(plugin, name)
+	local fn = plugin[name]
+	if fn then
+		local ok, err = pcall(fn, plugin)
 		if not ok then
-			echo_error('Plugin %s: before() failed:\n%s', plugin.name, err)
-		end
-	end
-end
-
-local function plugin_after(plugin)
-	if plugin.after then
-		local ok, err = pcall(plugin.after, plugin)
-		if not ok then
-			echo_error('Plugin %s: after() failed:\n%s', plugin.name, err)
+			echo_error('Plugin %s: %s() failed:\n%s', plugin.name, name, err)
 		end
 	end
 end
@@ -238,7 +230,7 @@ local function setup(opts)
 
 			table_insert(plugins, plugin)
 
-			plugin_before(plugin)
+			plugin_hook(plugin, 'before')
 		end
 		::not_found::
 	end
@@ -302,7 +294,7 @@ local function setup(opts)
 	for _, plugin in ipairs(plugins) do
 		local span = trace(plugin.name)
 		plugin_setup(plugin)
-		plugin_after(plugin)
+		plugin_hook(plugin, 'after')
 		trace(span)
 	end
 
