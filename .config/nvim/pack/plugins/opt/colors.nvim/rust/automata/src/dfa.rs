@@ -33,11 +33,11 @@ pub enum Error {
 type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
-pub(crate) struct State {
-    pub(crate) transitions: HashMap<Terminal, StateId>,
+pub(crate) struct State<T> {
+    pub(crate) transitions: HashMap<T, StateId>,
 }
 
-impl State {
+impl<T> State<T> {
     pub fn new() -> Self {
         Self {
             transitions: HashMap::new(),
@@ -47,18 +47,12 @@ impl State {
 
 /// Deterministic finite automaton (DFA).
 #[derive(Debug)]
-pub struct Dfa<A>
-where
-    A: Accept,
-{
-    pub(crate) states: Vec<State>,
+pub struct Dfa<T, A> {
+    pub(crate) states: Vec<State<T>>,
     pub(crate) accepts: HashMap<StateId, A>,
 }
 
-impl<A> Dfa<A>
-where
-    A: Accept,
-{
+impl<T, A> Dfa<T, A> {
     /// Constructs an empty DFA.
     pub fn new() -> Self {
         Self {
@@ -71,10 +65,14 @@ where
     ///
     /// Reverse of [`Nfa::from_dfa`].
     pub fn from_nfa<F: Fn(A, A) -> Option<A>>(
-        nfa: &Nfa<A>,
+        nfa: &Nfa<T, A>,
         start: nfa::StateId,
         accept_strategy: F,
-    ) -> Result<(Self, StateId)> {
+    ) -> Result<(Self, StateId)>
+    where
+        T: Eq + Hash + Copy,
+        A: Clone,
+    {
         let mut dfa = Self::new();
         let start = dfa.insert_nfa(nfa, start, accept_strategy)?;
         Ok((dfa, start))
@@ -85,10 +83,14 @@ where
     /// Returns start state.
     pub fn insert_nfa<F: Fn(A, A) -> Option<A>>(
         &mut self,
-        nfa: &Nfa<A>,
+        nfa: &Nfa<T, A>,
         start: nfa::StateId,
         accept_strategy: F,
-    ) -> Result<StateId> {
+    ) -> Result<StateId>
+    where
+        T: Eq + Hash + Copy,
+        A: Clone,
+    {
         type SuperStates = Vec<nfa::StateId>;
 
         let mut state_map = HashMap::<SuperStates, StateId>::new();
@@ -162,7 +164,11 @@ where
     /// - Evict states not reachable from `starts`.
     /// - Evict states that do not lead to accept states.
     /// - Evict duplicated states.
-    pub fn minimize(&mut self, starts: &mut [StateId]) {
+    pub fn minimize(&mut self, starts: &mut [StateId])
+    where
+        T: Eq + Hash,
+        A: PartialEq,
+    {
         const UNREACHABLE: u32 = u32::MAX;
 
         let mut queue = Vec::<StateId>::with_capacity(self.accepts.len());
@@ -364,7 +370,10 @@ where
     }
 
     /// Sets accept value of a state.
-    pub fn set_accept(&mut self, state: StateId, value: A) -> Result<()> {
+    pub fn set_accept(&mut self, state: StateId, value: A) -> Result<()>
+    where
+        A: Clone,
+    {
         self.set_accept_with(state, value, |_, _| None)
     }
 
@@ -374,7 +383,10 @@ where
         state: StateId,
         value: A,
         strategy: F,
-    ) -> Result<()> {
+    ) -> Result<()>
+    where
+        A: Clone,
+    {
         match self.accepts.entry(state) {
             Occupied(mut entry) => {
                 entry
@@ -388,7 +400,10 @@ where
     }
 
     /// Creates a transition between `from` and `to`.
-    pub fn insert_transition(&mut self, from: StateId, via: Terminal, to: StateId) -> Result<()> {
+    pub fn insert_transition(&mut self, from: StateId, via: T, to: StateId) -> Result<()>
+    where
+        T: Eq + Hash,
+    {
         match self.states[from.as_usize()].transitions.entry(via) {
             Occupied(entry) => {
                 if *entry.get() != to {
@@ -405,13 +420,16 @@ where
     }
 
     /// Turns alphabet into "equivalence classes of the alphabet".
-    fn minimize_alphabet(&self, alphabet_len: usize) -> Result<Box<[usize]>> {
-        struct MinimalAlphabetBuilder {
-            classes: Vec<HashSet<Terminal>>,
+    fn minimize_alphabet(&self, alphabet_len: usize) -> Result<Box<[usize]>>
+    where
+        T: Copy + Into<usize>,
+    {
+        struct MinimalAlphabetBuilder<T> {
+            classes: Vec<HashSet<T>>,
             terminal_class: Box<[usize]>,
         }
 
-        impl MinimalAlphabetBuilder {
+        impl MinimalAlphabetBuilder<usize> {
             pub fn new(len: usize) -> Self {
                 Self {
                     classes: vec![{
@@ -423,7 +441,7 @@ where
                 }
             }
 
-            pub fn add_equivalence_class(&mut self, class: &HashSet<Terminal>) -> Result<()> {
+            pub fn add_equivalence_class(&mut self, class: &HashSet<usize>) -> Result<()> {
                 for term in class.iter() {
                     if *term >= self.terminal_class.len() {
                         return Err(Error::TerminalNotInAlphabet);
@@ -459,7 +477,10 @@ where
             debug_assert!(classes.is_empty());
 
             for (term, to) in state.transitions.iter() {
-                classes.entry(to).or_insert_with(HashSet::new).insert(*term);
+                classes
+                    .entry(to)
+                    .or_insert_with(HashSet::new)
+                    .insert((*term).into());
             }
 
             for (_, class) in classes.drain() {
@@ -471,7 +492,11 @@ where
     }
 
     /// Writes DOT representation of the automaton for debugging purposes.
-    pub fn write_dot<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
+    pub fn write_dot<W: Write>(&self, mut writer: W) -> std::io::Result<()>
+    where
+        T: Debug + Copy + Into<char>,
+        A: Debug,
+    {
         writeln!(writer, "digraph {{")?;
         writeln!(writer, "\trankdir=LR")?;
 
@@ -498,7 +523,7 @@ where
                     "\t{} -> {} [label={:?}]",
                     from,
                     to.as_usize(),
-                    (*term as u8 as char).to_string()
+                    (*term).into().to_string(),
                 )?;
             }
         }
@@ -508,7 +533,10 @@ where
     }
 
     /// Returns an iterator that generates all possible non-rejected words having the given length.
-    pub fn words_exact(&self, start: StateId, len: usize) -> WordsExact<A> {
+    pub fn words_exact(&self, start: StateId, len: usize) -> WordsExact<T, A>
+    where
+        T: Copy + Default,
+    {
         WordsExact::new(self, start, len)
     }
 
@@ -517,7 +545,7 @@ where
         &self,
         start: StateId,
         max_depth: Option<usize>,
-    ) -> BreadthFirstStates<A> {
+    ) -> BreadthFirstStates<T, A> {
         BreadthFirstStates::new(self, start, max_depth)
     }
 
@@ -535,7 +563,10 @@ where
         None
     }
 
-    pub fn collect_terminals(&self, start: StateId, max_depth: Option<usize>) -> HashSet<Terminal> {
+    pub fn collect_terminals(&self, start: StateId, max_depth: Option<usize>) -> HashSet<T>
+    where
+        T: Eq + Hash + Copy,
+    {
         let mut terminals = HashSet::new();
         for (_, i) in self.breadth_first_states(start, max_depth) {
             terminals.extend(self.states[i.as_usize()].transitions.keys());
@@ -550,7 +581,11 @@ where
         struct_name: &str,
         alphabet_len: usize,
         start: StateId,
-    ) -> std::io::Result<()> {
+    ) -> std::io::Result<()>
+    where
+        T: Copy + Into<usize>,
+        A: Debug,
+    {
         let alphabet = self.minimize_alphabet(alphabet_len).unwrap();
 
         let alphabet_len = alphabet.iter().max().unwrap() + 1;
@@ -589,7 +624,7 @@ where
             let base = from * alphabet_len;
             for (term, to) in &state.transitions {
                 let to = state_map[to.as_usize()];
-                gtransitions[base + alphabet[*term]] = to * alphabet_len;
+                gtransitions[base + alphabet[(*term).into()]] = to * alphabet_len;
             }
         }
 
@@ -662,31 +697,22 @@ where
     }
 }
 
-impl<A> Default for Dfa<A>
-where
-    A: Accept,
-{
+impl<T, A> Default for Dfa<T, A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
 /// A word iterator for [`Dfa`].
-pub struct WordsExact<'a, A>
-where
-    A: Accept,
-{
-    dfa: &'a Dfa<A>,
-    stack: Vec<std::collections::hash_map::Iter<'a, Terminal, StateId>>,
-    word: Box<[Terminal]>,
+pub struct WordsExact<'a, T, A> {
+    dfa: &'a Dfa<T, A>,
+    stack: Vec<std::collections::hash_map::Iter<'a, T, StateId>>,
+    word: Box<[T]>,
     len: usize,
 }
 
-impl<'a, A> WordsExact<'a, A>
-where
-    A: Accept,
-{
-    pub(super) fn new(dfa: &'a Dfa<A>, start: StateId, len: usize) -> Self {
+impl<'a, T: Copy + Default, A> WordsExact<'a, T, A> {
+    pub(super) fn new(dfa: &'a Dfa<T, A>, start: StateId, len: usize) -> Self {
         Self {
             dfa,
             stack: {
@@ -694,17 +720,14 @@ where
                 x.push(dfa.states[start.as_usize()].transitions.iter());
                 x
             },
-            word: vec![0; len].into_boxed_slice(),
+            word: vec![Default::default(); len].into_boxed_slice(),
             len,
         }
     }
 }
 
-impl<'a, A> Iterator for WordsExact<'a, A>
-where
-    A: Accept,
-{
-    type Item = Box<[Terminal]>;
+impl<'a, T: Copy, A> Iterator for WordsExact<'a, T, A> {
+    type Item = Box<[T]>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(cur) = self.stack.last_mut() {
@@ -730,11 +753,8 @@ where
 }
 
 /// A breadth-first state iterator for [`Dfa`].
-pub struct BreadthFirstStates<'a, A>
-where
-    A: Accept,
-{
-    dfa: &'a Dfa<A>,
+pub struct BreadthFirstStates<'a, T, A> {
+    dfa: &'a Dfa<T, A>,
     current_level: Vec<StateId>,
     next_level: Vec<StateId>,
     visited: Box<[bool]>,
@@ -743,11 +763,8 @@ where
     latest_state: Option<StateId>,
 }
 
-impl<'a, A> BreadthFirstStates<'a, A>
-where
-    A: Accept,
-{
-    pub(super) fn new(dfa: &'a Dfa<A>, start: StateId, max_depth: Option<usize>) -> Self {
+impl<'a, T, A> BreadthFirstStates<'a, T, A> {
+    pub(super) fn new(dfa: &'a Dfa<T, A>, start: StateId, max_depth: Option<usize>) -> Self {
         Self {
             dfa,
             current_level: vec![start],
@@ -760,10 +777,7 @@ where
     }
 }
 
-impl<'a, A> Iterator for BreadthFirstStates<'a, A>
-where
-    A: Accept,
-{
+impl<'a, T, A> Iterator for BreadthFirstStates<'a, T, A> {
     type Item = (usize, StateId);
 
     fn next(&mut self) -> Option<Self::Item> {

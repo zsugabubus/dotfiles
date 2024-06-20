@@ -1,7 +1,3 @@
-use std::fmt::Debug;
-
-pub type Terminal = usize;
-
 macro_rules! automaton_impl {
     (
         $vis:vis struct StateId;
@@ -25,7 +21,3 @@ macro_rules! automaton_impl {
 }
 
 pub(crate) use automaton_impl;
-
-pub trait Accept: PartialEq + Debug + Clone {}
-
-impl<T> Accept for T where T: PartialEq + Debug + Clone {}

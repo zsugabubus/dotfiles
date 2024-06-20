@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
+use std::hash::Hash;
 use std::io::Write;
 use std::iter::Iterator;
 
@@ -9,11 +10,11 @@ use crate::dfa::Dfa;
 automaton_impl! { pub struct StateId; }
 
 #[derive(Debug)]
-pub(crate) struct State {
-    pub(crate) transitions: HashMap<Terminal, HashSet<StateId>>,
+pub(crate) struct State<T> {
+    pub(crate) transitions: HashMap<T, HashSet<StateId>>,
 }
 
-impl State {
+impl<T> State<T> {
     pub fn new() -> Self {
         Self {
             transitions: HashMap::new(),
@@ -26,19 +27,13 @@ impl State {
 /// An NFA is rarely useful on its own but it is mostly used as an intermediate layer to build a
 /// DFA. See [`Dfa::from_nfa`].
 #[derive(Debug)]
-pub struct Nfa<A>
-where
-    A: Accept,
-{
-    pub(crate) states: Vec<State>,
+pub struct Nfa<T, A> {
+    pub(crate) states: Vec<State<T>>,
     pub(crate) epsilon_transitions: HashMap<StateId, HashSet<StateId>>,
     pub(crate) accepts: HashMap<StateId, A>,
 }
 
-impl<A> Nfa<A>
-where
-    A: Accept,
-{
+impl<T, A> Nfa<T, A> {
     /// Constructs a new NFA.
     pub fn new() -> Self {
         Self {
@@ -51,13 +46,21 @@ where
     /// Converts DFA to NFA.
     ///
     /// Reverse of [`Dfa::from_nfa`].
-    pub fn from_dfa(dfa: &Dfa<A>) -> Self {
+    pub fn from_dfa(dfa: &Dfa<T, A>) -> Self
+    where
+        T: Eq + Hash + Copy,
+        A: Clone,
+    {
         let mut nfa = Self::new();
         nfa.insert_dfa(dfa);
         nfa
     }
 
-    pub fn insert_dfa(&mut self, dfa: &Dfa<A>) {
+    pub fn insert_dfa(&mut self, dfa: &Dfa<T, A>)
+    where
+        T: Eq + Hash + Copy,
+        A: Clone,
+    {
         let base = self.new_state_many(dfa.states.len());
 
         for (from, state) in dfa.states.iter().enumerate() {
@@ -75,13 +78,21 @@ where
         }
     }
 
-    pub fn rev(&self) -> Self {
+    pub fn rev(&self) -> Self
+    where
+        T: Eq + Hash + Copy,
+        A: Clone,
+    {
         let mut nfa = Self::new();
         nfa.insert_rev_nfa(self);
         nfa
     }
 
-    fn insert_rev_nfa(&mut self, other: &Self) {
+    fn insert_rev_nfa(&mut self, other: &Self)
+    where
+        T: Eq + Hash + Copy,
+        A: Clone,
+    {
         let base = self.new_state_many(other.states.len());
 
         for (from, state) in other.states.iter().enumerate() {
@@ -129,7 +140,10 @@ where
     }
 
     /// Creates a terminal transition between `from` and `to`.
-    pub fn insert_transition<T: Into<Terminal>>(&mut self, from: StateId, via: T, to: StateId) {
+    pub fn insert_transition<V: Into<T>>(&mut self, from: StateId, via: V, to: StateId)
+    where
+        T: Eq + Hash,
+    {
         self.states[from.as_usize()]
             .transitions
             .entry(via.into())
@@ -162,7 +176,11 @@ where
     /// ```sh
     /// dot -Tsvg a.dot > a.svg
     /// ```
-    pub fn write_dot<W: Write>(&self, mut writer: W) -> std::io::Result<()> {
+    pub fn write_dot<W: Write>(&self, mut writer: W) -> std::io::Result<()>
+    where
+        T: Debug,
+        A: Debug,
+    {
         writeln!(writer, "digraph {{")?;
         writeln!(writer, "\trankdir=LR")?;
 
@@ -190,7 +208,7 @@ where
                         "\t{} -> {} [label={:?}]",
                         from,
                         to.as_usize(),
-                        (*term as u8 as char).to_string()
+                        *term,
                     )?;
                 }
             }
@@ -206,10 +224,7 @@ where
     }
 }
 
-impl<A> Default for Nfa<A>
-where
-    A: Accept,
-{
+impl<T, A> Default for Nfa<T, A> {
     fn default() -> Self {
         Self::new()
     }

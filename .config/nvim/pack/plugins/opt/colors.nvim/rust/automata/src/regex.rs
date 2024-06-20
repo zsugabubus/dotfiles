@@ -1,5 +1,5 @@
-use crate::automaton::*;
 use crate::nfa::{Nfa, StateId};
+use std::hash::Hash;
 use std::ops::{Deref, DerefMut, Range};
 
 /// A high-level [NFA][`Nfa`] builder.
@@ -22,19 +22,21 @@ use std::ops::{Deref, DerefMut, Range};
 /// # Ok::<(), ParseError>(())
 /// ```
 #[derive(Debug)]
-pub struct Regex<'a, A>
-where
-    A: Accept,
-{
-    nfa: &'a mut Nfa<A>,
+pub struct Regex<'a, T, A> {
+    nfa: &'a mut Nfa<T, A>,
 }
 
-impl<'a, A: Accept> Regex<'a, A> {
+impl<'a, T, A> Regex<'a, T, A> {
     /// Constructs a new `Regex`.
-    pub fn new(nfa: &'a mut Nfa<A>) -> Self {
+    pub fn new(nfa: &'a mut Nfa<T, A>) -> Self {
         Self { nfa }
     }
+}
 
+impl<'a, T, A> Regex<'a, T, A>
+where
+    T: From<u8> + Eq + Hash,
+{
     /// Inserts regex.
     ///
     /// Returns end state.
@@ -50,10 +52,10 @@ impl<'a, A: Accept> Regex<'a, A> {
     /// Inserts literal.
     ///
     /// Returns end state.
-    pub fn insert_literal<T: AsRef<[u8]>>(
+    pub fn insert_literal<S: AsRef<[u8]>>(
         &mut self,
         start: StateId,
-        literal: T,
+        literal: S,
         flags: &Flags,
     ) -> StateId {
         self.insert_node(start, &Node::ByteSeq(literal.as_ref()), flags)
@@ -103,15 +105,15 @@ impl<'a, A: Accept> Regex<'a, A> {
     }
 }
 
-impl<'a, A: Accept> Deref for Regex<'a, A> {
-    type Target = Nfa<A>;
+impl<'a, T, A> Deref for Regex<'a, T, A> {
+    type Target = Nfa<T, A>;
 
     fn deref(&self) -> &Self::Target {
         self.nfa
     }
 }
 
-impl<'a, A: Accept> DerefMut for Regex<'a, A> {
+impl<'a, T, A> DerefMut for Regex<'a, T, A> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.nfa
     }

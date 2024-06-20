@@ -139,7 +139,7 @@ fn generate(writer: impl Write) {
     let mut v = Vec::new();
     for word in dfa.words_exact(start, 3) {
         v.clear();
-        v.extend(word.iter().map(|x| *x as u8));
+        v.extend(word.iter());
         builder.push(&v);
     }
     builder.build();
