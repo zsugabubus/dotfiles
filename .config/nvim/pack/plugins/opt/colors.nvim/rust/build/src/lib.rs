@@ -6,7 +6,7 @@ use std::{env, path::Path};
 use automata::regex::{Flags, Regex};
 use automata::{dfa::Dfa, nfa::Nfa};
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, Hash)]
 pub enum Action {
     Named([u8; 3]),
     Xrrggbb,

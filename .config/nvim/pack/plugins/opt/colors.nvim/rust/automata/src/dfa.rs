@@ -2,6 +2,7 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::hash::{DefaultHasher, Hasher};
 use std::io::Write;
 use std::iter::Iterator;
 use std::mem::{replace, swap, take};
@@ -167,7 +168,7 @@ impl<T, A> Dfa<T, A> {
     pub fn minimize(&mut self, starts: &mut [StateId])
     where
         T: Eq + Hash,
-        A: PartialEq,
+        A: PartialEq + Hash,
     {
         const UNREACHABLE: u32 = u32::MAX;
 
@@ -253,15 +254,26 @@ impl<T, A> Dfa<T, A> {
                 continue;
             }
 
-            let shape = self.states[i]
-                .transitions
-                .keys()
-                .collect::<Vec<_>>()
-                .into_boxed_slice();
+            let hash = {
+                let mut hasher = DefaultHasher::new();
 
-            // Apart from shape, consider depth factor to produce more unique groups.
+                hasher.write_u32(depths[i]);
+
+                if let Some(value) = self.accepts.get(&StateId::from(i)) {
+                    value.hash(&mut hasher);
+                }
+
+                hasher.finish()
+            };
+
+            let hash = self.states[i].transitions.keys().fold(hash, |hash, term| {
+                let mut hasher = DefaultHasher::new();
+                term.hash(&mut hasher);
+                hash ^ hasher.finish()
+            });
+
             groups
-                .entry((depths[i], shape))
+                .entry(hash)
                 .or_insert_with(Vec::new)
                 .push(StateId::from(i));
         }
