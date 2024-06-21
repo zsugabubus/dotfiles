@@ -155,14 +155,10 @@ fn generate(mut writer: impl Write) {
     // todo!();
     assert_eq!(dfa.shortest_word_len(start, None).unwrap(), 3);
 
-    const N: usize = 3;
-    let mut builder = teddy::TeddyBuilder::<N, teddy::LowNibbleConfig<N>>::new(3, 16, 8);
+    let mut builder = teddy::TeddyBuilder::new(&teddy::LowNibble::<3>);
 
-    let mut v = Vec::new();
     for word in dfa.words_exact(start, 3) {
-        v.clear();
-        v.extend(word.iter());
-        builder.push(&v);
+        builder.insert(&word);
     }
     builder.build();
 }

@@ -1,299 +1,386 @@
 use core::array;
-use std::collections::HashSet;
-// use fxhash::FxHashSet as HashSet;
-use std::{fmt::Debug, marker::PhantomData};
+use rand::prelude::*;
+use std::{arch::x86_64::__m128i, collections::HashSet, fmt::Debug};
 
+type Mask = u64;
+
+/// `N` is the number of masks.
 pub trait Config<const N: usize> {
-    #[inline]
-    fn buckets() -> usize {
+    type Input: ?Sized;
+
+    /// Returns number of buckets.
+    ///
+    /// For `i8x16` it should be `8`.
+    fn buckets(&self) -> usize;
+
+    /// Returns number of lanes.
+    ///
+    /// For `i8x16` it should be `16`.
+    fn lanes(&self) -> usize;
+
+    /// Returns lane masks that match the input.
+    fn fingerprint(&self, input: &Self::Input) -> [Mask; N];
+}
+
+#[derive(Clone, Debug)]
+pub struct LowNibble<const N: usize>;
+
+impl<const N: usize> Config<N> for LowNibble<N> {
+    type Input = [u8];
+
+    fn buckets(&self) -> usize {
         8
     }
 
-    fn slots(pattern: &[u8]) -> [u8; N];
+    fn lanes(&self) -> usize {
+        16
+    }
+
+    fn fingerprint(&self, input: &Self::Input) -> [Mask; N] {
+        array::from_fn(|i| (1 << (input[i] % 16)))
+    }
 }
 
 #[derive(Debug, Clone)]
-pub struct TeddyBuilder<'a, const N: usize, C>
-where
-    C: Config<N>,
-{
-    height: usize,
-    width: usize,
-    buckets_len: usize,
-    len: usize,
-    xs: Vec<u8>,
-    board: Box<[HashSet<usize>]>,
-    phantom: PhantomData<&'a C>,
+pub struct TeddyBuilder<'a, const N: usize, C> {
+    masks: HashSet<[Mask; N]>,
+    config: &'a C,
 }
 
 impl<'a, const N: usize, C> TeddyBuilder<'a, N, C>
 where
     C: Config<N>,
 {
-    pub fn new(masks_len: usize, alphabet_len: usize, buckets_len: usize) -> Self {
+    pub fn new(config: &'a C) -> Self {
         Self {
-            height: masks_len,
-            width: alphabet_len,
-            buckets_len,
-            len: 0,
-            xs: Vec::new(),
-            board: vec![Default::default(); masks_len * alphabet_len * buckets_len]
-                .into_boxed_slice(),
-            phantom: PhantomData,
+            masks: HashSet::new(),
+            config,
         }
     }
 
-    #[inline]
-    fn cell_index(&self, y: usize, x: usize, bucket: usize) -> usize {
-        debug_assert!(y < self.height);
-        debug_assert!(x < self.width);
-        debug_assert!(bucket < self.buckets_len);
-        bucket * self.width * self.height + y * self.width + x
+    pub fn insert(&mut self, input: &C::Input) {
+        self.masks.insert(self.config.fingerprint(input));
     }
 
-    #[inline]
-    fn cell(&self, y: usize, x: usize, bucket: usize) -> &HashSet<usize> {
-        &self.board[self.cell_index(y, x, bucket)]
-    }
+    pub fn build(self) {
+        const MAX_SCORE: u32 = u32::MAX;
 
-    #[inline]
-    fn cell_mut(&mut self, y: usize, x: usize, bucket: usize) -> &mut HashSet<usize> {
-        &mut self.board[self.cell_index(y, x, bucket)]
-    }
-
-    pub fn push(&mut self, word: &[u8]) {
-        let xs = C::slots(word);
-        let i = self.len;
-        xs.iter().copied().enumerate().for_each(|(y, x)| {
-            if x == u8::MAX {
-                for x in 0..self.width {
-                    self.cell_mut(y, x, 0).insert(i);
-                }
-            } else {
-                self.cell_mut(y, x as usize, 0).insert(i);
-            }
-        });
-        let b = self.xs.len();
-        self.xs.extend(xs);
-        debug_assert!(self.xs.len() == b + self.height);
-        self.len += 1;
-    }
-
-    pub fn clear(&mut self) {
-        self.len = 0;
-        self.xs.clear();
-        self.board.iter_mut().for_each(HashSet::clear);
-    }
-
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-
-    pub fn build(mut self) {
-        use rand::prelude::*;
         let mut rng = rand::thread_rng();
 
-        use std::time::Instant;
-        let start = Instant::now();
+        let height = N;
+        let width = self.config.lanes();
+        let mut buckets = {
+            let n = self.config.buckets();
+            let capacity = self.masks.len() / n + 1;
+            (0..n)
+                .map(|_| Vec::with_capacity(capacity))
+                .collect::<Vec<_>>()
+                .into_boxed_slice()
+        };
+        let masks = self
+            .masks
+            .into_iter()
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
 
-        let mut total = Instant::now().elapsed();
+        for i in 0..masks.len() {
+            let bucket = rng.gen_range(0..buckets.len());
+            let bucket = bucket % buckets.len();
+            buckets[bucket].push(i);
+        }
 
-        let mut zz = 1;
-        for _ in 0..28
-        /* TODO: Find iteration limit. */
-        {
-            let mut best: Option<(i64, usize, (usize, usize), usize)> = None;
+        let mut bucket_masks = vec![[0 as Mask; N]; buckets.len()].into_boxed_slice();
+        let mut bucket_scores = vec![0; buckets.len()].into_boxed_slice();
+        let mut global_score = MAX_SCORE;
+        let mut global_best_masks = vec![[0 as Mask; N]; buckets.len()].into_boxed_slice();
+        let mut global_best_score = MAX_SCORE;
 
-            // let mut ntie = 0;
-            // let mut ktie = 0;
+        let mut shuffles = 0;
 
-            let mut v = vec![0_u64; self.height].into_boxed_slice();
+        let mut selection = Vec::new();
+        let mut best_selection = Vec::new();
+        let mut best_src_dest = (0, 0);
+        let mut best_src_mask_score = ([0 as Mask; N], 0);
+        let mut best_dest_mask_score = ([0 as Mask; N], 0);
 
-            for src in 0..self.buckets_len {
-                let src_before = (0..self.height).fold(1_u64, |p, y| {
-                    p * (0..self.width)
-                        .filter(|x| !self.cell(y, *x, src).is_empty())
-                        .count() as u64
-                });
+        loop {
+            fn merge<const N: usize>(dest: &mut [Mask; N], src: &[Mask; N]) {
+                for i in 0..N {
+                    dest[i] |= src[i];
+                }
+            }
 
-                for y in 0..self.height {
-                    for x in 0..self.width {
-                        let square = self.cell(y, x, src);
-                        if square.is_empty() {
-                            continue;
+            fn score<const N: usize>(mask: &[Mask; N]) -> u32 {
+                mask.iter().map(|x| x.count_ones()).product()
+            }
+
+            if global_score == MAX_SCORE {
+                for i in 0..buckets.len() {
+                    (bucket_scores[i], bucket_masks[i]) = {
+                        let mut v = [0; N];
+
+                        for mask in buckets[i].iter().map(|&i| &masks[i]) {
+                            merge(&mut v, mask);
                         }
 
-                        zz += 1;
+                        (score(&v), v)
+                    };
+                }
 
-                        let coverage = {
-                            for i in 0..self.height {
-                                v[i] = 0;
+                global_score = bucket_scores.iter().sum();
+            };
+
+            /*
+            let mut vs = vec![0_usize; width.pow(height as u32)].into_boxed_slice();
+
+            for a0 in 0..width {
+                for b0 in 0..width {
+                    for c0 in 0..width {
+                        let i = a0 + b0 * width + c0 * width * width;
+
+                        for bi in 0..buckets.len() {
+                            if (bucket_masks[bi][0] & (1 << a0)) != 0
+                                && (bucket_masks[bi][1] & (1 << b0)) != 0
+                                && (bucket_masks[bi][2] & (1 << c0)) != 0
+                            {
+                                vs[i] |= 1 << bi;
                             }
-                            for i in square {
-                                for (y, x) in self.xs[i * self.height..(i + 1) * self.height]
-                                    .iter()
-                                    .copied()
-                                    .enumerate()
-                                {
-                                    if x == u8::MAX {
-                                        v[y] = !0;
+                        }
+                    }
+                }
+            }
+            println!(
+                "real score:{global_score} k/n: {}",
+                vs.iter().filter(|&&x| x != 0).count()
+            );
+            */
+
+            let mut best_score = global_score;
+
+            // Find masks in `src` bucket that has a set bit in the `y`th mask at the `x`th lane
+            // and move them to `dest` bucket. Find the move that yields the greatest score
+            // decrease.
+            //
+            // Note that instead of moving a single mask (by ID) we move (potentially) multiple
+            // masks at once. If a mask is completely overlapped by other masks, it would leave no
+            // holes in the source bucket after it had been moved out. It implies that source score
+            // remains unchanged thus there is no way for the global score to decrease. So we pick
+            // a position and move out all masks under it to make sure source score decrease.
+            for src in 0..buckets.len() {
+                for (y, &(mut xs)) in bucket_masks[src].iter().enumerate() {
+                    while xs != 0 {
+                        let x = xs.trailing_zeros();
+                        xs ^= 1 << x;
+
+                        selection.clear();
+
+                        let (src_mask_after, selection_mask) = {
+                            let mut v = [0; N];
+                            let mut w = [0; N];
+
+                            for (i, mask) in buckets[src].iter().map(|&i| &masks[i]).enumerate() {
+                                merge(
+                                    if (mask[y] & (1 << x)) == 0 {
+                                        &mut v
                                     } else {
-                                        v[y] |= 1 << x;
+                                        selection.push(i);
+                                        &mut w
+                                    },
+                                    mask,
+                                );
+                            }
+
+                            (v, w)
+                        };
+
+                        debug_assert!(selection_mask != [0; N]);
+
+                        let src_score_after = score(&src_mask_after);
+
+                        let mut found_best = false;
+
+                        /*
+                        let src_mask_before = bucket_masks[src];
+
+                        let mut mink = 0;
+                        for a0 in 0..width {
+                            for b0 in 0..width {
+                                for c0 in 0..width {
+                                    let i = a0 + b0 * width + c0 * width * width;
+                                    let m = [1 << a0, 1 << b0, 1 << c0];
+
+                                    if vs[i] == (1 << src)
+                                        && (((src_mask_before[0] ^ src_mask_after[0]) & m[0]) != 0)
+                                        && (((src_mask_before[1] ^ src_mask_after[1]) & m[1]) != 0)
+                                        && (((src_mask_before[2] ^ src_mask_after[2]) & m[2]) != 0)
+                                    {
+                                        mink += 1;
                                     }
                                 }
                             }
-                            &v
-                        };
+                        }
+                        if mink > 0 {
+                            println!("mink={mink}");
+                        }
+                        */
 
-                        let src_after = (0..self.height).fold(1_u64, |p, y| {
-                            p * (0..self.width)
-                                .filter(|x| {
-                                    let c = self.cell(y, *x, src);
-                                    !c.is_empty() && !c.is_subset(square)
-                                })
-                                .count() as u64
-                        });
-
-                        let start = Instant::now();
-                        for dest in 0..self.buckets_len {
+                        for dest in 0..buckets.len() {
                             if src == dest {
                                 continue;
                             }
 
-                            let (dest_before, dest_after) =
-                                (0..self.height).fold((1_u64, 1_u64), |p, y| {
-                                    let m = (0..self.width)
-                                        .filter(|x| !self.cell(y, *x, dest).is_empty())
-                                        .fold(0, |m, x| m | (1_u64 << x));
-                                    (
-                                        p.0 * m.count_ones() as u64,
-                                        p.1 * (coverage[y] | m).count_ones() as u64,
-                                    )
-                                });
+                            let src_score_before = bucket_scores[src];
 
-                            let delta = src_after as i64 + dest_after as i64
-                                - src_before as i64
-                                - dest_before as i64;
-                            // println!(
-                            //     "   rel to bucket {} => {} {} SUM {} sb {}",
-                            //     dest, dest_before, dest_after, delta, src_before
-                            // );
+                            let dest_score_before = bucket_scores[dest];
 
-                            let score = (delta, src, (y, x), dest);
-                            if let Some(ref mut best) = best {
-                                let tie = best.0 == score.0;
-                                if tie {
-                                    // ntie += 1;
-                                }
-                                #[allow(clippy::if_same_then_else)]
-                                if best.0 > score.0 {
-                                    *best = score;
-                                    // XXX: Probably not perfect but not 100% confirmed. We should backtrack on tie.
-                                    // ntie = 0;
-                                    // ktie = 0;
-                                } else if tie
-                                    && (best.1 != score.1 && best.2 != score.2)
-                                    && rng.gen()
-                                {
-                                    *best = score;
-                                    // ktie = ntie;
-                                }
-                            } else {
-                                best = Some(score);
+                            let dest_mask_before = bucket_masks[dest];
+
+                            let dest_mask_after = {
+                                let mut m = dest_mask_before;
+                                merge(&mut m, &selection_mask);
+                                m
+                            };
+                            let dest_score_after = score(&dest_mask_after);
+
+                            debug_assert!(src_score_after < src_score_before);
+                            debug_assert!(dest_score_after >= dest_score_before);
+
+                            let score_before = src_score_before + dest_score_before;
+                            let score_after = src_score_after + dest_score_after;
+
+                            let score = global_score + score_after - score_before;
+
+                            if score > best_score || (score == best_score && rng.gen()) {
+                                continue;
                             }
+
+                            found_best = true;
+
+                            best_score = score;
+                            best_src_dest = (src, dest);
+                            best_src_mask_score = (src_mask_after, src_score_after);
+                            best_dest_mask_score = (dest_mask_after, dest_score_after);
                         }
-                        total += start.elapsed();
+
+                        if found_best {
+                            std::mem::swap(&mut best_selection, &mut selection);
+                        }
                     }
                 }
             }
 
-            if let Some((_, src, (y, x), dest)) = best {
-                let relocpats = self.cell(y, x, src).clone();
-                debug_assert!(!relocpats.is_empty());
+            if best_score < global_score {
+                let (src, dest) = best_src_dest;
 
-                // println!(
-                //     "step end {:3}/{:3} -- {:?} removed pats {:?} -- {:#?}",
-                //     ntie,
-                //     ktie,
-                //     (delta, src, (y, x), dest),
-                //     relocpats,
-                //     (), //self.board
-                // );
-
-                for i in relocpats {
-                    for (y, x) in self.xs[i * self.height..(i + 1) * self.height]
-                        .iter()
-                        .copied()
-                        .enumerate()
-                    {
-                        if x == u8::MAX {
-                            unimplemented!();
-                        } else {
-                            // println!("{:?}: {:?}", (y, x), self.board[self.cell_index(y, x, src)]);
-                            let b = self.board[self.cell_index(y, x as usize, src)].remove(&i);
-                            debug_assert!(b);
-                            let b = self.board[self.cell_index(y, x as usize, dest)].insert(i);
-                            debug_assert!(b);
-                        }
-                        // zz += 2;
-                    }
+                for &i in best_selection.iter().rev() {
+                    let j = buckets[src].swap_remove(i);
+                    buckets[dest].push(j);
                 }
+
+                global_score = best_score;
+                (bucket_masks[src], bucket_scores[src]) = best_src_mask_score;
+                (bucket_masks[dest], bucket_scores[dest]) = best_dest_mask_score;
+
+                continue;
             }
+
+            if best_score < global_best_score {
+                global_best_score = best_score;
+                global_best_masks.clone_from(&bucket_masks);
+                shuffles = 0;
+            }
+
+            // Local optimum is likely not the global minimum so we keep searching. To get out of
+            // the local trap we perturb mask assignments.
+            if shuffles < 10 {
+                shuffles += 1;
+
+                for _ in 0..masks.len().div_ceil(10) {
+                    let src = rng.gen_range(0..buckets.len());
+                    let dest = rng.gen_range(0..buckets.len());
+
+                    let x = 0..buckets[src].len();
+                    if x.is_empty() {
+                        continue;
+                    }
+                    let i = rng.gen_range(x);
+                    let j = buckets[src].swap_remove(i);
+
+                    buckets[dest].push(j);
+                }
+
+                global_score = MAX_SCORE;
+
+                continue;
+            }
+
+            break;
         }
 
-        let sum = (0..self.buckets_len).fold(0_u64, |p, i| {
-            p + (0..self.height).fold(1, |p, y| {
-                p * (0..self.width)
-                    .filter(|x| !self.cell(y, *x, i).is_empty())
-                    .count() as u64
+        let b = (0..height)
+            .map(|y| {
+                (0..width)
+                    .map(|x| {
+                        (0..buckets.len()).fold(0, |bits, i| {
+                            bits | if (global_best_masks[i][y] & (1 << x)) != 0 {
+                                1 << i
+                            } else {
+                                0
+                            }
+                        }) as i8
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice()
             })
-        });
-        println!("==> {:?} zz={}", sum, zz);
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
 
-        let mut r = Vec::new();
-        for y in 0..self.height {
-            let mut v = vec![0_u8; self.width].into_boxed_slice();
+        let mut n = 0;
+        let mut k = 0;
 
-            for i in 0..self.buckets_len {
-                for x in 0..self.width {
-                    if !self.cell(y, x, i).is_empty() {
-                        v[x] |= 1 << i;
+        for a0 in 0..width as u8 {
+            for b0 in 0..width as u8 {
+                for c0 in 0..width as u8 {
+                    let input: [u8; 3] = [a0, b0, c0];
+
+                    n += 1;
+
+                    if input
+                        .iter()
+                        .zip(b.iter())
+                        .fold(0xff, |x, (input, b)| x & (b[(input & 0xf) as usize] as u8))
+                        != 0
+                    {
+                        k += 1;
                     }
                 }
             }
-
-            r.push(v);
         }
 
-        let b = r
-            .iter()
-            .map(|x| x.iter().map(|x| *x as i8).collect::<Vec<_>>())
-            .collect::<Vec<_>>();
-        println!("{:#?}", b);
+        let passthrough = (global_best_score as f64) / width.pow(height as u32) as f64;
 
-        let duration = start.elapsed();
-        println!("Time elapsed in expensive_function() is: {duration:?} // {total:?}");
+        println!(
+            "P={k}/{:.2}% ({global_best_score}/{:.2}% predicted) LEN={} => {global_best_masks:?} {b:?}",
+            k as f64 / n as f64 * 100.0,
+            passthrough * 100.0,
+            masks.len()
+        );
 
-        // todo!();
-    }
-}
+        for (i, bucket) in buckets.iter().enumerate() {
+            println!("bucket[{i}]:");
+            for y in 0..height {
+                let mut v = vec![0; width].into_boxed_slice();
 
-use std::arch::x86_64::__m128i;
-
-#[derive(Clone, Debug)]
-pub struct LowNibbleConfig<const N: usize> {
-    _masks: [__m128i; N],
-}
-
-impl<const N: usize> Config<N> for LowNibbleConfig<N> {
-    fn slots(pattern: &[u8]) -> [u8; N] {
-        array::from_fn(|i| pattern.get(i).map(|x| x & 0xf).unwrap_or(u8::MAX))
+                for mask in bucket.iter().map(|&i| &masks[i]) {
+                    for x in 0..width {
+                        if (mask[y] & (1 << x)) != 0 {
+                            v[x] += 1;
+                        }
+                    }
+                }
+                println!("  [{y}]: {v:?}");
+            }
+        }
     }
 }
 
