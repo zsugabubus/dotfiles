@@ -1,11 +1,12 @@
-use std::collections::{HashMap, HashSet};
-use std::fmt::Debug;
-use std::hash::Hash;
-use std::io::Write;
-use std::iter::Iterator;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    hash::Hash,
+    io::Write,
+    iter::Iterator,
+};
 
-use crate::automaton::*;
-use crate::dfa::Dfa;
+use crate::{automaton::*, dfa::Dfa};
 
 automaton_impl! { pub struct StateId; }
 

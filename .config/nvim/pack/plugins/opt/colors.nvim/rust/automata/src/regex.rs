@@ -1,6 +1,8 @@
 use crate::nfa::{Nfa, StateId};
-use std::hash::Hash;
-use std::ops::{Deref, DerefMut, Range};
+use std::{
+    hash::Hash,
+    ops::{Deref, DerefMut, Range},
+};
 
 /// A high-level [NFA][`Nfa`] builder.
 ///

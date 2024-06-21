@@ -1,11 +1,9 @@
 use crate::ansi::XTERM_256;
 
-use palette::chromatic_adaptation::AdaptInto;
-use palette::convert::FromColor;
-use palette::rgb::channels;
-use palette::white_point::D50;
-use palette::Clamp;
-use palette::{Hsl, Hwb, Lab, Lch, Oklab, Oklch, Srgb};
+use palette::{
+    chromatic_adaptation::AdaptInto, convert::FromColor, rgb::channels, white_point::D50, Clamp,
+    Hsl, Hwb, Lab, Lch, Oklab, Oklch, Srgb,
+};
 
 macro_rules! convert_rgb {
     ($rgb:expr) => {

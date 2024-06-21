@@ -1,14 +1,19 @@
-use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::collections::{BTreeSet, HashMap, HashSet};
-use std::fmt::Debug;
-use std::hash::Hash;
-use std::hash::{DefaultHasher, Hasher};
-use std::io::Write;
-use std::iter::Iterator;
-use std::mem::{replace, swap, take};
+use std::{
+    collections::{
+        hash_map::Entry::{Occupied, Vacant},
+        BTreeSet, HashMap, HashSet,
+    },
+    fmt::Debug,
+    hash::{DefaultHasher, Hash, Hasher},
+    io::Write,
+    iter::Iterator,
+    mem::{replace, swap, take},
+};
 
-use crate::automaton::*;
-use crate::nfa::{self, Nfa};
+use crate::{
+    automaton::*,
+    nfa::{self, Nfa},
+};
 
 automaton_impl! { pub struct StateId; }
 

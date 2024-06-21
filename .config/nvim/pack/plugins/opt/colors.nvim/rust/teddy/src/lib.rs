@@ -1,8 +1,7 @@
 use core::array;
 use std::collections::HashSet;
 // use fxhash::FxHashSet as HashSet;
-use std::fmt::Debug;
-use std::marker::PhantomData;
+use std::{fmt::Debug, marker::PhantomData};
 
 pub trait Config<const N: usize> {
     #[inline]

@@ -1,10 +1,15 @@
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::{BufReader, BufWriter};
-use std::{env, path::Path};
+use std::{
+    env,
+    fs::File,
+    io::{prelude::*, BufReader, BufWriter},
+    path::Path,
+};
 
-use automata::regex::{Flags, Regex};
-use automata::{dfa::Dfa, nfa::Nfa};
+use automata::{
+    dfa::Dfa,
+    nfa::Nfa,
+    regex::{Flags, Regex},
+};
 
 #[derive(Debug, Clone, PartialEq, Copy, Hash)]
 pub enum Action {
