@@ -1,9 +1,11 @@
 use crate::ansi::XTERM_256;
 
+use palette::chromatic_adaptation::AdaptInto;
 use palette::convert::FromColor;
-use palette::convert::FromColorUnclamped;
 use palette::rgb::channels;
-use palette::{Hsl, Hwb, Lab, Lch, LinSrgb, Oklab, Oklch, Srgb};
+use palette::white_point::D50;
+use palette::Clamp;
+use palette::{Hsl, Hwb, Lab, Lch, Oklab, Oklch, Srgb};
 
 macro_rules! convert_rgb {
     ($rgb:expr) => {
@@ -11,17 +13,9 @@ macro_rules! convert_rgb {
     };
 }
 
-macro_rules! convert_lossy {
+macro_rules! convert_color {
     ($color:expr) => {
-        convert_rgb!(Srgb::<u8>::from_linear(LinSrgb::from_color_unclamped(
-            $color
-        )))
-    };
-}
-
-macro_rules! convert_lossless {
-    ($color:expr) => {
-        convert_rgb!(Srgb::from_color($color).into_format::<u8>())
+        convert_rgb!(Srgb::from_color($color.clamp()).into_format::<u8>())
     };
 }
 
@@ -87,10 +81,10 @@ fn number_or_percentage(input: &[u8], pos: usize, hundred: f32) -> Result<f32> {
     }
 }
 
-fn percentage(input: &[u8], pos: usize, hundred: f32) -> Result<f32> {
+fn percentage(input: &[u8], pos: usize) -> Result<f32> {
     let (pos, value) = number(input, pos)?;
     if peek(input, pos) == Some(b'%') {
-        Ok((pos + 1, value * (hundred / 100.0)))
+        Ok((pos + 1, value / 100.0))
     } else {
         Err(())
     }
@@ -137,23 +131,15 @@ pub fn css_rgb_fn(input: &[u8], pos: usize) -> Result<u32> {
 }
 
 pub fn css_hsl_fn(input: &[u8], pos: usize) -> Result<u32> {
-    fn coord(input: &[u8], pos: usize) -> Result<f32> {
-        map(percentage(input, pos, 1.0), |x| x.clamp(0.0, 1.0))
-    }
-
-    let (pos, (h, s, l)) = css_fn(input, pos, angle, coord, coord)?;
+    let (pos, (h, s, l)) = css_fn(input, pos, angle, percentage, percentage)?;
     let color = Hsl::new(h, s, l);
-    Ok((pos, convert_lossless!(color)))
+    Ok((pos, convert_color!(color)))
 }
 
 pub fn css_hwb_fn(input: &[u8], pos: usize) -> Result<u32> {
-    fn coord(input: &[u8], pos: usize) -> Result<f32> {
-        percentage(input, pos, 100.0)
-    }
-
-    let (pos, (h, w, b)) = css_fn(input, pos, angle, coord, coord)?;
+    let (pos, (h, w, b)) = css_fn(input, pos, angle, percentage, percentage)?;
     let color = Hwb::new(h, w, b);
-    Ok((pos, convert_lossless!(color)))
+    Ok((pos, convert_color!(color)))
 }
 
 pub fn css_lab_fn(input: &[u8], pos: usize) -> Result<u32> {
@@ -164,8 +150,8 @@ pub fn css_lab_fn(input: &[u8], pos: usize) -> Result<u32> {
         |input, pos| number_or_percentage(input, pos, 125.0),
         |input, pos| number_or_percentage(input, pos, 125.0),
     )?;
-    let color = Lab::new(l, a, b);
-    Ok((pos, convert_lossy!(color)))
+    let color: Lab = Lab::<D50>::new(l, a, b).clamp().adapt_into();
+    Ok((pos, convert_color!(color)))
 }
 
 pub fn css_lch_fn(input: &[u8], pos: usize) -> Result<u32> {
@@ -176,8 +162,8 @@ pub fn css_lch_fn(input: &[u8], pos: usize) -> Result<u32> {
         |input, pos| number_or_percentage(input, pos, 150.0),
         angle,
     )?;
-    let color = Lch::new(l, c, h);
-    Ok((pos, convert_lossy!(color)))
+    let color: Lch = Lch::<D50>::new(l, c, h).clamp().adapt_into();
+    Ok((pos, convert_color!(color)))
 }
 
 pub fn css_oklab_fn(input: &[u8], pos: usize) -> Result<u32> {
@@ -189,7 +175,7 @@ pub fn css_oklab_fn(input: &[u8], pos: usize) -> Result<u32> {
         |input, pos| number_or_percentage(input, pos, 0.4),
     )?;
     let color = Oklab::new(l, a, b);
-    Ok((pos, convert_lossy!(color)))
+    Ok((pos, convert_color!(color)))
 }
 
 pub fn css_oklch_fn(input: &[u8], pos: usize) -> Result<u32> {
@@ -201,7 +187,7 @@ pub fn css_oklch_fn(input: &[u8], pos: usize) -> Result<u32> {
         angle,
     )?;
     let color = Oklch::new(l, c, h);
-    Ok((pos, convert_lossy!(color)))
+    Ok((pos, convert_color!(color)))
 }
 
 #[inline]
@@ -337,12 +323,10 @@ mod tests {
 
     #[test]
     fn parse_percentage() {
-        assert_eq!(percentage(b"100%", 0, 100.0), Ok((4, 100.0)));
-        assert_eq!(percentage(b"100%", 0, 1.0), Ok((4, 1.0)));
-        assert_eq!(percentage(b"1%", 0, 1000.0), Ok((2, 10.0)));
-        assert_eq!(percentage(b"0.1%", 0, 1000.0), Ok((4, 1.0)));
+        assert_eq!(percentage(b"100%", 0), Ok((4, 1.0)));
+        assert_eq!(percentage(b"0.1%", 0), Ok((4, 0.001)));
 
-        assert_eq!(percentage(b"", 0, 1.0), Err(()));
+        assert_eq!(percentage(b"", 0), Err(()));
     }
 
     #[test]
@@ -401,9 +385,83 @@ mod tests {
     }
 
     #[test]
+    fn parse_css_hsl_fn() {
+        parse(css_hsl_fn, "240deg 100% 50%)", Some(0x0000ff));
+
+        parse(css_hsl_fn, "", None);
+    }
+
+    #[test]
+    fn parse_css_hwb_fn() {
+        parse(css_hwb_fn, "0 0% 0%)", Some(0xff0000));
+        parse(css_hwb_fn, "0 100% 0%)", Some(0xffffff));
+        parse(css_hwb_fn, "0 0% 100%)", Some(0x000000));
+        parse(css_hwb_fn, "0 50% 50%)", Some(0x808080));
+        parse(css_hwb_fn, "0 100% 100%)", Some(0x808080));
+        parse(css_hwb_fn, "60 0% 0%)", Some(0xffff00));
+        parse(css_hwb_fn, "240deg 0% 0%)", Some(0x0000ff));
+        // Should be 0x994d80 according to https://www.w3.org/TR/css-color-4/#the-hwb-notation
+        parse(css_hwb_fn, "320deg 30% 40%)", Some(0x994c7f));
+
+        parse(css_hwb_fn, "", None);
+    }
+
+    #[test]
+    fn parse_css_lab_fn() {
+        parse(css_lab_fn, "40 125 71)", Some(0xff0000));
+        parse(css_lab_fn, "40% 100% 56.8%)", Some(0xff0000));
+        parse(css_lab_fn, "40 125 999)", Some(0xff0000));
+        parse(css_lab_fn, "-999 0 0)", Some(0x000000));
+        parse(css_lab_fn, "29.567% 68.298 -112.0294)", Some(0x0000ff));
+
+        parse(css_lab_fn, "", None);
+    }
+
+    #[test]
+    fn parse_css_lch_fn() {
+        parse(css_lch_fn, "30 131.21 301.37)", Some(0x0902ff));
+
+        parse(css_lch_fn, "", None);
+    }
+
+    #[test]
+    fn parse_css_oklab_fn() {
+        parse(css_oklab_fn, "100% 0 0)", Some(0xffffff));
+        parse(css_oklab_fn, "999% 0 0)", Some(0xffffff));
+        parse(css_oklab_fn, "0.45 -0.03 -0.31)", Some(0x0600fd));
+
+        parse(css_oklab_fn, "", None);
+    }
+
+    #[test]
+    fn parse_css_oklch_fn() {
+        parse(css_oklch_fn, "0.452 0.313 264.1)", Some(0x0100ff));
+        parse(css_oklch_fn, "-1 0 0)", Some(0x000000));
+
+        parse(css_oklch_fn, "", None);
+    }
+
+    #[test]
     fn parse_xterm256() {
-        parse(xterm256, "0", Some(0));
+        parse(xterm256, "0", Some(0x000000));
+        parse(xterm256, "1", Some(0x800000));
+        parse(xterm256, "2", Some(0x008000));
+        parse(xterm256, "3", Some(0x808000));
+        parse(xterm256, "7", Some(0xc0c0c0));
+        parse(xterm256, "8", Some(0x808080));
+        parse(xterm256, "9", Some(0xff0000));
+        parse(xterm256, "10", Some(0x00ff00));
+        parse(xterm256, "12", Some(0x0000ff));
         parse(xterm256, "15", Some(0xffffff));
+        parse(xterm256, "16", Some(0x000000));
+        parse(xterm256, "17", Some(0x00005f));
+        parse(xterm256, "21", Some(0x0000ff));
+        parse(xterm256, "52", Some(0x5f0000));
+        parse(xterm256, "57", Some(0x5f00ff));
+        parse(xterm256, "196", Some(0xff0000));
+        parse(xterm256, "231", Some(0xffffff));
+        parse(xterm256, "46", Some(0x00ff00));
+        parse(xterm256, "232", Some(0x080808));
         parse(xterm256, "255", Some(0xeeeeee));
 
         parse(xterm256, "256", None);

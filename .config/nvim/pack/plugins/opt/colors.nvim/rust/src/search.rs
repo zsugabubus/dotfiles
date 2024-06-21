@@ -197,7 +197,7 @@ fn verify_all(s: &[u8], offset: usize, len: usize, action: Action) -> Option<Mat
     use crate::parser::*;
 
     let (len, color) = match action {
-        Action::Named([r, g, b]) => (len, ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)),
+        Action::Named(r, g, b) => (len, ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)),
         Action::Xrrggbb => unsafe { css_hex6_unchecked(s, 1) },
         Action::XXrrggbb => unsafe { css_hex6_unchecked(s, 2) },
         Action::Xrgb => unsafe { css_hex3_unchecked(s, 1) },
@@ -238,129 +238,79 @@ pub fn verify_literal(input: &[u8]) -> Option<(Action, usize)> {
 mod tests {
     use super::*;
 
-    macro_rules! test_impl {
-        (
-            $(
-                $test_name:ident : $input:expr => $expected:expr,
-            )+
-        ) => {
-            $(
-                #[test]
-                fn $test_name() {
-                    let mut got = None;
-                    search(
-                        ($input.to_owned() + "\0").as_bytes(),
-                        |m| {
-                            got = Some(m);
-                            ControlFlow::Continue(())
-                        },
-                    );
-                    assert_eq!(got, Some(Match::new(
-                        0..$input.len(),
-                        $expected,
-                    )));
-                }
-            )+
-        }
-    }
+    #[test]
+    fn matches() {
+        #[track_caller]
+        fn assert_match2(input: &str, expected: u32) {
+            let mut got = None;
 
-    test_impl! {
-        red: "red" => 0xff0000,
-        green: "green" => 0x008000,
-        greenyellow: "greenyellow" => 0xadff2f,
-        yellow: "yellow" => 0xffff00,
-        blue: "blue" => 0x0000ff,
-        lightgoldenrodyellow: "lightgoldenrodyellow" => 0xfafad2,
-        hex6_digits: "#003399" => 0x003399,
-        hex6_lowercase: "#abcdef" => 0xabcdef,
-        hex6_uppercase: "#ABCDEF" => 0xabcdef,
-        hex3_digits: "#039" => 0x003399,
-        hex3_lowercase: "#abc" => 0xaabbcc,
-        hex3_uppercase: "#ABC" => 0xaabbcc,
-        hwb: "hwb(0 0% 0%)" => 0xff0000,
-        xhex3: "0x123" => 0x112233,
-        xhex6: "0x123465" => 0x123465,
-        colour0: "colour0" => 0x000000,
-        brightcolor0: "brightcolor0" => 0x000000,
-        color0: "color0" => 0x000000,
-        color1: "color1" => 0x800000,
-        color2: "color2" => 0x008000,
-        color3: "color3" => 0x808000,
-        color7: "color7" => 0xc0c0c0,
-        color8: "color8" => 0x808080,
-        color9: "color9" => 0xff0000,
-        color10: "color10" => 0x00ff00,
-        color12: "color12" => 0x0000ff,
-        color16: "color16" => 0x000000,
-        color17: "color17" => 0x00005f,
-        color52: "color52" => 0x5f0000,
-        color21: "color21" => 0x0000ff,
-        color57: "color57" => 0x5f00ff,
-        color196: "color196" => 0xff0000,
-        color231: "color231" => 0xffffff,
-        color46: "color46" => 0x00ff00,
-        color232: "color232" => 0x080808,
-        rgb: "rgb(255 0 0)" => 0xff0000,
-        rgba: "rgba(255 0 0)" => 0xff0000,
-    }
-
-    macro_rules! test_word_boundary_impl {
-        (
-            $(
-                $test_name:ident : $input:expr => $should_match:expr,
-            )+
-        ) => {
-            $(
-                #[test]
-                fn $test_name() {
-                    for i in 0..32 {
-                        let mut got = None;
-                        search(
-                            (" ".repeat(i) + "_" + $input + "\0").as_bytes(),
-                            |m| {
-                                got = Some(m);
-                                ControlFlow::Continue(())
-                            },
-                        );
-                        if $should_match {
-                            assert!(got.is_some());
-                        } else {
-                            assert_eq!(got, None);
-                        }
-                    }
-                }
-            )+
-        }
-    }
-
-    test_word_boundary_impl! {
-        word_boundary_space: "red" => true,
-        word_boundary_underscore: "_red" => true,
-        word_boundary_alphabetic: "xred" => false,
-    }
-
-    /*
-    fn test_large() {
-        use std::fs::File;
-        use std::io::prelude::*;
-        let mut f = File::open("../../target/large-file.txt").unwrap();
-        let mut buffer = Vec::new();
-        f.read_to_end(&mut buffer).unwrap();
-
-        use std::time::Instant;
-        let start = Instant::now();
-
-        for _i in 0..10 {
-            // println!("go!");
-            search(buffer.as_ref(), |_m| {
-                // println!("MATCH #{} => {:?}", c, m);
+            search((input.to_owned() + "\0").as_bytes(), |m| {
+                got = Some(m);
                 ControlFlow::Continue(())
             });
-            // println!("TOTAL MATCH {}", c);
+
+            assert_eq!(got, Some(Match::new(0..input.len(), expected)));
         }
 
-        let duration = start.elapsed();
-        println!("Time elapsed in expensive_function() is: {duration:?}");
+        #[track_caller]
+        fn assert_match(input: &str, expected: u32) {
+            assert_match2(&input.to_ascii_lowercase(), expected);
+            assert_match2(&input.to_ascii_uppercase(), expected);
+        }
+
+        assert_match("hsl(0 0% 100%)", 0xffffff);
+        assert_match("hsla(0 0% 100%)", 0xffffff);
+        assert_match("hwb(0 100% 0%)", 0xffffff);
+        assert_match("lab(100 0 0)", 0xffffff);
+        assert_match("lch(100% 0% 0)", 0xffffff);
+        assert_match("oklab(1 0 0)", 0xffffff);
+        assert_match("oklch(100% 0 0)", 0xffffff);
+        assert_match("rgb(255 255 255)", 0xffffff);
+        assert_match("rgba(100% 100% 100%)", 0xffffff);
+        assert_match("color15", 0xffffff);
+        assert_match("brightcolor15", 0xffffff);
+        assert_match("colour15", 0xffffff);
+        assert_match("#fff", 0xffffff);
+        assert_match("#ffffff", 0xffffff);
+        assert_match("0xfff", 0xffffff);
+        assert_match("0xffffff", 0xffffff);
+
+        assert_match("#010", 0x001100);
+        assert_match("#230", 0x223300);
+        assert_match("#450", 0x445500);
+        assert_match("#670", 0x667700);
+        assert_match("#890", 0x889900);
+        assert_match("#ab0", 0xaabb00);
+        assert_match("#cd0", 0xccdd00);
+        assert_match("#ef0", 0xeeff00);
+
+        assert_match("rebeccapurple", 0x663399);
+
+        for (name, color) in &NAMED_COLORS {
+            assert_match(name, *color);
+        }
     }
-    */
+
+    #[test]
+    fn word_boundary() {
+        #[track_caller]
+        fn assert_match(input: &str, expected_offset: Option<usize>) {
+            for i in 0..32 {
+                let mut got = None;
+
+                search((" ".repeat(i) + input + "\0").as_bytes(), |m| {
+                    got = Some(m.first());
+                    ControlFlow::Continue(())
+                });
+
+                assert_eq!(got, expected_offset.map(|x| i + x));
+            }
+        }
+
+        assert_match("red", Some(0));
+        assert_match("_red", Some(1));
+        assert_match("-red", Some(1));
+        assert_match("xred", None);
+        assert_match("#red", None);
+    }
 }

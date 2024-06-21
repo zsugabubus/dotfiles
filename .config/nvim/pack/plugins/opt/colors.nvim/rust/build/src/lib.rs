@@ -8,7 +8,7 @@ use automata::{dfa::Dfa, nfa::Nfa};
 
 #[derive(Debug, Clone, PartialEq, Copy, Hash)]
 pub enum Action {
-    Named([u8; 3]),
+    Named(u8, u8, u8),
     Xrrggbb,
     Xrgb,
     XXrrggbb,
@@ -38,7 +38,26 @@ pub fn main() {
     generate(&mut writer);
 }
 
-fn generate(writer: impl Write) {
+fn get_named_colors() -> Vec<(String, u32)> {
+    ["data/named.csv", "data/tailwind.csv"]
+        .iter()
+        .flat_map(|file| {
+            println!("cargo:rerun-if-changed={file}");
+
+            BufReader::new(File::open(file).unwrap())
+                .lines()
+                .map(|line| {
+                    let line = line.unwrap();
+                    let (name, s) = line.split_once(',').expect("comma");
+                    let s = s.strip_prefix('#').expect("#");
+                    let color = u32::from_str_radix(s, 16).expect("hex color");
+                    (name.to_string(), color)
+                })
+        })
+        .collect()
+}
+
+fn generate(mut writer: impl Write) {
     let mut nfa = Nfa::new();
     let start = nfa.new_state();
 
@@ -49,26 +68,24 @@ fn generate(writer: impl Write) {
         flags
     };
 
-    let parse_color = |s: &str| {
-        let s = s.strip_prefix('#').unwrap();
-        [
-            i32::from_str_radix(&s[0..2], 16).unwrap() as u8,
-            i32::from_str_radix(&s[2..4], 16).unwrap() as u8,
-            i32::from_str_radix(&s[4..6], 16).unwrap() as u8,
-        ]
-    };
+    let named = get_named_colors();
 
-    for file in ["data/named.csv", "data/tailwind.csv"] {
-        println!("cargo:rerun-if-changed={file}");
-        let reader = BufReader::new(File::open(file).unwrap());
-        for line in reader.lines() {
-            let line = line.unwrap();
-            let [name, hex] = &line.split(',').collect::<Vec<_>>().into_boxed_slice()[..] else {
-                panic!();
-            };
-            let state = re.insert_literal(start, name, &flags);
-            re.set_accept(state, Action::Named(parse_color(hex)));
-        }
+    writeln!(writer, "#[cfg(test)]").unwrap();
+    writeln!(
+        writer,
+        "pub static NAMED_COLORS: [(&str, u32); {}] = [",
+        named.len()
+    )
+    .unwrap();
+    for (name, color) in &named {
+        writeln!(writer, "({:?}, {}),", name, color).unwrap();
+    }
+    writeln!(writer, "];").unwrap();
+
+    for (name, color) in named {
+        let state = re.insert_literal(start, name, &flags);
+        let [_, r, g, b] = color.to_be_bytes();
+        re.set_accept(state, Action::Named(r, g, b));
     }
 
     for (name, action) in [
