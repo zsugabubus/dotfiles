@@ -22,7 +22,7 @@ local is_buffer_enabled
 
 local lib
 local hls
-local attached_bufs
+local attached_bufs = {}
 local hl_cache
 
 local function rgb2hl(color)
@@ -81,6 +81,8 @@ local function is_attached_to_buffer(buf)
 end
 
 local function attach_to_buffer(buf)
+	local attached_bufs = attached_bufs
+
 	assert(buf ~= 0)
 	if attached_bufs[buf] then
 		return
@@ -154,6 +156,10 @@ end
 
 local function reload()
 	hl_cache = {}
+
+	for buf in pairs(attached_bufs) do
+		attached_bufs[buf] = nil
+	end
 	attached_bufs = {}
 
 	for _, win in ipairs(api.nvim_list_wins()) do
