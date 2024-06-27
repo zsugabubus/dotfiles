@@ -1,4 +1,5 @@
 local api = vim.api
+local bo = vim.bo
 local fn = vim.fn
 local go = vim.go
 
@@ -56,8 +57,9 @@ local function setup(opts)
 			for s, lnum in pairs(patterns) do
 				lines[lnum] = s
 			end
-			vim.api.nvim_buf_set_lines(0, 0, -1, true, lines)
-			vim.bo.buftype = 'acwrite'
+			api.nvim_buf_set_lines(0, 0, -1, true, lines)
+			bo.buftype = 'acwrite'
+			bo.modeline = false
 		end,
 	})
 
@@ -67,11 +69,11 @@ local function setup(opts)
 		callback = function()
 			patterns = {}
 			update()
-			for lnum, s in ipairs(vim.api.nvim_buf_get_lines(0, 0, -1, true)) do
+			for lnum, s in ipairs(api.nvim_buf_get_lines(0, 0, -1, true)) do
 				patterns[s] = lnum
 			end
 			update()
-			vim.bo.modified = false
+			bo.modified = false
 		end,
 	})
 
