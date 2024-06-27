@@ -1,4 +1,5 @@
 local api = vim.api
+local bo = vim.bo
 local fn = vim.fn
 
 local shesc = fn.shellescape
@@ -24,8 +25,8 @@ api.nvim_create_autocmd('BufReadCmd', {
 	nested = true,
 	callback = function(opts)
 		local destination, path, recursive = parse_opts(opts)
-		vim.bo.buftype = 'nofile'
-		vim.bo.swapfile = false
+		bo.buftype = 'nofile'
+		bo.swapfile = false
 		local cmdline = {
 			'ssh',
 			'--',
@@ -86,21 +87,22 @@ api.nvim_create_autocmd('BufReadCmd', {
 			end
 		end
 		api.nvim_buf_set_lines(0, 0, -1, true, output)
-		vim.bo.readonly = writable == 'readonly'
+		bo.readonly = writable == 'readonly'
 		if kind == 'file' or kind == 'new' then
-			vim.bo.buftype = 'acwrite'
+			bo.buftype = 'acwrite'
 			local filetype, on_detect = vim.filetype.match({
 				buf = 0,
 				filename = path,
 			})
-			vim.bo.filetype = filetype or ''
+			bo.filetype = filetype or ''
 			if on_detect then
 				on_detect(0)
 			end
 		elseif kind == 'dir' then
-			vim.bo.filetype = 'directory'
+			bo.filetype = 'directory'
+			bo.modeline = false
 		else
-			vim.bo.filetype = ''
+			bo.filetype = ''
 		end
 	end,
 })

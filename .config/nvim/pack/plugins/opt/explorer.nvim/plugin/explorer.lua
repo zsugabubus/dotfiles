@@ -54,6 +54,7 @@ api.nvim_create_autocmd('BufEnter', {
 
 				bo.buftype = 'nofile'
 				bo.swapfile = false
+				bo.modeline = false
 				bo.filetype = 'directory'
 			end,
 		})
