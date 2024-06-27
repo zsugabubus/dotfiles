@@ -789,7 +789,7 @@ require('pack').setup({
 			very_magic = true,
 		},
 		after = function()
-			map('n', 'gm', '<Cmd>MultiSearch<CR>')
+			map('n', 'sm', '<Cmd>MultiSearch<CR>')
 		end,
 	},
 	{
