@@ -264,6 +264,18 @@ function Nvim:pop_messages()
 	return result
 end
 
+function Nvim:get_cursor(bufname)
+	if not bufname then
+		return { self.fn.bufname(), self.fn.line('.'), self.fn.col('.') }
+	end
+	return self:lua(function(bufname)
+		local buf = vim.fn.bufnr(bufname)
+		return vim.api.nvim_buf_call(buf, function()
+			return { vim.fn.line('.'), vim.fn.col('.') }
+		end)
+	end, bufname)
+end
+
 function Nvim:get_lines(buf)
 	buf = buf or 0
 	if type(buf) == 'string' then
@@ -300,6 +312,10 @@ function Nvim:screen()
 
 		return lines
 	end)
+end
+
+function Nvim:assert_cursor(bufname, row, col)
+	return busted.assert.same({ bufname, row, col }, self:get_cursor())
 end
 
 function Nvim:assert_lines(expected)
