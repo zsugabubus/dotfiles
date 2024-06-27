@@ -250,14 +250,17 @@ map('i', '<C-e>', '<C-o>g_<Right>')
 
 smap('n', '<M-l>', ':lnext<CR>:silent! normal! zOzz<CR>')
 smap('n', '<M-L>', ':lprev<CR>:silent! normal! zOzz<CR>')
-smap('n', '<M-n>', ':cnext<CR>:silent! normal! zOzz<CR>')
-smap('n', '<M-N>', ':cprev<CR>:silent! normal! zOzz<CR>')
+smap('n', '<M-n>', ':Cnext<CR>:silent! normal! zOzz<CR>')
+smap('n', '<M-N>', ':Cprev<CR>:silent! normal! zOzz<CR>')
 smap('n', '<M-f>', ':next<CR>')
 smap('n', '<M-F>', ':prev<CR>')
 smap('n', '<M-j>', ':wincmd W<CR>')
 smap('n', '<M-k>', ':wincmd w<CR>')
 smap('n', '<M-o>', ':buffer #<CR>')
 smap('n', '<Tab>', ':wincmd p<CR>')
+
+smap('n', ']q', ':Cnewer<CR>')
+smap('n', '[q', ':Colder<CR>')
 
 xmap('i', '<C-f>', function()
 	local s = fn.expand('%:t:r')
@@ -326,7 +329,10 @@ fmap('n', 'sb', function()
 end)
 smap('n', 'sp', [[vip:sort /\v^(#!)@!\A*\zs/<CR>]])
 smap('n', 'sq', ':Qread<CR>')
+smap('n', 'sq', ':Qf<CR>')
+smap('n', 'sQ', ':tabnew|Qe<CR>')
 smap('n', 'sw', ':set wrap!<CR>')
+smap('n', 'se', ':edit<CR>')
 
 map('n', 'Q', ':normal n.<CR>zz')
 
@@ -442,12 +448,12 @@ do
 				'\\        %m:   %f',
 			}, ',')
 
-			cmd.cgetbuffer()
+			cmd.Cgetbuffer()
 
 			bo.errorformat = saved
 		end)
 
-		cmd.cnext()
+		cmd.Cnext()
 	end, { bang = true })
 end
 
@@ -785,6 +791,7 @@ require('pack').setup({
 			})
 		end,
 	},
+	{ 'qf.nvim' },
 	{ 'register.nvim' },
 	{
 		'searchfold.nvim',
@@ -814,7 +821,6 @@ require('pack').setup({
 	{ 'vim-bufgrep' },
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
-	{ 'vim-qf' },
 	{ 'vim-tilde' },
 	{ 'vimdent.nvim' },
 	{
