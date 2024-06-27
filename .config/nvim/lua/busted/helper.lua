@@ -319,11 +319,11 @@ function Nvim:assert_cursor(bufname, row, col)
 end
 
 function Nvim:assert_lines(expected)
-	busted.assert.same(expected, self:get_lines())
+	return busted.assert.same(expected, self:get_lines())
 end
 
 function Nvim:assert_messages(expected)
-	busted.assert.same(expected, self:pop_messages())
+	return busted.assert.same(expected, self:pop_messages())
 end
 
 function Nvim:assert_screen()
