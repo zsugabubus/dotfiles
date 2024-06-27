@@ -290,11 +290,8 @@ fmap('n', '<C-q>', function()
 end)
 
 xmap('n', '<M-!>', function()
-	local dirname = fn.expand('%:h')
-	if dirname == '' then
-		dirname = '.'
-	end
-	return ':edit ' .. xmapescape(fn.fnameescape(dirname)) .. '/<C-Z>'
+	local s = string.match(fn.expand('%'), '^(.*/)[^/]') or './'
+	return string.format(':edit %s<C-Z>', xmapescape(fn.fnameescape(s)))
 end)
 smap('n', '<M-q>', ':quit<CR>')
 smap('n', '<M-w>', ':silent! wa<CR>')
