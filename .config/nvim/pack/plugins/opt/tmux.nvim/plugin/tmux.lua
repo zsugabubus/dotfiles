@@ -1,6 +1,8 @@
 local api = vim.api
+
 local autocmd = api.nvim_create_autocmd
 local user_command = api.nvim_create_user_command
+
 local group = api.nvim_create_augroup('tmux', {})
 
 local function autoload_user_command(opts)
