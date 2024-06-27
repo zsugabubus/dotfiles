@@ -153,7 +153,7 @@ function Nvim.new(cls)
 	end
 
 	for _, name in ipairs({ 'v', 'o', 'g', 'go', 'b', 'bo', 'w', 'wo' }) do
-		self[name] = self:make_vim_primitive_redirect(name)
+		self[name] = self:make_vim_options_redirect(name)
 	end
 
 	for _, name in ipairs({ 'inspect', 'tbl_map', 'tbl_filter' }) do
@@ -333,9 +333,13 @@ function Nvim:make_vim_function_redirect(name)
 	})
 end
 
-function Nvim:make_vim_primitive_redirect(name)
+function Nvim:make_vim_options_redirect(name)
 	local function index_fn(name, k)
 		return vim[name][k]
+	end
+
+	local function index2_fn(name, k, k2)
+		return vim[name][k][k2]
 	end
 
 	local function newindex_fn(name, k, v)
@@ -344,6 +348,13 @@ function Nvim:make_vim_primitive_redirect(name)
 
 	return setmetatable({}, {
 		__index = function(_, k)
+			if type(k) == 'number' then
+				return setmetatable({}, {
+					__index = function(_, k2)
+						return self:lua(index2_fn, name, k, k2)
+					end,
+				})
+			end
 			return self:lua(index_fn, name, k)
 		end,
 		__newindex = function(_, k, v)
