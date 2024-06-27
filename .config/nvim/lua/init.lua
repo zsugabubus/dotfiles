@@ -715,6 +715,12 @@ require('pack').setup({
 	},
 	{ 'ansiesc.nvim' },
 	{ 'archive.nvim' },
+	{
+		'arglist.nvim',
+		after = function()
+			map('n', 'sa', '<Cmd>Args<CR>')
+		end,
+	},
 	{ 'capture.nvim' },
 	{
 		'colors.nvim',
