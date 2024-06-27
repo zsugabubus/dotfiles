@@ -406,6 +406,15 @@ user_command('TODO', 'GREP \\b(TODO|FIXME|BUG|WTF)[: ]', {})
 
 user_command('Gconflicts', 'GREP ^<<<<<<<', {})
 
+user_command('Glob', function(opts)
+	local base = 'read! rg --files --sort=path'
+	if opts.args == '' then
+		cmd(base)
+	else
+		cmd(string.format('%s -g %s', base, fn.shellescape(opts.args)))
+	end
+end, { nargs = '*' })
+
 do
 	local buf
 
