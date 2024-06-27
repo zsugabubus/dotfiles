@@ -264,8 +264,12 @@ function Nvim:pop_messages()
 	return result
 end
 
-function Nvim:get_lines()
-	return self.api.nvim_buf_get_lines(0, 0, -1, false)
+function Nvim:get_lines(buf)
+	buf = buf or 0
+	if type(buf) == 'string' then
+		buf = self.fn.bufnr(buf)
+	end
+	return self.api.nvim_buf_get_lines(buf, 0, -1, false)
 end
 
 function Nvim:set_lines(lines)
