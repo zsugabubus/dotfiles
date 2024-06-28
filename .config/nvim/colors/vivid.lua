@@ -30,7 +30,7 @@ local theme = {
 	Directory = 'Normal',
 	EndOfBuffer = 'NonText',
 	Error = { fg = '#d80000', bg = '#ffd4d4', bold = true },
-	ErrorMsg = { fg = '#ff0034', bg = '#fdcdd4', bold = true },
+	ErrorMsg = { fg = '#ff0020', bold = true },
 	FoldColumn = { fg = '#b0abab', bg = 'LineNr' },
 	Folded = { bg = light and '#e3e5ea' or '#44455c', fg = light and '#44546a' or '#d1d2d6' },
 	Function = 'Identifier',
