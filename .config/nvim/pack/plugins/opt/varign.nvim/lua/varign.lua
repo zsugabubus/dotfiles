@@ -18,7 +18,6 @@ local function compute_vartabstop(buf)
 
 	local lines = api.nvim_buf_get_lines(buf, 0, max_lines, false)
 	local start = {}
-	local col = 1
 
 	while true do
 		local max_width = 0
@@ -49,7 +48,6 @@ local function compute_vartabstop(buf)
 		end
 
 		table.insert(result, max_width + pad)
-		col = col + max_width + pad
 	end
 end
 
