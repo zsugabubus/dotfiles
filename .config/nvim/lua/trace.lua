@@ -47,8 +47,9 @@ local M = setmetatable({
 	trace = trace_disabled,
 	verbose = 0,
 }, {
-	__index = function(self, k)
-		return require('trace-more')[k]
+	__index = function(M, k)
+		getmetatable(M).__index = require('trace-more')
+		return M[k]
 	end,
 })
 
