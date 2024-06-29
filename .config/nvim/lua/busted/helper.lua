@@ -129,7 +129,7 @@ function Nvim:lua(fn, ...)
 end
 
 function Nvim:clear()
-	self.cmd('%bdelete!|set all&|call setqflist([])|messages clear')
+	self.cmd([[%bdelete!|set all&|call setqflist([],'f')|messages clear]])
 end
 
 function Nvim:save_global_options()
