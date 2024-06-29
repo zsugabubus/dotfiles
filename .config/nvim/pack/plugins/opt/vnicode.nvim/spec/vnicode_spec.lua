@@ -20,7 +20,7 @@ test('ga; normal mode', function()
 		'< a >97, U+0061, Ll/LATIN SMALL LETTER A',
 		'',
 		'',
-	}, vim:screen())
+	}, vim:get_screen())
 end)
 
 test('ga; visual mode', function()
@@ -32,7 +32,7 @@ test('ga; visual mode', function()
 		'< a >97, U+0061, Ll/LATIN SMALL LETTER A',
 		'< ^J >10, U+000A, Cc/EOL (<control>)',
 		'< b >98, U+0062, Ll/LATIN SMALL LETTER B',
-	}, vim:screen())
+	}, vim:get_screen())
 end)
 
 test(':VnicodeInspect', function()

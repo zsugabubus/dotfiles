@@ -420,15 +420,15 @@ describe('qe://X', function()
 			'~',
 			'1,2',
 			'',
-		}, vim:screen())
+		}, vim:get_screen())
 	end)
 
 	test('edit', function()
 		vim:feed('0ineo')
-		assert.same('1 neo vim: a1', vim:screen()[2])
+		assert.same('1 neo vim: a1', vim:get_screen()[2])
 
 		vim:feed('ccneovim')
-		assert.same('1 neovim', vim:screen()[2])
+		assert.same('1 neovim', vim:get_screen()[2])
 	end)
 
 	test('write no modify', function()

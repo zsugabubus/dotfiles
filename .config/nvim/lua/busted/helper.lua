@@ -207,7 +207,7 @@ function Nvim:resize(width, height)
 	self.api.nvim_ui_try_resize(width, height)
 end
 
-function Nvim:screen()
+function Nvim:get_screen()
 	return self:lua(function()
 		local lines = {}
 

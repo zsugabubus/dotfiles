@@ -47,7 +47,7 @@ describe('*', function()
 			'~',
 			'1,0',
 			'E348: No string under cursor',
-		}, vim:screen())
+		}, vim:get_screen())
 	end)
 
 	test('keeps options', function()

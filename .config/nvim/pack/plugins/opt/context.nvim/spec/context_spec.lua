@@ -23,7 +23,7 @@ local function collapse(up, expected)
 
 		vim.cmd.ContextEnable()
 
-		local screen = vim:screen()
+		local screen = vim:get_screen()
 		table.remove(screen, #screen)
 		assert.same(expected, screen)
 	end)
@@ -129,7 +129,7 @@ test('line ignore', function()
 
 	vim.cmd.ContextEnable()
 
-	local screen = vim:screen()
+	local screen = vim:get_screen()
 	table.remove(screen, #screen)
 	table.remove(screen, #screen)
 	assert.same({
@@ -151,7 +151,7 @@ test(':ContextDisable', function()
 		'  c',
 		'3,1',
 		'',
-	}, vim:screen())
+	}, vim:get_screen())
 
 	vim.cmd.ContextDisable()
 
@@ -160,5 +160,5 @@ test(':ContextDisable', function()
 		'  c',
 		'3,1',
 		'',
-	}, vim:screen())
+	}, vim:get_screen())
 end)
