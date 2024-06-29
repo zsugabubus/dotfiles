@@ -1,94 +1,5 @@
 local busted = require('busted')
 
-local function create_assert_snapshot(busted)
-	local handler = require('busted.outputHandlers.base')()
-
-	local test_name, per_test_index
-
-	local old_snapshots
-	local new_snapshots
-
-	local function serialize_to_lua(x)
-		return string.format(
-			'return %s',
-			string.gsub(
-				vim.inspect(x, { indent = '' }),
-				'"([^"]*\\n[^"]*)"',
-				function(s)
-					return string.format('[[\n%s]]', string.gsub(s, '\\n', '\n'))
-				end
-			)
-		)
-	end
-
-	local function get_filename(element)
-		return string.format('%s.snapshots', element.file[1].name)
-	end
-
-	local function get_snapshot_name()
-		return string.format(
-			'%s%s',
-			test_name,
-			per_test_index == 1 and '' or string.format('_%d', per_test_index)
-		)
-	end
-
-	busted.subscribe({ 'suite', 'start' }, function(element)
-		if not element.file then
-			return
-		end
-
-		local ok, result = pcall(dofile, get_filename(element))
-		if ok then
-			old_snapshots = assert(result)
-		else
-			old_snapshots = {}
-		end
-		new_snapshots = {}
-	end)
-
-	busted.subscribe({ 'suite', 'end' }, function(element)
-		if not element.file then
-			return
-		end
-
-		local old = serialize_to_lua(old_snapshots)
-		local new = serialize_to_lua(new_snapshots)
-
-		if old == new then
-			return
-		end
-
-		local filename = get_filename(element)
-
-		if not next(new_snapshots) then
-			os.remove(filename)
-		else
-			local f = assert(io.open(filename, 'w'))
-			assert(f:write(new))
-			assert(f:close())
-		end
-	end)
-
-	busted.subscribe({ 'test', 'start' }, function(element)
-		test_name = handler.getFullName(element)
-		per_test_index = 0
-	end)
-
-	return function(actual)
-		per_test_index = per_test_index + 1
-
-		local name = get_snapshot_name()
-		local expected = old_snapshots[name]
-		new_snapshots[name] = actual
-		if expected then
-			return busted.assert.same(expected, actual)
-		end
-	end
-end
-
-local assert_snapshot = create_assert_snapshot(busted)
-
 local ASYNC_API = {
 	nvim_get_mode = true,
 	nvim_ui_attach = true,
@@ -324,10 +235,6 @@ end
 
 function Nvim:assert_messages(expected)
 	return busted.assert.same(expected, self:pop_messages())
-end
-
-function Nvim:assert_screen()
-	return assert_snapshot(table.concat(self:screen(), '\n'))
 end
 
 function Nvim:make_vim_function_redirect(name)
