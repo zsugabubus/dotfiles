@@ -39,7 +39,15 @@ describe('*', function()
 		vim:set_lines({ '', 'abc' })
 		vim:feed('*r*')
 		vim:assert_lines({ '', 'abc' })
-		vim:assert_screen()
+		assert.same({
+			'',
+			'abc',
+			'~',
+			'~',
+			'~',
+			'1,0',
+			'E348: No string under cursor',
+		}, vim:screen())
 	end)
 
 	test('keeps options', function()
