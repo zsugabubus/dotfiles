@@ -1,8 +1,7 @@
 local api = vim.api
+local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
-
-local M = {}
 
 local MIN = 60
 local HOUR = 60 * MIN
@@ -65,10 +64,6 @@ local function time_display(time, now)
 	)
 end
 
-local function buf_get_win(buf)
-	return assert(api.nvim_list_wins()[fn.bufwinnr(buf)])
-end
-
 local function buf_get_undotree(buf)
 	local undotree
 	api.nvim_buf_call(buf, function()
@@ -83,13 +78,11 @@ local function buf_undo(buf, undo_number)
 	end)
 end
 
-local function buf_set_folds(buf, ranges)
-	api.nvim_buf_call(buf, function()
-		cmd.normal({ args = { 'zE' }, bang = true })
-		for _, range in ipairs(ranges) do
-			cmd.fold({ range = range })
-		end
-	end)
+local function set_folds(ranges)
+	cmd.normal({ args = { 'zE' }, bang = true })
+	for _, range in ipairs(ranges) do
+		cmd.fold({ range = range })
+	end
 end
 
 local function buf_load_undo(buf, undo_number)
@@ -102,8 +95,7 @@ local function buf_load_undo(buf, undo_number)
 
 		if not rundo_buf then
 			rundo_buf = api.nvim_create_buf(false, true)
-			local bo = vim.bo[rundo_buf]
-			bo.undolevels = -1
+			bo[rundo_buf].undolevels = -1
 		end
 
 		api.nvim_buf_call(buf, function()
@@ -130,12 +122,12 @@ end
 
 local function make_buf_undo_lines_lookup(buf)
 	return setmetatable({}, {
-		__index = function(self, undo_unumber)
-			local lines = buf_get_undo_lines(buf, undo_unumber, 0, -1, false)
+		__index = function(t, undo_number)
+			local lines = buf_get_undo_lines(buf, undo_number, 0, -1, false)
 			-- Add trailing CR.
 			table.insert(lines, '')
 			local contents = table.concat(lines, '\n')
-			self[undo_unumber] = contents
+			t[undo_number] = contents
 			return contents
 		end,
 	})
@@ -398,17 +390,15 @@ local function update(buf)
 		end
 	end
 
-	local bo = vim.bo[buf]
+	local bo = bo[buf]
 	bo.modifiable = true
 	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	bo.modifiable = false
 
-	buf_set_folds(buf, folds)
-
-	local win = buf_get_win(buf)
-	api.nvim_win_set_cursor(win, { cursor, 0 })
 	api.nvim_buf_call(buf, function()
-		vim.cmd.normal({ args = { 'zz' }, bang = true })
+		set_folds(folds)
+		api.nvim_win_set_cursor(0, { cursor, 0 })
+		cmd.normal({ args = { 'zz' }, bang = true })
 	end)
 
 	local keymap = api.nvim_buf_set_keymap
@@ -466,12 +456,11 @@ local function update(buf)
 	})
 end
 
-function M.read_undo(opts)
+local function read_undo_autocmd(opts)
 	local target_buf, undo_number = parse_undo_bufname(opts.match)
 
-	local target_bo = vim.bo[target_buf]
+	local target_bo = bo[target_buf]
 
-	local bo = vim.bo
 	bo.buftype = 'nofile'
 	bo.filetype = target_bo.filetype
 	bo.swapfile = false
@@ -484,8 +473,7 @@ function M.read_undo(opts)
 	bo.modifiable = false
 end
 
-function M.read_undotree(opts)
-	local bo = vim.bo
+local function read_undotree_autocmd(opts)
 	bo.bufhidden = 'wipe'
 	bo.buflisted = false
 	bo.buftype = 'nofile'
@@ -514,7 +502,7 @@ function M.read_undotree(opts)
 			if not api.nvim_buf_is_valid(buf) then
 				return true
 			end
-			if api.nvim_buf_get_option(buf, 'readonly') then
+			if bo[buf].readonly then
 				return
 			end
 			update(buf)
@@ -524,4 +512,7 @@ function M.read_undotree(opts)
 	update(buf)
 end
 
-return M
+return {
+	read_undo_autocmd = read_undo_autocmd,
+	read_undotree_autocmd = read_undotree_autocmd,
+}

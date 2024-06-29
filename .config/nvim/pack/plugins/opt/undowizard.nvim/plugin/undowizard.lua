@@ -1,23 +1,26 @@
 local api = vim.api
 
+local autocmd = api.nvim_create_autocmd
+local user_command = api.nvim_create_user_command
+
 local group = api.nvim_create_augroup('undowizard', {})
 
-api.nvim_create_user_command('Undotree', function()
+user_command('Undotree', function()
 	vim.cmd('vsplit undotree://' .. api.nvim_get_current_buf())
 end, {})
 
-api.nvim_create_autocmd('BufReadCmd', {
+autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'undotree://*',
 	callback = function(...)
-		require('undowizard').read_undotree(...)
+		require('undowizard').read_undotree_autocmd(...)
 	end,
 })
 
-api.nvim_create_autocmd('BufReadCmd', {
+autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'undo://*',
 	callback = function(...)
-		require('undowizard').read_undo(...)
+		require('undowizard').read_undo_autocmd(...)
 	end,
 })
