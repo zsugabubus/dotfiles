@@ -248,10 +248,8 @@ local function setup(opts)
 
 	local span = trace(span, 'initialize plugins')
 
-	if api.nvim_get_vvar('vim_did_enter') == 0 then
-		table_insert(package.loaders, 2, package_loader)
-		api.nvim_set_option_value('loadplugins', false, {})
-	end
+	table_insert(package.loaders, 2, package_loader)
+	api.nvim_set_option_value('loadplugins', false, {})
 
 	local lua_span = trace('initialize lua package cache')
 
