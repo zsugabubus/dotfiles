@@ -128,10 +128,6 @@ function Nvim:lua(fn, ...)
 	return self.api.nvim_exec_lua(string.dump(fn, true), { ... })
 end
 
-function Nvim:messages()
-	return self:vim('messages')
-end
-
 function Nvim:clear()
 	self.cmd('%bdelete!|set all&|call setqflist([])|messages clear')
 end
@@ -163,12 +159,6 @@ function Nvim:save_global_options()
 			end
 		end, state)
 	end
-end
-
-function Nvim:pop_messages()
-	local result = self:messages()
-	self.cmd('messages clear')
-	return result
 end
 
 function Nvim:get_cursor(bufname)
@@ -228,7 +218,8 @@ function Nvim:assert_lines(expected)
 end
 
 function Nvim:assert_messages(expected)
-	return busted.assert.same(expected, self:pop_messages())
+	local messages = self:vim('messages|messages clear')
+	return busted.assert.same(expected, messages)
 end
 
 function Nvim:make_vim_function_redirect(name)
