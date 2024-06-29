@@ -1,5 +1,4 @@
 local vim = create_vim({
-	isolated = false,
 	width = 100,
 	height = 5,
 	on_setup = function(vim)
@@ -8,31 +7,54 @@ local vim = create_vim({
 		vim:lua(function()
 			require('vnicode').setup()
 		end)
-		vim.keymap.set('', 'ga', '<Plug>(vnicode-unicode)')
-		vim.keymap.set('', 'g8', '<Plug>(vnicode-utf8)')
+		vim.keymap.set('', 'ga', '<Plug>(vnicode-inspect)')
 	end,
 })
 
-test('ga, visual mode, multi-line', function()
-	vim:set_lines({ 'a', 'b' })
-	vim:feed('vjga')
-	vim:assert_screen()
+test('ga; normal mode', function()
+	vim:set_lines({ 'abc' })
+	vim:feed('ga')
+	assert.same({
+		'abc',
+		'1,1',
+		'< a >97, U+0061, Ll/LATIN SMALL LETTER A',
+		'',
+		'',
+	}, vim:screen())
 end)
 
-describe('g8, normal mode:', function()
-	local function case(s)
-		test(string.format("'%s'", s), function()
-			vim:set_lines({ s })
-			vim:feed('g8')
-			vim:assert_screen()
-		end)
-	end
+test('ga; visual mode', function()
+	vim:set_lines({ 'a', 'b' })
+	vim:feed('vjga')
+	assert.same({
+		'a',
+		'1,1',
+		'< a >97, U+0061, Ll/LATIN SMALL LETTER A',
+		'< ^J >10, U+000A, Cc/EOL (<control>)',
+		'< b >98, U+0062, Ll/LATIN SMALL LETTER B',
+	}, vim:screen())
+end)
 
-	case('')
-	case('\r')
-	case('a')
-	case('ő')
-	case('ﬁ')
-	case('🌍')
-	case('\u{10ffff}')
+test(':VnicodeInspect', function()
+	vim.cmd.VnicodeInspect()
+	assert.same('vnicode://', vim.fn.bufname())
+
+	vim.cmd.VnicodeInspect('abc')
+	assert.same('vnicode://abc', vim.fn.bufname())
+
+	vim.cmd.VnicodeInspect('a b c')
+	assert.same('vnicode://a b c', vim.fn.bufname())
+end)
+
+test('vnicode://', function()
+	vim.cmd.edit(vim.fn.fnameescape('vnicode://\raőﬁ🌍\u{10ffff}'))
+	vim:assert_lines({
+		'< ^M >13, U+000D, Cc/CR (<control>)',
+		'< a >97, U+0061, Ll/LATIN SMALL LETTER A',
+		'< ő >337, U+0151, Ll/LATIN SMALL LETTER O WITH DOUBLE ACUTE = < o >+< ◌̋ >',
+		'< ﬁ >64257, U+FB01, Ll/LATIN SMALL LIGATURE FI = < f >+< i >',
+		'< 🌍 >127757, U+1F30D, So/EARTH GLOBE EUROPE-AFRICA',
+		'< <10ffff> >1114111, U+10FFFF, Cn/NO NAME',
+	})
+	vim.cmd.edit()
 end)

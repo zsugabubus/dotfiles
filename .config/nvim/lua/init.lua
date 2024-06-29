@@ -839,8 +839,7 @@ require('pack').setup({
 		'vnicode.nvim',
 		opts = {},
 		after = function()
-			nxo_map('ga', '<Plug>(vnicode-unicode)')
-			nxo_map('g8', '<Plug>(vnicode-utf8)')
+			nxo_map('ga', '<Plug>(vnicode-inspect)')
 		end,
 	},
 	{ 'wtf.nvim' },

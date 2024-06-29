@@ -1,4 +1,17 @@
-local M = {}
+local api = vim.api
+
+local autocmd = api.nvim_create_autocmd
+local keymap = api.nvim_set_keymap
+local user_command = api.nvim_create_user_command
+
+local group = api.nvim_create_augroup('vnicode', {})
+
+local M = setmetatable({}, {
+	__index = function(M, k)
+		getmetatable(M).__index = require('vnicode.autoload')
+		return M[k]
+	end,
+})
 
 function M.setup(opts)
 	local default_config = {
@@ -7,43 +20,42 @@ function M.setup(opts)
 
 	M.config = setmetatable(opts or {}, { __index = default_config })
 
-	local api = vim.api
-	local keymap = api.nvim_set_keymap
-	local user_command = api.nvim_create_user_command
-
-	keymap('', '<Plug>(vnicode-unicode)', '', {
+	keymap('', '<Plug>(vnicode-inspect)', '', {
 		callback = function()
-			require('vnicode.commands').ga()
+			require('vnicode').inspect()
 		end,
 	})
 
-	keymap('', '<Plug>(vnicode-utf8)', '', {
-		callback = function()
-			require('vnicode.commands').g8()
-		end,
-	})
+	user_command('VnicodeInspect', function(opts)
+		vim.cmd.edit(vim.fn.fnameescape('vnicode://' .. opts.args))
+	end, { nargs = '*' })
 
-	user_command('Vnicode', function(...)
-		require('vnicode.commands').view(...)
+	user_command('VnicodeView', function(...)
+		require('vnicode').view_cmd(...)
 	end, {
 		nargs = '?',
-		complete = function(...)
-			return require('vnicode.commands').view_complete(...)
-		end,
+		complete = "custom,v:lua.require'vnicode'.view_complete",
 	})
 
 	user_command('VnicodeInstall', function(...)
-		require('vnicode.commands').install(...)
+		require('vnicode').install_cmd(...)
 	end, {
 		nargs = '?',
-		complete = function(...)
-			return require('vnicode.commands').install_complete(...)
-		end,
+		complete = "custom,v:lua.require'vnicode'.install_complete",
 	})
 
 	user_command('VnicodeUpdate', function(opts)
-		require('vnicode.commands').update(opts)
+		require('vnicode').update_cmd(opts)
 	end, {})
+
+	autocmd('BufReadCmd', {
+		group = group,
+		pattern = 'vnicode://*',
+		nested = true,
+		callback = function(...)
+			require('vnicode').read_vnicode_autocmd(...)
+		end,
+	})
 end
 
 return M
