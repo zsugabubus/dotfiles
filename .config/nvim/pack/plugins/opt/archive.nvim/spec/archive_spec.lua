@@ -116,7 +116,6 @@ describe('xz', function()
 		vim:set_lines(OTHER_CONTENT)
 		assert.True(vim.bo.modified)
 		vim.cmd.write()
-		vim:unblock()
 		assert.False(vim.bo.modified)
 		assert.same(
 			table.concat(OTHER_CONTENT, '\n') .. '\n',

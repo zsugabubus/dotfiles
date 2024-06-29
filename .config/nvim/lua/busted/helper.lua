@@ -40,11 +40,9 @@ function Nvim.new(cls)
 				if debug then
 					print_log(display_call(string.format('vim.api.%s', k), ...))
 				end
-
 				if not ASYNC_API[k] then
 					self:assert_unblocked()
 				end
-
 				local result = self:rpc_request(k, ...)
 				if result == vim.NIL then
 					result = nil
@@ -112,11 +110,6 @@ end
 
 function Nvim:is_blocking()
 	return self.api.nvim_get_mode()['blocking']
-end
-
-function Nvim:unblock()
-	self.api.nvim_input('<Esc>')
-	self:assert_unblocked()
 end
 
 function Nvim:assert_unblocked()
@@ -213,7 +206,6 @@ end
 function Nvim:get_screen()
 	return self:lua(function()
 		local lines = {}
-
 		for y = 1, vim.o.lines do
 			local columns = {}
 			for x = 1, vim.o.columns do
@@ -223,7 +215,6 @@ function Nvim:get_screen()
 			line = string.gsub(line, ' +$', '')
 			table.insert(lines, line)
 		end
-
 		return lines
 	end)
 end
