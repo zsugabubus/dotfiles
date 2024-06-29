@@ -3,6 +3,9 @@ local bo = vim.bo
 local fn = vim.fn
 local go = vim.go
 
+local autocmd = api.nvim_create_autocmd
+local user_command = api.nvim_create_user_command
+
 local wins = {}
 local patterns
 
@@ -29,9 +32,9 @@ local function setup(opts)
 
 	local function update()
 		for win, win_patterns in pairs(wins) do
-			for s, lnum in pairs(patterns) do
+			for s, i in pairs(patterns) do
 				if not win_patterns[s] then
-					local hl_group = 'Search' .. (((lnum - 1) % opts.search_n) + 1)
+					local hl_group = 'Search' .. (((i - 1) % opts.search_n) + 1)
 					win_patterns[s] =
 						fn.matchadd(hl_group, get_pattern(s), -1, -1, { window = win })
 				end
@@ -45,17 +48,17 @@ local function setup(opts)
 		end
 	end
 
-	api.nvim_create_user_command('MultiSearch', function()
+	user_command('MultiSearch', function()
 		vim.cmd.edit('multisearch://')
 	end, {})
 
-	api.nvim_create_autocmd('BufReadCmd', {
+	autocmd('BufReadCmd', {
 		group = group,
 		pattern = 'multisearch://',
 		callback = function()
 			local lines = {}
-			for s, lnum in pairs(patterns) do
-				lines[lnum] = s
+			for s, i in pairs(patterns) do
+				lines[i] = s
 			end
 			api.nvim_buf_set_lines(0, 0, -1, true, lines)
 			bo.buftype = 'acwrite'
@@ -63,21 +66,21 @@ local function setup(opts)
 		end,
 	})
 
-	api.nvim_create_autocmd('BufWriteCmd', {
+	autocmd('BufWriteCmd', {
 		group = group,
 		pattern = 'multisearch://',
 		callback = function()
 			patterns = {}
 			update()
-			for lnum, s in ipairs(api.nvim_buf_get_lines(0, 0, -1, true)) do
-				patterns[s] = lnum
+			for i, s in ipairs(api.nvim_buf_get_lines(0, 0, -1, true)) do
+				patterns[s] = i
 			end
 			update()
 			bo.modified = false
 		end,
 	})
 
-	api.nvim_create_autocmd('WinNew', {
+	autocmd('WinNew', {
 		group = group,
 		callback = function()
 			wins[api.nvim_get_current_win()] = {}
@@ -85,7 +88,7 @@ local function setup(opts)
 		end,
 	})
 
-	api.nvim_create_autocmd('WinClosed', {
+	autocmd('WinClosed', {
 		group = group,
 		callback = function()
 			wins[api.nvim_get_current_win()] = nil
