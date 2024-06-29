@@ -464,6 +464,7 @@ local function read_undo_autocmd(opts)
 	bo.buftype = 'nofile'
 	bo.filetype = target_bo.filetype
 	bo.swapfile = false
+	bo.modeline = false
 	bo.undolevels = -1
 
 	local lines = buf_get_undo_lines(target_buf, undo_number, 0, -1, false)
@@ -479,6 +480,7 @@ local function read_undotree_autocmd(opts)
 	bo.buftype = 'nofile'
 	bo.filetype = 'diff'
 	bo.swapfile = false
+	bo.modeline = false
 	bo.undolevels = -1
 
 	win_set_local_options(win, {
