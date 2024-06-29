@@ -85,10 +85,13 @@ function Nvim:channel()
 		if debug then
 			print_log('--- start ---')
 		end
-		self._channel = vim.fn.jobstart(
-			{ 'nvim', '--embed', '--clean', '--cmd', 'set noloadplugins noswapfile' },
-			{ rpc = true }
-		)
+		self._channel = vim.fn.jobstart({
+			'nvim',
+			'--embed',
+			'--clean',
+			'--cmd',
+			'set noloadplugins|let &directory=tempname()',
+		}, { rpc = true })
 	end
 	return self._channel
 end
