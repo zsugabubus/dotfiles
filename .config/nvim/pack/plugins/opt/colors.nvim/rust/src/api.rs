@@ -16,11 +16,10 @@ pub unsafe extern "C" fn nvim_buf_get_color_matches(
 ) -> c_int {
     use std::ops::ControlFlow;
 
-    let server = nvim::Server::new();
-    let Some(buffer) = server.get_buffer(nvim::BufferId(buffer)) else {
+    let Some(buffer) = nvim::get_buffer(nvim::BufferId(buffer)) else {
         return 0;
     };
-    let line = buffer.get_line(nvim::Row(row));
+    let line = buffer.get_line_with_nul(nvim::Row(row));
 
     let out = std::slice::from_raw_parts_mut(out, out_len);
 
