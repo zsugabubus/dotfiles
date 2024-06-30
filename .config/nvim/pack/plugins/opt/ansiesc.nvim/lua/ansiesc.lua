@@ -1,7 +1,5 @@
 local api = vim.api
 
-local M = {}
-
 local ns = api.nvim_create_namespace('ansiesc')
 local group = api.nvim_create_augroup('ansiesc', {})
 
@@ -134,7 +132,7 @@ local function apply_sgr(pen, params)
 end
 
 local function is_default_pen(pen)
-	return vim.tbl_isempty(pen)
+	return next(pen) == nil
 end
 
 local function pen_to_hl_group(pen)
@@ -166,8 +164,8 @@ local function hl_group_to_pen(hl_group)
 	}
 end
 
-local function add_highlight(buffer, lnum, col_start, col_end, pen)
-	if col_start == col_end or is_default_pen(pen) then
+local function add_highlight(buffer, row, start_col, end_col, pen)
+	if start_col == end_col or is_default_pen(pen) then
 		return
 	end
 
@@ -177,50 +175,50 @@ local function add_highlight(buffer, lnum, col_start, col_end, pen)
 		api.nvim_set_hl(0, hl_group, pen)
 	end
 
-	api.nvim_buf_add_highlight(buffer, ns, hl_group, lnum, col_start, col_end)
+	api.nvim_buf_add_highlight(buffer, ns, hl_group, row, start_col, end_col)
 end
 
-function M.highlight_buffer(buffer)
-	for lnum, line in ipairs(api.nvim_buf_get_lines(buffer, 0, -1, false)) do
-		local pen = {}
-		local starts = {}
-		local sgrs = {}
-		local original = line
+local function make_ansi_parser()
+	local string_gsub = string.gsub
 
-		do
-			local start = 1
+	local start_cols
+	local sgrs
+	local offset
 
-			while true do
-				local i, j, s = string.find(line, '\x1b%[([0-9;:]*)m', start)
-				if s == nil then
-					break
-				end
+	-- Creating a new closure on every line is expensive.
+	local function f(i, sgr, j)
+		table.insert(start_cols, i + offset)
+		table.insert(sgrs, sgr)
+		offset = offset - (j - i)
+		return ''
+	end
 
-				-- Make it 0-based.
-				table.insert(starts, i - 1)
-				table.insert(sgrs, s)
+	return function(s)
+		start_cols = {}
+		sgrs = {}
+		offset = -1
+		return string_gsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
+	end
+end
+local ansi_parse = make_ansi_parser()
 
-				line = string.sub(line, 1, i - 1) .. string.sub(line, j + 1)
-				start = i
+local function highlight_buffer(buffer)
+	for row, line in ipairs(api.nvim_buf_get_lines(buffer, 0, -1, false)) do
+		local line_without_sgr, start_cols, sgrs = ansi_parse(line)
+
+		if line ~= line_without_sgr then
+			api.nvim_buf_set_lines(buffer, row - 1, row, true, { line_without_sgr })
+
+			local pen = {}
+			local start_col = 0
+
+			for i, end_col in ipairs(start_cols) do
+				add_highlight(buffer, row - 1, start_col, end_col, pen)
+				start_col = end_col
+				pen = apply_sgr(pen, parse_sgr(sgrs[i]))
 			end
 
-			if line ~= original then
-				api.nvim_buf_set_lines(buffer, lnum - 1, lnum, true, { line })
-			end
-		end
-
-		do
-			local start = 0
-
-			for i, stop in ipairs(starts) do
-				add_highlight(buffer, lnum - 1, start, stop, pen)
-				start = stop
-
-				local params = parse_sgr(sgrs[i])
-				pen = apply_sgr(pen, params)
-			end
-
-			add_highlight(buffer, lnum - 1, start, -1, pen)
+			add_highlight(buffer, row - 1, start_col, -1, pen)
 		end
 	end
 end
@@ -235,4 +233,6 @@ api.nvim_create_autocmd('ColorScheme', {
 	end,
 })
 
-return M
+return {
+	highlight_buffer = highlight_buffer,
+}
