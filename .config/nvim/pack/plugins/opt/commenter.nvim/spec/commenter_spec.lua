@@ -6,69 +6,62 @@ local vim = create_vim({
 	end,
 })
 
-describe('toggle single line', function()
-	local function case(cms, input, expected_output)
-		test(
-			string.format("[%s] '%s' -> '%s'", cms, input, expected_output),
-			function()
-				vim.o.cms = cms
-				vim:set_lines({ input })
-				vim:feed('gcc')
-				vim:assert_lines({ expected_output })
-			end
-		)
+it('toggles single line', function()
+	local function test_case(cms, input, output)
+		vim.o.cms = cms
+		vim:set_lines({ input })
+		vim:feed('gcc')
+		return vim:assert_lines({ output })
 	end
 
-	case('/*%s*/', 'a', '/* a */')
-	case('/*%s*/', '/* a */', 'a')
-	case('/*%s*/', '/*a*/', 'a')
-	case('/*%s*/', '/*  a  */', ' a ')
-	case('/*%s*/', '/**//*a*/', '//*a') -- BAD
-	case('/*%s*/', '/* *//*a*/', '/*a*/')
-	case('/*%s*/', '/*** a ***/', 'a')
-	case('//%s', '//// a', 'a')
-	case('#%s', '#  a ', ' a ')
-	case('--%s', 'a--b', '-- a--b')
-	case('--%s', '----', '')
-	case('//%s', '', '')
-	case('//%s', ' ', ' ')
-	case('/*  %s  */', 'a', '/* a */')
-	case('/*  %s  */', '/*a*/', 'a')
-	case('//  %s', 'a', '// a')
-	case('//  %s', '//a', 'a')
+	test_case('/*%s*/', 'a', '/* a */')
+	test_case('/*%s*/', '/* a */', 'a')
+	test_case('/*%s*/', '/*a*/', 'a')
+	test_case('/*%s*/', '/*  a  */', ' a ')
+	test_case('/*%s*/', '/**//*a*/', '//*a') -- BAD
+	test_case('/*%s*/', '/* *//*a*/', '/*a*/')
+	test_case('/*%s*/', '/*** a ***/', 'a')
+	test_case('//%s', '//// a', 'a')
+	test_case('#%s', '#  a ', ' a ')
+	test_case('--%s', 'a--b', '-- a--b')
+	test_case('--%s', '----', '')
+	test_case('//%s', '', '')
+	test_case('//%s', ' ', ' ')
+	test_case('/*  %s  */', 'a', '/* a */')
+	test_case('/*  %s  */', '/*a*/', 'a')
+	test_case('//  %s', 'a', '// a')
+	test_case('//  %s', '//a', 'a')
 end)
 
-describe('toggle multiple lines', function()
-	local function case(keys)
-		test(keys, function()
-			local UNCOMMENTED = {
-				'    a',
-				'',
-				'     ',
-				'  b',
-				'\t   c',
-			}
+it('toggles multiple lines', function()
+	local UNCOMMENTED = {
+		'    a',
+		'',
+		'     ',
+		'  b',
+		'\t   c',
+	}
 
-			local COMMENTED = {
-				'  //   a',
-				'',
-				'     ',
-				'  // b',
-				'\t //   c',
-			}
+	local COMMENTED = {
+		'  //   a',
+		'',
+		'     ',
+		'  // b',
+		'\t //   c',
+	}
 
-			vim.o.cms = '//%s'
-			vim:set_lines(UNCOMMENTED)
-			vim:feed(keys)
-			vim:assert_lines(COMMENTED)
-			vim:feed(keys)
-			vim:assert_lines(UNCOMMENTED)
-		end)
+	local function test_case(keys)
+		vim.o.cms = '//%s'
+		vim:set_lines(UNCOMMENTED)
+		vim:feed(keys)
+		vim:assert_lines(COMMENTED)
+		vim:feed(keys)
+		vim:assert_lines(UNCOMMENTED)
 	end
 
-	case('4gcc')
-	case('gc4j')
-	case('4gcj')
+	test_case('4gcc')
+	test_case('gc4j')
+	test_case('4gcj')
 end)
 
 describe('toggle mixed lines', function()
@@ -117,14 +110,14 @@ describe('filetype', function()
 			})
 		end)
 
-		test('uses default commentstring', function()
+		it('uses default commentstring', function()
 			vim:feed('gcc')
 			vim:assert_lines({
 				'# text',
 			})
 		end)
 
-		test('uses custom commentstring', function()
+		it('uses custom commentstring', function()
 			vim:feed('gcc')
 			vim:feed('gcc')
 			vim.o.cms = '//%s'
@@ -145,7 +138,7 @@ describe('filetype', function()
 			})
 		end)
 
-		test('uses custom commentstring', function()
+		it('uses custom commentstring', function()
 			vim:feed('gcc')
 			vim:feed('gcc')
 			vim.o.cms = 'BLA %s BLA'
@@ -166,7 +159,7 @@ describe('filetype', function()
 			})
 		end)
 
-		test('guesses ts correctly', function()
+		it('guesses ts correctly', function()
 			vim:feed('1Ggcc3Ggcc')
 			vim:assert_lines({
 				'// (',
@@ -175,7 +168,7 @@ describe('filetype', function()
 			})
 		end)
 
-		test('guesses html correctly', function()
+		it('guesses html correctly', function()
 			pending('How to test treesitter?')
 			vim:feed('2Ggcc')
 			vim:assert_lines({
@@ -311,4 +304,31 @@ describe(':Uncomment', function()
 			'a',
 		})
 	end)
+end)
+
+it('reports changed lines', function()
+	local function test_case(report, keys, message)
+		vim.cmd.echo()
+		vim:set_lines({
+			'1',
+			'2',
+			'',
+		})
+		vim.o.report = report
+		vim:feed('gg' .. keys)
+		local screen = vim:get_screen()
+		local cmdline = screen[#screen]
+		return assert.same(message, cmdline)
+	end
+
+	test_case(0, '3Ggcc', '--No lines to comment--')
+	test_case(0, 'gcc', '1 line commented')
+	test_case(0, 'gccgcc', '1 line uncommented')
+	test_case(0, 'gcj', '2 lines commented')
+	test_case(0, 'gcjgcj', '2 lines uncommented')
+	test_case(1, 'gcc', '')
+	test_case(1, 'gcj', '2 lines commented')
+	test_case(1, 'gcjgcj', '2 lines uncommented')
+	test_case(2, 'gcj', '')
+	test_case(9, '3Ggcc', '--No lines to comment--')
 end)

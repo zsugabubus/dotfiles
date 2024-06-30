@@ -83,17 +83,19 @@ function M.comment_lines(buf, start_lnum, end_lnum, op)
 		end
 	end
 
-	vim.api.nvim_echo({
-		{
-			op ~= nil and string.format(
-				'%d %s %s',
-				#lines,
-				#lines == 1 and 'line' or 'lines',
-				op and 'commented' or 'uncommented'
-			) or '--No lines to comment--',
-			'Normal',
-		},
-	}, false, {})
+	if op == nil or vim.go.report == 0 or #lines > vim.go.report then
+		vim.api.nvim_echo({
+			{
+				op ~= nil and string.format(
+					'%d %s %s',
+					#lines,
+					#lines == 1 and 'line' or 'lines',
+					op and 'commented' or 'uncommented'
+				) or '--No lines to comment--',
+				'Normal',
+			},
+		}, false, {})
+	end
 end
 
 return M
