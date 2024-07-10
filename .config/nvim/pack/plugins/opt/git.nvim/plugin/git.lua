@@ -30,7 +30,7 @@ end
 
 user_command('Gblame', function(...)
 	return require('git.command.blame')(...)
-end, { nargs = '*' })
+end, {})
 
 user_command('Gdiff', function(...)
 	return require('git.command.diff')(...)

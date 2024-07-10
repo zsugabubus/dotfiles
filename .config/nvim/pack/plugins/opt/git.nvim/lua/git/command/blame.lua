@@ -1,7 +1,7 @@
 local buffer = require('git.buffer')
 local Revision = require('git.revision')
 
-return function(opts)
+return function()
 	local source_buf = vim.api.nvim_get_current_buf()
 	local source_win = vim.api.nvim_get_current_win()
 	local source_file = vim.fn.expand('%:p')
