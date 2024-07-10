@@ -5,29 +5,27 @@ local vim = create_vim({
 	end,
 })
 
-local function test_margin(input, expected)
-	local name =
-		string.format('margin; %s -> %s', vim.inspect(input), vim.inspect(expected))
-	test(name, function()
+test('margin', function()
+	local function test_case(input, expected)
 		vim:set_lines({ input })
 		vim:feed('Vs|')
-		vim:assert_lines({ expected })
-	end)
-end
+		return vim:assert_lines({ expected })
+	end
 
-test_margin('', '')
-test_margin('  ', '  ')
-test_margin('||', '| |')
-test_margin('|  |', '| |')
-test_margin('a', 'a')
-test_margin('  a', '  a')
-test_margin('a  ', 'a  ')
-test_margin('|a|', '| a |')
-test_margin('|a', '| a')
-test_margin('a|', 'a |')
-test_margin('|  a  |', '| a |')
-test_margin('|  a  ', '| a  ')
-test_margin('  a  |', '  a |')
+	test_case('', '')
+	test_case('  ', '  ')
+	test_case('||', '| |')
+	test_case('|  |', '| |')
+	test_case('a', 'a')
+	test_case('  a', '  a')
+	test_case('a  ', 'a  ')
+	test_case('|a|', '| a |')
+	test_case('|a', '| a')
+	test_case('a|', 'a |')
+	test_case('|  a  |', '| a |')
+	test_case('|  a  ', '| a  ')
+	test_case('  a  |', '  a |')
+end)
 
 test('char; "|"', function()
 	vim:set_lines({
