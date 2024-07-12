@@ -16,7 +16,7 @@ local dark = not light or nil
 
 local span = trace('colorscheme data')
 
--- stylua: ignore start
+-- stylua: ignore
 local theme = {
 	Character = 'String',
 	ColorColumn = { bg = light and '#e0e0e0' or '#3a404a' },
@@ -182,7 +182,6 @@ local theme = {
 	Search4 = { fg = '#000000', bg = '#aaff58' },
 	Search5 = { fg = '#000000', bg = '#58ccff' },
 }
--- stylua: ignore end
 
 local span = trace(span, 'set highlights')
 
