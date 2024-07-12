@@ -11,7 +11,7 @@ vim.api.nvim_set_keymap('', '<Plug>(jumpmotion)', '', {
 
 		local jump = require('jumpmotion').jump
 
-		if c == '/' then
+		if c == '/' and vim.fn.getreg('/') ~= '' then
 			jump(vim.fn.getreg('/') .. '\\V\\|' .. pat(c))
 		elseif c == ';' and vim.fn.getcharsearch().char ~= '' then
 			jump('\\V' .. pat(vim.fn.getcharsearch().char) .. '\\|' .. pat(c))
