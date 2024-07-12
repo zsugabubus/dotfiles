@@ -308,7 +308,7 @@ smap('n', 'gsh', ':setlocal spell spelllang=hu<CR>')
 map('n', '+', 'g+')
 map('n', '-', 'g-')
 
-map('n', '<C-w>T', '<C-w>s<C-w>T')
+smap('n', '<C-w>T', ':tab split<CR>')
 map('n', '<C-w>d', ':windo diffthis<CR>')
 
 xmap('n', 's;', function()
