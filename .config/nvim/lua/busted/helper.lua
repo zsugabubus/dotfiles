@@ -284,6 +284,12 @@ function Nvim:load_plugin()
 	end)
 end
 
+function Nvim:p()
+	self.api.nvim_input(string.rep('<C-C>', 10))
+	print(table.concat(self:get_screen(), '\n'))
+	print(self:vim('messages'))
+end
+
 function _G.create_vim(opts)
 	if type(opts) == 'function' then
 		opts = { on_setup = opts }
