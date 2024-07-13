@@ -1,8 +1,9 @@
-local cli = require('git.cli')
+local utils = require('git.utils')
 
 local api = vim.api
 local fn = vim.fn
-local uv = vim.loop
+local uv = vim.uv
+local bo = vim.bo
 
 local M = {}
 
@@ -67,89 +68,105 @@ local function update_statusline(repo)
 	end
 end
 
-local function update_head(repo)
-	cli.run(repo, {
-		args = {
-			'symbolic-ref',
-			'--short',
-			'HEAD',
-		},
-		on_stdout = function(data)
-			if data ~= '' then
-				-- Trim "\n".
-				repo.head = string.sub(data, 1, -2)
-				repo.detached = false
-				return update_statusline(repo)
-			end
+local function run(repo, args, callback)
+	args = utils.make_args(repo, args)
 
-			repo.detached = true
-			cli.run(repo, {
-				args = {
-					'name-rev',
-					'--name-only',
-					'--always',
-					'--no-undefined',
-					'HEAD',
-				},
-				on_stdout = function(data)
-					if data == '' then
-						repo.head = 'undefined'
-					else
-						-- Trim "\n".
-						repo.head = string.sub(data, 1, -2)
-					end
-					return update_statusline(repo)
-				end,
-			})
-		end,
-	})
+	local stdout = uv.new_pipe()
+
+	local process
+	process = uv.spawn(table.remove(args, 1), {
+		args = args,
+		stdio = { nil, stdout, nil },
+	}, function()
+		process:close()
+	end)
+
+	local chunks = {}
+
+	stdout:read_start(function(err, data)
+		if data then
+			table.insert(chunks, data)
+		else
+			stdout:close()
+			assert(not err, err)
+			return callback(table.concat(chunks))
+		end
+	end)
 end
 
-local function update_stashed(repo)
-	cli.run(repo, {
-		args = {
-			'rev-list',
-			'--walk-reflogs',
-			'--count',
-			'refs/stash',
-		},
-		on_stdout = function(data)
-			repo.stashed = tonumber(data) or 0
-			return update_statusline(repo)
-		end,
-	})
-end
-
-local function update_ahead_behind(repo)
-	cli.run(repo, {
-		args = {
-			'rev-list',
-			'--count',
-			'--left-right',
-			'--count',
-			'@{upstream}...@',
-		},
-		on_stdout = function(data)
-			local behind, ahead = string.match(data, '(%d+)\t(%d+)')
-			repo.behind = tonumber(behind)
-			repo.ahead = tonumber(ahead)
-			return update_statusline(repo)
-		end,
-	})
-end
-
-local function read_all(path, callback)
+local function read(path, callback)
 	return uv.fs_open(path, 'r', 0, function(_, fd)
 		if not fd then
 			return callback()
 		end
-		return uv.fs_read(fd, 64, function(_, data)
+
+		return uv.fs_read(fd, 64, function(_, s)
 			uv.fs_close(fd, function(err, success)
 				assert(not err, err)
 				assert(success)
 			end)
-			return callback(data)
+
+			return callback(s)
 		end)
+	end)
+end
+
+local function update_head(repo)
+	run(repo, {
+		'symbolic-ref',
+		'--short',
+		'HEAD',
+	}, function(s)
+		if s ~= '' then
+			-- Trim "\n".
+			repo.head = string.sub(s, 1, -2)
+			repo.detached = false
+			return update_statusline(repo)
+		end
+
+		repo.detached = true
+		run(repo, {
+			'name-rev',
+			'--name-only',
+			'--always',
+			'--no-undefined',
+			'HEAD',
+		}, function(s)
+			if s == '' then
+				repo.head = nil
+			else
+				-- Trim "\n".
+				repo.head = string.sub(s, 1, -2)
+			end
+			return update_statusline(repo)
+		end)
+	end)
+end
+
+local function update_stashed(repo)
+	run(repo, {
+		'rev-list',
+		'--walk-reflogs',
+		'--count',
+		'refs/stash',
+	}, function(s)
+		repo.stashed = tonumber(s) or 0
+		return update_statusline(repo)
+	end)
+end
+
+local function update_ahead_behind(repo)
+	run(repo, {
+		'rev-list',
+		'--count',
+		'--left-right',
+		'--count',
+		'@{upstream}...@',
+	}, function(s)
+		local behind, ahead = string.match(s, '(%d+)\t(%d+)')
+		repo.behind = tonumber(behind)
+		repo.ahead = tonumber(ahead)
+		return update_statusline(repo)
 	end)
 end
 
@@ -161,77 +178,78 @@ local function update_operation(repo)
 			repo.operation, repo.step, repo.total = operation, step, total
 			return update_statusline(repo)
 		elseif operation then
-			repo.operation, repo.step, repo.total = operation
+			repo.operation, repo.step, repo.total = operation, nil, nil
 			return update_statusline(repo)
 		end
 
 		i = i - 1
-		if i == 0 then
-			repo.operation, repo.step, repo.total = nil
-			return update_statusline(repo)
+		if i > 0 then
+			return
 		end
+
+		repo.operation, repo.step, repo.total = nil, nil, nil
+		return update_statusline(repo)
 	end
 
-	uv.fs_access(repo.git_dir .. '/REVERT_HEAD', 'r', function(_, permission)
-		return step(permission and 'REVERT')
+	uv.fs_access(repo.git_dir .. '/REVERT_HEAD', 'r', function(_, ok)
+		return step(ok and 'REVERT')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/BISECT_LOG', 'r', function(_, permission)
-		return step(permission and 'BISECT')
+	uv.fs_access(repo.git_dir .. '/BISECT_LOG', 'r', function(_, ok)
+		return step(ok and 'BISECT')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/CHERRY_PICK_HEAD', 'r', function(_, permission)
-		return step(permission and 'CHERRY-PICK')
+	uv.fs_access(repo.git_dir .. '/CHERRY_PICK_HEAD', 'r', function(_, ok)
+		return step(ok and 'CHERRY-PICK')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/MERGE_HEAD', 'r', function(_, permission)
-		return step(permission and 'MERGE')
+	uv.fs_access(repo.git_dir .. '/MERGE_HEAD', 'r', function(_, ok)
+		return step(ok and 'MERGE')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/rebase-merge', 'r', function(_, permission)
-		if permission then
-			read_all(repo.git_dir .. '/rebase-merge/msgnum', function(data)
-				local k = tonumber(data)
-				read_all(repo.git_dir .. '/rebase-merge/end', function(data)
-					local n = tonumber(data)
-					return step('REBASE', k, n)
-				end)
-			end)
-		else
+	uv.fs_access(repo.git_dir .. '/rebase-merge', 'r', function(_, ok)
+		if not ok then
 			return step()
 		end
+
+		read(repo.git_dir .. '/rebase-merge/msgnum', function(s)
+			local k = tonumber(s)
+			read(repo.git_dir .. '/rebase-merge/end', function(s)
+				local n = tonumber(s)
+				return step('REBASE', k, n)
+			end)
+		end)
 	end)
 
-	uv.fs_access(repo.git_dir .. '/rebase-apply', 'r', function(_, permission)
-		if permission then
-			read_all(repo.git_dir .. '/rebase-apply/next', function(data)
-				local k = tonumber(data)
-				read_all(repo.git_dir .. '/rebase-apply/last', function(data)
-					local n = tonumber(data)
-					return step('REBASE', k, n)
-				end)
-			end)
-		else
+	uv.fs_access(repo.git_dir .. '/rebase-apply', 'r', function(_, ok)
+		if not ok then
 			return step()
 		end
+
+		read(repo.git_dir .. '/rebase-apply/next', function(s)
+			local k = tonumber(s)
+			read(repo.git_dir .. '/rebase-apply/last', function(s)
+				local n = tonumber(s)
+				return step('REBASE', k, n)
+			end)
+		end)
 	end)
 end
 
 local function update_modified(repo)
-	if repo.work_tree then
-		cli.run(repo, {
-			args = {
-				'status',
-				'--porcelain',
-			},
-			on_stdout = function(data)
-				data = '\n' .. data
-				repo.staged = string.match(data, '\n[MARC]') ~= nil
-				repo.modified = string.match(data, '\n.[MARC]') ~= nil
-				return update_statusline(repo)
-			end,
-		})
+	if not repo.work_tree then
+		return
 	end
+
+	run(repo, {
+		'status',
+		'--porcelain',
+	}, function(s)
+		s = '\n' .. s
+		repo.staged = string.find(s, '\n[MARC]') ~= nil
+		repo.modified = string.find(s, '\n.[MARC]') ~= nil
+		return update_statusline(repo)
+	end)
 end
 
 local function update_outdated(repo)
@@ -251,11 +269,12 @@ end
 
 function M.from_path(path)
 	local repo = repo_by_path[path]
+
 	if repo then
 		return repo
 	end
 
-	local repo = {
+	repo = {
 		dir = path,
 		statusline = '',
 		outdated = {},
@@ -263,86 +282,83 @@ function M.from_path(path)
 	}
 	repo_by_path[path] = repo
 
-	cli.run(repo, {
-		args = {
-			'rev-parse',
-			'--is-bare-repository',
-			'--absolute-git-dir',
-			'--show-toplevel',
-		},
-		on_stdout = function(data)
-			repo.pending = nil
+	run(repo, {
+		'rev-parse',
+		'--is-bare-repository',
+		'--absolute-git-dir',
+		'--show-toplevel',
+	}, function(s)
+		repo.pending = nil
 
-			if data == '' then
+		if s == '' then
+			return
+		end
+
+		local bare, git_dir, work_tree =
+			string.match(s, '^([^\n]*)\n([^\n]*)\n([^\n]*)')
+
+		local repo = {
+			git_dir = git_dir,
+			work_tree = work_tree ~= '' and work_tree or nil,
+			bare = bare == 'true',
+			statusline = '',
+			outdated = {},
+		}
+
+		local id = repo.git_dir .. '\0' .. (repo.work_tree or '')
+		local existing_repo = repo_by_id[id]
+
+		if existing_repo then
+			repo_by_path[path] = existing_repo
+			redraw_status()
+			return
+		end
+
+		repo_by_id[id] = repo
+		repo_by_path[path] = repo
+		repo_by_path[work_tree or git_dir] = repo
+
+		local timer = uv.new_timer()
+
+		local function timer_callback()
+			update_outdated(repo)
+		end
+
+		repo.fs_event = uv.new_fs_event()
+		repo.fs_event:start(git_dir, {}, function(_, filename)
+			if filename == 'HEAD' or filename == 'HEAD.lock' then
+				repo.outdated.head = true
+			elseif filename == 'index' then
+				repo.outdated.index = true
+			elseif
+				filename == 'rebase-merge'
+				or filename == 'rebase-apply'
+				or filename == 'MERGE_HEAD'
+				or filename == 'CHERRY_PICK_HEAD'
+				or filename == 'REVERT_HEAD'
+				or filename == 'BISECT_LOG'
+				or filename == 'REBASE_HEAD.lock'
+			then
+				repo.outdated.operation = true
+			else
 				return
 			end
 
-			local bare, git_dir, work_tree = unpack(vim.split(data, '\n', {
-				trimempty = true,
-			}))
-
-			local repo = {
-				git_dir = git_dir,
-				work_tree = work_tree,
-				bare = bare == 'true',
-				statusline = '',
-				outdated = {},
-			}
-
-			local id = repo.git_dir .. '\0' .. (repo.work_tree or '')
-			local existing_repo = repo_by_id[id]
-
-			if existing_repo then
-				repo_by_path[path] = existing_repo
-				redraw_status()
+			if not repo.live then
 				return
 			end
 
-			repo_by_id[id] = repo
-			repo_by_path[path] = repo
-			repo_by_path[work_tree or git_dir] = repo
-
-			local timer = uv.new_timer()
-
-			local function timer_callback()
-				update_outdated(repo)
+			if not timer:is_active() then
+				timer:start(100, 0, timer_callback)
 			end
+		end)
 
-			repo.fs_event = uv.new_fs_event()
-			repo.fs_event:start(git_dir, {}, function(err, filename)
-				if filename == 'HEAD' or filename == 'HEAD.lock' then
-					repo.outdated.head = true
-				elseif filename == 'index' then
-					repo.outdated.index = true
-				elseif
-					filename == 'rebase-merge'
-					or filename == 'rebase-apply'
-					or filename == 'MERGE_HEAD'
-					or filename == 'CHERRY_PICK_HEAD'
-					or filename == 'REVERT_HEAD'
-					or filename == 'BISECT_LOG'
-				then
-					repo.outdated.operation = true
-				else
-					return
-				end
-
-				if not repo.live then
-					return
-				end
-
-				if not timer:is_active() then
-					timer:start(100, 0, timer_callback)
-				end
-			end)
-
-			update_head(repo)
-			update_ahead_behind(repo)
-			update_modified(repo)
-			update_stashed(repo)
-			update_operation(repo)
-		end,
-	})
+		update_head(repo)
+		update_ahead_behind(repo)
+		update_modified(repo)
+		update_stashed(repo)
+		update_operation(repo)
+	end)
 
 	return repo
 end
@@ -354,7 +370,7 @@ end
 function M.from_current_buf()
 	local dir = vim.b.git_dir
 	if not dir then
-		if vim.bo.buftype == '' then
+		if bo.buftype == '' then
 			dir = fn.expand('%:p:h')
 		else
 			dir = fn.getcwd()
@@ -377,16 +393,12 @@ function M.await(repo)
 end
 
 local function is_status_enabled()
-	local buftype = vim.bo.buftype
-	if buftype == 'help' or buftype == 'quickfix' then
+	if bo.buftype ~= '' then
 		return false
 	end
 
 	local bufname = api.nvim_buf_get_name(0)
-	if
-		string.sub(bufname, 1, 6) == 'man://'
-		or string.sub(bufname, 1, 4) == '/tmp'
-	then
+	if string.sub(bufname, 1, 4) == '/tmp' then
 		return false
 	end
 

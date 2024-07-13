@@ -1,105 +1,92 @@
-local autocmd = vim.api.nvim_create_autocmd
-local keymap = vim.api.nvim_set_keymap
-local user_command = vim.api.nvim_create_user_command
+local api = vim.api
 
-local group = vim.api.nvim_create_augroup('git', {})
+local autocmd = api.nvim_create_autocmd
+local keymap = api.nvim_set_keymap
+local user_command = api.nvim_create_user_command
 
-autocmd('BufReadCmd', {
-	group = group,
-	pattern = 'git://*',
-	nested = true,
-	callback = function(opts)
-		return require('git.buffer').autocmd(opts)
-	end,
-})
+local group = api.nvim_create_augroup('git', {})
 
-autocmd('BufReadCmd', {
-	group = group,
-	pattern = 'git-blame://*',
-	nested = true,
-	callback = function(opts)
-		return require('git.blame').autocmd(opts)
-	end,
-})
-
-_G.git_status = function()
-	local fn = require('git.repository').status
-	_G.git_status = fn
-	return fn()
+local function make_read_autocmd(pattern, package)
+	autocmd('BufReadCmd', {
+		group = group,
+		pattern = pattern,
+		nested = true,
+		callback = function(...)
+			return require(package).handle_read_autocmd(...)
+		end,
+	})
 end
 
-user_command('Gblame', function(...)
-	return require('git.command.blame')(...)
-end, {})
+make_read_autocmd('git://*', 'git.show')
+make_read_autocmd('git-blame://*', 'git.blame')
+make_read_autocmd('git-log://*', 'git.log')
 
-user_command('Gdiff', function(...)
-	return require('git.command.diff')(...)
-end, { nargs = '?' })
+local function make_user_command(names, package, opts)
+	local function callback(...)
+		return require(package).handle_user_command(...)
+	end
 
-user_command('Gsign', function(...)
-	return require('git.command.sign')(...)
-end, {})
+	if opts.nargs then
+		function opts.complete(...)
+			local fn = require(package).handle_complete
+			if fn then
+				return fn(...)
+			end
+		end
+	end
 
-local function command_factory(package, opts)
-	return function(name)
-		return user_command(name, function(...)
-			return require(package)(...)
-		end, opts)
+	for _, name in ipairs(names) do
+		user_command(name, callback, opts)
 	end
 end
 
-local function command_with_cmd_factory(package, opts)
-	return function(name)
-		return user_command(name, function(opts)
-			local cmd = string.sub(opts.name, 2)
-			return require(package)(cmd, opts)
-		end, opts)
-	end
-end
+make_user_command({ 'Gcd', 'Glcd', 'Gtcd' }, 'git.cd', {
+	nargs = '?',
+})
 
-local command_log = command_factory('git.command.log', {
+make_user_command({ 'Gshow', 'Gs' }, 'git.show', {
+	nargs = '*',
+})
+
+make_user_command(
+	{
+		'Gedit',
+		'Ge',
+		'Gtabedit',
+		'Gtabe',
+		'Gsplit',
+		'Gsp',
+		'Gvsplit',
+		'Gvs',
+	},
+	'git.edit',
+	{
+		nargs = 1,
+	}
+)
+
+make_user_command({ 'Gdiff' }, 'git.diff', {
+	nargs = '?',
+})
+
+make_user_command({ 'Gblame' }, 'git.blame', {})
+
+make_user_command({ 'Gsign' }, 'git.sign', {})
+
+make_user_command({ 'Glog', 'Gl' }, 'git.log', {
 	nargs = '*',
 	range = true,
+	bang = true,
 })
-command_log('Gl')
-command_log('Glog')
-
-local command_show = command_factory('git.command.show', {
-	nargs = '*',
-	complete = function(...)
-		return require('git.complete.show')(...)
-	end,
-})
-command_show('Gs')
-command_show('Gshow')
-
-local command_cd = command_with_cmd_factory('git.command.cd', {
-	nargs = '?',
-	complete = function(...)
-		return require('git.complete.cd')(...)
-	end,
-})
-command_cd('Gcd')
-command_cd('Glcd')
-command_cd('Gtcd')
-
-local command_edit = command_with_cmd_factory('git.command.edit', {
-	nargs = 1,
-	complete = function(...)
-		return require('git.complete.edit')(...)
-	end,
-})
-command_edit('Ge')
-command_edit('Gedit')
-command_edit('Gtabe')
-command_edit('Gtabedit')
-command_edit('Gsp')
-command_edit('Gsplit')
-command_edit('Gvs')
-command_edit('Gvsplit')
 
 keymap('n', '<Plug>(git-goto-file)', '', {
 	callback = function()
 		require('git.buffer').goto_object()
 	end,
 })
+
+_G.git_status = function(...)
+	local fn = require('git.repository').status
+	_G.git_status = fn
+	return fn(...)
+end

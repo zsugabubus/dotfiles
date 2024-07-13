@@ -1,8 +1,5 @@
 local api = vim.api
 local fn = vim.fn
-local uv = vim.loop
-
-local M = {}
 
 local ADDED = {
 	sign_text = '+',
@@ -24,7 +21,7 @@ local LIMIT_1 = {
 }
 
 local ns = api.nvim_create_namespace('git.sign')
-local timer = uv.new_timer()
+local timer = vim.uv.new_timer()
 
 local a_buf, b_buf
 local attached = {}
@@ -135,7 +132,7 @@ local function attach_to_current_buf()
 	end
 
 	local bufname = api.nvim_buf_get_name(0)
-	if bufname == '' or string.find(bufname, '://', 1, true) then
+	if bufname == '' then
 		return
 	end
 
@@ -164,7 +161,7 @@ local function attach_to_current_buf()
 	buf_attach(b_buf)
 end
 
-function M.is_enabled()
+local function is_enabled()
 	return a_buf ~= nil
 end
 
@@ -184,9 +181,9 @@ local function setup_highlights()
 	})
 end
 
-function M.toggle(enable)
+local function toggle(enable)
 	if enable == nil then
-		enable = not M.is_enabled()
+		enable = not is_enabled()
 	end
 
 	local group = api.nvim_create_augroup('git.sign', {})
@@ -212,4 +209,12 @@ function M.toggle(enable)
 	attach_to_current_buf()
 end
 
-return M
+local function handle_user_command()
+	toggle()
+end
+
+return {
+	handle_user_command = handle_user_command,
+	is_enabled = is_enabled,
+	toggle = toggle,
+}

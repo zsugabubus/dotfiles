@@ -1,7 +1,7 @@
 local Repository = require('git.repository')
 local utils = require('git.utils')
 
-return function(opts)
+local function handle_user_command(opts)
 	local rev = opts.args
 	if rev == '' then
 		rev = ':0'
@@ -19,3 +19,12 @@ return function(opts)
 		)
 	)
 end
+
+local function handle_complete(...)
+	return require('git.show').handle_complete(...)
+end
+
+return {
+	handle_user_command = handle_user_command,
+	handle_complete = handle_complete,
+}
