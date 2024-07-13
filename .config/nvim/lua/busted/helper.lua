@@ -277,7 +277,7 @@ end
 
 function Nvim:load_plugin()
 	self:lua(function()
-		vim.opt.runtimepath:append('.')
+		vim.opt.runtimepath:append(vim.fn.getcwd())
 		for _, f in ipairs(vim.fn.glob('plugin/**/*.{lua,vim}', true, true)) do
 			vim.cmd.source(f)
 		end
