@@ -3,12 +3,20 @@ local buffer = require('git.buffer')
 local cli = require('git.cli')
 local utils = require('git.utils')
 
-return function(prefix)
+local function user_command(opts)
+	local object = opts.args
+	if object == '' then
+		object = '@'
+	end
+	vim.cmd.edit(vim.fn.fnameescape('git://' .. object))
+end
+
+local function complete(prefix)
 	if prefix == '%' then
 		return { buffer.current_rev() }
 	end
 
-	local repo = Repository.from_current_buf()
+	local repo = Repository.await(Repository.from_current_buf())
 	if not repo.git_dir then
 		return
 	end
@@ -25,13 +33,9 @@ return function(prefix)
 
 		local result = {}
 
-		for x in
-			vim.gsplit(output, '\0', {
-				trimempty = true,
-			})
+		for object_type, object_path in
+			string.gmatch(output, '[^ ]* ([^ ]*)[^\t]*\t([\x01-\xff]*).')
 		do
-			local object_type, object_path =
-				string.match(x, '^[^ ]* ([^ ]+)[^\t]*\t(.*)')
 			if string.sub(object_path, 1, #filter) == filter then
 				local indicator = object_type == 'tree' and '/' or ''
 				table.insert(
@@ -87,3 +91,8 @@ return function(prefix)
 		return result
 	end
 end
+
+return {
+	user_command = user_command,
+	complete = complete,
+}

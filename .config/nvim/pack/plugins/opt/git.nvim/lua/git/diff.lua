@@ -1,7 +1,7 @@
 local Repository = require('git.repository')
 local utils = require('git.utils')
 
-return function(opts)
+local function user_command(opts)
 	local rev = opts.args
 	if rev == '' then
 		rev = ':0'
@@ -19,3 +19,12 @@ return function(opts)
 		)
 	)
 end
+
+local function complete(prefix)
+	return require('git.show').complete(prefix)
+end
+
+return {
+	user_command = user_command,
+	complete = complete,
+}

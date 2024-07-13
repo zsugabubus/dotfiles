@@ -1,9 +1,11 @@
-local cli = require('git.cli')
 local Repository = require('git.repository')
 local Revision = require('git.revision')
+local cli = require('git.cli')
 local utils = require('git.utils')
 
 local api = vim.api
+local cmd = vim.cmd
+local fn = vim.fn
 
 local M = {}
 
@@ -35,7 +37,7 @@ function M.buf_pipe(buf, opts)
 				end
 			end
 
-			vim.cmd.diffupdate()
+			cmd.diffupdate()
 
 			if opts.callback then
 				return opts.callback(process_success)
@@ -169,34 +171,29 @@ local function buf_map(buf, lhs, rhs)
 	end
 end
 
-function M.goto_revision(rev, use_git)
-	local protocol = not use_git
-			and string.match(api.nvim_buf_get_name(0), '^git[^:]*://')
-		or 'git://'
-	local file = vim.fn.fnameescape(protocol .. rev)
+function M.goto_revision(rev)
+	local file = fn.fnameescape('git://' .. rev)
 
 	-- May block file open since it can make rev expand to nothing.
 	local saved_wildignore = vim.go.wildignore
 	vim.go.wildignore = ''
 
-	local use_preview = protocol == 'git://' and vim.b.git_use_preview
+	local use_preview = vim.b.git_use_preview
 
 	if use_preview then
 		local saved_previewheight = vim.go.previewheight
 		vim.go.previewheight = 82
-		vim.cmd(
-			string.format('topleft vertical pedit +set\\ noscrollbind %s', file)
-		)
+		cmd(string.format('topleft vertical pedit +set\\ noscrollbind %s', file))
 		vim.go.previewheight = saved_previewheight
 	else
-		vim.cmd.edit(file)
+		cmd.edit(file)
 	end
 
 	vim.go.wildignore = saved_wildignore
 end
 
 function M.goto_object()
-	local cfile = vim.fn.expand('<cfile>')
+	local cfile = fn.expand('<cfile>')
 
 	if string.match(cfile, '^%x%x%x%x+$') then
 		M.goto_revision(cfile)
@@ -205,7 +202,7 @@ function M.goto_object()
 
 	local rev = M.current_rev()
 	if rev == '' then
-		vim.api.nvim_feedkeys('gf', 'xtin', false)
+		api.nvim_feedkeys('gf', 'xtin', false)
 		return
 	end
 

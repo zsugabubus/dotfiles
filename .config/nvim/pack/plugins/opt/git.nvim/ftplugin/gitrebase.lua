@@ -36,11 +36,11 @@ change_command('p', 'pick')
 change_command('r', 'reword')
 change_command('s', 'squash')
 
-for _, x in ipairs({ 'gf', '<CR>' }) do
-	keymap(0, 'n', x, '', {
-		nowait = true,
-		callback = function()
-			return require('git.buffer').goto_object()
-		end,
-	})
-end
+keymap(0, 'n', 'gf', '', {
+	nowait = true,
+	callback = function()
+		return require('git.buffer').goto_object()
+	end,
+})
+
+keymap(0, 'n', '<CR>', '0gf', { nowait = true })

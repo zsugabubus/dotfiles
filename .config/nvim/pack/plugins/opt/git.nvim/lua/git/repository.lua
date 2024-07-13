@@ -2,7 +2,8 @@ local cli = require('git.cli')
 
 local api = vim.api
 local fn = vim.fn
-local uv = vim.loop
+local uv = vim.uv
+local bo = vim.bo
 
 local M = {}
 
@@ -93,7 +94,7 @@ local function update_head(repo)
 				},
 				on_stdout = function(data)
 					if data == '' then
-						repo.head = 'undefined'
+						repo.head = nil
 					else
 						-- Trim "\n".
 						repo.head = string.sub(data, 1, -2)
@@ -161,35 +162,37 @@ local function update_operation(repo)
 			repo.operation, repo.step, repo.total = operation, step, total
 			return update_statusline(repo)
 		elseif operation then
-			repo.operation, repo.step, repo.total = operation
+			repo.operation, repo.step, repo.total = operation, nil, nil
 			return update_statusline(repo)
 		end
 
 		i = i - 1
-		if i == 0 then
-			repo.operation, repo.step, repo.total = nil
-			return update_statusline(repo)
+		if i > 0 then
+			return
 		end
+
+		repo.operation, repo.step, repo.total = nil, nil, nil
+		return update_statusline(repo)
 	end
 
-	uv.fs_access(repo.git_dir .. '/REVERT_HEAD', 'r', function(_, permission)
-		return step(permission and 'REVERT')
+	uv.fs_access(repo.git_dir .. '/REVERT_HEAD', 'r', function(_, ok)
+		return step(ok and 'REVERT')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/BISECT_LOG', 'r', function(_, permission)
-		return step(permission and 'BISECT')
+	uv.fs_access(repo.git_dir .. '/BISECT_LOG', 'r', function(_, ok)
+		return step(ok and 'BISECT')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/CHERRY_PICK_HEAD', 'r', function(_, permission)
-		return step(permission and 'CHERRY-PICK')
+	uv.fs_access(repo.git_dir .. '/CHERRY_PICK_HEAD', 'r', function(_, ok)
+		return step(ok and 'CHERRY-PICK')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/MERGE_HEAD', 'r', function(_, permission)
-		return step(permission and 'MERGE')
+	uv.fs_access(repo.git_dir .. '/MERGE_HEAD', 'r', function(_, ok)
+		return step(ok and 'MERGE')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/rebase-merge', 'r', function(_, permission)
-		if permission then
+	uv.fs_access(repo.git_dir .. '/rebase-merge', 'r', function(_, ok)
+		if ok then
 			read_all(repo.git_dir .. '/rebase-merge/msgnum', function(data)
 				local k = tonumber(data)
 				read_all(repo.git_dir .. '/rebase-merge/end', function(data)
@@ -202,8 +205,8 @@ local function update_operation(repo)
 		end
 	end)
 
-	uv.fs_access(repo.git_dir .. '/rebase-apply', 'r', function(_, permission)
-		if permission then
+	uv.fs_access(repo.git_dir .. '/rebase-apply', 'r', function(_, ok)
+		if ok then
 			read_all(repo.git_dir .. '/rebase-apply/next', function(data)
 				local k = tonumber(data)
 				read_all(repo.git_dir .. '/rebase-apply/last', function(data)
@@ -251,11 +254,12 @@ end
 
 function M.from_path(path)
 	local repo = repo_by_path[path]
+
 	if repo then
 		return repo
 	end
 
-	local repo = {
+	repo = {
 		dir = path,
 		statusline = '',
 		outdated = {},
@@ -277,13 +281,12 @@ function M.from_path(path)
 				return
 			end
 
-			local bare, git_dir, work_tree = unpack(vim.split(data, '\n', {
-				trimempty = true,
-			}))
+			local bare, git_dir, work_tree =
+				string.match(data, '^([^\n]*)\n([^\n]*)\n([^\n]*)')
 
 			local repo = {
 				git_dir = git_dir,
-				work_tree = work_tree,
+				work_tree = work_tree ~= '' and work_tree or nil,
 				bare = bare == 'true',
 				statusline = '',
 				outdated = {},
@@ -309,7 +312,7 @@ function M.from_path(path)
 			end
 
 			repo.fs_event = uv.new_fs_event()
-			repo.fs_event:start(git_dir, {}, function(err, filename)
+			repo.fs_event:start(git_dir, {}, function(_, filename)
 				if filename == 'HEAD' or filename == 'HEAD.lock' then
 					repo.outdated.head = true
 				elseif filename == 'index' then
@@ -321,6 +324,7 @@ function M.from_path(path)
 					or filename == 'CHERRY_PICK_HEAD'
 					or filename == 'REVERT_HEAD'
 					or filename == 'BISECT_LOG'
+					or filename == 'REBASE_HEAD.lock'
 				then
 					repo.outdated.operation = true
 				else
@@ -354,7 +358,7 @@ end
 function M.from_current_buf()
 	local dir = vim.b.git_dir
 	if not dir then
-		if vim.bo.buftype == '' then
+		if bo.buftype == '' then
 			dir = fn.expand('%:p:h')
 		else
 			dir = fn.getcwd()
@@ -377,16 +381,12 @@ function M.await(repo)
 end
 
 local function is_status_enabled()
-	local buftype = vim.bo.buftype
-	if buftype == 'help' or buftype == 'quickfix' then
+	if bo.buftype ~= '' then
 		return false
 	end
 
 	local bufname = api.nvim_buf_get_name(0)
-	if
-		string.sub(bufname, 1, 6) == 'man://'
-		or string.sub(bufname, 1, 4) == '/tmp'
-	then
+	if string.sub(bufname, 1, 4) == '/tmp' then
 		return false
 	end
 
