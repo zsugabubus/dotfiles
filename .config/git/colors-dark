@@ -1,0 +1,3 @@
+[alias]
+	h = heat --numbers --colors="bg=#303240,fg=#aaaaaa;#ffee4a;#ffc501;#fe9600;#ff5a00;#e31a1c"
+# vim: ft=gitconfig

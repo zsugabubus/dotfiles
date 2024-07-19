@@ -90,6 +90,8 @@
 	serve = !git daemon --port=10000 --base-path=. --export-all --reuseaddr --informative-errors --verbose
 	hub = !git serve --enable=receive-pack
 
+	hx = h -x
+
 [am]
 	threeWay = yes
 
@@ -106,9 +108,6 @@
 
 [grep]
 	lineNumber = yes
-
-[include]
-	path = config.credential
 
 [init]
 	templateDir = ~/.config/git/template
@@ -139,3 +138,7 @@
 	annotate = yes
 	assume8bitEncoding = yes
 	xmailer = no
+
+[include]
+	path = config.credential
+	path = colors
