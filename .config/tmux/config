@@ -167,6 +167,8 @@ bind r source-file ~/.tmux.conf \; display-message -d250 "Reloaded."
 bind / set -s @copy_feedkeys '?' \; source ~/.config/tmux/editor-copy.tmux
 bind ' ' set -s @copy_feedkeys ' ' \; source ~/.config/tmux/editor-copy.tmux
 bind C-u copy-mode \; send-keys -X halfpage-up
+bind '{' copy-mode \; send-keys '{'
+bind '[' copy-mode \; send-keys '['
 bind v set -s @copy_feedkeys 'v' \; source ~/.config/tmux/editor-copy.tmux
 bind y set -su @copy_feedkeys \; source ~/.config/tmux/editor-copy.tmux
 bind e capture-pane -e -J -S- \; split-window -vZ "tmux show-buffer | sed 's/\\s*$//' | nvim +AnsiEsc +normal!G{}k"
