@@ -140,21 +140,22 @@ end
 
 local function pen_to_hl_group(pen)
 	return string.format(
-		'_ansiesc_%s_%s_%s_%s%s%s%s',
+		'_ansiesc_%s_%s_%s_%s%s%s%s%s',
 		pen.fg and string.sub(pen.fg, 2) or '',
 		pen.bg and string.sub(pen.bg, 2) or '',
 		pen.sp and string.sub(pen.sp, 2) or '',
 		pen.bold and 'b' or '',
 		pen.italic and 'i' or '',
 		pen.underline and 'u' or '',
-		pen.reverse and 'r' or ''
+		pen.reverse and 'r' or '',
+		pen.strikethrough and 's' or ''
 	)
 end
 
 local function hl_group_to_pen(hl_group)
-	local fg, bg, sp, b, i, u, r = string.match(
+	local fg, bg, sp, b, i, u, r, s = string.match(
 		hl_group,
-		'^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)$'
+		'^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)(s?)$'
 	)
 	return {
 		fg = fg ~= '' and '#' .. fg or nil,
@@ -164,6 +165,7 @@ local function hl_group_to_pen(hl_group)
 		italic = i ~= '' or nil,
 		underline = u ~= '' or nil,
 		reverse = r ~= '' or nil,
+		strikethrough = s ~= '' or nil,
 	}
 end
 
