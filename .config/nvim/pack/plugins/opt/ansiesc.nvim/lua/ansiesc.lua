@@ -60,16 +60,19 @@ end
 
 local function parse_sgr(s)
 	local params = {}
+	local i = 1
 
-	for n in string.gmatch(s, '%d+') do
-		table.insert(params, tonumber(n))
+	while true do
+		local j = string.find(s, ';', i, true)
+
+		if not j then
+			table.insert(params, tonumber(string.sub(s, i)) or 0)
+			return params
+		end
+
+		table.insert(params, tonumber(string.sub(s, i, j - 1)) or 0)
+		i = j + 1
 	end
-
-	if #params == 0 then
-		return { 0 }
-	end
-
-	return params
 end
 
 local function parse_sgr_color(params, i)
