@@ -120,7 +120,7 @@ api.nvim_create_autocmd('BufWriteCmd', {
 			'--',
 			destination,
 			string.format(
-				'test -e %s || echo && cat >%s && mv %s %s',
+				'test -e %s || echo new && cat >%s && mv %s %s',
 				shesc(path),
 				shesc(tmp_path),
 				shesc(tmp_path),
@@ -133,7 +133,7 @@ api.nvim_create_autocmd('BufWriteCmd', {
 			return
 		end
 		vim.bo.modified = false
-		local new = output == '\n\n'
+		local new = output == 'new\n'
 		echo(
 			'Normal',
 			'"%s"%s %dL, %dB written on %s',
