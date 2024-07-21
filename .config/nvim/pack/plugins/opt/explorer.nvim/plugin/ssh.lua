@@ -66,6 +66,7 @@ api.nvim_create_autocmd('BufReadCmd', {
 		local kind = table.remove(output, 1)
 		local writable = table.remove(output, 1)
 		if vim.v.shell_error ~= 0 then
+			bo.readonly = true
 			echo(
 				'ErrorMsg',
 				"Can't read file: %s",
