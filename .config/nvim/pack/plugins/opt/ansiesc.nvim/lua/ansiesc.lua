@@ -231,6 +231,7 @@ end
 api.nvim_create_autocmd('ColorScheme', {
 	group = group,
 	callback = function()
+		palette = nil
 		for hl_group in pairs(hl_cache) do
 			local pen = hl_group_to_pen(hl_group)
 			api.nvim_set_hl(0, hl_group, pen)
