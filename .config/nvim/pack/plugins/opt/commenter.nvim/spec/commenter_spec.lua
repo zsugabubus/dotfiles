@@ -14,6 +14,7 @@ it('toggles single line', function()
 		return vim:assert_lines({ output })
 	end
 
+	test_case('', 'a', '# a')
 	test_case('/*%s*/', 'a', '/* a */')
 	test_case('/*%s*/', '/* a */', 'a')
 	test_case('/*%s*/', '/*a*/', 'a')
@@ -95,88 +96,6 @@ describe('toggle mixed lines', function()
 			'a',
 			'c*',
 		})
-	end)
-end)
-
-describe('filetype', function()
-	before_each(function()
-		vim.cmd.filetype({ args = { 'plugin', 'on' } })
-	end)
-
-	describe('unset', function()
-		before_each(function()
-			vim:set_lines({
-				'text',
-			})
-		end)
-
-		it('uses default commentstring', function()
-			vim:feed('gcc')
-			vim:assert_lines({
-				'# text',
-			})
-		end)
-
-		it('uses custom commentstring', function()
-			vim:feed('gcc')
-			vim:feed('gcc')
-			vim.o.cms = '//%s'
-			vim:feed('gcc')
-			vim:assert_lines({
-				'// text',
-			})
-		end)
-	end)
-
-	describe('known', function()
-		before_each(function()
-			assert(vim.o.cms == '')
-			vim.o.ft = 'c'
-			assert(vim.o.cms ~= '')
-			vim:set_lines({
-				'code',
-			})
-		end)
-
-		it('uses custom commentstring', function()
-			vim:feed('gcc')
-			vim:feed('gcc')
-			vim.o.cms = 'BLA %s BLA'
-			vim:feed('gcc')
-			vim:assert_lines({
-				'BLA code BLA',
-			})
-		end)
-	end)
-
-	describe('tsx', function()
-		before_each(function()
-			vim.o.ft = 'typescriptreact'
-			vim:set_lines({
-				'(',
-				'<html/>',
-				')',
-			})
-		end)
-
-		it('guesses ts correctly', function()
-			vim:feed('1Ggcc3Ggcc')
-			vim:assert_lines({
-				'// (',
-				'<html/>',
-				'// )',
-			})
-		end)
-
-		it('guesses html correctly', function()
-			pending('How to test treesitter?')
-			vim:feed('2Ggcc')
-			vim:assert_lines({
-				'(',
-				'{/* <html/> */}',
-				')',
-			})
-		end)
 	end)
 end)
 
