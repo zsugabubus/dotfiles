@@ -33,6 +33,16 @@ alias g=git
 compdef g=git
 alias git='noglob git'
 
+function ga() {
+	local f
+	while f=$(
+		git ls-files -z --others --exclude-standard |
+		fzr --read0 --reverse
+	); do
+		git add -v -- $f
+	done
+}
+
 function gb() {
 	git switch $(git branch --format '%(refname:short)' | fzr -r)
 }
