@@ -6,32 +6,14 @@ draw_bold_text_with_bright_colors: false
 import:
   - ~/.config/alacritty/colors.yml
 
-cursor:
-  style: Block
-  unfocused_hollow: true
-
-window:
-  padding:
-    x: 0
-    y: 0
-  dynamic_title: true
-  decorations: None
-
 scrolling:
   history: 0
 
 font:
   normal:
     family: SauceCodePro Nerd Font Mono
-    style: Regular
-
-  italic:
-    family: SauceCodePro Nerd Font Mono
-    style: Italic
 
   size: 10
-
-  builtin_box_drawing: false
 
 hints:
   enabled:
