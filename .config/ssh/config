@@ -5,7 +5,7 @@ AddKeysToAgent confirm
 Host *
 	UseRoaming no
 	ControlMaster auto
-	ControlPath ~/.cache/ssh/%r@%h-%p
+	ControlPath ~/.cache/ssh/%r@%h-%C
 	ControlPersist 10m
 
 Host *.onion
