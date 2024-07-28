@@ -6,7 +6,7 @@ Host *
 	UseRoaming no
 	ControlMaster auto
 	ControlPath ~/.cache/ssh/%r@%h-%p
-	ControlPersist 60
+	ControlPersist 10m
 
 Host *.onion
 	PubkeyAuthentication yes
