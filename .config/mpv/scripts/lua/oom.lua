@@ -1,8 +1,7 @@
-local utils = require('mp.utils')
-local pid = utils.getpid()
+local pid = require('mp.utils').getpid()
 
 local function oom_score_adj(n)
-	local path = ('/proc/%d/%s'):format(pid, 'oom_score_adj')
+	local path = string.format('/proc/%d/oom_score_adj', pid)
 	local f, err = io.open(path, 'wb')
 	if not f then
 		mp.msg.error(err)
