@@ -164,38 +164,36 @@ function update()
 		return
 	end
 
-	osd:reset()
-	osd:put('\\h\n{\\q2}')
+	osd:clear()
+	osd:skip_message_line()
+	osd:wrap(false)
 
 	for i, p in ipairs(PROPERTIES) do
 		local current = i == cursor_id
 
 		osd:put_cursor(current)
-		osd:put(
-			-- Bold must be turned off otherwise font gets messed up after the
-			-- symbol.
-			'{\\b0\\fnmpv-osd-symbols}\238\128',
-			string.char(128 + p.icon),
-			'\\h'
-		)
-		osd:put(
-			current and '{\\b1}' or '',
-			string.upper(string.sub(p.name, 1, 1)),
-			string.sub(p.name, 2),
-			': ',
-			props[p.name]
-		)
-		osd:put_rcursor(current)
-		osd:put('\\N')
+		osd:fn_symbols()
+		osd:put('\238\128', string.char(128 + p.icon))
+		osd:h()
+		osd:bold(current)
+		osd:put(string.upper(string.sub(p.name, 1, 1)), string.sub(p.name, 2), ': ')
+		osd:str(props[p.name])
+		osd:bold(false)
+		osd:N()
 	end
 
 	local current_preset = get_active_preset()
 
-	osd:put('\\h\n{\\q2\\fscx80\\fscy80}', 'Available Presets:')
+	osd:h()
+	osd:n()
+	osd:wrap(false)
+	osd:fsc(80)
+	osd:put('Available Presets:')
 	for i, preset in ipairs(presets) do
-		osd:put('\\N')
+		osd:N()
 		osd:put_marker(i == current_preset)
-		osd:put(i - 1, ': ', preset.name)
+		osd:put(i - 1, ': ')
+		osd:str(preset.name)
 	end
 
 	osd:update()

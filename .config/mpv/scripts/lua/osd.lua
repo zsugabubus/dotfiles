@@ -6,6 +6,21 @@ local M = {
 }
 M.__index = M
 
+-- Rendering is never parallel and always starts with a cleared buffer so we
+-- can use a shared scratch space to save some memory.
+local buf = require('string.buffer').new()
+
+local function esc_helper(s, nl)
+	s = string.gsub(s, '\\', '\\\u{FEFF}')
+	s = string.gsub(s, '{', '\\{')
+	s = string.gsub(s, '\n', nl)
+	return s
+end
+
+local function esc(s)
+	return esc_helper(s, ' ')
+end
+
 local function update_size(self)
 	self.height = self.ass.res_y
 	self.width = self.ass.res_x
@@ -14,83 +29,131 @@ end
 function M.new(opts)
 	opts = opts or {}
 
-	local self = {
-		ass = mp.create_osd_overlay('ass-events'),
-		buf = require('string.buffer').new(),
-	}
+	local ass = mp.create_osd_overlay('ass-events')
+	ass.z = opts.z or 0
 
-	self.ass.z = opts.z or 0
-	update_size(self)
+	local o = setmetatable({ ass = ass }, M)
 
-	return setmetatable(self, M)
+	update_size(o)
+
+	return o
 end
 
-function M:reset()
+function M:clear()
 	self.ass.data = nil
-	self.buf:reset()
+	buf:reset()
 end
 
 function M:put(...)
-	self.buf:put(...)
+	buf:put(...)
 end
 
 function M:putf(...)
-	self.buf:putf(...)
+	buf:putf(...)
 end
 
-function M:put_cursor(visible)
-	local RIGHT_ARROW_ICON = '\u{279C}'
-
-	self:put(
-		visible and '' or '{\\alpha&HFF}',
-		RIGHT_ARROW_ICON,
-		'{\\alpha&H00}\\h',
-		visible and '{\\b1}' or '{\\b0}'
-	)
+function M:r()
+	buf:put('{\\r}')
 end
 
-function M:put_rcursor(visible)
-	if visible then
-		self:put('{\\b0}')
-	end
+function M:h()
+	buf:put('\\h')
 end
 
-function M:put_marker(active)
-	self:put(active and '●' or '○', '\\h')
+function M:n()
+	self:put('\n')
 end
 
-function M.observe_fsc_properties(fn)
-	mp.observe_property('osd-font-size', 'native', fn)
-	mp.observe_property('osd-margin-y', 'native', fn)
+function M:N()
+	buf:put('\\N')
 end
 
-function M:put_fsc(props, line_count, max_scale)
-	local font_size = props['osd-font-size'] or 0
-	local margin_y = 2 * (props['osd-margin-y'] or 0)
-	local work_height = self.height - margin_y - font_size
-	local font_scale = work_height / font_size / line_count
-	font_scale = math.min(font_scale, max_scale or 1)
+function M:str(s)
+	buf:put(esc(s))
+end
 
-	-- Insert blank line to skip message line.
-	self:put('\\h\n')
-	-- Disable line wrapping so line_count is exact.
-	self:putf('{\\q2\\fscx%d\\fscy%d}', font_scale * 100, font_scale * 100)
+function M:strnl(s)
+	buf:put(esc_helper(s, '\\N'))
+end
+
+function M:wrap(on)
+	buf:put(on and '{\\q1}' or '{\\q2}')
+end
+
+function M:an(x)
+	buf:put('{\\an', x, '}')
+end
+
+function M:fs(x)
+	buf:put('{\\fs', x, '}')
+end
+
+function M:fscy0(x)
+	buf:put('{\\fscy0}')
+end
+
+function M:fsc(x)
+	buf:put('{\\fscx', x, '\\fscy', x, '}')
+end
+
+function M:fn_monospace()
+	buf:put('{\\fnmonospace}')
+end
+
+function M:fn_symbols()
+	buf:put('{\\fnmpv-osd-symbols}')
+end
+
+function M:bold(on)
+	buf:put(on and '{\\b1}' or '{\\b0}')
+end
+
+function M:italic(on)
+	buf:put(on and '{\\i1}' or '{\\i0}')
+end
+
+function M:alpha(x)
+	buf:putf('{\\alpha&H%02x}', x)
+end
+
+function M:a1(x)
+	buf:putf('{\\1a&H%02x&}', x)
+end
+
+function M:c1(x)
+	buf:putf('{\\1c&H%06x&}', x)
+end
+
+function M:c3(x)
+	buf:putf('{\\3c&H%06x&}', x)
+end
+
+function M:bord(x)
+	buf:put('{\\bord', x, '}')
+end
+
+function M:pos(x, y)
+	buf:put('{\\pos(', x, ',', y, ')}')
+end
+
+function M:clip(x0, y0, x1, y1)
+	buf:put('{\\clip(', x0, ',', y0, ',', x1, ',', y1, ')}')
 end
 
 function M:draw_begin()
-	self:put('{\\p1}')
+	buf:put('{\\p1}')
 end
 
 function M:draw_end()
-	self:put('{\\p0}')
+	buf:put('{\\p0}')
 end
 
 function M:draw_move(x, y)
-	self:put('m ', x, ' ', y, ' ')
+	buf:put('m', x, ' ', y)
 end
 
 function M:draw_line(x, y)
-	self:put('l ', x, ' ', y, ' ')
+	buf:put('l', x, ' ', y)
 end
 
 function M:draw_rect(x0, y0, x1, y1)
@@ -102,6 +165,19 @@ end
 
 function M:draw_rect_wh(x, y, width, height)
 	self:draw_rect(x, y, x + width, y + height)
+end
+
+function M:draw_rect_border(x0, y0, x1, y1, w)
+	self:draw_move(x0, y0)
+	self:draw_line(x1, y0)
+	self:draw_line(x1, y1)
+	self:draw_line(x0 + w, y1)
+	self:draw_line(x0 + w, y1 - w)
+	self:draw_line(x1 - w, y1 - w)
+	self:draw_line(x1 - w, y0 + w)
+	self:draw_line(x0 + w, y0 + w)
+	self:draw_line(x0 + w, y1)
+	self:draw_line(x0, y1)
 end
 
 local function deg2rad(deg)
@@ -119,10 +195,53 @@ function M:draw_triangle(x, y, a0, l0, a1, l1)
 	self:draw_line(xy_offset(x, y, a1, l1))
 end
 
+function M:put_cursor(visible)
+	local RIGHT_ARROW_ICON = '\u{279C}'
+
+	if visible then
+		buf:put(RIGHT_ARROW_ICON)
+	else
+		self:alpha(0xff)
+		buf:put(RIGHT_ARROW_ICON)
+		self:alpha(0)
+	end
+	self:h()
+end
+
+function M:put_marker(active)
+	buf:put(active and '●' or '○')
+	self:h()
+end
+
+function M.observe_fsc_properties(fn)
+	mp.observe_property('osd-font-size', 'native', fn)
+	mp.observe_property('osd-margin-y', 'native', fn)
+end
+
+function M:compute_fsc(props, line_count, max_scale)
+	local font_size = props['osd-font-size'] or 0
+	local margin_y = 2 * (props['osd-margin-y'] or 0)
+	local work_height = self.height - margin_y - font_size
+	local font_scale = work_height / font_size / line_count
+	return math.min(font_scale, max_scale or 1) * 100
+end
+
+function M:put_fsc(...)
+	self:skip_message_line()
+	self:wrap(false)
+	self:fsc(self:compute_fsc(...))
+end
+
+function M:skip_message_line()
+	self:h()
+	self:n()
+end
+
 function M:update()
 	if not self.ass.data then
-		self.ass.data = self.buf:tostring()
+		self.ass.data = buf:tostring()
 	end
+
 	if self.on_screen_data ~= self.ass.data then
 		self.on_screen_data = self.ass.data
 		self.ass:update()
@@ -154,20 +273,6 @@ function M:set_res(w, h)
 	update_size(self)
 end
 
-function M.ass_escape(s)
-	return s
-		-- ASS' escape handling is WTF: RS cannot be escaped with RS so we trick it
-		-- by using ZWJ.
-		:gsub(
-			'\\',
-			'\\\u{FEFF}'
-		)
-		:gsub('{', '\\{')
-		:gsub('\n', '\\N')
-end
-
-function M.ass_escape_nl(s)
-	return M.ass_escape(string.gsub(s, '\n', ' '))
-end
+M.esc = esc
 
 return M

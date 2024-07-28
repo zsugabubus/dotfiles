@@ -20,7 +20,11 @@ local function update_property(name, value)
 end
 
 local function osd_put_block(align, ...)
-	osd:put('\n{\\an', align, '\\c&H00ffFF\\bord2\\fscx70\\fscy70}')
+	osd:n()
+	osd:an(align)
+	osd:bord(2)
+	osd:fsc(70)
+	osd:c1(0x00ffff)
 	osd:putf(...)
 end
 
@@ -48,7 +52,7 @@ function update()
 		return
 	end
 
-	osd:reset()
+	osd:clear()
 
 	osd_put_block(2, '%s', title.get_current_ass(osd))
 

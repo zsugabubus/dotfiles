@@ -102,16 +102,20 @@ local function osd_put_avdict(o)
 end
 
 local function osd_put_filters(name, t)
-	osd:putf('{\\b1}%s{\\b0} Filters:', name)
+	osd:bold(true)
+	osd:put(name)
+	osd:bold(false)
+	osd:put(' Filters:')
 
 	local filters = props[t]
 
 	if #filters == 0 then
-		osd:put('\\h')
 		local current = t == cursor_tab
+		osd:h()
 		osd:put_cursor(current)
+		osd:bold(current)
 		osd:put('(none)')
-		osd:put_rcursor(current)
+		osd:bold(false)
 	end
 
 	for i = 1, #filters do
@@ -119,19 +123,24 @@ local function osd_put_filters(name, t)
 		local enabled = filters[i].enabled
 		local current = t == cursor_tab and i == cursor_id
 
-		osd:put('\\N')
+		osd:N()
 		osd:put_cursor(current)
+		osd:bold(current)
 		osd:put_marker(enabled)
-		osd:put(i, ':\\h', filters[i].name, ' ')
-
+		osd:put(i, ':')
+		osd:h()
+		osd:str(filters[i].name)
+		osd:put(' ')
 		if pars.graph then
-			osd:put('[', pars.graph, ']')
+			osd:put('[')
+			osd:str(pars.graph)
+			osd:put(']')
 		else
 			osd_put_avdict(pars)
 		end
-		osd:put_rcursor(current)
+		osd:bold(false)
 	end
-	osd:put('\\N')
+	osd:N()
 end
 
 function update()
@@ -157,12 +166,12 @@ function update()
 		return
 	end
 
-	osd:reset()
+	osd:clear()
 	osd:put_fsc(props, 1 + #props.af + 1 + 1 + #props.vf, 0.9)
-	osd:put('{\\fnmpv-osd-symbols}')
+	osd:fn_symbols()
 
 	osd_put_filters(osd.VIDEO_ICON .. ' Video', 'vf')
-	osd:put('\\N')
+	osd:N()
 	osd_put_filters(osd.AUDIO_ICON .. ' Audio', 'af')
 
 	osd:update()

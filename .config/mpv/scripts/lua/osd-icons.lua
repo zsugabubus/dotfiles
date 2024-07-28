@@ -1,17 +1,14 @@
 local osd = require('osd').new({ z = 10 })
 
 local props = {}
-local update_timeout
 
 local function osd_put_icon(align, alpha, text)
-	osd:put(
-		'\n{\\an',
-		align,
-		'\\1a&H',
-		alpha,
-		'\\fscx200\\fscy200\\fnmpv-osd-symbols}',
-		text
-	)
+	osd:n()
+	osd:an(align)
+	osd:a1(alpha)
+	osd:fsc(200)
+	osd:fn_symbols()
+	osd:put(text)
 end
 
 local function update()
@@ -20,7 +17,7 @@ local function update()
 		return
 	end
 
-	osd:reset()
+	osd:clear()
 
 	if props['pause'] then
 		osd_put_icon(4, 20, '\u{E002}')
@@ -34,8 +31,7 @@ local function update()
 end
 update = osd.update_wrap(update)
 
-update_timeout = mp.add_timeout(0.05, update)
-update_timeout:kill()
+local update_timeout = mp.add_timeout(0.05, update, true)
 
 local function update_property(name, value)
 	if name == 'pause' and value then

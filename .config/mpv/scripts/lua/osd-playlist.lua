@@ -93,13 +93,10 @@ function update()
 	local playlist = props['playlist'] or {}
 	local lines, y = compute_layout()
 
-	osd:reset()
-	osd:putf(
-		'{\\q2\\pos(0, %d)\\fscx%f\\fscy%f}',
-		y,
-		font_scale * 100,
-		font_scale * 100
-	)
+	osd:clear()
+	osd:wrap(false)
+	osd:pos(0, y)
+	osd:fsc(font_scale * 100)
 
 	local top, bottom
 	top = math.max(1, pos - math.floor(lines * (forward and 0.2 or 0.8)))
@@ -109,10 +106,12 @@ function update()
 	for i = top, bottom do
 		local entry = playlist[i]
 		local display = title.from_playlist_entry(entry)
-		osd:put('\\N\\h')
+		osd:N()
+		osd:h()
 		osd:put_cursor(entry.current)
+		osd:bold(entry.current)
 		osd:put(display)
-		osd:put_rcursor(entry.current)
+		osd:bold(false)
 	end
 
 	osd:update()
@@ -123,9 +122,9 @@ hide_timeout = mp.add_timeout(
 	mp.get_property_number('osd-duration') / 1000,
 	function()
 		set_visible('hide')
-	end
+	end,
+	true
 )
-hide_timeout:kill()
 
 utils.register_script_messages('osd-playlist', {
 	visibility = set_visible,

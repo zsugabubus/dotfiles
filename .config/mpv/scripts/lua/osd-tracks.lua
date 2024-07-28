@@ -105,16 +105,21 @@ local TRACK_FLAGS = {
 local function osd_put_track(track)
 	local current = track.type == cursor_type and cursor_id == track.id
 
-	osd:put('\\N')
+	osd:N()
 	osd:put_cursor(current)
+	osd:bold(current)
 	osd:put_marker(track.selected)
-	osd:put(string.upper(string.sub(track.type, 1, 1)), ':\\h')
-	osd:put(track.id, ':\\h')
+	osd:put(string.upper(string.sub(track.type, 1, 1)), ':')
+	osd:h()
+	osd:put(track.id, ':')
+	osd:h()
 
 	osd:putf('[%s] ', track.lang or 'und')
 
 	if track.title then
-		osd:putf("'%s' ", osd.ass_escape(track.title))
+		osd:put("'")
+		osd:str(track.title)
+		osd:put("' ")
 	end
 
 	osd:put('(')
@@ -178,11 +183,14 @@ local function osd_put_track(track)
 		end
 	end
 
-	osd:put_rcursor(current)
+	osd:bold(false)
 end
 
 local function osd_put_track_list(name, track_type, paginate)
-	osd:putf('{\\b1}%s{\\b0} Tracks:', name)
+	osd:bold(true)
+	osd:put(name)
+	osd:bold(false)
+	osd:put(' Tracks:')
 
 	local tracks = props['track-list/type'][track_type]
 	local selected_track = props['track-list/selected'][track_type]
@@ -191,7 +199,9 @@ local function osd_put_track_list(name, track_type, paginate)
 	if paginate and cursor_type ~= track_type then
 		local more = #tracks - (selected_track and 1 or 0)
 		if more > 0 then
-			osd:putf(' {\\i1}%d more tracks{\\i0}', more)
+			osd:italic(true)
+			osd:put(' ', more, ' more tracks')
+			osd:italic(false)
 		end
 		if selected_track then
 			top, bottom = selected_track.id, selected_track.id
@@ -208,20 +218,21 @@ local function osd_put_track_list(name, track_type, paginate)
 
 	if top == 0 then
 		top = top + 1
-		osd:put('\\N')
+		osd:N()
 		local current = cursor_type == track_type and cursor_id == 0
 		osd:put_cursor(current)
+		osd:bold(current)
 		osd:put_marker(not selected_track)
 		osd:put(string.upper(string.sub(track_type, 1, 1)), ': ')
 		osd:put('0: none')
-		osd:put_rcursor(current)
+		osd:bold(false)
 	end
 
 	for i = top, bottom do
 		osd_put_track(tracks[i])
 	end
 
-	osd:put('\\N')
+	osd:N()
 end
 
 function update()
@@ -264,14 +275,14 @@ function update()
 			)
 		or #props['track-list']
 
-	osd:reset()
+	osd:clear()
 	osd:put_fsc(props, 3 * 3 + more_lines, 0.9)
-	osd:put('{\\fnmpv-osd-symbols}')
+	osd:fn_symbols()
 
 	osd_put_track_list(osd.VIDEO_ICON .. ' Video', 'video', paginate)
-	osd:put('\\N')
+	osd:N()
 	osd_put_track_list(osd.AUDIO_ICON .. ' Audio', 'audio', paginate)
-	osd:put('\\N')
+	osd:N()
 	osd_put_track_list(osd.SUBTITLE_ICON .. ' Subtitle', 'sub', paginate)
 
 	osd:update()

@@ -53,21 +53,23 @@ function update()
 		return
 	end
 
-	osd:reset()
+	osd:clear()
 	osd:put_fsc(props, 2 + #CHOICES)
 	osd:put('Cache:')
 
-	osd:put('\\N')
+	osd:N()
 	osd:put_marker(not props.cache)
-	osd:put('n: none\\h')
+	osd:put('n: none')
 
 	local current = props.cache and props[name]
 	for _, choice in pairs(CHOICES) do
 		local key, value, display = unpack(choice)
 
-		osd:put('\\N')
+		osd:N()
 		osd:put_marker(value == current)
-		osd:put(key, ':\\h', display or value)
+		osd:put(key, ':')
+		osd:h()
+		osd:str(display or value)
 	end
 
 	osd:update()

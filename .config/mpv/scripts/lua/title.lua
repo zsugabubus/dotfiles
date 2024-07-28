@@ -30,7 +30,7 @@ function M.from_playlist_entry(entry)
 	s = string.gsub(s, ' [0-9]+p[^/]*', '')
 	s = string.gsub(s, ' [1-9][0-9][0-9][0-9] [A-Za-z0-9][^/]', '')
 
-	s = Osd.ass_escape_nl(s)
+	s = Osd.esc(s)
 	cache[entry.filename] = s
 	return s
 end
@@ -42,13 +42,13 @@ function M.get_current_ass()
 	if artist and title then
 		local version = mp.get_property_native('metadata/by-key/Version', nil)
 		return table.concat({
-			Osd.ass_escape_nl(artist),
+			Osd.esc(artist),
 			' - ',
 			'{\\b1}',
-			Osd.ass_escape_nl(title),
+			Osd.esc(title),
 			'{\\b0}',
 			version and ' (',
-			version and Osd.ass_escape_nl(version),
+			version and Osd.esc(version),
 			version and ')',
 		})
 	else
@@ -59,7 +59,7 @@ function M.get_current_ass()
 		then
 			return M.from_playlist_entry(current)
 		elseif title then
-			return Osd.ass_escape_nl(title)
+			return Osd.esc(title)
 		else
 			return
 		end

@@ -344,16 +344,11 @@ function update()
 	end
 
 	local function osd_clip_main(prog)
-		osd:put(
-			'{\\clip(',
+		osd:clip(
 			prog == 'right' and prog_pos or main_x0,
-			',',
 			main_y0,
-			',',
 			prog == 'left' and prog_pos or main_x1,
-			',',
-			main_y1,
-			')}'
+			main_y1
 		)
 	end
 
@@ -361,36 +356,45 @@ function update()
 		return duration > 0 and time / duration * prog_width or 0
 	end
 
-	osd:reset()
+	osd:clear()
 
 	-- Bar background.
 	do
-		osd:put('{\\r\\pos(', box_x0, ',', box_y0, ')}')
-		osd:put('{\\bord0\\1a&H2E&\\1c&H000000&}')
+		osd:r()
+		osd:bord(0)
+		osd:pos(box_x0, box_y0)
+		osd:a1(0x2e)
+		osd:c1(0x000000)
 		osd:draw_begin()
 		osd:draw_rect_wh(0, 0, box_width, box_height)
 		osd:draw_end()
-		osd:put('\n')
+		osd:n()
 	end
 
 	-- Progress bar.
 	do
-		osd:put('{\\r\\pos(', main_x0, ',', main_y0, ')}')
-		osd:put('{\\bord0\\1a&HEE&\\1c&HFFFFFF&}')
+		osd:r()
+		osd:bord(0)
+		osd:pos(main_x0, main_y0)
+		osd:a1(0xee)
+		osd:c1(0xffffff)
 		osd:draw_begin()
 		osd:draw_rect_wh(0, 0, math.ceil(main_width), math.ceil(main_height))
 		osd:draw_end()
-		osd:put('\n')
+		osd:n()
 	end
 
 	-- Filled progress bar.
 	do
-		osd:put('{\\r\\pos(', prog_x0, ',', prog_y0, ')}')
-		osd:put('{\\bord0\\1a&H10&\\1c&HFFFFFF&}')
+		osd:r()
+		osd:bord(0)
+		osd:pos(prog_x0, prog_y0)
+		osd:a1(0x10)
+		osd:c1(0xffffff)
 		osd:draw_begin()
 		osd:draw_rect_wh(0, 0, prog_fill_width, prog_height)
 		osd:draw_end()
-		osd:put('\n')
+		osd:n()
 	end
 
 	local cache = props['demuxer-cache-state']
@@ -414,46 +418,53 @@ function update()
 			end
 
 			-- Part over filled part.
-			osd:put('{\\r\\pos(', x, ',', y, ')\\bord0\\1a&H10&\\1c&H000000&}')
+			osd:r()
+			osd:bord(0)
+			osd:pos(x, y)
+			osd:a1(0x10)
+			osd:c1(0x000000)
 			osd_clip_main('left')
 			osd:draw_begin()
 			draw()
 			osd:draw_end()
-			osd:put('\n')
+			osd:n()
 
 			-- Part over unfilled part.
-			osd:put('{\\r\\pos(', x, ',', y, ')\\bord0\\1a&H10&\\1c&HFFFFFF&}')
+			osd:r()
+			osd:bord(0)
+			osd:pos(x, y)
+			osd:a1(0x10)
+			osd:c1(0xffffff)
 			osd_clip_main('right')
 			osd:draw_begin()
 			draw()
 			osd:draw_end()
-			osd:put('\n')
+			osd:n()
 		end
 	end
 
 	if not (small and prog_hover) then
 		local fs = main_fs * (small and 0.8 or 1)
 		-- Left block.
-		osd:put(
-			'{\\r\\pos(',
-			box_x0 + (small and 0 or side_width / 2),
-			',',
-			main_yc,
-			')}'
-		)
-		osd:put('{\\bord2\\fs', fs, '\\fnmonospace\\an', small and '4}\\h' or '5}')
+		osd:r()
+		osd:bord(2)
+		osd:pos(box_x0 + (small and 0 or side_width / 2), main_yc)
+		osd:fs(fs)
+		osd:fn_monospace()
+		osd:an(small and 4 or 5)
+		if small then
+			osd:h()
+		end
 		osd_put_human_time(props['time-pos'] or 0)
-		osd:put('\n')
+		osd:n()
 
 		-- Right block.
-		osd:put(
-			'{\\r\\pos(',
-			box_x1 - (small and 0 or side_width / 2),
-			',',
-			main_yc,
-			')}'
-		)
-		osd:put('{\\bord2\\fs', fs, '\\fnmonospace\\an', small and '6}' or '5}')
+		osd:r()
+		osd:bord(2)
+		osd:pos(box_x1 - (small and 0 or side_width / 2), main_yc)
+		osd:fs(fs)
+		osd:fn_monospace()
+		osd:an(small and 6 or 5)
 		if prog_hover then
 			osd_put_human_time(-(duration - mouse_time))
 		elseif
@@ -466,37 +477,36 @@ function update()
 			local playtime_remaininig = time_remaininig / props['speed']
 			osd_put_human_time(-playtime_remaininig)
 		end
-		osd:put(small and '\\h' or '', '\n')
+		if small then
+			osd:h()
+		end
+		osd:n()
 	end
 
 	-- Top left block.
 	do
-		osd:put(
-			'{\\r\\pos(',
-			box_x0 + side_width / 2,
-			',',
-			math.floor(box_y0 + top_fs / 2),
-			')}'
-		)
-		osd:put('{\\bord1\\fs', top_fs, '\\fnmonospace\\an5}')
+		osd:r()
+		osd:bord(1)
+		osd:pos(box_x0 + side_width / 2, math.floor(box_y0 + top_fs / 2))
+		osd:fs(top_fs)
+		osd:fn_monospace()
+		osd:an(5)
 		osd:put(props['playlist-pos'], '/', props['playlist-count'])
-		osd:put('\n')
+		osd:n()
 	end
 
 	-- Top right block.
 	if cache and not very_small then
-		osd:put(
-			'{\\r\\pos(',
-			box_x1 - side_width / 2,
-			',',
-			math.floor(box_y0 + top_fs / 2),
-			')}'
-		)
-		osd:put('{\\bord1\\fs', top_fs, '\\fnmonospace\\an5}')
+		osd:r()
+		osd:bord(1)
+		osd:pos(box_x1 - side_width / 2, math.floor(box_y0 + top_fs / 2))
+		osd:fs(top_fs)
+		osd:fn_monospace()
+		osd:an(5)
 		osd:put('Cache: ')
 		osd_put_human_duration(cache['cache-duration'] or 0)
 		osd:put('/', math.floor((cache['total-bytes'] or 0) / 1000 / 1000), 'M')
-		osd:put('\n')
+		osd:n()
 	end
 
 	-- Chapter markers.
@@ -508,13 +518,11 @@ function update()
 			local tri_height = main_fs / 8
 			local tri_side = tri_height / math.sin(45 / 180 * math.pi)
 
-			osd:put(
-				'{\\r\\pos(',
-				main_x0 + prog_margin,
-				',',
-				main_y0,
-				')\\bord1\\1a&H10&\\1c&HFFFFFF&}'
-			)
+			osd:r()
+			osd:pos(main_x0 + prog_margin, main_y0)
+			osd:bord(1)
+			osd:a1(0x10)
+			osd:c1(0xffffff)
 			osd:draw_begin()
 			for i, chapter in ipairs(chapters) do
 				chapter.id = i - 1
@@ -530,7 +538,7 @@ function update()
 				)
 			end
 			osd:draw_end()
-			osd:put('\n')
+			osd:n()
 
 			local chapter_at = prog_hover and mouse_time or (props['time-pos'] or 0)
 
@@ -555,15 +563,11 @@ function update()
 			local tri_height = main_fs / 5
 			local tri_side = tri_height / math.sin(45 / 180 * math.pi)
 
-			osd:put(
-				'{\\r\\pos(',
-				main_x0 + prog_margin,
-				',',
-				main_y0,
-				')\\bord1\\1a&H10&\\1c&H',
-				color,
-				'&}'
-			)
+			osd:r()
+			osd:bord(1)
+			osd:pos(main_x0 + prog_margin, main_y0)
+			osd:a1(0x10)
+			osd:c1(color)
 			osd:draw_begin()
 			local x = time2x(math.min(time, duration))
 			osd:draw_triangle(x, tri_height, 90, tri_height, rot, tri_side)
@@ -576,23 +580,29 @@ function update()
 				tri_side
 			)
 			osd:draw_end()
-			osd:put('\n')
+			osd:n()
 		end
 
-		draw_ab('ab-loop-a', 90 + 45, '0000FF')
-		draw_ab('ab-loop-b', 90 - 45, '00FF00')
+		draw_ab('ab-loop-a', 90 + 45, 0x0000ff)
+		draw_ab('ab-loop-b', 90 - 45, 0x00ff00)
 	end
 
 	-- Mouse position.
 	if prog_hover then
 		local mouse_align = mouse_x < osd.width / 2 and 4 or 6
-		osd:put('{\\r\\1c&HFFFFFF&\\fs', main_fs, '\\fnmonospace}')
-		osd:put('{\\pos(', mouse_x, ',', main_yc, ')}')
+		osd:r()
+		osd:c1(0xffffff)
+		osd:fs(main_fs)
+		osd:fn_monospace()
+		osd:pos(mouse_x, main_yc)
 		osd_clip_main()
-		osd:put('{\\bord2\\an', mouse_align, '}')
-		osd:put('{\\3c&H000000&}\\h')
+		osd:bord(2)
+		osd:an(mouse_align)
+		osd:c3(0x000000)
+		osd:h()
 		osd_put_human_time(mouse_time)
-		osd:put('\\h\n')
+		osd:h()
+		osd:n()
 	end
 
 	-- Top center block.
@@ -602,31 +612,27 @@ function update()
 			or (mouse_chapter and prog_x0 + time2x(mouse_chapter.time) or main_x0)
 		local y0 = box_y0 + (small and top_fs or 0)
 		local align = x0 < osd.width / 2 and 4 or 6
-		osd:put('{\\r\\pos(', x0, ',', y0 + top_fs / 2, ')}')
-		osd:put(
-			'{\\bord1\\fs',
-			top_fs,
-			'\\fnmonospace\\q2\\an',
-			mouse_chapter and align or 4,
-			'}'
-		)
-		osd:put(
-			'{\\clip(',
+		osd:r()
+		osd:bord(1)
+		osd:pos(x0, y0 + top_fs / 2)
+		osd:fs(top_fs)
+		osd:fn_monospace()
+		osd:wrap(false)
+		osd:an(mouse_chapter and align or 4)
+		osd:clip(
 			small and box_x0 or main_x0,
-			',',
 			y0,
-			',',
 			small and box_x1 or main_x1,
-			',',
-			y0 + top_fs,
-			')}'
+			y0 + top_fs
 		)
 		if mouse_chapter then
-			osd:put(
-				small and '' or '\\h',
-				osd.ass_escape(mouse_chapter.title),
-				small and '' or '\\h'
-			)
+			if not small then
+				osd:h()
+			end
+			osd:str(mouse_chapter.title)
+			if not small then
+				osd:h()
+			end
 		else
 			if not old_title then
 				old_title = title.get_current_ass() or ''
@@ -636,15 +642,18 @@ function update()
 				osd:put(' \u{2022} ', chapter_pos.title)
 			end
 		end
-		osd:put('\n')
+		osd:n()
 
 		if mouse_chapter and not small then
-			osd:put('{\\r\\pos(', x0, ',', y0, ')}', '{\\bord1\\3c&HFFFFFF&}')
+			osd:r()
+			osd:bord(1)
+			osd:c3(0xffffff)
+			osd:pos(x0, y0)
 			osd:draw_begin()
 			osd:draw_move(0, 0)
 			osd:draw_line(0, top_fs)
 			osd:draw_end()
-			osd:put('\n')
+			osd:n()
 		end
 	end
 
@@ -662,8 +671,7 @@ update = osd.update_wrap(update)
 hide_timeout = mp.add_timeout(1.5, function()
 	visible = false
 	update()
-end)
-hide_timeout:kill()
+end, true)
 
 utils.register_script_messages('osd-bar', {
 	visibility = function(action)

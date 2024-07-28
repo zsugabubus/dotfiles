@@ -74,19 +74,22 @@ local function build_chooser(name, choices_file)
 			return
 		end
 
-		osd:reset()
+		osd:clear()
 		osd:put_fsc(props, 1 + #choices)
+
 		osd:putf('Choose %s:', name)
 
 		local current = props[name]
 		for _, choice in pairs(choices) do
 			local key, value, display = unpack(choice)
 
-			osd:put('\\N')
+			osd:N()
 			if current ~= nil then
 				osd:put_marker(value == current)
 			end
-			osd:put(key, ':\\h', display or value)
+			osd:put(key, ':')
+			osd:h()
+			osd:str(display or value)
 		end
 
 		osd:update()

@@ -55,17 +55,20 @@ function update()
 		return
 	end
 
-	osd:reset()
-	osd:put('{\\an9}')
+	osd:clear()
+	osd:an(9)
 	osd:put_fsc(props, #props['metadata/list'], 0.5)
-	osd:put('{\\an9\\q0\\a1\\bord2}')
+	osd:an(9)
+	osd:bord(2)
 
 	for _, kv in pairs(props['metadata/list']) do
-		osd:putf(
-			'{\\b1}%s{\\b0}: %s\\N',
-			osd.ass_escape(kv[1]),
-			osd.ass_escape(kv[2])
-		)
+		local k, v = unpack(kv)
+		osd:bold(true)
+		osd:str(k)
+		osd:bold(false)
+		osd:put(': ')
+		osd:strnl(v)
+		osd:N()
 	end
 
 	if #props['metadata/list'] == 0 then
