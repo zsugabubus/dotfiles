@@ -3,27 +3,25 @@
 
   $ mpv --script-opts=sort=none ...
   $ mpv --script-opts=sort-by=none ...
-  $ mpv --script-opts=playlist_filtersort-by=none ...
 
 - Change sort options from MPV console.
 
   set script-opts sort=none
   set script-opts sort-by=none
-  set script-opts playlist_filtersort-by=none
 
 - Change sort options on key press.
 
   input.conf:
-  s   change-list script-opts set playlist_filtersort-by=path
-  S   change-list script-opts set playlist_filtersort-by=none
+  s   change-list script-opts set sort-by=path
+  S   change-list script-opts set sort-by=none
 
 - Sort on demand.
 
-  script-opts/playlist_filtersort.conf:
+  script-opts/sort.conf:
   by=none
 
   input.conf:
-  s   script-message-to playlist_filtersort sort-now path
+  s   script-message sort path
 ]]
 
 local SORT_BY_CHOICES = {
@@ -74,9 +72,8 @@ local function filter_playlist(playlist)
 end
 
 local can_playlist_clear = true
-local function sort_playlist(playlist)
-	local by = sort_options.by
-	if by == 'none' then
+local function sort_playlist(playlist, sort_by)
+	if sort_by == 'none' then
 		return
 	end
 
@@ -97,16 +94,16 @@ local function sort_playlist(playlist)
 		local entry = playlist[i]
 		order[i] = i
 
-		if by == 'alpha' then
+		if sort_by == 'alpha' then
 			entry.key = entry.filename
 				:gsub('^.*/', '')
 				:gsub('[.,;&_ ()[\135{}-]', '')
 				:gsub('^([0-9]+)(.*)', sub_leading_number)
 				:gsub('([0-9]+)(.)', sub_wide_number)
 				:lower()
-		elseif by == 'name' then
+		elseif sort_by == 'name' then
 			entry.key = entry.filename:gsub('^.*/', ''):lower()
-		elseif by == 'path' then
+		elseif sort_by == 'path' then
 			entry.key = entry.filename
 		end
 
@@ -206,7 +203,7 @@ end
 
 local old_playlist_count = 0
 local old_sort_by
-local function update_playlist()
+local function update_playlist(sort_by)
 	local playlist_count = mp.get_property_native('playlist-count')
 
 	-- MPV scripts are executed in parallel, so routines that modify playlist
@@ -215,7 +212,7 @@ local function update_playlist()
 	-- Because of this, it can be assumed that no other script touches playlist,
 	-- so sorting (and filtering) have to be redone only when playlist-count
 	-- increases.
-	if old_playlist_count < playlist_count or old_sort_by ~= sort_options.by then
+	if old_playlist_count < playlist_count or old_sort_by ~= sort_by then
 		local start = mp.get_time()
 
 		local playlist = mp.get_property_native('playlist')
@@ -223,7 +220,7 @@ local function update_playlist()
 
 		if 1 < #playlist then
 			filter_playlist(playlist)
-			sort_playlist(playlist)
+			sort_playlist(playlist, sort_by)
 			-- Issuing a random playlist-clear is unsafe since other scripts may
 			-- modify playlist in parallel. As a heuristics, playlist-clear is only
 			-- ever allowed to run once, when other scripts surely do not can about
@@ -235,39 +232,36 @@ local function update_playlist()
 		local elapsed = mp.get_time() - start
 
 		mp.msg.info(
-			string.format("Sorted by '%s' in %.3f seconds", sort_options.by, elapsed)
+			string.format(
+				'Sorted by %s in %.3f seconds.%s',
+				sort_by,
+				elapsed,
+				sort_by == 'none' and ''
+					or ' Use --script-opts=sort=none to disable sorting.'
+			)
 		)
 	end
 	old_playlist_count = playlist_count
-	old_sort_by = sort_options.by
+	old_sort_by = sort_by
 end
 
-local function validate_options(first_run)
+local function validate_options()
 	if not SORT_BY_CHOICES[sort_options.by] then
+		sort_options.by = 'none'
 		mp.msg.error(
-			'--script-opts='
-				.. mp.get_script_name()
-				.. '-by=X must be one of: '
+			'--script-opts=sort-by= expects one of: '
 				.. table.concat(SORT_BY_CHOICES, ', ')
 		)
-	end
-
-	if first_run then
-		if sort_options.by ~= 'none' then
-			mp.msg.info(
-				'Use --script-opts=' .. mp.get_script_name() .. '-by=none to disable.'
-			)
-		end
 	end
 end
 
 local function update_options()
-	validate_options(false)
-	update_playlist()
+	validate_options()
+	update_playlist(sort_options.by)
 end
 
 mp.observe_property('playlist-count', 'number', function()
-	update_playlist()
+	update_playlist(sort_options.by)
 end)
 
 mp.observe_property('options/script-opts', 'native', function(_, t)
@@ -278,14 +272,17 @@ mp.observe_property('options/script-opts', 'native', function(_, t)
 	end
 end)
 
-mp.register_script_message('sort-now', function(by)
-	local saved_sort_by = sort_options.by
-	sort_options.by = by or saved_sort_by
-	validate_options(false)
-	update_playlist()
-	sort_options.by = saved_sort_by
+mp.register_script_message('sort', function(sort_by)
+	if not SORT_BY_CHOICES[sort_by] then
+		mp.msg.error(
+			'Usage: sort SORT_BY where SORT_BY is one of: '
+				.. table.concat(SORT_BY_CHOICES, ', ')
+		)
+		return
+	end
+
+	update_playlist(sort_by)
 end)
 
 require('mp.options').read_options(sort_options, 'sort', update_options)
-require('mp.options').read_options(sort_options, nil, update_options)
-validate_options(true)
+validate_options()
