@@ -2,10 +2,10 @@ local osd = require('osd').new({ z = 10 })
 
 local props = {}
 
-local function osd_put_icon(align, alpha, text)
+local function osd_put_icon(align, text)
 	osd:n()
 	osd:an(align)
-	osd:a1(alpha)
+	osd:a1(40)
 	osd:fsc(200)
 	osd:fn_symbols()
 	osd:put(text)
@@ -20,11 +20,11 @@ local function update()
 	osd:clear()
 
 	if props['pause'] then
-		osd_put_icon(4, 20, '\u{E002}')
+		osd_put_icon(4, '\u{E002}')
 	end
 
 	if props['mute'] then
-		osd_put_icon(6, 50, '\u{E10A}')
+		osd_put_icon(6, '\u{E10A}')
 	end
 
 	osd:update()
