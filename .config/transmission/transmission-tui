@@ -2474,20 +2474,36 @@ transmission-daemon(1), transmission-remote(1).
 		local reply = ''
 
 		self:spawn_shell('fzr', {
-			args = { '--read0', '--print0' },
+			args = { '--read0', '--print-index' },
 			stdio = { stdin, stdout, 2 },
 		}, function(err)
 			if err then
 				return
 			end
 
-			local id = tonumber(string.match(reply, '^%d+'))
-			assert(self._torrents:move_cursor_to_id(id))
+			local index = string.match(reply, '^%d+\n$')
+			if index then
+				self._torrents:move_cursor(index + 1)
+				return
+			end
+
+			local ids = {}
+
+			for index in string.gmatch(reply, '%d+') do
+				local torrent = self._torrents:get(index + 1)
+				table.insert(ids, torrent.id)
+			end
+
+			if #ids == 0 then
+				return
+			end
+
+			self:set_torrent_filter_by_ids(ids)
 		end)
 
 		stdin:write(with_buffer(function(buf)
 			for _, torrent in ipairs(self._torrents:list()) do
-				buf:put(tostring(torrent.id), '\t', torrent.name, '\0')
+				buf:put(torrent.name, '\0')
 			end
 		end))
 		stdin:shutdown(function()
