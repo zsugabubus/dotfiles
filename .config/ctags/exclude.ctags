@@ -4,3 +4,4 @@
 --exclude=dist
 --exclude=vendor
 --exclude=node_modules
+--options-maybe=.ctags
