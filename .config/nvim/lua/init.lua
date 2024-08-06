@@ -762,8 +762,9 @@ require('pack').setup({
 	{
 		'fuzzy.nvim',
 		after = function()
-			map('n', '!', '<Cmd>Fuzzy buffers<CR>')
-			map('n', 'g/', '<Cmd>Fuzzy files<CR>')
+			map('n', '!', '<Cmd>FuzzyBuffers<CR>')
+			map('n', 'g/', '<Cmd>FuzzyFiles<CR>')
+			map('n', 'g]', '<Cmd>FuzzyTags<CR>')
 		end,
 	},
 	{
