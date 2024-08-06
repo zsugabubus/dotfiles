@@ -1,3 +1,13 @@
-vim.api.nvim_create_user_command('Fuzzy', function(opts)
-	require('fuzzy')[opts.fargs[1]]()
-end, { nargs = 1 })
+local user_command = vim.api.nvim_create_user_command
+
+user_command('FuzzyBuffers', function()
+	require('fuzzy').buffers()
+end, {})
+
+user_command('FuzzyFiles', function()
+	require('fuzzy').files()
+end, {})
+
+user_command('FuzzyTags', function()
+	require('fuzzy').tags()
+end, {})
