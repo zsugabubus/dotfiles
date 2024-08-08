@@ -535,6 +535,14 @@ vim.filetype.add({
 				if string.match(content, '^[* ]*%x%x%x%x%x%x') then
 					return 'git'
 				end
+				if string.match(content, '^%-+BEGIN.*PRIVATE KEY') then
+					return 'privatekey',
+						function()
+							vim.schedule(function()
+								cmd('silent keeppattern normal! zE2GV/^-/-1\rzf')
+							end)
+						end
+				end
 			end,
 			{ priority = -math.huge },
 		},
