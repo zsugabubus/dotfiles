@@ -13,6 +13,13 @@ local ns = api.nvim_create_namespace('qf')
 local buf_qf = {}
 local buf_qe = {}
 
+local function trigger_quickfix_changed()
+	api.nvim_exec_autocmds('User', {
+		pattern = 'QuickFixChanged',
+		modeline = false,
+	})
+end
+
 local function buf_set_lines_and_clear_undo(buf, lines)
 	local bo = bo[buf]
 	local saved_undolevels = bo.undolevels
@@ -21,9 +28,36 @@ local function buf_set_lines_and_clear_undo(buf, lines)
 	bo.undolevels = saved_undolevels
 end
 
-local function set_highlights()
-	api.nvim_set_hl(0, 'qeLineNr', { link = 'LineNr', default = true })
-	api.nvim_set_hl(0, 'qeHeader', { link = 'Normal', default = true })
+local function buf_is_hidden(buf)
+	return fn.bufwinnr(buf) == -1
+end
+
+local function buf_unload(buf)
+	cmd(buf .. 'bunload!')
+end
+
+local function buf_edit(buf)
+	api.nvim_buf_call(buf, function()
+		cmd('edit!')
+	end)
+end
+
+local function buf_reload(buf)
+	if buf_is_hidden(buf) then
+		buf_unload(buf)
+	else
+		buf_edit(buf)
+	end
+end
+
+local function make_bufnames()
+	return setmetatable({ [-1] = '', [0] = '' }, {
+		__index = function(t, k)
+			local s = fn.bufname(k)
+			t[k] = s
+			return s
+		end,
+	})
 end
 
 local function get_current_item()
@@ -44,16 +78,6 @@ local function retain(buf, predicate)
 			api.nvim_buf_set_lines(buf, i - 1, i, true, {})
 		end
 	end
-end
-
-local function make_bufnames()
-	return setmetatable({ [-1] = '', [0] = '' }, {
-		__index = function(t, k)
-			local s = fn.bufname(k)
-			t[k] = s
-			return s
-		end,
-	})
 end
 
 local function highlight_row(buf, row)
@@ -115,46 +139,38 @@ local function qf2line(item, bufnames)
 	)
 end
 
-local function update_qf(buf)
+local function buf_qf_id(buf)
 	local s = api.nvim_buf_get_name(buf)
-	local id = assert(tonumber(string.match(s, 'qf://(%d+)')))
-
-	local cur = buf_qf[buf]
-	local qf = fn.getqflist({ id = id, changedtick = true, idx = 0 })
-
-	if cur and cur.id == qf.id and cur.changedtick == qf.changedtick then
-		if cur.idx ~= qf.idx then
-			cur.idx = qf.idx
-			highlight_idx(buf)
-		end
-		return
-	end
-
-	qf = fn.getqflist({ id = id, all = true })
-
-	local bufnames = make_bufnames()
-	local lines = {}
-	local line2item = {}
-
-	for i, item in ipairs(qf.items) do
-		item.idx = i
-		local line = qf2line(item, bufnames)
-		line2item[line] = item
-		table.insert(lines, line)
-	end
-
-	buf_set_lines_and_clear_undo(buf, lines)
-	bo[buf].modified = false
-
-	qf.line2item = line2item
-	buf_qf[buf] = qf
-
-	highlight_idx(buf)
+	local id = tonumber(string.match(s, 'q[fe]://(%d+)'))
+	return id
 end
 
-local function update_qf_all()
-	for buf in pairs(buf_qf) do
-		update_qf(buf)
+local function is_qf_list_same(a, b)
+	return a.id == b.id and a.changedtick == b.changedtick
+end
+
+local function handle_quickfix_changed()
+	for buf, cur in pairs(buf_qf) do
+		local id = assert(buf_qf_id(buf))
+		local qf = fn.getqflist({ id = id, changedtick = true, idx = 0 })
+
+		if is_qf_list_same(cur, qf) then
+			if cur.idx ~= qf.idx then
+				cur.idx = qf.idx
+				highlight_idx(buf)
+			end
+		else
+			buf_reload(buf)
+		end
+	end
+
+	for buf, cur in pairs(buf_qe) do
+		local id = assert(buf_qf_id(buf))
+		local qf = fn.getqflist({ id = id, changedtick = true })
+
+		if not is_qf_list_same(cur, qf) then
+			buf_reload(buf)
+		end
 	end
 end
 
@@ -184,10 +200,7 @@ local function proxy_cmd(opts)
 		return false
 	end
 
-	api.nvim_exec_autocmds('User', {
-		pattern = 'QuickFixChanged',
-		modeline = false,
-	})
+	trigger_quickfix_changed()
 
 	if bo.buftype == 'quickfix' then
 		bo.bufhidden = 'wipe'
@@ -204,7 +217,6 @@ end
 
 local function list_cmd(opts)
 	cmd.edit(fn.fnameescape('qf://' .. opts.count))
-	bo.bufhidden = 'unload'
 end
 
 local function do_global(pat, text, bang)
@@ -217,9 +229,11 @@ end
 
 local function global_cmd(opts)
 	local pat = opts.args
+
 	if pat == '' then
 		pat = fn.getreg('/')
 	end
+
 	do_global(pat, function(item)
 		return item.text
 	end, opts.bang == (opts.name == 'G'))
@@ -228,11 +242,13 @@ end
 local function global_file_cmd(opts)
 	local bufnames = make_bufnames()
 	local pat = opts.args
+
 	if pat == '' then
 		pat = fn.getreg('/')
 	else
 		pat = fn.glob2regpat(pat)
 	end
+
 	do_global(pat, function(item)
 		return bufnames[item.bufnr]
 	end, opts.bang == (opts.name == 'Gf'))
@@ -240,10 +256,11 @@ end
 
 local function edit_cmd(opts)
 	local id = opts.count
+
 	if id == 0 then
-		local s = api.nvim_buf_get_name(0)
-		id = string.match(s, 'qf://(%d+)') or id
+		id = buf_qf_id(0) or id
 	end
+
 	cmd.edit('qe://' .. id)
 end
 
@@ -289,7 +306,7 @@ local function read_qf_autocmd(opts)
 			i = i + 1
 		end
 
-		api.nvim_buf_set_lines(buf, 0, -1, true, lines)
+		buf_set_lines_and_clear_undo(buf, lines)
 		highlight_row(buf, fn.getqflist({ nr = 0 }).nr)
 
 		buf_keymap(buf, 'n', '<CR>', '', {
@@ -309,7 +326,26 @@ local function read_qf_autocmd(opts)
 
 	bo.filetype = 'qf'
 
-	update_qf(buf)
+	local id = assert(buf_qf_id(buf))
+	local qf = fn.getqflist({ id = id, all = true })
+
+	local bufnames = make_bufnames()
+	local lines = {}
+	local line2item = {}
+
+	for i, item in ipairs(qf.items) do
+		item.idx = i
+		local line = qf2line(item, bufnames)
+		line2item[line] = item
+		table.insert(lines, line)
+	end
+
+	buf_set_lines_and_clear_undo(buf, lines)
+
+	qf.line2item = line2item
+	buf_qf[buf] = qf
+
+	highlight_idx(buf)
 
 	buf_user_command(buf, 'G', global_cmd, {
 		nargs = '*',
@@ -393,24 +429,27 @@ local function write_qf_autocmd(opts)
 	bo.modified = false
 	api.nvim_echo({ { 'quickfix written', 'Normal' } }, false, {})
 
-	update_qf(buf)
+	trigger_quickfix_changed()
+end
+
+local function context_cmd(opts)
+	vim.b.qf_context = opts.count
+	cmd.edit()
 end
 
 local function read_qe_autocmd(opts)
-	local s = opts.match
 	local buf = opts.buf
-	local id = assert(tonumber(string.match(s, 'qe://(%d+)')))
+	local id = buf_qf_id(buf)
 	local qf = fn.getqflist({ id = id, all = true })
+	local context = vim.b.qf_context or 0
 
 	local buf_rows = {}
-	local max_row = 0
 
 	for _, item in ipairs(qf.items) do
 		if item and item.valid == 1 then
 			local buf, row = item.bufnr, item.lnum
 			buf_rows[buf] = buf_rows[buf] or {}
 			buf_rows[buf][row] = true
-			max_row = math.max(max_row, row)
 		end
 	end
 
@@ -431,95 +470,147 @@ local function read_qe_autocmd(opts)
 		return a.row < b.row
 	end)
 
-	buf_qe[buf] = items
-
 	local bo = bo[buf]
 	bo.swapfile = false
 	bo.modeline = false
 	bo.buftype = 'acwrite'
 
 	local lines = {}
+	local index2row = {}
 	local prev_buf
 
-	for _, item in ipairs(items) do
+	for i, item in ipairs(items) do
 		local buf, row = item.buf, item.row
+
 		if buf ~= prev_buf then
 			prev_buf = buf
 			fn.bufload(buf)
 		end
-		local line = api.nvim_buf_get_lines(buf, row - 1, row, true)[1]
-		table.insert(lines, line)
+
+		local start_row = math.max(0, row - 1 - context)
+
+		index2row[i] = #lines + row - 1 - start_row
+
+		for _, line in
+			ipairs(api.nvim_buf_get_lines(buf, start_row, row + context, false))
+		do
+			table.insert(lines, line)
+		end
+
+		if context > 0 then
+			table.insert(lines, '')
+		end
 	end
 
 	buf_set_lines_and_clear_undo(buf, lines)
 
 	api.nvim_buf_clear_namespace(buf, ns, 0, -1)
 
-	local row_format = string.format('%%%dd ', #('' .. max_row))
-	local prev_buf
+	local extmark2item = {}
 
 	for i, item in ipairs(items) do
-		if item.buf ~= prev_buf then
-			prev_buf = item.buf
-
-			api.nvim_buf_set_extmark(buf, ns, i - 1, 0, {
-				virt_lines = {
-					{
-						{ string.format('%s:', bufnames[item.buf]), 'qeHeader' },
-					},
-				},
-				virt_lines_above = true,
-			})
-		end
-
-		api.nvim_buf_set_extmark(buf, ns, i - 1, 0, {
+		local extmark_id = api.nvim_buf_set_extmark(buf, ns, index2row[i], 0, {
 			virt_text = {
-				{ string.format(row_format, item.row), 'qeLineNr' },
+				{ bufnames[item.buf], 'qfFileName' },
+				{ '|', 'qfSeparator' },
+				{ tostring(item.row), 'qfLineNr' },
+				{ '|', 'qfSeparator' },
+				{ ' ', 'Normal' },
 			},
 			virt_text_pos = 'inline',
 			right_gravity = false,
+			invalidate = true,
 		})
+		extmark2item[extmark_id] = item
 	end
+
+	buf_qe[buf] = {
+		id = qf.id,
+		changedtick = qf.changedtick,
+		extmark2item = extmark2item,
+	}
 
 	buf_keymap(buf, 'n', '<CR>', '', {
 		nowait = true,
 		callback = function()
-			local i = api.nvim_win_get_cursor(0)[1]
-			local item = items[i]
-			local bufname = bufnames[item.buf]
-			cmd(string.format('pedit +%d %s', item.row, fn.fnameescape(bufname)))
+			local row = api.nvim_win_get_cursor(0)[1] - 1
+			local extmarks = api.nvim_buf_get_extmarks(
+				buf,
+				ns,
+				{ row, 0 },
+				{ row, 0 },
+				{ details = true }
+			)
+
+			for _, extmark in ipairs(extmarks) do
+				local extmark_id, _, _, details = unpack(extmark)
+
+				if not details.invalid then
+					local item = buf_qe[buf].extmark2item[extmark_id]
+					local bufname = fn.bufname(item.buf)
+					cmd(string.format('pedit +%d %s', item.row, fn.fnameescape(bufname)))
+					return
+				end
+			end
 		end,
 		desc = 'Preview line',
 	})
 
-	set_highlights()
+	buf_user_command(buf, 'Qcontext', context_cmd, {
+		count = true,
+		desc = 'Set number of quickfix context lines',
+	})
 end
 
 local function write_qe_autocmd(opts)
 	local buf = opts.buf
-	local items = buf_qe[buf]
+	local extmark2item = buf_qe[buf].extmark2item
 
-	local changes = 0
+	local num_changes = 0
+	local num_buffers = 0
+	local seen_buffers = {}
+
 	local lines = api.nvim_buf_get_lines(buf, 0, -1, true)
-	assert(#lines == #items)
+	local extmarks = api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
 
-	for i, item in ipairs(items) do
-		local buf, row = item.buf, item.row
-		local old_line = api.nvim_buf_get_lines(buf, row - 1, row, true)[1]
-		local new_line = lines[i]
-		if old_line ~= new_line then
-			api.nvim_buf_set_lines(buf, row - 1, row, true, { new_line })
-			changes = changes + 1
+	for _, extmark in ipairs(extmarks) do
+		local extmark_id, row, _, details = unpack(extmark)
+
+		if not details.invalid then
+			local new_line = lines[row + 1]
+
+			local item = extmark2item[extmark_id]
+			local buf, row = item.buf, item.row
+			local line = api.nvim_buf_get_lines(buf, row - 1, row, true)[1]
+
+			if line ~= new_line then
+				api.nvim_buf_set_lines(buf, row - 1, row, true, { new_line })
+
+				num_changes = num_changes + 1
+				if not seen_buffers[buf] then
+					seen_buffers[buf] = true
+					num_buffers = num_buffers + 1
+				end
+			end
 		end
 	end
 
 	bo.modified = false
-	local s = string.format('%d changes committed', changes)
-	api.nvim_echo({ { s, 'Normal' } }, false, {})
+
+	local s = num_changes == 0 and '--No changes--'
+		or string.format(
+			'%d %s changed in %d %s',
+			num_changes,
+			num_changes == 1 and 'line' or 'lines',
+			num_buffers,
+			num_buffers == 1 and 'buffer' or 'buffers'
+		)
+	api.nvim_echo({ { s, 'Normal' } }, true, {})
 end
 
 local function cmdpost_autocmd(opts)
 	local qf = fn.getqflist({ size = true })
+
 	vim.schedule(function()
 		if qf.size == 0 then
 			cmd.Cclose()
@@ -529,7 +620,8 @@ local function cmdpost_autocmd(opts)
 			cmd.Cfirst()
 		end
 	end)
-	update_qf_all()
+
+	trigger_quickfix_changed()
 end
 
 autocmd('BufWriteCmd', {
@@ -567,7 +659,7 @@ autocmd('User', {
 	pattern = 'QuickFixChanged',
 	nested = true,
 	callback = function()
-		update_qf_all()
+		handle_quickfix_changed()
 	end,
 })
 
@@ -576,14 +668,6 @@ autocmd('QuitPre', {
 	nested = true,
 	callback = function()
 		cmd.Cclose()
-	end,
-})
-
-autocmd('ColorScheme', {
-	group = group,
-	nested = true,
-	callback = function()
-		set_highlights()
 	end,
 })
 

@@ -305,7 +305,12 @@ test(':Cnext is fast', function()
 		table.insert(items, { buf = 0, lnum = i, text = '' })
 	end
 	vim.fn.setqflist(items)
+
+	vim.cmd.Qedit()
 	vim.cmd.Copen()
+	assert.True(vim.fn.bufwinnr('qf://0') > 0)
+	assert.True(vim.fn.bufwinnr('qe://0') > 0)
+
 	for i = 1, 100 do
 		vim.cmd.Cnext()
 	end
@@ -381,7 +386,7 @@ test(':Qedit', function()
 end)
 
 describe('qe://X', function()
-	local a, b
+	local a, b, c
 
 	before_each(function()
 		vim.cmd.edit('a')
@@ -394,9 +399,15 @@ describe('qe://X', function()
 		vim:set_lines({ 'b1', 'b2', 'b3' })
 		vim.bo.modified = false
 
+		vim.cmd.edit('c')
+		c = vim.fn.bufnr()
+		vim:set_lines({ 'c1' })
+		vim.bo.modified = false
+
 		vim.fn.setqflist({
 			{},
 			{ bufnr = b, lnum = 2 },
+			{ bufnr = c, lnum = 1, col = 1, end_col = 2, text = 'x' },
 			{ bufnr = a, lnum = 2, col = 3 },
 			{ bufnr = a, lnum = 1 },
 			{ bufnr = a, lnum = 2 },
@@ -404,55 +415,215 @@ describe('qe://X', function()
 		})
 
 		vim.cmd.edit('qe://0')
-		vim:feed('zb')
 	end)
 
-	test('read', function()
+	test('screen', function()
 		-- Ordered alphabetically, no duplicated lines.
 		assert.same({
-			'a:',
-			'1  vim: a1',
-			'2 a2',
-			'b:',
-			'2 b2',
+			'a|1|  vim: a1',
+			'a|2| a2',
+			'b|2| b2',
+			'c|1| c1',
+			'~',
 			'~',
 			'~',
 			'~',
 			'1,2',
 			'',
 		}, vim:get_screen())
-	end)
 
-	test('edit', function()
 		vim:feed('0ineo')
-		assert.same('1 neo vim: a1', vim:get_screen()[2])
+		assert.same('a|1| neo vim: a1', vim:get_screen()[1])
 
 		vim:feed('ccneovim')
-		assert.same('1 neovim', vim:get_screen()[2])
+		assert.same('a|1| neovim', vim:get_screen()[1])
 	end)
 
-	test('write no modify', function()
-		vim.cmd.write()
+	test('write no changes', function()
+		vim.bo.modified = true
+		vim.cmd.update()
 		assert.False(vim.bo.modified)
+
 		assert.False(vim.bo[a].modified)
 		assert.False(vim.bo[b].modified)
+		assert.False(vim.bo[c].modified)
+
+		vim:assert_messages('--No changes--')
 	end)
 
-	test('write invalid', function()
-		vim:set_lines({})
-		assert.errors(vim.cmd.write)
-		assert.True(vim.bo.modified)
-	end)
+	test('write single change', function()
+		vim:feed('1G0Cfoo')
+		vim.cmd.messages('clear')
 
-	test('write', function()
-		vim:set_lines({ 'foo', 'a2', '' })
 		assert.True(vim.bo.modified)
 		vim.cmd.update()
 		assert.False(vim.bo.modified)
+
 		assert.same({ 'foo', 'a2' }, vim:get_lines('a'))
+		assert.True(vim.bo[a].modified)
+		assert.False(vim.bo[b].modified)
+		assert.False(vim.bo[c].modified)
+
+		vim:assert_messages('1 line changed in 1 buffer')
+	end)
+
+	test('write multiple changes', function()
+		vim:feed('1G0Cfoo')
+		vim:feed('2G0Cbar')
+		vim.cmd.messages('clear')
+
+		assert.True(vim.bo.modified)
+		vim.cmd.update()
+		assert.False(vim.bo.modified)
+
+		assert.same({ 'foo', 'bar' }, vim:get_lines('a'))
+		assert.True(vim.bo[a].modified)
+		assert.False(vim.bo[b].modified)
+		assert.False(vim.bo[c].modified)
+
+		vim:assert_messages('2 lines changed in 1 buffer')
+	end)
+
+	test('write multiple buffers', function()
+		vim:feed('1G0Cfoo')
+		vim:feed('2G0Cbar')
+		vim:feed('3Gcc')
+		vim.cmd.messages('clear')
+
+		assert.True(vim.bo.modified)
+		vim.cmd.update()
+		assert.False(vim.bo.modified)
+
+		assert.same({ 'foo', 'bar' }, vim:get_lines('a'))
 		assert.same({ 'b1', '', 'b3' }, vim:get_lines('b'))
 		assert.True(vim.bo[a].modified)
 		assert.True(vim.bo[b].modified)
-		vim:assert_messages('')
+		assert.False(vim.bo[c].modified)
+
+		vim:assert_messages('3 lines changed in 2 buffers')
 	end)
+
+	test('delete lines', function()
+		vim.cmd.v('/^c1$/d')
+		vim:feed('Cfoo')
+		assert.same({
+			'c|1| foo',
+			'~',
+			'~',
+			'~',
+			'~',
+			'~',
+			'~',
+			'~',
+			'1,3',
+			'',
+		}, vim:get_screen())
+		vim.cmd.messages('clear')
+
+		assert.True(vim.bo.modified)
+		vim.cmd.update()
+		assert.False(vim.bo.modified)
+
+		assert.same({ 'foo' }, vim:get_lines('c'))
+		assert.False(vim.bo[a].modified)
+		assert.False(vim.bo[b].modified)
+		assert.True(vim.bo[c].modified)
+
+		vim:assert_messages('1 line changed in 1 buffer')
+
+		vim.cmd.undo()
+		vim.cmd.undo()
+		vim.cmd.echo()
+		vim.cmd.messages('clear')
+		assert.same({
+			'a|1|  vim: a1',
+			'a|2| a2',
+			'b|2| b2',
+			'c|1| c1',
+			'~',
+			'~',
+			'~',
+			'~',
+			'1,2',
+			'',
+		}, vim:get_screen())
+
+		assert.True(vim.bo.modified)
+		vim.cmd.update()
+		assert.False(vim.bo.modified)
+
+		assert.same({ 'c1' }, vim:get_lines('c'))
+		assert.False(vim.bo[a].modified)
+		assert.False(vim.bo[b].modified)
+		assert.True(vim.bo[c].modified)
+
+		vim:assert_messages('1 line changed in 1 buffer')
+	end)
+
+	test('quickfix change', function()
+		vim.bo.modified = true
+		vim:assert_lines({ ' vim: a1', 'a2', 'b2', 'c1' })
+
+		vim.cmd.Copen()
+		vim:feed('3dd')
+		vim.cmd.write()
+
+		vim.cmd.wincmd('p')
+		vim:assert_lines({ ' vim: a1', 'a2' })
+		assert.False(vim.bo.modified)
+	end)
+end)
+
+test('qe://X :Qcontext', function()
+	vim:set_lines({ '1', '2', '3', '4' })
+	local buf = vim.fn.bufnr()
+
+	vim.fn.setqflist({
+		{ bufnr = buf, lnum = 1 },
+		{ bufnr = buf, lnum = 2 },
+	})
+
+	vim.cmd.Qedit()
+
+	vim.cmd('2Qcontext')
+	assert.same({
+		'|1| 1',
+		'2',
+		'3',
+		'',
+		'1',
+		'|2| 2',
+		'3',
+		'4',
+		'1,1',
+		'',
+	}, vim:get_screen())
+
+	vim.cmd('999Qcontext')
+	assert.same({
+		'|1| 1',
+		'2',
+		'3',
+		'4',
+		'',
+		'1',
+		'|2| 2',
+		'3',
+		'1,1',
+		'',
+	}, vim:get_screen())
+
+	vim.cmd.Qcontext()
+	assert.same({
+		'|1| 1',
+		'|2| 2',
+		'~',
+		'~',
+		'~',
+		'~',
+		'~',
+		'~',
+		'1,1',
+		'',
+	}, vim:get_screen())
 end)
