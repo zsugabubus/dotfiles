@@ -474,6 +474,7 @@ local function read_qe_autocmd(opts)
 	bo.swapfile = false
 	bo.modeline = false
 	bo.buftype = 'acwrite'
+	bo.filetype = 'qe'
 
 	local lines = {}
 	local index2row = {}

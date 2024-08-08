@@ -123,6 +123,7 @@ test('qf://X', function()
 	local original = vim.fn.getqflist()
 
 	vim.cmd.edit('qf://0')
+	assert.same('qf', vim.bo.filetype)
 	vim:assert_lines({
 		'|| ',
 		'|| vim: a',
@@ -415,6 +416,7 @@ describe('qe://X', function()
 		})
 
 		vim.cmd.edit('qe://0')
+		assert.same('qe', vim.bo.filetype)
 	end)
 
 	test('screen', function()
