@@ -150,12 +150,12 @@ o.wildmenu = true
 o.wildmode = 'list:longest,full'
 o.wrap = false
 
-if fn.filewritable(fn.stdpath('config')) then
+if fn.filewritable(fn.stdpath('config')) == 2 then
 	o.undofile = true
 	o.undodir = fn.stdpath('cache') .. '/undo'
 else
 	o.undofile = false
-	o.shada = 'NONE'
+	o.shadafile = 'NONE'
 end
 
 o.list = true
