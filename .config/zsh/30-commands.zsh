@@ -47,7 +47,7 @@ function gb() {
 	git switch $(git branch --format '%(refname:short)' | fzr -r)
 }
 
-function mkcd md() {
+function md() {
 	mkdir -p -- $1 && cd -- $1
 }
 
@@ -151,14 +151,6 @@ function cd() {
 		set -- $1:h
 	fi
 	builtin cd "$@"
-}
-
-compdef '_files -g "*(/)"' ccd
-function ccd() {
-	(( $# )) && cd -- $1
-	while cd -- *(/) 2>/dev/null; do
-		:
-	done
 }
 
 function gcd() {
