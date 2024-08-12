@@ -1,5 +1,21 @@
+local function make_o()
+	local OPTS = {}
+
+	local get = vim.api.nvim_get_option_value
+	local set = vim.api.nvim_set_option_value
+
+	return setmetatable({}, {
+		__index = function(_, k)
+			return get(k, OPTS)
+		end,
+		__newindex = function(_, k, v)
+			return set(k, v, OPTS)
+		end,
+	})
+end
+
 local function make_bo()
-	local DEFAULT = { buf = 0 }
+	local OPTS = { buf = 0 }
 
 	local type = type
 	local setmetatable = setmetatable
@@ -10,10 +26,10 @@ local function make_bo()
 
 	local mt = {
 		__index = function(t, k)
-			return get(k, rawget(t, DEFAULT))
+			return get(k, rawget(t, OPTS))
 		end,
 		__newindex = function(t, k, v)
-			return set(k, v, rawget(t, DEFAULT))
+			return set(k, v, rawget(t, OPTS))
 		end,
 	}
 
@@ -21,25 +37,66 @@ local function make_bo()
 		__mode = 'kv',
 		__index = function(t, k)
 			if type(k) == 'string' then
-				return get(k, DEFAULT)
+				return get(k, OPTS)
 			end
-			local o = setmetatable({ [DEFAULT] = { buf = k } }, mt)
+			local o = setmetatable({ [OPTS] = { buf = k } }, mt)
 			rawset(t, k, o)
 			return o
 		end,
 		__newindex = function(_, k, v)
-			return set(k, v, DEFAULT)
+			return set(k, v, OPTS)
 		end,
 	})
 end
 
+local function make_wo()
+	local OPTS = { win = 0 }
+
+	local type = type
+	local setmetatable = setmetatable
+	local rawget = rawget
+	local rawset = rawset
+	local get = vim.api.nvim_get_option_value
+	local set = vim.api.nvim_set_option_value
+
+	local mt = {
+		__index = function(t, k)
+			return get(k, rawget(t, OPTS))
+		end,
+		__newindex = function(t, k, v)
+			return set(k, v, rawget(t, OPTS))
+		end,
+	}
+
+	return setmetatable({}, {
+		__mode = 'kv',
+		__index = function(t, k)
+			if type(k) == 'string' then
+				return get(k, OPTS)
+			end
+			local o = setmetatable({
+				[OPTS] = { win = k },
+				[0] = setmetatable({ [OPTS] = { win = k, scope = 'local' } }, mt),
+			}, mt)
+			rawset(t, k, o)
+			return o
+		end,
+		__newindex = function(_, k, v)
+			return set(k, v, OPTS)
+		end,
+	})
+end
+
+vim.o = make_o()
 vim.bo = make_bo()
+vim.wo = make_wo()
 
 local api = vim.api
 local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
 local o = vim.o
+local wo = vim.wo
 
 local autocmd = api.nvim_create_autocmd
 local keymap = api.nvim_set_keymap
@@ -319,9 +376,9 @@ map('n', 's,', 'A,<Esc>')
 map('n', 's<C-g>', ':! stat %<CR>')
 
 fmap('n', 'sb', function()
-	local x = not vim.wo.scrollbind
+	local x = not wo.scrollbind
 	for _, win in ipairs(api.nvim_tabpage_list_wins(0)) do
-		vim.wo[win].scrollbind = x
+		wo[win][0].scrollbind = x
 	end
 end)
 smap('n', 'sp', [[vip:sort /\v^(#!)@!\A*\zs/<CR>]])
@@ -606,7 +663,7 @@ autocmd('FileType', {
 autocmd('TextChanged', {
 	group = group,
 	callback = function()
-		if vim.wo.diff then
+		if wo.diff then
 			cmd.diffupdate()
 		end
 	end,
