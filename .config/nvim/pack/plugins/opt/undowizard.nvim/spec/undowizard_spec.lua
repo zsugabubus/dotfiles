@@ -88,8 +88,16 @@ describe('undotree://', function()
 	end)
 
 	test('undo diff folded by default', function()
-		vim:feed('j')
-		assert.is_true(vim.fn.line('.') > 3)
+		assert.same(-1, vim.fn.foldclosedend(1))
+		assert.same(11, vim.fn.foldclosedend(2))
+		assert.same(21, vim.fn.foldclosedend(12))
+		assert.same(26, vim.fn.foldclosedend(22))
+		assert.same(-1, vim.fn.foldclosedend(27))
+		assert.same(vim.fn.line('$'), 27)
+		vim:feed('zr')
+		for i = 1, vim.fn.line('$') do
+			assert.same(-1, vim.fn.foldclosedend(i))
+		end
 	end)
 
 	test('undo diff toggle', function()

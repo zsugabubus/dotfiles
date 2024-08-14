@@ -3,9 +3,16 @@ local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
 
+local autocmd = api.nvim_create_autocmd
+local buf_keymap = api.nvim_buf_set_keymap
+
 local MIN = 60
 local HOUR = 60 * MIN
 local DAY = 24 * HOUR
+
+local group = api.nvim_create_augroup('undowizard', { clear = false })
+
+local buf_fold_starts = {}
 
 local wundo_file
 local wundoed_max_number = 0
@@ -15,6 +22,18 @@ local rundo_buf
 function _G._undowizard_foldtext()
 	local row = vim.v.foldstart
 	return api.nvim_buf_get_lines(0, row - 1, row, true)[1]
+end
+
+function _G._undowizard_foldexpr()
+	local row = vim.v.lnum
+	if row == 1 then
+		return 0
+	end
+	local buf = api.nvim_get_current_buf()
+	if buf_fold_starts[buf][row] then
+		return '>1'
+	end
+	return 1
 end
 
 local function gsplit_lines(s)
@@ -76,13 +95,6 @@ local function buf_undo(buf, undo_number)
 	api.nvim_buf_call(buf, function()
 		cmd(string.format('undo %d', undo_number))
 	end)
-end
-
-local function set_folds(ranges)
-	cmd.normal({ args = { 'zE' }, bang = true })
-	for _, range in ipairs(ranges) do
-		cmd.fold({ range = range })
-	end
 end
 
 local function buf_load_undo(buf, undo_number)
@@ -155,13 +167,6 @@ local function get_current_undo_number()
 		if undo_number then
 			return tonumber(undo_number)
 		end
-	end
-end
-
-local function win_set_local_options(win, t)
-	local opts = { scope = 'local', win = win }
-	for name, value in pairs(t) do
-		api.nvim_set_option_value(name, value, opts)
 	end
 end
 
@@ -352,7 +357,7 @@ local function update(buf)
 	end)
 
 	local lines = {}
-	local folds = {}
+	local fold_starts = {}
 	local cursor = 1
 
 	table.insert(
@@ -362,10 +367,6 @@ local function update(buf)
 
 	for _, commit in ipairs(repo.commits) do
 		local current = repo.head == commit
-
-		if current then
-			cursor = #lines + 1
-		end
 
 		table.insert(
 			lines,
@@ -379,13 +380,15 @@ local function update(buf)
 			)
 		)
 
+		if current then
+			cursor = #lines
+		end
+
+		fold_starts[#lines] = true
+
 		if commit.diff_patch then
-			local fold_start = #lines
 			for line in gsplit_lines(commit.diff_patch) do
 				table.insert(lines, line)
-			end
-			if fold_start < #lines then
-				table.insert(folds, { fold_start, #lines })
 			end
 		end
 	end
@@ -395,15 +398,14 @@ local function update(buf)
 	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	bo.modifiable = false
 
+	buf_fold_starts[buf] = fold_starts
+
 	api.nvim_buf_call(buf, function()
-		set_folds(folds)
 		api.nvim_win_set_cursor(0, { cursor, 0 })
 		cmd.normal({ args = { 'zz' }, bang = true })
 	end)
 
-	local keymap = api.nvim_buf_set_keymap
-
-	keymap(buf, 'n', '+', '', {
+	buf_keymap(buf, 'n', '+', '', {
 		nowait = true,
 		callback = function()
 			open_current_undo_preview(repo)
@@ -411,7 +413,7 @@ local function update(buf)
 		desc = 'Preview additions',
 	})
 
-	keymap(buf, 'n', '-', '', {
+	buf_keymap(buf, 'n', '-', '', {
 		nowait = true,
 		callback = function()
 			open_current_undo_preview(repo, true)
@@ -419,11 +421,11 @@ local function update(buf)
 		desc = 'Preview deletions',
 	})
 
-	keymap(buf, 'n', 'gf', '-', {
+	buf_keymap(buf, 'n', 'gf', '-', {
 		nowait = true,
 	})
 
-	keymap(buf, 'n', 'y+', '', {
+	buf_keymap(buf, 'n', 'y+', '', {
 		nowait = true,
 		callback = function()
 			yank_undo_patch(repo)
@@ -431,7 +433,7 @@ local function update(buf)
 		desc = 'Copy additions',
 	})
 
-	keymap(buf, 'n', 'y-', '', {
+	buf_keymap(buf, 'n', 'y-', '', {
 		nowait = true,
 		callback = function()
 			yank_undo_patch(repo, true)
@@ -439,7 +441,7 @@ local function update(buf)
 		desc = 'Copy deletions',
 	})
 
-	keymap(buf, 'n', 'u', '', {
+	buf_keymap(buf, 'n', 'u', '', {
 		nowait = true,
 		callback = function()
 			undo_to()
@@ -447,11 +449,11 @@ local function update(buf)
 		desc = 'Undo to',
 	})
 
-	keymap(buf, 'n', '<CR>', 'u', {
+	buf_keymap(buf, 'n', '<CR>', 'u', {
 		nowait = true,
 	})
 
-	keymap(buf, 'n', '<Space>', 'za', {
+	buf_keymap(buf, 'n', '<Space>', 'za', {
 		nowait = true,
 	})
 end
@@ -483,16 +485,17 @@ local function read_undotree_autocmd(opts)
 	bo.modeline = false
 	bo.undolevels = -1
 
-	win_set_local_options(win, {
-		fillchars = 'fold: ',
-		foldtext = 'v:lua._undowizard_foldtext()',
-		list = false,
-		number = false,
-		relativenumber = false,
-		winhighlight = 'Folded:Normal',
-	})
+	local wo = vim.wo[0][0]
+	wo.fillchars = 'fold: '
+	wo.foldexpr = 'v:lua._undowizard_foldexpr()'
+	wo.foldmethod = 'expr'
+	wo.foldtext = 'v:lua._undowizard_foldtext()'
+	wo.list = false
+	wo.number = false
+	wo.relativenumber = false
+	wo.winhighlight = 'Folded:Normal'
 
-	local buf = api.nvim_get_current_buf()
+	local buf = opts.buf
 	local target_buf = get_target_buf(buf)
 
 	local group = api.nvim_create_augroup(string.format('undotree/%d', buf), {})
@@ -513,6 +516,15 @@ local function read_undotree_autocmd(opts)
 
 	update(buf)
 end
+
+autocmd('BufUnload', {
+	group = group,
+	pattern = 'undotree://*',
+	callback = function(opts)
+		local buf = opts.buf
+		buf_fold_starts[buf] = nil
+	end,
+})
 
 return {
 	read_undo_autocmd = read_undo_autocmd,
