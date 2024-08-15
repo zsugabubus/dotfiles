@@ -30,7 +30,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 				nowait = true,
 				callback = function()
 					vim.cmd.edit(
-						string.format('%s//%s', archive, api.nvim_get_current_line())
+						fn.fnameescape(archive .. '//' .. api.nvim_get_current_line())
 					)
 				end,
 			})
