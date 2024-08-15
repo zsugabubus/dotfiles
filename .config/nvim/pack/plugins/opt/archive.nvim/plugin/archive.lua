@@ -21,13 +21,14 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 			local archive = opts.file
 			read_system(list_cmdline(archive))
 			api.nvim_buf_set_keymap(0, 'n', 'gf', '', {
+				nowait = true,
 				callback = function()
 					vim.cmd.edit(
 						string.format('%s//%s', archive, api.nvim_get_current_line())
 					)
 				end,
 			})
-			api.nvim_buf_set_keymap(0, 'n', '<CR>', 'gf', {})
+			api.nvim_buf_set_keymap(0, 'n', '<CR>', 'gf', { nowait = true })
 		end,
 	})
 
