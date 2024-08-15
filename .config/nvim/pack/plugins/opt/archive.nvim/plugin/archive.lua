@@ -21,6 +21,11 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 			local archive = opts.file
 			read_system(list_cmdline(archive))
 			bo.modeline = false
+			if vim.v.shell_error == 0 then
+				bo.filetype = 'archive'
+			else
+				bo.filetype = ''
+			end
 			api.nvim_buf_set_keymap(0, 'n', 'gf', '', {
 				nowait = true,
 				callback = function()
@@ -52,6 +57,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 					read_system(extract_cmdline(archive, member))
 					if vim.v.shell_error ~= 0 then
 						bo.modeline = false
+						bo.filetype = ''
 						return
 					end
 					bo.modeline = true
@@ -85,6 +91,7 @@ local function compress(pattern, prog)
 			if vim.v.shell_error ~= 0 then
 				bo.modeline = false
 				bo.buftype = 'nofile'
+				bo.filetype = ''
 				return
 			end
 			bo.modeline = true
