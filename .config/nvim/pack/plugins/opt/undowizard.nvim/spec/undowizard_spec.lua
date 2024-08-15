@@ -8,7 +8,7 @@ local function enew_paste()
 end
 
 describe(':Undotree', function()
-	test('opens undotree://X', function()
+	it('edits undotree://X of current buffer', function()
 		local target_buf = vim.fn.bufnr()
 		vim.cmd.Undotree()
 		assert.same(string.format('undotree://%d', target_buf), vim.fn.bufname())
