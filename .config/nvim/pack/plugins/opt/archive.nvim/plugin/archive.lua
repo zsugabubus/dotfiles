@@ -109,9 +109,7 @@ local function compress(pattern, prog)
 				os.remove(tmpfile)
 			end
 			if not ok then
-				api.nvim_echo({
-					{ err, 'ErrorMsg' },
-				}, true, {})
+				api.nvim_echo({ { err, 'ErrorMsg' } }, true, {})
 				return
 			end
 			bo.modified = false
