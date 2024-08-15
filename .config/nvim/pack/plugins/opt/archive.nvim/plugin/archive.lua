@@ -20,6 +20,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 			vim.b.did_archive = true
 			local archive = opts.file
 			read_system(list_cmdline(archive))
+			bo.modeline = false
 			api.nvim_buf_set_keymap(0, 'n', 'gf', '', {
 				nowait = true,
 				callback = function()
@@ -45,9 +46,15 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 				local archive, member = string.match(match, pattern)
 				if archive and member == '' then
 					read_system(extract_cmdline(archive))
+					bo.modeline = false
 					return
 				elseif archive then
 					read_system(extract_cmdline(archive, member))
+					if vim.v.shell_error ~= 0 then
+						bo.modeline = false
+						return
+					end
+					bo.modeline = true
 					local filetype, on_detect = vim.filetype.match({
 						buf = 0,
 						filename = member,
@@ -76,9 +83,11 @@ local function compress(pattern, prog)
 			local cmdline = { prog, '-cd', '--', file }
 			api.nvim_buf_set_lines(0, 0, -1, true, fn.systemlist(cmdline))
 			if vim.v.shell_error ~= 0 then
+				bo.modeline = false
 				bo.buftype = 'nofile'
 				return
 			end
+			bo.modeline = true
 			bo.buftype = 'acwrite'
 			local filetype, on_detect = vim.filetype.match({
 				buf = 0,
