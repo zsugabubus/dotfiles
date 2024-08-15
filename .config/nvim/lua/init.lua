@@ -754,14 +754,8 @@ autocmd('TermClose', {
 
 autocmd('FocusLost', {
 	group = group,
-	callback = function(opts)
-		if bo[opts.buf].buftype == '' then
-			pcall(
-				fn.writefile,
-				{ fn.expand('%:p') },
-				fn.stdpath('run') .. '/nvim_here'
-			)
-		end
+	callback = function()
+		pcall(fn.writefile, { fn.expand('%:p') }, fn.stdpath('run') .. '/nvim_here')
 	end,
 })
 
