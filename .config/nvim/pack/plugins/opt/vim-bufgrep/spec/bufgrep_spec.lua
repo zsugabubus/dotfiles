@@ -43,27 +43,6 @@ local function command_tests(Command, add)
 		})
 	end)
 
-	local function searches_buffer(name, yes, setup)
-		it(string.format('searches buffer with %s set -> %s', name, yes), function()
-			vim:set_lines({ 'a' })
-			setup()
-
-			Command('a')
-
-			assert.same(yes, #vim.fn.getqflist() > 0)
-		end)
-	end
-
-	searches_buffer('defaults', true, function() end)
-
-	searches_buffer('buflisted=false', false, function()
-		vim.bo.buflisted = false
-	end)
-
-	searches_buffer('buftype=nofile', false, function()
-		vim.bo.buftype = 'nofile'
-	end)
-
 	it('searches all buffers', function()
 		vim.cmd.edit('a')
 		vim:set_lines({ 'a' })
@@ -76,6 +55,14 @@ local function command_tests(Command, add)
 
 		vim.cmd.edit('d')
 		-- No match.
+
+		vim.cmd.edit('unlisted')
+		vim.bo.buflisted = false
+		vim:set_lines({ 'x' })
+
+		vim.cmd.edit('nofile')
+		vim.bo.buftype = 'nofile'
+		vim:set_lines({ 'x' })
 
 		Command('.')
 
