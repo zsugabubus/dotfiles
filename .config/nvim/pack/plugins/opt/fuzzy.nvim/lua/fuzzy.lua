@@ -64,7 +64,7 @@ local function choose(opts)
 	})
 
 	cmd('keepalt buffer ' .. term_buf)
-	cmd('noautocmd setlocal nonumber norelativenumber nomodified')
+	cmd('noautocmd setlocal nonumber norelativenumber statuscolumn= nomodified')
 
 	if opts.choices then
 		local f = assert(io.open(stdin, 'w'))

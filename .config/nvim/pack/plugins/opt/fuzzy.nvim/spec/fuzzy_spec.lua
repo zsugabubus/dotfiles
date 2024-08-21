@@ -17,6 +17,10 @@ describe(':FuzzyFiles', function()
 	it('opens and closes picker correctly', function()
 		local win = vim.fn.winnr()
 
+		vim.wo.number = true
+		vim.wo.relativenumber = true
+		vim.wo.statuscolumn = 'foo'
+
 		vim.cmd.edit('alt')
 		vim.cmd.edit('cur')
 
@@ -40,6 +44,7 @@ describe(':FuzzyFiles', function()
 		})
 		assert.False(vim.wo.number)
 		assert.False(vim.wo.relativenumber)
+		assert.same('', vim.wo.statuscolumn)
 
 		vim.api.nvim_input('<C-c>')
 		wait()
