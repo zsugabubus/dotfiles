@@ -5,8 +5,8 @@ local fn = vim.fn
 local shesc = fn.shellescape
 
 local term_buf
-local tmpfile1 = fn.tempname()
-local tmpfile2 = fn.tempname()
+local stdin = fn.tempname()
+local stdout = fn.tempname()
 
 local function choose(opts)
 	local cur_buf = api.nvim_get_current_buf()
@@ -29,49 +29,49 @@ local function choose(opts)
 		group = group,
 		buffer = term_buf,
 		callback = function()
-			if api.nvim_buf_is_valid(cur_buf) then
-				cmd('keepalt buffer ' .. cur_buf)
-			end
+			local success = vim.v.event.status == 0
+
+			vim.api.nvim_create_autocmd('TermLeave', {
+				group = group,
+				once = true,
+				callback = function()
+					vim.schedule(function()
+						if api.nvim_buf_is_valid(cur_buf) then
+							cmd('keepalt buffer ' .. cur_buf)
+						end
+
+						if not success then
+							return
+						end
+
+						local f = assert(io.open(stdout))
+						local s = assert(f:read('*a'))
+						assert(f:close())
+
+						local t = {}
+
+						for x in string.gmatch(s, '(%Z*)%z') do
+							table.insert(t, x)
+						end
+
+						opts.callback(t)
+					end)
+				end,
+			})
+
+			cmd.stopinsert()
 		end,
 	})
 
 	cmd('keepalt buffer ' .. term_buf)
 	cmd('noautocmd setlocal nonumber norelativenumber nomodified')
 
-	local stdout = tmpfile1
-
-	local function run(cmdline)
-		fn.termopen(cmdline, {
-			on_exit = function(_, code)
-				if code ~= 0 then
-					return
-				end
-
-				local f = assert(io.open(stdout))
-				local s = assert(f:read('*a'))
-				assert(f:close())
-
-				local t = {}
-
-				for x in string.gmatch(s, '(%Z*)%z') do
-					table.insert(t, x)
-				end
-
-				vim.schedule(function()
-					opts.callback(t)
-				end)
-			end,
-		})
-	end
-
 	if opts.choices then
-		local stdin = tmpfile2
-
 		local f = assert(io.open(stdin, 'w'))
 		assert(f:write(table.concat(opts.choices, '\0')))
 		assert(f:close())
 
-		run(
+		fn.termopen(
 			string.format(
 				'fzr --select-1 --exit-0 --read0 --print0 <%s >%s',
 				shesc(stdin),
@@ -79,7 +79,7 @@ local function choose(opts)
 			)
 		)
 	elseif opts.choices_cmd0 then
-		run(
+		fn.termopen(
 			string.format(
 				'%s | fzr --select-1 --exit-0 --read0 --print0 >%s',
 				opts.choices_cmd0,

@@ -49,13 +49,17 @@ describe(':FuzzyFiles', function()
 	end)
 
 	it('auto-selects only file', function()
-		local s = 'new\r\n % # * $(false) ` "'
+		local s = 'new\r\n % # * $(false) ` ".c'
 		vim.fn.writefile({}, s)
+
+		vim.cmd.edit('cur')
 
 		vim.cmd.FuzzyFiles()
 		wait()
 
 		assert.same(s, vim.fn.bufname())
+		assert.same('c', vim.bo.filetype)
+		assert.same('cur', vim.fn.expand('#'))
 	end)
 
 	it('handles deleted buffers without errors', function()
@@ -70,6 +74,21 @@ describe(':FuzzyFiles', function()
 		wait()
 
 		assert.same('', vim.v.errmsg)
+	end)
+
+	it('enters buffer after terminal-mode-only options restored', function()
+		-- See terminal_enter.
+		vim.cmd.edit('file')
+		vim.cmd.write()
+		vim.cmd('setlocal scrolloff=999')
+
+		for i = 1, 3 do
+			vim.cmd.FuzzyFiles()
+			wait()
+
+			assert.same('file', vim.fn.bufname())
+			assert.same(999, vim.wo.scrolloff)
+		end
 	end)
 end)
 
@@ -119,6 +138,7 @@ describe(':FuzzyBuffers', function()
 		wait()
 
 		assert.same('other', vim.fn.bufname())
+		assert.same('cur', vim.fn.expand('#'))
 	end)
 end)
 
