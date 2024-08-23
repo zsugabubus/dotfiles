@@ -1174,7 +1174,7 @@ local function create_TransmissionTui()
 	end
 
 	local function display_speed_and_peers(speed, peer_count)
-		if peer_count <= 0 then
+		if speed <= 0 and peer_count <= 0 then
 			return ''
 		else
 			return string.format('%s (%5s)', display_bytes(speed), display_number(peer_count))
