@@ -35,114 +35,102 @@ it('toggles single line', function()
 end)
 
 it('toggles multiple lines', function()
-	local UNCOMMENTED = {
+	local ORIGINAL = {
 		'    a',
 		'',
 		'     ',
 		'  b',
 		'\t   c',
+		'x',
 	}
 
 	local COMMENTED = {
-		'  //   a',
+		'  |   a',
 		'',
 		'     ',
-		'  // b',
-		'\t //   c',
+		'  | b',
+		'\t |   c',
+		'x',
 	}
 
 	local function test_case(keys)
-		vim.o.cms = '//%s'
-		vim:set_lines(UNCOMMENTED)
+		vim.o.cms = '|%s'
+		vim:set_lines(ORIGINAL)
 		vim:feed(keys)
 		vim:assert_lines(COMMENTED)
 		vim:feed(keys)
-		vim:assert_lines(UNCOMMENTED)
+		vim:assert_lines(ORIGINAL)
 	end
 
-	test_case('4gcc')
+	test_case('5gcc')
 	test_case('gc4j')
 	test_case('4gcj')
 end)
 
 describe('toggle mixed lines', function()
-	before_each(function()
+	it('comments', function()
 		vim.o.cms = '*%s'
-	end)
-
-	it('should do comment', function()
 		vim:set_lines({
 			'',
 			'a*',
 			'*b',
+			'x',
 		})
-		vim:feed('2gcc')
+		vim:feed('3gcc')
 		vim:assert_lines({
 			'',
 			'* a*',
 			'* *b',
+			'x',
 		})
 	end)
 
-	it('should do uncomment', function()
+	it('uncomments', function()
+		vim.o.cms = '*%s'
 		vim:set_lines({
 			'',
 			'* a',
 			'c*',
+			'x',
 		})
-		vim:feed('2gcc')
+		vim:feed('3gcc')
 		vim:assert_lines({
 			'',
 			'a',
 			'c*',
+			'x',
 		})
 	end)
 end)
 
-describe('dot repeat', function()
-	before_each(function()
+it('dot repeat', function()
+	local function test_case(keys)
 		vim.o.cms = '*%s'
-	end)
-
-	it('works in normal mode', function()
 		vim:set_lines({
 			'a',
 			'b',
 			'* c',
+			'x',
 		})
-		vim:feed('1gcc')
+		vim:feed('gg' .. keys)
 		vim:assert_lines({
 			'* a',
 			'* b',
 			'* c',
+			'x',
 		})
 		vim:feed('j.')
 		vim:assert_lines({
 			'* a',
 			'b',
 			'c',
+			'x',
 		})
-	end)
+	end
 
-	it('works in visual mode', function()
-		vim:set_lines({
-			'a',
-			'b',
-			'* c',
-		})
-		vim:feed('Vjgc')
-		vim:assert_lines({
-			'* a',
-			'* b',
-			'* c',
-		})
-		vim:feed('.')
-		vim:assert_lines({
-			'a',
-			'b',
-			'* c',
-		})
-	end)
+	test_case('gcj')
+	test_case('2gcc')
+	test_case('Vjgc')
 end)
 
 describe(':Comment', function()
@@ -150,13 +138,11 @@ describe(':Comment', function()
 		vim:set_lines({
 			'a',
 			'b',
-			'c',
 		})
 		vim.cmd('Comment')
 		vim:assert_lines({
 			'# a',
 			'b',
-			'c',
 		})
 	end)
 
@@ -165,12 +151,14 @@ describe(':Comment', function()
 			'a',
 			'b',
 			'c',
+			'd',
 		})
 		vim.cmd('2,3Comment')
 		vim:assert_lines({
 			'a',
 			'# b',
 			'# c',
+			'd',
 		})
 	end)
 
@@ -190,13 +178,11 @@ describe(':Uncomment', function()
 		vim:set_lines({
 			'# a',
 			'# b',
-			'# c',
 		})
 		vim.cmd('Uncomment')
 		vim:assert_lines({
 			'a',
 			'# b',
-			'# c',
 		})
 	end)
 
@@ -205,12 +191,14 @@ describe(':Uncomment', function()
 			'# a',
 			'# b',
 			'# c',
+			'# d',
 		})
 		vim.cmd('2,3Uncomment')
 		vim:assert_lines({
 			'# a',
 			'b',
 			'c',
+			'# d',
 		})
 	end)
 
@@ -242,12 +230,15 @@ it('reports changed lines', function()
 
 	test_case(0, '3Ggcc', '--No lines to comment--')
 	test_case(0, 'gcc', '1 line commented')
+	test_case(0, '1gcc', '1 line commented')
 	test_case(0, 'gccgcc', '1 line uncommented')
 	test_case(0, 'gcj', '2 lines commented')
 	test_case(0, 'gcjgcj', '2 lines uncommented')
 	test_case(1, 'gcc', '')
 	test_case(1, 'gcj', '2 lines commented')
+	test_case(1, '2gcc', '2 lines commented')
 	test_case(1, 'gcjgcj', '2 lines uncommented')
 	test_case(2, 'gcj', '')
+	test_case(2, '3gcc', '3 lines commented')
 	test_case(9, '3Ggcc', '--No lines to comment--')
 end)

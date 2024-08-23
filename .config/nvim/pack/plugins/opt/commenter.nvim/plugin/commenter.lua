@@ -11,17 +11,7 @@ keymap('', '<Plug>(commenter)', '', {
 	end,
 })
 
-keymap('n', '<Plug>(commenter-current-line)', '', {
-	expr = true,
-	replace_keycodes = true,
-	callback = function()
-		if vim.v.count == 0 then
-			return '<Plug>(commenter)_'
-		else
-			return '<Plug>(commenter)j'
-		end
-	end,
-})
+keymap('n', '<Plug>(commenter-current-line)', '<Plug>(commenter)_', {})
 
 function _G._commenter_operatorfunc()
 	require('commenter').comment_lines(
