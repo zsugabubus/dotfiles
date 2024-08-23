@@ -83,7 +83,7 @@ function M.comment_lines(buf, start_lnum, end_lnum, op)
 		end
 	end
 
-	if op == nil or vim.go.report == 0 or #lines > vim.go.report then
+	if op == nil or #lines > vim.go.report then
 		vim.api.nvim_echo({
 			{
 				op ~= nil and string.format(
