@@ -1205,9 +1205,9 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < 10 then
-			return string.format('%.2fx', n)
+			return string.format('%.2fx', math.max(0, n - 0.005))
 		elseif n < 100 then
-			return string.format('%.1fx', n)
+			return string.format('%.1fx', n - 0.05)
 		else
 			return string.format('%dx', n)
 		end
