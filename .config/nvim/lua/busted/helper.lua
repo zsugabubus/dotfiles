@@ -222,6 +222,22 @@ function Nvim:assert_messages(expected)
 	return busted.assert.same(expected, messages)
 end
 
+function Nvim:assert_highlights(expected)
+	local ms = self.api.nvim_buf_get_extmarks(0, -1, 0, -1, { details = true })
+	local actual = {}
+
+	for _, m in ipairs(ms) do
+		local _, row, col, details = unpack(m)
+		local hl = self.api.nvim_get_hl(0, { name = details.hl_group })
+		table.insert(actual, {
+			region = { row, col, details.end_row, details.end_col },
+			hl = hl,
+		})
+	end
+
+	return busted.assert.same(expected, actual)
+end
+
 function Nvim:make_vim_function_redirect(name)
 	local function index_fn(name, k, ...)
 		return vim[name][k](...)
