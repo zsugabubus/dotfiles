@@ -37,9 +37,9 @@ function ga() {
 	local f
 	while f=$(
 		git ls-files -z --others --exclude-standard |
-		fzr --read0 --reverse
+		fzr --exit-0 --read0 --print0 --reverse
 	); do
-		git add -v -- $f
+		git add -v -- ${(ps:\0:)f}
 	done
 }
 
