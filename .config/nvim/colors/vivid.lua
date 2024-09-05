@@ -86,11 +86,11 @@ local theme = {
 	WinBarNC = 'WinBar',
 	WinSeparator = 'VertSplit',
 
-	DiffAdd = { bg = light and '#b5f789', fg = dark and '#00d700' },
-	DiffChange = { bg = light and '#ffdda5', fg = dark and '#ffc028' },
-	DiffDelete = { bg = light and '#ffa195' or '#ea1f24', fg = light and '#9d1e17' or '#fff0f0' },
+	DiffAdd = { bg = light and '#baf691' or '#043506' },
+	DiffChange = { bg = light and '#ffe0ae' or '#3f2900' },
+	DiffDelete = { bg = light and '#ffaaa0' or '#d40000', fg = light and '#9d1e17' or '#5c0200' },
 	diffAdded = { fg = light and '#00af00' or '#00d700' },
-	diffRemoved = { fg = '#ff0000' },
+	diffRemoved = { fg = light and '#ff0000' or '#ff1010' },
 	diffText = { bg = light and '#ffafff' or '#ffc028', fg = dark and '#000000' },
 
 	CfgOnOff = 'Boolean',
