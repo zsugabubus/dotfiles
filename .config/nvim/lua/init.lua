@@ -904,6 +904,7 @@ require('pack').add({
 			nxo_map('ga', '<Plug>(vnicode-inspect)')
 		end,
 	},
+	{ 'wellness.nvim' },
 	{ 'wtf.nvim' },
 })
 
