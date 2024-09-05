@@ -1,21 +1,5 @@
 local vim = create_vim()
 
-local function assert_hls(expected)
-	local ms = vim.api.nvim_buf_get_extmarks(0, -1, 0, -1, { details = true })
-	local actual = {}
-
-	for _, m in ipairs(ms) do
-		local _, row, col, details = unpack(m)
-		local hl = vim.api.nvim_get_hl(0, { name = details.hl_group })
-		table.insert(actual, {
-			region = { row, col, details.end_row, details.end_col },
-			hl = hl,
-		})
-	end
-
-	return assert.same(expected, actual)
-end
-
 describe(':AnsiEsc', function()
 	it('removes SGR and keeps added highlights after ColorScheme', function()
 		local hls = {
@@ -53,9 +37,9 @@ describe(':AnsiEsc', function()
 		})
 		vim.cmd.AnsiEsc()
 		vim:assert_lines({ '012345', '678' })
-		assert_hls(hls)
+		vim:assert_highlights(hls)
 		vim.cmd.colorscheme('default')
-		assert_hls(hls)
+		vim:assert_highlights(hls)
 	end)
 end)
 
@@ -68,7 +52,7 @@ it('parses SGR correctly', function()
 		vim.cmd.doautocmd('colorscheme')
 		vim.cmd.AnsiEsc()
 
-		return assert_hls({
+		return vim:assert_highlights({
 			hl and {
 				region = { 0, 0, 0, 3 },
 				hl = hl,
