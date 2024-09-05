@@ -1,6 +1,16 @@
 local ffi = require('ffi')
 
 local api = vim.api
+local config = vim.g.colors or {}
+local max = math.max
+local min = math.min
+local schedule = vim.schedule
+
+local autocmd = api.nvim_create_autocmd
+local buf_add_hl = api.nvim_buf_add_highlight
+local buf_clear_ns = api.nvim_buf_clear_namespace
+local buf_is_valid = api.nvim_buf_is_valid
+local buf_line_count = api.nvim_buf_line_count
 
 local HEADER = [[
 struct highlight {
@@ -11,17 +21,19 @@ struct highlight {
 int nvim_buf_get_color_matches(int, int, struct highlight *, size_t);
 int nvim_is_bright_background_color(uint32_t);
 ]]
+pcall(ffi.cdef, HEADER)
 
 local ns = api.nvim_create_namespace('colors')
 
-local library_path
-local max_highlights_per_line
-local max_lines_to_highlight
-local debug
-local is_buffer_enabled
+local library_path = config.library_path
+	or (vim.fn.stdpath('data') .. '/libnvim_plugin_colors.so')
+local hls_len = config.max_highlights_per_line or 100
+local hls = ffi.new('struct highlight[?]', hls_len)
+local max_lines_to_highlight = config.max_lines_to_highlight or 2000
+local debug = config.debug
+local auto_attach = config.auto_attach
 
 local lib
-local hls
 local attached_bufs = {}
 local hl_cache
 
@@ -31,11 +43,11 @@ local function rgb2hl(color)
 	if hl_cache[color] == nil then
 		hl_cache[color] = true
 
-		local is_bright = lib.nvim_is_bright_background_color(color) ~= 0
+		local bg_bright = lib.nvim_is_bright_background_color(color) ~= 0
 
 		api.nvim_set_hl(0, hl_group, {
 			bg = string.format('#%06x', color),
-			fg = is_bright and '#000000' or '#ffffff',
+			fg = bg_bright and '#000000' or '#ffffff',
 		})
 	end
 
@@ -45,17 +57,14 @@ end
 local function highlight_lines(buf, start_row, end_row)
 	local start, count = debug and vim.loop.hrtime(), 0
 
-	api.nvim_buf_clear_namespace(buf, ns, start_row, end_row)
-
-	local hls_len = max_highlights_per_line
-	local add_highlight = api.nvim_buf_add_highlight
+	buf_clear_ns(buf, ns, start_row, end_row)
 
 	for row = start_row, end_row - 1 do
 		local n = lib.nvim_buf_get_color_matches(buf, row + 1, hls, hls_len)
 
 		for i = 0, n - 1 do
 			local m = hls[i]
-			add_highlight(buf, ns, rgb2hl(m.color), row, m.start_col, m.end_col + 1)
+			buf_add_hl(buf, ns, rgb2hl(m.color), row, m.start_col, m.end_col + 1)
 		end
 
 		count = count + n
@@ -96,11 +105,11 @@ local function attach_to_buffer(buf)
 	local function commit()
 		scheduled = false
 
-		if api.nvim_buf_is_valid(buf) then
-			local last_row = api.nvim_buf_line_count(buf)
+		if buf_is_valid(buf) then
+			local last_row = buf_line_count(buf)
 
-			start_row = math.min(start_row, last_row)
-			end_row = math.min(end_row, last_row)
+			start_row = min(start_row, last_row)
+			end_row = min(end_row, last_row)
 
 			highlight_lines(buf, start_row, end_row)
 		end
@@ -109,7 +118,7 @@ local function attach_to_buffer(buf)
 	end
 
 	local function reload()
-		api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+		buf_clear_ns(buf, ns, 0, -1)
 
 		start_row = 0
 		end_row = max_lines_to_highlight
@@ -123,12 +132,12 @@ local function attach_to_buffer(buf)
 				return true
 			end
 
-			start_row = math.min(start_row, change_start)
-			end_row = math.max(end_row, change_end, change_new_end)
+			start_row = min(start_row, change_start)
+			end_row = max(end_row, change_end, change_new_end)
 
 			if not scheduled then
 				scheduled = true
-				vim.schedule(commit)
+				schedule(commit)
 			end
 		end,
 		on_reload = reload,
@@ -141,16 +150,20 @@ local function attach_to_buffer(buf)
 end
 
 local function enter_buffer(buf)
-	if is_buffer_enabled(buf) then
-		attach_to_buffer(buf)
+	if auto_attach == false then
+		return
+	elseif type(auto_attach) == 'function' and not auto_attach(buf) then
+		return
 	end
+
+	attach_to_buffer(buf)
 end
 
 local function detach_from_buffer(buf)
 	assert(buf ~= 0)
 	attached_bufs[buf] = nil
-	vim.schedule(function()
-		pcall(api.nvim_buf_clear_namespace, buf, ns, 0, -1)
+	schedule(function()
+		pcall(buf_clear_ns, buf, ns, 0, -1)
 	end)
 end
 
@@ -172,24 +185,6 @@ local function reload()
 	end
 end
 
-local function create_autocmds()
-	local group = api.nvim_create_augroup('colors', {})
-
-	api.nvim_create_autocmd('BufWinEnter', {
-		group = group,
-		callback = function(opts)
-			enter_buffer(opts.buf)
-		end,
-	})
-
-	api.nvim_create_autocmd('ColorScheme', {
-		group = group,
-		callback = function()
-			reload()
-		end,
-	})
-end
-
 local function get_rust_dir()
 	return assert(vim.tbl_filter(function(x)
 		return vim.endswith(x, 'colors.nvim/rust')
@@ -208,38 +203,27 @@ end
 
 local function load_library()
 	lib = ffi.load(library_path)
-	create_autocmds()
+
+	local group = api.nvim_create_augroup('colors', {})
+
+	autocmd('BufWinEnter', {
+		group = group,
+		callback = function(opts)
+			enter_buffer(opts.buf)
+		end,
+	})
+
+	autocmd('ColorScheme', {
+		group = group,
+		callback = function()
+			reload()
+		end,
+	})
+
 	reload()
 end
 
-local function create_user_commands()
-	api.nvim_create_user_command('ColorsInstall', function()
-		install_library()
-		load_library()
-	end, {})
-end
-
-local function setup(opts)
-	opts = opts or {}
-
-	library_path = opts.library_path
-		or (vim.fn.stdpath('data') .. '/libnvim_plugin_colors.so')
-	max_lines_to_highlight = opts.max_lines_to_highlight or 2000
-	max_highlights_per_line = opts.max_highlights_per_line or 100
-	debug = opts.debug
-	is_buffer_enabled = opts.is_buffer_enabled or function()
-		return true
-	end
-
-	pcall(ffi.cdef, HEADER)
-
-	hls = ffi.new('struct highlight[?]', max_highlights_per_line)
-
-	create_user_commands()
-end
-
 return {
-	setup = setup,
 	load_library = load_library,
 	install_library = install_library,
 	attach_to_buffer = attach_to_buffer,

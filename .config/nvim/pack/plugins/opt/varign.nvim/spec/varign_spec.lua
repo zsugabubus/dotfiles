@@ -1,10 +1,4 @@
-local vim = create_vim({
-	on_setup = function(vim)
-		vim:lua(function()
-			require('varign').setup()
-		end)
-	end,
-})
+local vim = create_vim()
 
 test(':Varign', function()
 	vim:set_lines({ '\t' })

@@ -4,9 +4,6 @@ local vim = create_vim({
 	on_setup = function(vim)
 		vim.cmd.runtime('plugin/gzip.vim')
 		vim.o.cmdheight = 3
-		vim:lua(function()
-			require('vnicode').setup()
-		end)
 		vim.keymap.set('', 'ga', '<Plug>(vnicode-inspect)')
 	end,
 })

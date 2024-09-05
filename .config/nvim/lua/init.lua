@@ -95,6 +95,7 @@ local api = vim.api
 local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
+local g = vim.g
 local o = vim.o
 local wo = vim.wo
 
@@ -779,10 +780,10 @@ end)
 
 map('n', 'c-', ':cd -<CR>')
 
-require('pack').setup({
+require('pack').add({
 	{
 		'align.nvim',
-		after = function()
+		before = function()
 			nxo_map('gl', '<Plug>(align)')
 			remap('n', 'gL', 'viigl|')
 		end,
@@ -791,34 +792,33 @@ require('pack').setup({
 	{ 'archive.nvim' },
 	{
 		'arglist.nvim',
-		after = function()
+		before = function()
 			map('n', 'sa', '<Cmd>Args<CR>')
 		end,
 	},
 	{ 'capture.nvim' },
 	{
 		'colors.nvim',
-		opts = {},
 		after = function()
 			pcall(require('colors').load_library)
 		end,
 	},
 	{
 		'commenter.nvim',
-		after = function()
+		before = function()
 			nxo_map('gc', '<Plug>(commenter)')
 			map('n', 'gcc', '<Plug>(commenter-current-line)')
 		end,
 	},
 	{
 		'context.nvim',
-		after = function()
+		before = function()
 			map('n', '<C-w>x', '<Plug>(context-toggle)')
 		end,
 	},
 	{
 		'cword.nvim',
-		after = function()
+		before = function()
 			map('n', 'sc', '<Plug>(cword-toggle)')
 		end,
 	},
@@ -826,7 +826,7 @@ require('pack').setup({
 	{ 'explorer.nvim' },
 	{
 		'fuzzy.nvim',
-		after = function()
+		before = function()
 			map('n', '!', '<Cmd>FuzzyBuffers<CR>')
 			map('n', 'g/', '<Cmd>FuzzyFiles<CR>')
 			map('n', 'g]', '<Cmd>FuzzyTags<CR>')
@@ -834,7 +834,7 @@ require('pack').setup({
 	},
 	{
 		'git.nvim',
-		after = function()
+		before = function()
 			map('n', 'sd', ':Gdiff<CR>')
 			map('n', 'sgb', ':Gblame<CR>')
 			map('x', 'sgl', ':Glog<CR>')
@@ -843,25 +843,25 @@ require('pack').setup({
 	},
 	{
 		'jumpmotion.nvim',
-		after = function()
+		before = function()
 			nxo_map('<space>', '<Plug>(jumpmotion)')
 		end,
 	},
 	{ 'man.lua' },
 	{
 		'multisearch.nvim',
-		opts = {
-			search_n = 5,
-			very_magic = true,
-		},
-		after = function()
+		before = function()
+			g.multisearch = {
+				highlights = { 'Search1', 'Search2', 'Search3', 'Search4', 'Search5' },
+				very_magic = true,
+			}
 			map('n', 'sm', '<Cmd>MultiSearch<CR>')
 		end,
 	},
 	{
 		'nvim-treesitter',
 		enabled = false,
-		after = function(self)
+		after = function()
 			require('nvim-treesitter.configs').setup({
 				indent = { enable = false },
 				highlight = { enable = false },
@@ -873,7 +873,7 @@ require('pack').setup({
 	{ 'register.nvim' },
 	{
 		'searchfold.nvim',
-		after = function()
+		before = function()
 			fmap('n', 'sf', function()
 				require('searchfold').fold({
 					context = vim.v.count1,
@@ -884,7 +884,7 @@ require('pack').setup({
 	{ 'star.nvim' },
 	{
 		'surround.nvim',
-		after = function()
+		before = function()
 			map('n', 'ds', '<Plug>(surround-delete)')
 			map('x', 's', '<Plug>(surround)')
 		end,
@@ -892,10 +892,7 @@ require('pack').setup({
 	{ 'textobjects.nvim' },
 	{ 'tmux.nvim' },
 	{ 'undowizard.nvim' },
-	{
-		'varign.nvim',
-		opts = {},
-	},
+	{ 'varign.nvim' },
 	{ 'vim-bufgrep' },
 	{ 'vim-pastereindent' },
 	{ 'vim-pets' },
@@ -903,8 +900,7 @@ require('pack').setup({
 	{ 'vimdent.nvim' },
 	{
 		'vnicode.nvim',
-		opts = {},
-		after = function()
+		before = function()
 			nxo_map('ga', '<Plug>(vnicode-inspect)')
 		end,
 	},

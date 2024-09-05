@@ -6,7 +6,6 @@ local string_gmatch = string.gmatch
 local string_gsub = string.gsub
 local string_sub = string.sub
 local table_insert = table.insert
-local type = type
 local uv = vim.loop
 
 local lua2path = {}
@@ -128,42 +127,10 @@ local function plugin_hook(plugin, name)
 	end
 end
 
-local function plugin_main_setup(plugin)
-	local opts = plugin.opts
-	if type(opts) == 'function' then
-		opts = opts()
-	end
-	require(plugin.main).setup(opts)
-end
-
-local function plugin_setup(plugin)
-	if plugin.opts == nil then
-		return
-	end
-
-	if not plugin.main then
-		echo_error(
-			'Plugin %s specified opts but main is unset (maybe not a Lua plugin)',
-			plugin.name
-		)
-		return
-	end
-
-	local ok, err = pcall(plugin_main_setup, plugin)
-	if not ok then
-		echo_error(
-			'Plugin %s: require(%s).setup({opts}) failed:\n%s',
-			plugin.name,
-			vim.inspect(plugin.main),
-			err
-		)
-	end
-end
-
-local function setup(opts)
+local function add(opts)
 	local trace = require('trace').trace
 
-	local setup_span = trace('setup')
+	local fn_span = trace('add plugins')
 
 	local pack_plugin_dirs = {}
 	local rtp_plugin_files = {}
@@ -173,7 +140,6 @@ local function setup(opts)
 	local source_files_before = {}
 	local source_dirs_before = {}
 	local source_dirs_after = {}
-	local path2plugin = {}
 
 	local span = trace('find pack plugins')
 
@@ -199,43 +165,45 @@ local function setup(opts)
 		end
 	end
 
-	local span = trace(span, 'add plugins')
+	local span = trace(span, 'collect plugins')
 
 	local plugins = {}
 	for _, plugin in ipairs(opts) do
-		if plugin and plugin.enabled ~= false then
+		if plugin.enabled ~= false then
 			plugin.name = plugin[1]
 
 			local plugin_dir = pack_plugin_dirs[plugin.name]
 			if plugin_dir then
+				table_insert(plugins, plugin)
 				table_insert(rtp_before, plugin_dir)
 				table_insert(source_dirs_before, plugin_dir .. '/plugin')
-				path2plugin[plugin_dir] = plugin
 
 				local after_dir = plugin_dir .. '/after'
 				if uv.fs_access(after_dir, 'x') then
 					table_insert(rtp_after, after_dir)
 					table_insert(source_dirs_after, after_dir .. '/plugin')
-					path2plugin[after_dir] = plugin
 				end
 			else
 				local plugin_file = rtp_plugin_files[plugin.name]
 				if plugin_file then
+					table_insert(plugins, plugin)
 					table_insert(source_files_before, plugin_file)
 				else
 					echo_error('Plugin %s not found', plugin.name)
-					goto not_found
 				end
 			end
-
-			table_insert(plugins, plugin)
-
-			plugin_hook(plugin, 'before')
 		end
-		::not_found::
 	end
 
-	local span = trace(span, 'set &runtimepath')
+	local span = trace(span, 'before plugins')
+
+	for _, plugin in ipairs(plugins) do
+		local span = trace(plugin.name)
+		plugin_hook(plugin, 'before')
+		trace(span)
+	end
+
+	local span = trace(span, 'set runtimepath')
 
 	local rtp = rtp_before
 	for _, path in ipairs(rtp_middle) do
@@ -248,30 +216,18 @@ local function setup(opts)
 
 	local span = trace(span, 'initialize plugins')
 
-	table_insert(package.loaders, 2, package_loader)
+	if package.loaders[2] ~= package_loader then
+		table_insert(package.loaders, 2, package_loader)
+	end
 	api.nvim_set_option_value('loadplugins', false, {})
 
 	local lua_span = trace('initialize lua package cache')
 
 	for _, plugin_dir in ipairs(rtp) do
-		local plugin = path2plugin[plugin_dir]
 		local lua_dir = plugin_dir .. '/lua'
-		local main, main2 = not plugin or plugin.main
-		for name, kind in dir(lua_dir) do
+		for name in dir(lua_dir) do
 			local path = string_format('%s/%s', lua_dir, name)
 			lua2path[name] = path
-			if not main then
-				if kind == 'directory' then
-					if not main2 or uv.fs_access(path .. '/init.lua', 'r') then
-						main2 = name
-					end
-				else
-					main = string_sub(name, 1, -5)
-				end
-			end
-		end
-		if plugin then
-			plugin.main = main or main2
 		end
 	end
 
@@ -291,16 +247,15 @@ local function setup(opts)
 
 	for _, plugin in ipairs(plugins) do
 		local span = trace(plugin.name)
-		plugin_setup(plugin)
 		plugin_hook(plugin, 'after')
 		trace(span)
 	end
 
 	trace(span)
 
-	trace(setup_span)
+	trace(fn_span)
 end
 
 return {
-	setup = setup,
+	add = add,
 }

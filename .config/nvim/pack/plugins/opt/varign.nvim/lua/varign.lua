@@ -1,8 +1,9 @@
 local api = vim.api
+local config = vim.g.varign or {}
 local strdisplaywidth = vim.fn.strdisplaywidth
 
-local max_lines = 10000
-local pad = 1
+local max_lines = config.max_lines or 10000
+local pad = config.pad or 1
 
 local width = setmetatable({}, {
 	__mode = 'kv',
@@ -71,36 +72,7 @@ local function attach_to_buffer(buf)
 	reload_buffer(buf)
 end
 
-local function setup(opts)
-	opts = opts or {}
-
-	if opts.auto_attach ~= false then
-		local group = api.nvim_create_augroup('varign', {})
-
-		local function is_buffer_enabled(buf)
-			local s = api.nvim_buf_get_lines(buf, 0, 1, false)[1]
-			return string.find(s, '^[^\t]+\t[^\t]+\t[^\t]+')
-		end
-
-		api.nvim_create_autocmd('BufReadPost', {
-			group = group,
-			callback = function(opts)
-				local buf = opts.buf
-
-				if is_buffer_enabled(buf) then
-					attach_to_buffer(buf)
-				end
-			end,
-		})
-	end
-
-	api.nvim_create_user_command('Varign', function()
-		attach_to_buffer(api.nvim_get_current_buf())
-	end, {})
-end
-
 return {
 	attach_to_buffer = attach_to_buffer,
 	reload_buffer = reload_buffer,
-	setup = setup,
 }
