@@ -1,4 +1,51 @@
-local M = {}
+local buf_set_text = vim.api.nvim_buf_set_text
+local config = vim.g.commenter or {}
+
+local function get_buf_commentstring(buf)
+	local s = vim.bo[buf].commentstring
+	if s == '' then
+		return '#%s'
+	end
+	return s
+end
+
+local function get_treesitter_commentstring(buf, row)
+	local ok, tree = pcall(vim.treesitter.get_parser, buf)
+	if not ok then
+		return get_buf_commentstring(buf)
+	end
+
+	tree:parse({ row, row + 1 })
+
+	local range = { row, 0, row, 0 }
+	local ltree = tree:language_for_range(range)
+	local ty = ltree:named_node_for_range(range):type()
+	if ty == 'jsx_text' then
+		return '{/*%s*/}'
+	end
+
+	local ft = vim.bo[buf].filetype
+	repeat
+		local fts = vim.treesitter.language.get_filetypes(ltree:lang())
+		if vim.list_contains(fts, ft) then
+			return get_buf_commentstring(buf)
+		end
+
+		for _, ft in ipairs(fts) do
+			local s = vim.filetype.get_option(ft, 'commentstring')
+			if s ~= '' then
+				return s
+			end
+		end
+
+		ltree = ltree:parent()
+	until not ltree
+
+	return '#%s'
+end
+
+local get_commentstring = config.get_commentstring
+	or get_treesitter_commentstring
 
 local function expand(c)
 	if c == '*' or c == '/' or c == '-' then
@@ -7,26 +54,11 @@ local function expand(c)
 	return ''
 end
 
-function M.comment_lines(buf, start_lnum, end_lnum, op)
-	local cms = vim.bo[buf].commentstring
-	if cms == '' then
-		cms = '#%s'
-	end
-
-	pcall(function()
-		local tree = vim.treesitter.get_parser(buf)
-		tree:parse()
-		local ty =
-			tree:named_node_for_range({ start_lnum - 1, 0, start_lnum - 1, 0 }):type()
-
-		if string.match(ty, '^jsx_') then
-			cms = '{/*%s*/}'
-		end
-	end)
-
+local function comment_lines(buf, start_row, end_row, op)
+	local cms = get_commentstring(buf, start_row)
 	local cms_prefix, cms_suffix = string.match(cms, '^(.-) *%%s *(.-)$')
 
-	local lines = vim.api.nvim_buf_get_lines(buf, start_lnum - 1, end_lnum, true)
+	local lines = vim.api.nvim_buf_get_lines(buf, start_row, end_row, true)
 
 	local pattern = '^%s-()'
 		.. vim.pesc(cms_prefix)
@@ -46,40 +78,22 @@ function M.comment_lines(buf, start_lnum, end_lnum, op)
 	end
 
 	for i, line in ipairs(lines) do
-		local lnum = start_lnum + i - 1
+		local row = start_row + i - 1
 		local prefix_start, prefix_end, suffix_start, suffix_end =
 			string.match(line, pattern)
 
 		if op ~= true and prefix_start then
 			op = false
 			if suffix_start then
-				vim.api.nvim_buf_set_text(
-					buf,
-					lnum - 1,
-					suffix_start - 1,
-					lnum - 1,
-					suffix_end - 1,
-					{}
-				)
+				buf_set_text(buf, row, suffix_start - 1, row, suffix_end - 1, {})
 			end
-			vim.api.nvim_buf_set_text(
-				buf,
-				lnum - 1,
-				prefix_start - 1,
-				lnum - 1,
-				prefix_end - 1,
-				{}
-			)
+			buf_set_text(buf, row, prefix_start - 1, row, prefix_end - 1, {})
 		elseif op ~= false and string.find(line, '%S') then
 			op = true
 			if cms_suffix ~= '' then
-				vim.api.nvim_buf_set_text(buf, lnum - 1, #line, lnum - 1, #line, {
-					' ' .. cms_suffix,
-				})
+				buf_set_text(buf, row, #line, row, #line, { ' ' .. cms_suffix })
 			end
-			vim.api.nvim_buf_set_text(buf, lnum - 1, indent, lnum - 1, indent, {
-				cms_prefix .. ' ',
-			})
+			buf_set_text(buf, row, indent, row, indent, { cms_prefix .. ' ' })
 		end
 	end
 
@@ -98,4 +112,8 @@ function M.comment_lines(buf, start_lnum, end_lnum, op)
 	end
 end
 
-return M
+return {
+	comment_lines = comment_lines,
+	get_buf_commentstring = get_buf_commentstring,
+	get_treesitter_commentstring = get_treesitter_commentstring,
+}

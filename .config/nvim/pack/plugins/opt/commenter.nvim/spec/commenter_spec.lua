@@ -1,5 +1,4 @@
 local vim = create_vim({
-	isolate = false,
 	on_setup = function(vim)
 		vim.keymap.set('', 'gc', '<Plug>(commenter)')
 		vim.keymap.set('', 'gcc', '<Plug>(commenter-current-line)')
@@ -241,4 +240,75 @@ it('reports changed lines', function()
 	test_case(2, 'gcj', '')
 	test_case(2, '3gcc', '3 lines commented')
 	test_case(9, '3Ggcc', '--No lines to comment--')
+end)
+
+describe('uses treesitter to find commentstring', function()
+	it('lua', function()
+		vim.o.filetype = 'lua'
+		vim.o.cms = '---%s'
+		vim:set_lines({
+			'vim.api.nvim_exec2([[',
+			'let x',
+			'lua <<EOF',
+			'local x',
+			'EOF',
+			'let x',
+			']])',
+		})
+		vim:lua(function()
+			_G.vim.treesitter.start()
+		end)
+		vim:feed('6Ggcc')
+		vim:feed('4Ggcc')
+		vim:feed('2Ggcc')
+		vim:feed('1Ggcc')
+		vim:assert_lines({
+			'--- vim.api.nvim_exec2([[',
+			'" let x',
+			'lua <<EOF',
+			'--- local x',
+			'EOF',
+			'" let x',
+			']])',
+		})
+	end)
+
+	it('markdown', function()
+		vim.o.filetype = 'markdown'
+		vim:set_lines({
+			'x',
+			'# x',
+			'```c',
+			'int x;',
+			'```',
+		})
+		vim:lua(function()
+			_G.vim.treesitter.start()
+		end)
+		vim:feed('1Ggcc')
+		vim:feed('2Ggcc')
+		vim:feed('4Ggcc')
+		vim:assert_lines({
+			'<!-- x -->',
+			'<!-- # x -->',
+			'```c',
+			'/* int x; */',
+			'```',
+		})
+	end)
+end)
+
+it('get_commentstring can be overriden', function()
+	vim:lua(function()
+		_G.vim.g.commenter = {
+			get_commentstring = function(buf, row)
+				assert(buf == 0)
+				return row .. '%s'
+			end,
+		}
+	end)
+	vim:set_lines({ 'a', 'b', 'c' })
+	vim:feed('gcj')
+	vim:feed('3Ggcc')
+	vim:assert_lines({ '0 a', '0 b', '2 c' })
 end)
