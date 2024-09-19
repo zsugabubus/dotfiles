@@ -343,15 +343,6 @@ function update()
 		return
 	end
 
-	local function osd_clip_main(prog)
-		osd:clip(
-			prog == 'right' and prog_pos or main_x0,
-			main_y0,
-			prog == 'left' and prog_pos or main_x1,
-			main_y1
-		)
-	end
-
 	local function time2x(time)
 		return duration > 0 and time / duration * prog_width or 0
 	end
@@ -423,7 +414,7 @@ function update()
 			osd:pos(x, y)
 			osd:a1(0x10)
 			osd:c1(0x000000)
-			osd_clip_main('left')
+			osd:clip(main_x0, main_y0, prog_pos, main_y1)
 			osd:draw_begin()
 			draw()
 			osd:draw_end()
@@ -435,7 +426,7 @@ function update()
 			osd:pos(x, y)
 			osd:a1(0x10)
 			osd:c1(0xffffff)
-			osd_clip_main('right')
+			osd:clip(prog_pos, main_y0, main_x1, main_y1)
 			osd:draw_begin()
 			draw()
 			osd:draw_end()
@@ -595,7 +586,7 @@ function update()
 		osd:fs(main_fs)
 		osd:fn_monospace()
 		osd:pos(mouse_x, main_yc)
-		osd_clip_main()
+		osd:clip(main_x0, main_y0, main_x1, main_y1)
 		osd:bord(2)
 		osd:an(mouse_align)
 		osd:c3(0x000000)
