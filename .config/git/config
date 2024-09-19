@@ -98,6 +98,9 @@
 [browser "echo"]
 	cmd = echo
 
+[credential]
+	useHttpPath = true
+	helper = !pass git-credential
 
 [difftool]
 	prompt = no
@@ -140,5 +143,4 @@
 	xmailer = no
 
 [include]
-	path = config.credential
 	path = colors
