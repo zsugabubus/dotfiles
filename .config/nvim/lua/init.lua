@@ -552,11 +552,10 @@ do
 	autocmd('BufWritePost', {
 		group = group,
 		pattern = '*.vim,*.lua',
-		nested = true,
 		callback = function(opts)
 			local dir = fn.fnamemodify(opts.file, ':p:h')
 			if dir == colors_dir then
-				cmd.colorscheme(fn.fnamemodify(opts.file, ':t:r'))
+				fn.system({ 'pkill', '-x', 'nvim', '-USR1' })
 			end
 		end,
 	})
