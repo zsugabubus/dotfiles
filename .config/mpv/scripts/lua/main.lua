@@ -1,3 +1,4 @@
+require('audio-delay')
 require('cache')
 require('choose-value')
 require('confirm')
