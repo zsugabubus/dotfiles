@@ -1,3 +1,48 @@
 #command
+
+&	filter
+/	forw-search
+0	digit
+1	digit
+2	digit
+3	digit
+4	digit
+5	digit
+6	digit
+7	digit
+8	digit
+9	digit
+?	back-search
+G	goto-end
+N	reverse-search
+\ 	forw-screen
+\eF	prev-file
+\ef	next-file
+\kD	forw-screen # Page down.
+\kU	back-screen # Page up.
+\kd	forw-line # Down arrow.
+\ke	goto-end # End.
+\kh	goto-line # Home.
+\kl	left-scroll # Left arrow.
+\kr	right-scroll # Right arrow.
+\ku	back-line # Up arrow.
+^B	back-screen
+^D	forw-scroll
+^E	forw-line
+^F	forw-screen
+^U	back-scroll
+^Y	back-line
+b	back-screen
+d	forw-scroll
+f	forw-screen
+g	goto-line
 h	left-scroll
+j	forw-line
+k	back-line
 l	right-scroll
+n	repeat-search
+q	quit
+u	back-scroll
+w	toggle-option o
+
+#stop
