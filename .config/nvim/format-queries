@@ -1,0 +1,558 @@
+#!/usr/bin/nvim -l
+local function get_grammar()
+	local lpeg = vim.lpeg
+
+	local Cs = lpeg.Cs
+	local Ct = lpeg.Ct
+	local Cg = lpeg.Cg
+	local P = lpeg.P
+	local R = lpeg.R
+	local S = lpeg.S
+	local V = lpeg.V
+
+	local alpha = R('az')
+	local at = P('@')
+	local colon = P(':')
+	local digit = R('09')
+	local dot = P('.')
+	local exclam = P('!')
+	local hash = P('#')
+	local l_bracket = P('[')
+	local l_paren = P('(')
+	local minus = P('-')
+	local quest = P('?')
+	local quote = P('"')
+	local r_bracket = P(']')
+	local r_paren = P(')')
+	local semicolon = P(';')
+	local underscore = P('_')
+
+	return P({
+		'S',
+		S = V('patterns') * -1,
+		patterns = Ct((V('pattern') + V('white')) ^ 0),
+		pattern = V('child_pattern') + V('comment'),
+		child_pattern = V('node')
+			+ V('group')
+			+ V('alternation')
+			+ V('literal')
+			+ V('hash_node')
+			+ V('anchor')
+			+ V('unnamed'),
+		unnamed = Ct(Cg(underscore, 'unnamed') * V('capture_names')),
+		comment = Ct(semicolon * Cg(Cs((1 - P('\n')) ^ 0), 'comment')),
+		hash_node = Ct(
+			l_paren
+				* V('hash_node_type')
+				* Cg(
+					Ct(
+						(Ct(Cg(V('capture_name'), 'capture')) + V('literal') + V('white'))
+							^ 0
+					),
+					'arguments'
+				)
+				* r_paren
+		),
+		anchor = Ct(Cg(dot, 'anchor')),
+		node = Ct(
+			l_paren
+				* (V('white') ^ 0)
+				* V('node_type')
+				* (V('white') ^ 0)
+				* Cg(
+					Ct(
+						(
+							Ct(V('field_name') * (V('white') ^ 0) * Cg(V('pattern'), 'child'))
+							+ V('child_pattern')
+							+ V('white')
+						) ^ 0
+					),
+					'children'
+				)
+				* r_paren
+				* (((V('white') ^ 0) * V('repetition')) ^ -1)
+				* V('capture_names')
+		),
+		group = Ct(
+			l_paren
+				* Cg(V('patterns'), 'siblings')
+				* r_paren
+				* (((V('white') ^ 0) * V('repetition')) ^ -1)
+				* V('capture_names')
+		),
+		alternation = Ct(
+			l_bracket
+				* Cg(V('patterns'), 'alternatives')
+				* r_bracket
+				* (((V('white') ^ 0) * V('repetition')) ^ -1)
+				* V('capture_names')
+		),
+		repetition = Cg(S('*+?'), 'repetition'),
+		white = S(' \t\n\r'),
+		string = Cs(quote * ((1 - quote) ^ 0) * quote),
+		number = Cs(digit ^ 1),
+		literal = Ct(
+			Cg((V('string') + V('number')), 'literal') * V('capture_names')
+		),
+		alternate = l_bracket * Cg(V('patterns'), 'children') * r_bracket,
+		node_type = Cg(Cs((alpha + underscore + minus) ^ 1), 'type'),
+		capture_name = at * Cs((alpha + underscore + minus + dot) ^ 1),
+		capture_names = Cg(
+			Ct((V('capture_name') + V('white')) ^ 0),
+			'capture_names'
+		),
+		hash_node_type = hash
+			* Cg(Cs((alpha + minus) ^ 1 * (quest + exclam)), 'hash_type'),
+		field_name = Cg(Cs((alpha + underscore + minus) ^ 1), 'field_name') * colon,
+	})
+end
+
+local VARIOUS_CAPTURES = '\xff'
+local IGNORE_CAPTURES = { spell = true }
+
+local function merge_capture(result, input)
+	if IGNORE_CAPTURES[input] then
+		return result
+	end
+	if result and input and result ~= input then
+		return VARIOUS_CAPTURES
+	end
+	if input then
+		return input
+	end
+	return result
+end
+
+local function get_node_capture_name(x)
+	if type(x) ~= 'table' then
+		return
+	end
+
+	local result
+
+	for _, input in pairs(x.capture_names or {}) do
+		result = merge_capture(result, input)
+		if result == VARIOUS_CAPTURES then
+			return VARIOUS_CAPTURES
+		end
+	end
+
+	for _, v in pairs(x) do
+		local input = get_node_capture_name(v)
+		result = merge_capture(result, input)
+		if result == VARIOUS_CAPTURES then
+			return VARIOUS_CAPTURES
+		end
+	end
+
+	return result
+end
+
+local cmp_node
+
+local function cmp_string(a, b, field)
+	local ax, bx = a[field], b[field]
+	if ax == bx then
+		return
+	elseif ax and bx then
+		return ax < bx and 1 or 2
+	else
+		return ax and 1 or 2
+	end
+end
+
+local function cmp_child(a, b, field)
+	local ax, bx = a[field], b[field]
+	if ax and bx then
+		return cmp_node(ax, bx)
+	elseif ax or bx then
+		return ax and 1 or 2
+	end
+end
+
+local function cmp_children(a, b, field)
+	local ax, bx = a[field], b[field]
+	if ax and bx then
+		if #ax == #bx then
+			for i = 1, #ax do
+				local x = cmp_node(ax[i], bx[i])
+				if x then
+					return x
+				end
+			end
+			return
+		end
+
+		return #ax < #bx and 1 or 2
+	elseif ax or bx then
+		return ax and 1 or 2
+	end
+end
+
+local function cmp_node_tie(a, b)
+	print('==== tie ====')
+	vim.print(a)
+	vim.print(b)
+	-- Compare pointers to make sort stable.
+	return tostring(a) < tostring(b)
+end
+
+cmp_node = function(a, b)
+	return (
+		cmp_string(a, b, 'literal')
+		or cmp_string(a, b, 'field_name')
+		or cmp_string(a, b, 'type')
+		or cmp_children(a, b, 'children')
+		or cmp_child(a, b, 'child')
+		or cmp_children(a, b, 'siblings')
+		or cmp_children(a, b, 'alternatives')
+		or cmp_string(a, b, 'hash_type')
+		or cmp_node_tie(a, b)
+	)
+end
+
+local function get_node_order(a, b)
+	return cmp_node(a, b) == 1
+end
+
+local function write_capture_names(w, capture_names)
+	for _, capture_name in ipairs(capture_names) do
+		w:put(' @')
+		w:put(capture_name)
+	end
+end
+
+local new_writer = function()
+	local lines = { '' }
+	return {
+		fork = function()
+			local row = #lines
+			local col = #lines[#lines]
+			return {
+				first_line_fits = function()
+					return #lines[row] <= 80
+				end,
+				fits_one_line = function(self)
+					return #lines == row and self:first_line_fits()
+				end,
+				restore = function()
+					for i = #lines, row + 1, -1 do
+						lines[i] = nil
+					end
+					lines[row] = lines[row]:sub(1, col)
+				end,
+			}
+		end,
+		put = function(self, s)
+			lines[#lines] = lines[#lines] .. s
+		end,
+		new_line = function(self)
+			lines[#lines + 1] = ''
+		end,
+		tostring = function()
+			return table.concat(lines, '\n')
+		end,
+	}
+end
+
+local write_node
+
+local function node_with_capture_names(node, capture_names)
+	if #capture_names == 0 then
+		return node
+	end
+
+	local new = {}
+	for k, v in pairs(node) do
+		new[k] = v
+	end
+
+	new.capture_names = {}
+	for _, x in ipairs(node.capture_names or {}) do
+		table.insert(new.capture_names, x)
+	end
+	for _, x in ipairs(capture_names) do
+		table.insert(new.capture_names, x)
+	end
+
+	return new
+end
+
+local function write_array_node(
+	w,
+	open,
+	close,
+	children,
+	capture_names,
+	indent,
+	alt
+)
+	if #children == 1 then
+		local child = node_with_capture_names(children[1], capture_names)
+		write_node(w, child, indent)
+		return
+	end
+
+	local sorted_children
+	if alt then
+		sorted_children = {}
+		vim.list_extend(sorted_children, children)
+		table.sort(sorted_children, get_node_order)
+	else
+		sorted_children = children
+	end
+
+	w:put(open)
+
+	local fork = w:fork()
+
+	for i, child in ipairs(sorted_children) do
+		if i > 1 then
+			w:put(' ')
+		end
+		write_node(w, child, indent .. '  ')
+	end
+
+	w:put(close)
+	write_capture_names(w, capture_names)
+
+	if fork:fits_one_line() then
+		return
+	end
+	fork:restore()
+
+	for i, child in ipairs(sorted_children) do
+		if alt or i > 1 then
+			w:new_line()
+			w:put(indent .. '  ')
+		end
+
+		write_node(w, child, indent .. '  ')
+	end
+
+	if alt then
+		w:new_line()
+		w:put(indent)
+	end
+
+	w:put(close)
+	write_capture_names(w, capture_names)
+end
+
+write_node = function(w, node, indent)
+	if node.type then
+		w:put('(')
+		w:put(node.type)
+
+		local fork = w:fork()
+
+		for _, child in ipairs(node.children) do
+			w:put(' ')
+			write_node(w, child, indent)
+		end
+
+		w:put(')')
+		write_capture_names(w, node.capture_names)
+
+		if
+			(#node.children <= 1 and fork:first_line_fits())
+			or fork:fits_one_line()
+		then
+			return
+		end
+		fork:restore()
+
+		for _, child in ipairs(node.children) do
+			w:new_line()
+			w:put(indent .. '  ')
+			write_node(w, child, indent .. '  ')
+		end
+
+		w:put(')')
+		write_capture_names(w, node.capture_names)
+	elseif node.siblings then
+		write_array_node(
+			w,
+			'(',
+			')',
+			node.siblings,
+			node.capture_names,
+			indent,
+			false
+		)
+	elseif node.alternatives then
+		write_array_node(
+			w,
+			'[',
+			']',
+			node.alternatives,
+			node.capture_names,
+			indent,
+			true
+		)
+	elseif node.hash_type then
+		w:put('(#')
+		w:put(node.hash_type)
+
+		local capture_against_literals = ({
+			['any-of?'] = true,
+			['not-any-of?'] = true,
+			['any-match?'] = true,
+			['any-not-match?'] = true,
+		})[node.hash_type]
+
+		if capture_against_literals then
+			local sorted_arguments = {}
+			vim.list_extend(sorted_arguments, node.arguments, 2)
+			table.sort(sorted_arguments, get_node_order)
+
+			w:put(' ')
+			write_node(w, node.arguments[1], '')
+
+			for _, child in ipairs(sorted_arguments) do
+				w:new_line()
+				w:put(indent .. '  ')
+				write_node(w, child, '')
+			end
+
+			w:new_line()
+			w:put(indent)
+			w:put(')')
+			return
+		end
+
+		local fork = w:fork()
+
+		for _, child in ipairs(node.arguments) do
+			w:put(' ')
+			write_node(w, child, indent)
+		end
+
+		w:put(')')
+
+		if fork:fits_one_line() then
+			return
+		end
+		fork:restore()
+
+		for _, child in ipairs(node.arguments) do
+			w:new_line()
+			w:put(indent .. '  ')
+			write_node(w, child, indent .. '  ')
+		end
+
+		w:put(')')
+	elseif node.capture then
+		w:put('@')
+		w:put(node.capture)
+	elseif node.literal then
+		w:put(node.literal)
+		write_capture_names(w, node.capture_names)
+	elseif node.comment then
+		w:put('; ')
+		w:put(node.comment)
+		w:new_line()
+	elseif node.field_name then
+		w:put(node.field_name)
+		w:put(': ')
+		write_node(w, node.child, indent)
+	elseif node.unnamed then
+		w:put(node.unnamed)
+		write_capture_names(w, node.capture_names)
+	elseif node.anchor then
+		w:put(node.anchor)
+	else
+		vim.print(node)
+		error('unknown node')
+	end
+end
+
+local grammar = get_grammar()
+
+local function format_source(source)
+	local nodes = assert(grammar:match(source), 'syntax error')
+
+	local w = new_writer()
+	local last_group
+
+	local inherits = ((nodes[1] or {}).comment or ''):match(
+		'^ *inherits *:%s*(.-)%s*$'
+	)
+	if inherits then
+		table.remove(nodes, 1)
+		w:put('; inherits: ')
+		w:put(inherits)
+		w:new_line()
+
+		if #nodes > 0 then
+			w:new_line()
+		end
+	end
+
+	table.sort(nodes, function(a, b)
+		local ax = get_node_capture_name(a) or VARIOUS_CAPTURES
+		local bx = get_node_capture_name(b) or VARIOUS_CAPTURES
+		if ax == bx then
+			return get_node_order(a, b)
+		end
+		return ax < bx
+	end)
+
+	for _, node in ipairs(nodes) do
+		local group = get_node_capture_name(node)
+		if (group ~= last_group and last_group) or group == VARIOUS_CAPTURES then
+			w:new_line()
+		end
+		last_group = group
+
+		write_node(w, node, '')
+		w:new_line()
+	end
+
+	return w:tostring()
+end
+
+local function read_file(path)
+	local f, err = io.open(path)
+	if not f then
+		error(('cannot open %q: %s'):format(f, err))
+	end
+	local s = assert(f:read('*a'))
+	f:close()
+	return s
+end
+
+local function write_file_atomic(path, s)
+	local tmp = path .. '~'
+	local f = assert(io.open(tmp, 'w'))
+	assert(f:write(s))
+	assert(f:close())
+	assert(os.rename(tmp, path))
+end
+
+local function format_file(path)
+	io.stdout:write(('Formatting %s: '):format(path))
+
+	local source = read_file(path)
+	local formatted_source = format_source(source)
+
+	if formatted_source == source then
+		io.stdout:write('OK\n')
+		return
+	end
+
+	assert(grammar:match(formatted_source), 'formatter produced syntax error')
+	assert(
+		formatted_source == format_source(source),
+		'formatter produced unstable output'
+	)
+
+	write_file_atomic(path, formatted_source)
+
+	io.stdout:write('Fixed\n')
+end
+
+for _, path in ipairs(arg) do
+	format_file(path)
+end
+-- vim: ft=lua

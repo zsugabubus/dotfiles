@@ -135,12 +135,6 @@ local theme = {
 	mkdListItem = { bold = true },
 	mkdURL = 'Underlined',
 
-	luaConstant = 'cConstant',
-	luaFunction = 'Keyword',
-	luaOperator = 'Conditional',
-	luaRepeat = 'Repeat',
-	luaTable = 'Normal',
-
 	vimCommentTitle = 'Title',
 	vimFuncName = 'Keyword',
 	vimFuncVar = 'Normal',
@@ -181,6 +175,25 @@ local theme = {
 	Search3 = { fg = '#000000', bg = '#ffaa58' },
 	Search4 = { fg = '#000000', bg = '#aaff58' },
 	Search5 = { fg = '#000000', bg = '#58ccff' },
+
+	['@constant.builtin'] = 'cConstant',
+	['@constructor'] = 'Identifier',
+	['@function.builtin'] = 'Identifier',
+	['@keyword.conditional'] = 'Conditional',
+	['@keyword.conditional.ternary'] = '@operator',
+	['@keyword.conditional.ternary.python'] = '@keyword.conditional',
+	['@keyword.directive'] = '@comment',
+	['@keyword.repeat'] = 'Conditional',
+	['@module.builtin'] = 'Identifier',
+	['@string.documentation'] = '@comment',
+	['@string.regexp'] = '@string',
+	['@tag'] = 'Identifier',
+	['@tag.attribute'] = 'Type',
+	['@tag.builtin'] = 'Normal',
+	['@type.builtin'] = '@type',
+	['@type.definition'] = 'Identifier',
+	['@variable.builtin'] = 'Constant',
+
 }
 
 local span = trace(span, 'set highlights')

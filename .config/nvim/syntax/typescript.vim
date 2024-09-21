@@ -1,1 +1,0 @@
-syn keyword Keyword satisfies

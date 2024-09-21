@@ -605,8 +605,23 @@ vim.filetype.add({
 	},
 })
 
-filetype('lua,help', function()
+-- vim.treesitter pulls in lot's of Lua code.
+autocmd('FileType', {
+	group = group,
+	pattern = { 'typescriptreact', 'typescript' },
+	once = true,
+	callback = function()
+		vim.treesitter.language.register('tsx', 'typescriptreact')
+		vim.treesitter.language.register('tsx', 'typescript')
+	end,
+})
+
+filetype('help', function()
 	vim.treesitter.stop()
+end)
+
+filetype('lua,python,typescript,typescriptreact', function()
+	vim.treesitter.start()
 end)
 
 filetype(
@@ -642,16 +657,6 @@ end)
 filetype('cucumber', function()
 	cmd.Varign()
 end)
-
--- vim.treesitter pulls in lot's of Lua code.
-autocmd('FileType', {
-	group = group,
-	pattern = 'typescriptreact',
-	once = true,
-	callback = function()
-		vim.treesitter.language.register('tsx', 'typescriptreact')
-	end,
-})
 
 autocmd('TextChanged', {
 	group = group,
