@@ -9,56 +9,55 @@ local function autoload_user_command(opts)
 	return require('tmux')[opts.name](opts)
 end
 
-local function autoload_autocmd(opts)
-	local name = opts.event .. '_' .. string.match(opts.match, '^tmux://([^/]*)')
-	return require('tmux')[name](opts)
-end
-
 local function autoload_complete(prefix, cmdline)
 	local name = vim.fn.fullcommand(string.match(cmdline, '([^ ]*)'))
-		.. '_complete'
-	return require('tmux')[name](prefix)
+	return require('tmux')[name .. '_complete'](prefix)
 end
 
 autocmd({ 'BufReadCmd', 'BufWriteCmd' }, {
 	group = group,
-	pattern = 'tmux://buffer/*',
-	callback = autoload_autocmd,
+	pattern = { 'tmux://buffers/*', 'tmux://panes/*' },
+	callback = function(opts)
+		local name = opts.event
+			.. '_'
+			.. string.match(opts.match, '^tmux://([^/]*)')
+		return require('tmux')[name](opts)
+	end,
 })
 
-autocmd('BufReadCmd', {
-	group = group,
-	pattern = { 'tmux://buffers', 'tmux://pane/*' },
-	callback = autoload_autocmd,
+user_command('Tbuffers', autoload_user_command, {
+	desc = 'List tmux buffers',
 })
-
-user_command('Tsplitwindow', autoload_user_command, {
-	-- :lcd and :tcd do not set process working directory.
-	desc = 'Vim-aware tmux split-window',
-})
-
 user_command('Tbuffer', autoload_user_command, {
 	nargs = 1,
 	complete = autoload_complete,
 	desc = 'Edit tmux buffer',
 })
-user_command('Tlistbuffers', autoload_user_command, {
-	desc = 'List tmux buffers',
+
+user_command('Twrite', autoload_user_command, {
+	nargs = '?',
+	desc = 'Write buffer to tmux buffer',
+	range = 2,
 })
 
-local opts = {
-	nargs = '?',
+user_command('Tpanes', autoload_user_command, {
+	desc = 'List tmux panes',
+})
+user_command('Tpane', autoload_user_command, {
+	bang = true,
+	nargs = 1,
 	complete = autoload_complete,
-	desc = 'Capture tmux pane',
-}
-user_command('Tcapture', autoload_user_command, opts)
-user_command('Ttermcapture', autoload_user_command, opts)
+	desc = 'View tmux pane',
+})
+user_command('Tlast', 'Tpane! {last}', {})
 
-user_command('Tfileyank', autoload_user_command, {
-	desc = 'Yank buffer path to new tmux buffer',
+user_command('Tcd', autoload_user_command, {
+	nargs = 1,
+	complete = autoload_complete,
+	desc = 'Cd to tmux pane',
 })
 
-user_command('Tloadbuffer', autoload_user_command, {
-	nargs = '?',
-	desc = 'Load tmux buffer',
+user_command('Tsplitwindow', autoload_user_command, {
+	-- :lcd and :tcd do not set process working directory.
+	desc = 'tmux split-window',
 })
