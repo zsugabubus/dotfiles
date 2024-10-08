@@ -939,8 +939,16 @@ describe('<Plug>(git-goto-file)', function()
 	end)
 
 	it('falls back to gf', function()
-		vim:set_lines({ 'a/b/c' })
-		vim:feed('s')
-		assert.same([[E447: Can't find file "a/b/c" in path]], vim.v.errmsg)
+		local function test_case(lines, file)
+			vim:set_lines(lines)
+			vim:feed('s')
+			assert.same(
+				string.format([[E447: Can't find file "%s" in path]], file),
+				vim.v.errmsg
+			)
+		end
+
+		test_case({ 'a1' }, 'a1')
+		test_case({ ' a2' }, 'a2')
 	end)
 end)

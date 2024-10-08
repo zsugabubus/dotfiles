@@ -73,7 +73,7 @@ function M.get_diff_source()
 		row = row - 1
 	end
 
-	local s = api.nvim_buf_get_lines(0, row - 1, row, true)[1]
+	local s = api.nvim_buf_get_lines(0, row - 1, row, true)[1] or ''
 	local a_start, b_start = string.match(s, '^@@ %-(%d*),%d* %+(%d*)')
 
 	local a_path, b_path
