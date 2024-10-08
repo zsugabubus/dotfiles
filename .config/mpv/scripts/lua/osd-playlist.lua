@@ -114,6 +114,15 @@ function update()
 		osd:bold(false)
 	end
 
+	if #playlist == 0 then
+		osd:N()
+		osd:h()
+		osd:put_cursor(false)
+		osd:italic(true)
+		osd:put('(empty playlist)')
+		osd:italic(false)
+	end
+
 	osd:update()
 end
 update = osd.update_wrap(update)
