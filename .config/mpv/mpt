@@ -179,6 +179,8 @@ local stdin = uv.new_poll(0)
 stdin:unref()
 local sigwinch = uv.new_signal()
 sigwinch:unref()
+local playlist_timer = uv.new_timer()
+playlist_timer:unref()
 
 curs.initscr()
 curs.noecho()
@@ -314,9 +316,25 @@ end
 local function set_client(client_)
 	client = client_
 	render(false)
+	playlist_timer:stop()
 
 	if not client then
 		return
+	end
+
+	local playlist_changed = false
+
+	local function update_playlist()
+		if not playlist_changed then
+			playlist_timer:stop()
+			return
+		end
+
+		playlist_changed = false
+
+		client:request({ 'get_property', 'playlist' }, function(_, msg)
+			set_prop('playlist', msg.data)
+		end)
 	end
 
 	client:on('property-change', function(_, event)
@@ -324,9 +342,11 @@ local function set_client(client_)
 		local data = event.data
 
 		if name == 'playlist-count' then
-			client:request({ 'get_property', 'playlist' }, function(_, msg)
-				set_prop('playlist', msg.data)
-			end)
+			playlist_changed = true
+
+			if not playlist_timer:is_active() then
+				playlist_timer:start(0, 1000, update_playlist)
+			end
 		end
 
 		if name == 'time-pos' and data then
