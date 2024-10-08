@@ -163,20 +163,16 @@ describe('Table', function()
 			'  - ADVICE:',
 			'    - Did you mean: `a`',
 		}, function()
-			health.validate(
-				{},
-				{ t = { d = 0 }, t2 = { d = 0, e = 0 } },
-				function()
-					return Table({
-						s = String,
-						n = Number,
-						b = Boolean,
-						f = Function,
-						t = Table({ a = Nil, b = Nil, c = Nil }),
-						t2 = Table({ a = Nil }),
-					})
-				end
-			)
+			health.validate({}, { t = { d = 0 }, t2 = { d = 0, e = 0 } }, function()
+				return Table({
+					s = String,
+					n = Number,
+					b = Boolean,
+					f = Function,
+					t = Table({ a = Nil, b = Nil, c = Nil }),
+					t2 = Table({ a = Nil }),
+				})
+			end)
 		end)
 	end)
 
@@ -187,13 +183,9 @@ describe('Table', function()
 			'  - ADVICE:',
 			'    - Did you mean: `1`, `2`',
 		}, function()
-			health.validate(
-				{},
-				{ '', '', true, d = 0 },
-				function()
-					return Table({ String, Number })
-				end
-			)
+			health.validate({}, { '', '', true, d = 0 }, function()
+				return Table({ String, Number })
+			end)
 		end)
 	end)
 end)
