@@ -46,10 +46,8 @@ for _, s in ipairs({
 	'Cbefore',
 	'Cbelow',
 	'Cbottom',
-	'Cbuffer',
 	'Cc',
 	'Cexpr',
-	'Cfile',
 	'Cfirst',
 	'Chistory',
 	'Clast',
@@ -64,7 +62,9 @@ for _, s in ipairs({
 end
 
 for _, s in ipairs({
+	'Cbuffer',
 	'Cclose',
+	'Cfile',
 	'Cgetbuffer',
 	'Cgetexpr',
 	'Cgetfile',
