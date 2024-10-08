@@ -484,25 +484,23 @@ end, { nargs = '*' })
 do
 	local buf
 
-	user_command('Qread', function(opts)
-		if not buf or opts.bang then
-			if api.nvim_buf_get_name(0) == '' then
-				cmd.edit('tmux://pane/{last}')
-			end
-			buf = api.nvim_get_current_buf()
-		end
+	user_command('Qtmux', function()
+		cmd.Tlast()
+		cmd.Tcdhere()
+		cmd.Qreadthis()
+	end, {})
 
-		api.nvim_echo({
-			{
-				string.format('%s qread', vim.inspect(api.nvim_buf_get_name(buf))),
-				'Normal',
-			},
-		}, false, {})
+	user_command('Qreadthis', function()
+		buf = api.nvim_get_current_buf()
+		cmd.Qread()
+	end, {})
 
+	user_command('Qread', function()
 		api.nvim_buf_call(buf, function()
 			cmd.edit()
 
 			local saved = bo.errorformat
+
 			bo.errorformat = table.concat({
 				-- rust
 				'%Eerror[E%n]: %m',
@@ -520,13 +518,11 @@ do
 				'\\        %m:   %f',
 			}, ',')
 
-			cmd.Cgetbuffer()
+			cmd.Cbuffer()
 
 			bo.errorformat = saved
 		end)
-
-		cmd.Cnext()
-	end, { bang = true })
+	end, {})
 end
 
 autocmd({ 'FocusGained', 'VimEnter' }, {
