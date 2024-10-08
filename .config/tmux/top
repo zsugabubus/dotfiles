@@ -231,12 +231,7 @@ local function tmux(fn)
 	bar(fn, function(output)
 		local process
 		process = assert(uv.spawn('tmux', {
-			args = {
-				'set',
-				'-gF',
-				'@status-top',
-				output,
-			},
+			args = { 'set', '-g', '@status-top', output },
 		}, function(code)
 			process:close()
 			assert(code == 0)
