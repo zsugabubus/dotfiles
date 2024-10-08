@@ -46,58 +46,51 @@ local function display_keys(keys)
 	return table.concat(t, ', ')
 end
 
-local schema_tostring
-local SCHEMA_TOSTRING_IMPL = {
-	[S.PrimitiveSchema] = function(self)
-		return self.typename
-	end,
-	[S.UnionSchema] = function(self)
+local function stringify_schema(schema)
+	local ty = getmetatable(schema)
+	if ty == S.PrimitiveSchema then
+		return schema.typename
+	elseif ty == S.UnionSchema then
 		local t = {}
 
-		for _, branch_schema in ipairs(self) do
-			table.insert(t, schema_tostring(branch_schema))
+		for _, branch_schema in ipairs(schema) do
+			table.insert(t, stringify_schema(branch_schema))
 		end
 
 		return table.concat(t, '|')
-	end,
-	[S.TableSchema] = function(self)
+	elseif ty == S.TableSchema then
 		return 'table'
-	end,
-	[S.ArraySchema] = function(self)
-		return string.format('(%s)[]', schema_tostring(self.item))
-	end,
-	[S.NamedSchema] = function(self)
-		return self.name
-	end,
-	[S.CallbackSchema] = function(self)
-		return self.name
-	end,
-}
-function schema_tostring(schema)
-	return SCHEMA_TOSTRING_IMPL[getmetatable(schema)](schema)
+	elseif ty == S.ArraySchema then
+		return string.format('(%s)[]', stringify_schema(schema.item))
+	elseif ty == S.NamedSchema then
+		return schema.name
+	elseif ty == S.CallbackSchema then
+		return schema.name
+	else
+		error('unknown schema')
+	end
 end
 
 local function display_schema(schema)
-	return string.format('`%s`', schema_tostring(schema))
+	return string.format('`%s`', stringify_schema(schema))
 end
 
-local error_print
-local ERROR_PRINT_IMPL = {
-	[S.TypeError] = function(self, path)
+local function report_error(err, path)
+	local ty = getmetatable(err)
+	if ty == S.TypeError then
 		health.error(
 			string.format(
 				'Expected %s to be a %s, but got a %s value',
 				display_path(path),
-				display_type(self.schema.typename or 'table'),
-				display_type(type(self.value))
+				display_type(err.schema.typename or 'table'),
+				display_type(type(err.value))
 			)
 		)
-	end,
-	[S.UnionError] = function(self, path)
+	elseif ty == S.UnionError then
 		local type_errors_only = true
 
-		for _, branch_error in ipairs(self.branches) do
-			if getmetatable(branch_error) ~= S.TypeError then
+		for _, branch in ipairs(err.branches) do
+			if getmetatable(branch) ~= S.TypeError then
 				type_errors_only = false
 				break
 			end
@@ -108,62 +101,59 @@ local ERROR_PRINT_IMPL = {
 				string.format(
 					'Expected %s to be a %s, but got a %s value',
 					display_path(path),
-					display_schema(self.schema),
-					display_type(type(self.value))
+					display_schema(err.schema),
+					display_type(type(err.value))
 				)
 			)
 			return
 		end
 
-		for _, branch_error in ipairs(self.branches) do
-			if getmetatable(branch_error) ~= S.TypeError then
-				error_print(branch_error, path)
+		for _, branch in ipairs(err.branches) do
+			if getmetatable(branch) ~= S.TypeError then
+				report_error(branch, path)
 			end
 		end
-	end,
-	[S.TableError] = function(self, path)
-		for k, v in vim.spairs(self.invalid_fields) do
+	elseif ty == S.TableError then
+		for k, v in vim.spairs(err.invalid_fields) do
 			table.insert(path, k)
-			error_print(v, path)
+			report_error(v, path)
 			table.remove(path)
 		end
 
-		if #self.unknown_fields > 0 then
+		if #err.unknown_fields > 0 then
 			health.warn(
 				string.format(
 					'Unknown %s %s in %s',
-					#self.unknown_fields == 1 and 'field' or 'fields',
-					display_keys(self.unknown_fields),
+					#err.unknown_fields == 1 and 'field' or 'fields',
+					display_keys(err.unknown_fields),
 					display_path(path)
 				),
 				string.format(
 					'Did you mean: %s',
-					display_keys(vim.tbl_keys(self.schema.fields))
+					display_keys(vim.tbl_keys(err.schema.fields))
 				)
 			)
 		end
-	end,
-	[S.ArrayError] = function(self, path)
-		for k, v in vim.spairs(self.invalid_indexes) do
+	elseif ty == S.ArrayError then
+		for k, v in vim.spairs(err.invalid_indexes) do
 			table.insert(path, k)
-			error_print(v, path)
+			report_error(v, path)
 			table.remove(path)
 		end
 
-		if #self.unknown_fields > 0 then
+		if #err.unknown_fields > 0 then
 			health.warn(
 				string.format(
 					'Unknown %s %s in %s',
-					#self.unknown_fields == 1 and 'index' or 'indexes',
-					display_keys(self.unknown_fields),
+					#err.unknown_fields == 1 and 'index' or 'indexes',
+					display_keys(err.unknown_fields),
 					display_path(path)
 				)
 			)
 		end
-	end,
-}
-function error_print(err, path)
-	return ERROR_PRINT_IMPL[getmetatable(err)](err, path)
+	else
+		error('unknown error')
+	end
 end
 
 local function validate(path, value, schema)
@@ -181,7 +171,7 @@ local function validate(path, value, schema)
 		return
 	end
 
-	error_print(err, path)
+	report_error(err, path)
 end
 
 return validate
