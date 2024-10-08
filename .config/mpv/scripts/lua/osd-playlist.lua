@@ -37,7 +37,7 @@ end
 local function compute_layout()
 	local font_size = props['osd-font-size'] or 0
 	local scaled_font_size = font_size * font_scale
-	local margin_y = 2 * props['osd-margin-y']
+	local margin_y = 2 * (props['osd-margin-y'] or 0)
 	local playlist_height = osd.height - margin_y - font_size
 
 	-- Subtract one line so it is visually a bit more pleasant.
