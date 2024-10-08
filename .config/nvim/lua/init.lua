@@ -331,6 +331,8 @@ end)
 map('i', '<C-r>', '<C-r><C-o>')
 
 map('n', 'U', '')
+map('n', 'gx', '')
+map('x', 'gx', '')
 
 -- Reindent before append.
 xmap('n', 'A', function()
