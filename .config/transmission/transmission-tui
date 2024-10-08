@@ -3235,7 +3235,7 @@ transmission-daemon(1), transmission-remote(1).
 							new_ids,
 							assert((payload['torrent-added'] or payload['torrent-duplicate']).id)
 						)
-						if delete_after_add then
+						if delete_after_add and output ~= '' then
 							os.remove(s)
 						end
 					else
