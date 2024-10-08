@@ -689,6 +689,17 @@ autocmd('StdinReadPost', {
 		bo.buftype = 'nofile'
 		bo.bufhidden = 'hide'
 		bo.swapfile = false
+
+		-- After +AnsiEsc.
+		vim.schedule(function()
+			autocmd('TextChanged', {
+				buffer = 0,
+				once = true,
+				callback = function()
+					bo.buftype = ''
+				end,
+			})
+		end)
 	end,
 })
 
