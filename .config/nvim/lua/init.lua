@@ -533,7 +533,7 @@ autocmd({ 'FocusGained', 'VimEnter' }, {
 			group = group,
 			once = true,
 			callback = function()
-				autocmd('FocusLost', {
+				autocmd({ 'FocusLost', 'VimSuspend' }, {
 					group = group,
 					callback = function()
 						fn.setreg('+', fn.getreg('@'))
