@@ -95,8 +95,13 @@ mp.register_event('file-loaded', handle_file_loaded)
 
 mp.register_script_message('hup', function(arg)
 	if arg ~= nil then
+		if arg == 'toggle' then
+			arg = is_disabled() and 'yes' or 'no'
+		end
 		mp.commandv('change-list', 'script-opts', 'set', 'hup=' .. arg)
-		mp.msg.info(is_disabled() and 'Hup disabled' or 'Hup enabled')
+		local s = is_disabled() and 'Hup disabled' or 'Hup enabled'
+		mp.msg.info(s)
+		mp.osd_message(s)
 		return
 	end
 
