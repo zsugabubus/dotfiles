@@ -32,9 +32,10 @@ end
 
 local function find_targets(pattern, all_bufs)
 	local targets = {}
-	local current_win = api.nvim_get_current_win()
-	local current_buf = api.nvim_get_current_buf()
-	local current_row, current_col = unpack(api.nvim_win_get_cursor(current_win))
+
+	local orig_win = api.nvim_get_current_win()
+	local orig_buf = api.nvim_get_current_buf()
+	local orig_row, orig_col = unpack(api.nvim_win_get_cursor(orig_win))
 
 	local function add_win_targets()
 		local win_targets = {}
@@ -86,7 +87,7 @@ local function find_targets(pattern, all_bufs)
 					end
 				end
 
-				if right_col < virt_col then
+				if virt_col > right_col then
 					if row == bot_row then
 						break
 					end
@@ -99,7 +100,7 @@ local function find_targets(pattern, all_bufs)
 				end
 			end
 
-			if buf == current_buf and row == current_row and col == current_col then
+			if buf == orig_buf and row == orig_row and col == orig_col then
 				goto skip
 			end
 
@@ -129,9 +130,9 @@ local function find_targets(pattern, all_bufs)
 
 	for _, win in ipairs(api.nvim_tabpage_list_wins(0)) do
 		if
-			win ~= current_win
+			win ~= orig_win
 			and api.nvim_win_get_config(win).focusable
-			and (all_bufs or api.nvim_win_get_buf(win) == current_buf)
+			and (all_bufs or api.nvim_win_get_buf(win) == orig_buf)
 		then
 			api.nvim_win_call(win, add_win_targets)
 		end
@@ -154,7 +155,7 @@ local function make_word(n)
 end
 
 local function assign_keys(targets)
-	local target_by_key = {}
+	local targets_by_key = {}
 	local n = 1
 
 	for _, target in ipairs(targets) do
@@ -162,14 +163,14 @@ local function assign_keys(targets)
 			local key = make_word(n)
 			n = n + 1
 
-			local conflict = target_by_key[string.sub(key, 1, -2)]
+			local conflict = targets_by_key[string.sub(key, 1, -2)]
 			if conflict then
-				target_by_key[conflict.key] = nil
+				targets_by_key[conflict.key] = nil
 				conflict.key = key
-				target_by_key[conflict.key] = conflict
+				targets_by_key[key] = conflict
 			else
 				target.key = key
-				target_by_key[key] = target
+				targets_by_key[key] = target
 				break
 			end
 		end
@@ -215,11 +216,7 @@ local function unmap_target(target)
 	if not target.extmark_id then
 		return
 	end
-	api.nvim_buf_del_extmark(
-		target.buf,
-		get_win_ns(target.win),
-		target.extmark_id
-	)
+	api.nvim_buf_del_extmark(target.buf, win_ns[target.win], target.extmark_id)
 end
 
 local function pick_target(targets)
@@ -274,7 +271,6 @@ local function jump(pattern)
 
 	local targets = find_targets(pattern, mode == 'n')
 	assign_keys(targets)
-
 	local target = pick_target(targets)
 
 	if not target then
@@ -283,10 +279,8 @@ local function jump(pattern)
 
 	-- Push current location to jumplist.
 	api.nvim_command("normal! m'")
-
 	api.nvim_set_current_win(target.win)
 	api.nvim_win_set_cursor(target.win, { target.row, target.col })
-
 	if mode == 'v' or mode == 'V' then
 		api.nvim_command('normal! m>gv')
 	end
