@@ -1,4 +1,8 @@
 local api = vim.api
+local b = vim.b
+local bo = vim.bo
+local fn = vim.fn
+
 local group = api.nvim_create_augroup('Vimdent', {})
 
 local function sw_max(t)
@@ -17,8 +21,6 @@ local function sw_max(t)
 end
 
 local function detect()
-	local bo = vim.bo
-	local b = vim.b
 	if bo.buftype ~= '' then
 		return
 	end
@@ -38,12 +40,12 @@ local function detect()
 	local prev_tab, prev_sp = 0, 0
 	local endl = api.nvim_buf_line_count(0)
 	for i = math.max(1, endl - 1000), endl do
-		local indent = vim.fn.indent(i)
+		local indent = fn.indent(i)
 		local tab, sp = math.floor(indent / 100), indent % 100
 
 		if tab == prev_tab then
 			if tab == 0 then
-				if sp == 0 and vim.fn.nextnonblank(i) ~= i then
+				if sp == 0 and fn.nextnonblank(i) ~= i then
 					goto ignore_blank
 				end
 				-- SP SP SP
@@ -100,9 +102,10 @@ local function detect()
 	if best_sw and best_sw <= 8 then
 		local best_sw2 = sw_max(sw2_tbl)
 
-		-- Too much 8 spaces (universal default &tabstop across editors) became a
-		-- tab on adjacent lines. It mostly occurs when somebody starts using
-		-- &noexpandtab on a file that was historically &expandtab.
+		-- Countermeasures against editors that corrupted lines with misdetected
+		-- expandtab. It is assumed that it can occur with 8 spaces<->tab only
+		-- since it is the universal default width of a tab and so it could go
+		-- unnoticed to the user.
 		if best_sw2 == 8 then
 			best_sw2 = best_sw2 - best_sw
 			sw2_tbl[best_sw2] = sw2_tbl[best_sw2] + sw2_tbl[8]

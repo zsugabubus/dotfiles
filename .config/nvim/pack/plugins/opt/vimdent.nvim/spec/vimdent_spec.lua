@@ -1,19 +1,17 @@
 local vim = create_vim({ isolate = false, height = 20 })
 
-local DOUBLE_SPACE = { 'a', '  b', '    c' }
+local DOUBLE_SPACE = { 'x', '  x', '    x' }
 
 it('does not change options when detection fails', function()
 	vim.cmd('setlocal tabstop=42')
 	vim.cmd.Vimdent()
-
 	assert.same(nil, vim.b.did_vimdent)
 	assert.same(42, vim.bo.tabstop)
 end)
 
 it('ignores single-space indentation', function()
-	vim:set_lines({ 'a', ' b', '  c' })
+	vim:set_lines({ 'x', ' x', '  x' })
 	vim.cmd.Vimdent()
-
 	assert.same(nil, vim.b.did_vimdent)
 	assert.same(8, vim.bo.tabstop)
 	assert.same(false, vim.bo.expandtab)
@@ -23,7 +21,6 @@ end)
 it('detects double-space indentation', function()
 	vim:set_lines(DOUBLE_SPACE)
 	vim.cmd.Vimdent()
-
 	assert.same(1, vim.b.did_vimdent)
 	assert.same(8, vim.bo.tabstop)
 	assert.same(true, vim.bo.expandtab)
@@ -31,9 +28,8 @@ it('detects double-space indentation', function()
 end)
 
 it('detects tab-only indentation', function()
-	vim:set_lines({ 'a', '\tb', '\t\tc' })
+	vim:set_lines({ 'x', '\tb', '\t\tc' })
 	vim.cmd.Vimdent()
-
 	assert.same(1, vim.b.did_vimdent)
 	assert.same(8, vim.bo.tabstop)
 	assert.same(false, vim.bo.expandtab)
@@ -41,13 +37,56 @@ it('detects tab-only indentation', function()
 end)
 
 it('detects mixed space and tab indentation', function()
-	vim:set_lines({ 'a', '  b', '\tc' })
+	vim:set_lines({ 'x', '  x', '\tc' })
 	vim.cmd.Vimdent()
-
 	assert.same(1, vim.b.did_vimdent)
 	assert.same(4, vim.bo.tabstop)
 	assert.same(false, vim.bo.expandtab)
 	assert.same(2, vim.bo.shiftwidth)
+end)
+
+it('detects noexpandtab corruption; sw=8', function()
+	vim:set_lines({
+		(' '):rep(8) .. 'x', -- Bad.
+		'\tx', -- Good.
+		(' '):rep(8) .. 'x', -- Bad.
+	})
+	vim.cmd.Vimdent()
+	assert.same(1, vim.b.did_vimdent)
+	assert.same(8, vim.bo.tabstop)
+	assert.same(false, vim.bo.expandtab)
+	assert.same(8, vim.bo.shiftwidth)
+end)
+
+it('detects noexpandtab corruption; sw=2', function()
+	vim:set_lines({
+		'x',
+		(' '):rep(2) .. 'x',
+		(' '):rep(4) .. 'x',
+		(' '):rep(6) .. 'x',
+		(' '):rep(8) .. 'x', -- Bad.
+		'\tx', -- Good.
+		(' '):rep(8) .. 'x', -- Bad.
+	})
+	vim.cmd.Vimdent()
+	assert.same(1, vim.b.did_vimdent)
+	assert.same(8, vim.bo.tabstop)
+	assert.same(false, vim.bo.expandtab)
+	assert.same(2, vim.bo.shiftwidth)
+end)
+
+it('detects expandtab corruption', function()
+	vim:set_lines({
+		(' '):rep(8) .. 'x', -- Good.
+		'\tx', -- Bad.
+		(' '):rep(8) .. 'x', -- Good.
+		(' '):rep(16) .. 'x',
+	})
+	vim.cmd.Vimdent()
+	assert.same(1, vim.b.did_vimdent)
+	assert.same(8, vim.bo.tabstop)
+	assert.same(true, vim.bo.expandtab)
+	assert.same(8, vim.bo.shiftwidth)
 end)
 
 it('ignores non-file buffers', function()
@@ -55,12 +94,10 @@ it('ignores non-file buffers', function()
 
 	vim.bo.buftype = 'quickfix'
 	vim.cmd.Vimdent()
-
 	assert.same(nil, vim.b.did_vimdent)
 
 	vim.bo.buftype = ''
 	vim.cmd.Vimdent()
-
 	assert.same(1, vim.b.did_vimdent)
 end)
 
