@@ -904,7 +904,6 @@ require('pack').add({
 	{ 'varign.nvim' },
 	{ 'vim-bufgrep' },
 	{ 'vim-pastereindent' },
-	{ 'vim-pets' },
 	{ 'vim-tilde' },
 	{ 'vimdent.nvim' },
 	{
