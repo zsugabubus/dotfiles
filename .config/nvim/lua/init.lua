@@ -138,10 +138,6 @@ local function xmap(mode, lhs, callback)
 	})
 end
 
-local function xmapescape(s)
-	return string.gsub(s, '<', '<LT>')
-end
-
 local function filetype(pattern, callback)
 	return autocmd('FileType', {
 		group = group,
@@ -320,12 +316,12 @@ smap('n', '<Tab>', ':wincmd p<CR>')
 smap('n', ']q', ':Cnewer<CR>')
 smap('n', '[q', ':Colder<CR>')
 
-xmap('i', '<C-f>', function()
+fmap('i', '<C-f>', function()
 	local s = fn.expand('%:t:r')
 	if s == 'init' or s == 'index' or s == 'main' then
 		s = fn.expand('%:p:h:t')
 	end
-	return xmapescape(s)
+	api.nvim_paste(s, false, -1)
 end)
 
 map('i', '<C-r>', '<C-r><C-o>')
@@ -350,8 +346,8 @@ fmap('n', '<C-q>', function()
 end)
 
 xmap('n', '<M-!>', function()
-	local s = string.match(fn.expand('%'), '^(.*/)[^/]') or './'
-	return string.format(':edit %s<C-Z>', xmapescape(fn.fnameescape(s)))
+	fn.setreg('p', string.match(fn.expand('%'), '^(.*/)[^/]') or './')
+	return ':edit <C-R>p<C-Z>'
 end)
 smap('n', '<M-q>', ':quit<CR>')
 smap('n', '<M-w>', ':silent! wa<CR>')
