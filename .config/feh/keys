@@ -1,22 +1,37 @@
-scroll_left	h
-scroll_left_page	C-h
-scroll_up	k
-scroll_up_page	C-k
-scroll_right	l
-scroll_right_page	C-l
-scroll_down	j
-scroll_down_page	C-j
-
+delete
+flip	underscore
 jump_first	g
 jump_last	G
-
-toggle_filenames	w
-toggle_pause	c
-
-zoom_out	C-o minus
-zoom_in	C-i plus
-# zoom_default	equal
-# zoom_fill	asterisk
-# zoom_fit	divide
+mirror	bar
+next_img	Right n P
+orient_1	greater
+orient_3	less
+prev_img	Left p N
+quit	Escape q C-c
+remove	x
+save_filelist
+save_image
+scroll_down	j
+scroll_down_page	J
+scroll_left	h
+scroll_left_page	H
+scroll_right	l
+scroll_right_page	L
+scroll_up	k
+scroll_up_page	K
+toggle_actions	question
 toggle_auto_zoom	a
-# vim: ft=conf
+toggle_caption
+toggle_filenames	o
+toggle_fixed_geometry
+toggle_fullscreen
+toggle_info i
+toggle_menu
+toggle_pause	space c
+zoom_default	equal
+zoom_fill	slash
+zoom_fit	asterisk
+zoom_in	C-i plus
+zoom_out	C-o minus
+
+# vim: ft=conf ts=20

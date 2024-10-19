@@ -1,0 +1,11 @@
+blur
+next_img	4
+pan	1
+prev_img	5
+rotate
+toggle_menu
+zoom	3
+zoom_in	S-4
+zoom_out	S-5
+
+# vim: ft=conf ts=20
