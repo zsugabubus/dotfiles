@@ -19,4 +19,20 @@ mp.register_script_message('tmux', function(keys)
 			keys,
 		},
 	})
+
+	if os.getenv('DISPLAY') then
+		mp.command_native({
+			name = 'subprocess',
+			playback_only = false,
+			detach = true,
+			args = {
+				'xdotool',
+				'search',
+				'--onlyvisible',
+				'--class',
+				'Alacritty',
+				'windowactivate',
+			},
+		})
+	end
 end, { repeatable = false })
