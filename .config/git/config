@@ -67,7 +67,8 @@
 	riu = ri @{upstream}
 
 	rp = reset --patch
-	rso = remote show origin
+	rs = remote show
+	rso = rs origin
 
 	s = status --ahead-behind --show-stash --branch
 	sun = s --untracked=no
