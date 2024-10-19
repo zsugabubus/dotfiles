@@ -56,8 +56,8 @@ ffi.metatype('WINDOW', {
 		put = function(self, s)
 			return curs.waddnstr(self, s, #s)
 		end,
-		putf = function(self, s, ...)
-			return self:put(string.format(s, ...))
+		putf = function(self, ...)
+			return self:put(string.format(...))
 		end,
 		refresh = curs.wnoutrefresh,
 		resize = curs.wresize,
@@ -116,13 +116,13 @@ function Client:connect(on_connect)
 		end
 
 		local buffer = ''
-		self.pipe:read_start(function(err, data)
+		self.pipe:read_start(function(_, data)
 			if not data then
 				self:close()
 				return
 			end
 
-			for line, eol in string.gmatch(buffer .. data, '([^\n]*)(\n?)') do
+			for line, eol in (buffer .. data):gmatch('([^\n]*)(\n?)') do
 				if eol == '' then
 					buffer = line
 					break
@@ -132,12 +132,12 @@ function Client:connect(on_connect)
 				if msg.event then
 					local handler = self.event_handlers[msg.event]
 					if handler then
-						handler(self, msg)
+						handler(msg)
 					end
 				else
 					local handler = self.reply_handlers[msg.request_id]
 					if handler then
-						handler(self, msg)
+						handler(msg)
 					end
 				end
 			end
@@ -162,6 +162,7 @@ do
 end
 
 local client
+local tmpname
 local local_bindings
 local props = {
 	volume = 0,
@@ -230,7 +231,7 @@ end
 local function human_time(sec)
 	local sign = sec < 0 and '-' or ''
 	sec = math.abs(sec)
-	return string.format('%s%02d:%02d', sign, math.floor(sec / 60), sec % 60)
+	return ('%s%02d:%02d'):format(sign, math.floor(sec / 60), sec % 60)
 end
 
 local function render_status()
@@ -273,15 +274,15 @@ local function render_status()
 	win:putf('Volume: %d%% ', props.volume)
 
 	local left, left_space, indicator, right_space, right =
-		string.match(props['term-osd-bar-chars'], '^(.)(.)(.)(.)(.)$')
+		props['term-osd-bar-chars']:match('^(.)(.)(.)(.)(.)$')
 	local x0, x1 = win:x() + 1, win:cols() - 1
 	local w = x1 - x0
 	local sp0 = math.floor(w * pct)
 	local sp1 = w - 1 - sp0
 	win:put(left)
-	win:put(string.rep(left_space, sp0))
+	win:put(left_space:rep(sp0))
 	win:put(indicator)
-	win:put(string.rep(right_space, sp1))
+	win:put(right_space:rep(sp1))
 	win:put(right)
 
 	win:refresh()
@@ -332,12 +333,12 @@ local function set_client(client_)
 
 		playlist_changed = false
 
-		client:request({ 'get_property', 'playlist' }, function(_, msg)
-			set_prop('playlist', msg.data)
+		client:request({ 'get_property', 'playlist' }, function(reply)
+			set_prop('playlist', reply.data)
 		end)
 	end
 
-	client:on('property-change', function(_, event)
+	client:on('property-change', function(event)
 		local name = event.name
 		local data = event.data
 
@@ -384,12 +385,12 @@ local function mpv_keyname(key)
 		return 'INSERT'
 	end
 
-	local x = string.match(key, '^^([A-Z])$')
+	local x = key:match('^^([A-Z])$')
 	if x then
-		return 'Ctrl+' .. string.lower(x)
+		return 'Ctrl+' .. x:lower()
 	end
 
-	local x = string.match(key, 'KEY_([A-Z]+)')
+	local x = key:match('KEY_([A-Z]+)')
 	if x then
 		return x
 	end
@@ -434,7 +435,7 @@ local function enter_program()
 	render(true)
 end
 
-local function fuzzy_playlist()
+local function search_playlist()
 	enter_shell()
 
 	local stdin = uv.new_pipe()
@@ -449,16 +450,18 @@ local function fuzzy_playlist()
 		process:close()
 		enter_program()
 
-		if code == 0 then
-			local index = tonumber(string.match(reply, '^%d+'))
-			if client then
-				client:request({ 'playlist-play-index', index })
-			end
+		if code ~= 0 then
+			return
+		end
+
+		local index = tonumber(reply:match('^%d+'))
+		if client then
+			client:request({ 'playlist-play-index', index })
 		end
 	end)
 
 	local buf = require('string.buffer').new()
-	for i, entry in ipairs(props.playlist) do
+	for _, entry in ipairs(props.playlist) do
 		buf:put(entry.filename, '\0')
 	end
 	stdin:write(buf:tostring())
@@ -475,47 +478,75 @@ local function fuzzy_playlist()
 	end)
 end
 
-local function editor_playlist()
-	enter_shell()
+local function edit(s, line, callback)
+	tmpname = tmpname or os.tmpname()
 
-	local filename = os.tmpname()
-	local f = assert(io.open(filename, 'w'))
-	local cwd = props['working-directory'] .. '/'
-	for _, entry in ipairs(props.playlist) do
-		local path = entry.filename
-		if not string.find(path, '://') and string.sub(path, 1, 1) ~= '/' then
-			path = cwd .. path
-		end
-		assert(f:write(path, '\n'))
-	end
+	local f = assert(io.open(tmpname, 'w'))
+	assert(f:write(s))
 	assert(f:close())
 
-	local function cleanup()
-		os.remove(filename)
-	end
+	enter_shell()
 
 	local process
 	process = uv.spawn(os.getenv('EDITOR') or 'vim', {
-		args = { string.format('+%d', props['playlist-pos-1']), '--', filename },
+		args = { ('+%d'):format(line), '--', tmpname },
 		stdio = { 0, 1, 2 },
-	}, function(code, signal)
+	}, function(code)
 		process:close()
 		enter_program()
 
 		if code ~= 0 then
-			cleanup()
+			callback(nil)
 			return
 		end
 
-		if client then
-			client:request({ 'loadlist', filename }, cleanup)
+		local f = assert(io.open(tmpname))
+		local s = f:read('*a')
+		assert(f:close())
+
+		callback(s)
+	end)
+end
+
+local function edit_playlist()
+	local buf = require('string.buffer').new()
+
+	local refs = {}
+	local current_id = (props.playlist[props['playlist-pos-1']] or {}).id
+
+	for _, entry in ipairs(props.playlist) do
+		assert(not entry.filename:find('\n', 1, true))
+		buf:put(entry.filename, '\n')
+		refs[entry.filename] = { id = entry.id }
+	end
+
+	edit(buf:tostring(), props['playlist-pos-1'], function(s)
+		if not s then
+			return
 		end
+
+		local t = {}
+		local current_removed = true
+
+		for filename in s:gmatch('[^\n]+') do
+			local x = refs[filename] or { filename = filename }
+			if x.id == current_id then
+				current_removed = false
+			end
+			table.insert(t, x)
+		end
+
+		if current_removed and t[1] then
+			t[1].current = true
+		end
+
+		client:request({ 'set_property', 'playlist', t })
 	end)
 end
 
 local_bindings = {
-	['/'] = fuzzy_playlist,
-	['Ctrl+w'] = editor_playlist,
+	['/'] = search_playlist,
+	['Ctrl+w'] = edit_playlist,
 }
 
 local function connect_to_best_client(clients, on_connect)
@@ -545,8 +576,8 @@ local function connect_to_best_client(clients, on_connect)
 				return step()
 			end
 
-			self:request({ 'get_property', 'pause' }, function(self, msg)
-				local pause = msg.data
+			self:request({ 'get_property', 'pause' }, function(reply)
+				local pause = reply.data
 				if not best or (best_pause and not pause) then
 					best, best_pause = self, pause
 				end
@@ -558,7 +589,7 @@ end
 
 do
 	local clients = {}
-	for i, path in ipairs(arg) do
+	for _, path in ipairs(arg) do
 		table.insert(clients, Client:new(path))
 	end
 	connect_to_best_client(clients, function(client)
@@ -571,3 +602,7 @@ end
 enter_program()
 uv.run()
 enter_shell()
+
+if tmpname then
+	os.remove(tmpname)
+end
