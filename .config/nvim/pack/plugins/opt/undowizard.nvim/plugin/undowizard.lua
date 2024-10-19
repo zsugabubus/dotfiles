@@ -9,6 +9,16 @@ user_command('Undotree', function()
 	vim.cmd('vsplit undotree://' .. api.nvim_get_current_buf())
 end, {})
 
+user_command('Undodiff', function(opts)
+	vim.cmd(
+		string.format(
+			'leftabove vsplit undo://%d/%d | diffthis | wincmd p | diffthis',
+			api.nvim_get_current_buf(),
+			opts.fargs[1] or '0'
+		)
+	)
+end, { nargs = '?' })
+
 autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'undotree://*',

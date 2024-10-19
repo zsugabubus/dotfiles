@@ -116,3 +116,33 @@ test('undo:// ignores modeline', function()
 	vim:feed('+')
 	assert.same('', vim.v.errmsg)
 end)
+
+describe(':Undodiff', function()
+	it('opens diff against the original text without arguments', function()
+		vim.cmd.enew()
+		local buf = vim.fn.bufnr()
+		vim:set_lines({})
+
+		vim.cmd.Undodiff()
+
+		assert.same(buf, vim.fn.bufnr())
+		assert.True(vim.wo.diff)
+
+		vim.cmd.wincmd('p')
+
+		assert.same(string.format('undo://%d/0', buf), vim.fn.bufname())
+		assert.True(vim.wo.diff)
+	end)
+
+	it('opens diff against a specifc change with {number}', function()
+		vim.cmd.enew()
+		local buf = vim.fn.bufnr()
+		vim:set_lines({})
+		vim:set_lines({ 'x' })
+
+		vim.cmd.Undodiff('1')
+
+		vim.cmd.wincmd('p')
+		assert.same(string.format('undo://%d/1', buf), vim.fn.bufname())
+	end)
+end)
