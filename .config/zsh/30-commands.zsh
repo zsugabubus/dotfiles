@@ -509,7 +509,7 @@ function mp() {
 	mpv \
 		--player-operation-mode=pseudo-gui \
 		--force-window=immediate \
-		${@:-.} \
+		${${@:-.}/#--sort=/--script-opts=sort=} \
 		2>/dev/null \
 		&!
 }
@@ -525,7 +525,7 @@ compdef mpc=mpv_hack
 function mpd() {
 	ARGV0=mpd mpv 2>/dev/null --no-terminal --no-video ${@:-.}
 }
-alias mpom='mp --script-opts=sort=none *(om)'
+alias mpom='mp --sort=no *(om)'
 
 function mpt() {
 	ARGV0=mpt luajit ~c/mpv/mpt ${@:-/tmp/mpv*}
