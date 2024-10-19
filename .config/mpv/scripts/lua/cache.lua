@@ -2,6 +2,9 @@ local function update()
 	mp.unregister_event(update)
 
 	local url = mp.get_property_native('path')
+	if not url then
+		return
+	end
 
 	local bytes
 	if url:find('://') then
