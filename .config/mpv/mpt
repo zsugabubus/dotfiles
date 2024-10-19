@@ -544,9 +544,68 @@ local function edit_playlist()
 	end)
 end
 
+local function edit_properties()
+	local function is_blacklisted(name)
+		return name:find('%-list$')
+			or name:find('%-info$')
+			or name:find('%-state$')
+			or name:find('%-params$')
+			or name:find('^mpv%-')
+			or name:find('^vo%-')
+			or name == 'options'
+			or name == 'file-local-options'
+			or name == 'input-bindings'
+			or name == 'playlist'
+	end
+
+	local function get_all_properties(callback)
+		client:request({ 'get_property', 'property-list' }, function(reply)
+			local t = {}
+			local k = 0
+
+			for _, name in ipairs(reply.data) do
+				if not is_blacklisted(name) then
+					k = k + 1
+
+					client:request({ 'get_property_string', name }, function(reply)
+						table.insert(t, name)
+						t[name] = reply.data == json.null and '' or reply.data
+
+						k = k - 1
+						if k == 0 then
+							callback(t)
+						end
+					end)
+				end
+			end
+		end)
+	end
+
+	get_all_properties(function(t)
+		local buf = require('string.buffer').new()
+
+		for _, name in ipairs(t) do
+			buf:put(name, '=', t[name], '\n')
+		end
+
+		edit(buf:tostring(), 1, function(s)
+			if not s then
+				return
+			end
+
+			for name, value in s:gmatch('([a-z0-9-]+)=([^\n]*)') do
+				if t[name] ~= value then
+					client:request({ 'set_property_string', name, value })
+				end
+			end
+		end)
+	end)
+end
+
 local_bindings = {
 	['/'] = search_playlist,
 	['Ctrl+w'] = edit_playlist,
+	['Ctrl+p'] = edit_properties,
 }
 
 local function connect_to_best_client(clients, on_connect)
