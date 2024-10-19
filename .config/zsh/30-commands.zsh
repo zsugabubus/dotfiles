@@ -246,7 +246,15 @@ function zathura() {
 }
 
 function im() {
-	nsxiv ${@:-.}
+	local font_file=$(fc-match monospace -f '%{file}')
+	feh \
+		--scale-down \
+		--image-bg black \
+		--draw-filename \
+		--draw-actions \
+		--font ${font_file:t}/13 \
+		--fontpath ${font_file:h} \
+		"$@"
 }
 
 #
