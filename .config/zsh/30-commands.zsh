@@ -526,6 +526,7 @@ function mpd() {
 	ARGV0=mpd mpv 2>/dev/null --no-terminal --no-video ${@:-.}
 }
 alias mpom='mp --sort=no *(om)'
+alias mpw='mp --force-window --idle'
 
 function mpt() {
 	ARGV0=mpt luajit ~c/mpv/mpt ${@:-/tmp/mpv*}
