@@ -384,7 +384,6 @@ smap('n', 'sp', [[vip:sort /\v^(#!)@!\A*\zs/<CR>]])
 smap('n', 'sq', ':Qread<CR>')
 smap('n', 'sq', ':Qf<CR>')
 smap('n', 'sQ', ':tabnew|Qe<CR>')
-map('n', 'su', ':Undotree<CR>:view<CR>')
 map('n', 'ss', ':%s//g<Left><Left>')
 remap('n', 's/', 'ss/')
 map('x', 'ss', ':s//g<Left><Left>')
@@ -895,7 +894,13 @@ require('pack').add({
 	},
 	{ 'textobjects.nvim' },
 	{ 'tmux.nvim' },
-	{ 'undowizard.nvim' },
+	{
+		'undowizard.nvim',
+		before = function()
+			map('n', 'su', ':Undotree<CR>:view<CR>')
+			map('n', 'sD', ':<C-U>Undodiff <C-R>=v:count<CR><CR>')
+		end,
+	},
 	{ 'varign.nvim' },
 	{ 'vim-bufgrep' },
 	{ 'vim-pastereindent' },
