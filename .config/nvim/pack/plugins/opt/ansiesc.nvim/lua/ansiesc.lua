@@ -58,20 +58,24 @@ local function get_palette_color(i)
 	return palette[i + 1]
 end
 
-local function parse_sgr(s)
+local function make_sgr_parser()
+	local table_clear = require('table.clear')
 	local params = {}
-	local i = 1
 
-	while true do
-		local j = string.find(s, ';', i, true)
+	return function(s)
+		table_clear(params)
+		local i = 1
 
-		if not j then
-			table.insert(params, tonumber(string.sub(s, i)) or 0)
-			return params
+		while true do
+			local j = string.find(s, ';', i, true)
+			if j then
+				table.insert(params, tonumber(string.sub(s, i, j - 1)) or 0)
+				i = j + 1
+			else
+				table.insert(params, tonumber(string.sub(s, i)) or 0)
+				return params
+			end
 		end
-
-		table.insert(params, tonumber(string.sub(s, i, j - 1)) or 0)
-		i = j + 1
 	end
 end
 
@@ -205,11 +209,13 @@ local function make_ansi_parser()
 		return string_gsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
 	end
 end
-local ansi_parse = make_ansi_parser()
+
+local parse_ansi = make_ansi_parser()
+local parse_sgr = make_sgr_parser()
 
 local function highlight_buffer(buffer)
 	for row, line in ipairs(api.nvim_buf_get_lines(buffer, 0, -1, false)) do
-		local line_without_sgr, start_cols, sgrs = ansi_parse(line)
+		local line_without_sgr, start_cols, sgrs = parse_ansi(line)
 
 		if line ~= line_without_sgr then
 			api.nvim_buf_set_lines(buffer, row - 1, row, true, { line_without_sgr })
