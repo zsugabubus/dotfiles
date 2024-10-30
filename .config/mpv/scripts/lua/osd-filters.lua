@@ -59,7 +59,7 @@ local function move_cursor(action)
 	end
 end
 
-local function delete_cursor(action)
+local function delete_cursor()
 	table.remove(props[cursor_tab], cursor_id)
 	mp.set_property_native(cursor_tab, props[cursor_tab])
 end

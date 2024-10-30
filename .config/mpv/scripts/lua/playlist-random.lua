@@ -2,7 +2,7 @@ do
 	local f = assert(io.open('/dev/random', 'rb'))
 
 	local seed = 0
-	for i = 1, 4 do
+	for _ = 1, 4 do
 		seed = 256 * seed + string.byte(f:read(1), 1)
 	end
 	math.randomseed(seed)

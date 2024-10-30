@@ -129,7 +129,7 @@ local function update_property(name, value)
 	update()
 end
 
-local function handle_mouse_live_seek(event)
+local function handle_mouse_live_seek()
 	mp.commandv(
 		'no-osd',
 		'seek',
@@ -152,7 +152,7 @@ local function handle_mouse_seek(event)
 	mp.flush_keybindings()
 end
 
-local function handle_mouse_live_seek_to_chapter(event)
+local function handle_mouse_live_seek_to_chapter()
 	if chapter_pos then
 		mp.commandv('set', 'chapter', tostring(chapter_pos.id))
 	end

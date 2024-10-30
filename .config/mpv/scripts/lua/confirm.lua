@@ -2,7 +2,7 @@
 local ENV
 do
 	local MAGIC = {
-		__index = function(self, name)
+		__index = function(_, name)
 			name = string.gsub(name, '_', '-')
 			return mp.get_property_native(name)
 		end,

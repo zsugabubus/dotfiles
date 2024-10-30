@@ -88,7 +88,7 @@ function M:fs(x)
 	buf:put('{\\fs', x, '}')
 end
 
-function M:fscy0(x)
+function M:fscy0()
 	buf:put('{\\fscy0}')
 end
 
