@@ -925,6 +925,7 @@ local function create_Feed()
 			t.hour = hour
 			t.min = 0
 			t.sec = 0
+			t.isdst = nil
 			return os.time(t)
 		end
 		return self
@@ -939,6 +940,7 @@ local function create_Feed()
 			t.hour = 0
 			t.min = 0
 			t.sec = 0
+			t.isdst = nil
 			for i = 1, 7 do
 				t.day = t.day + 1
 				local x = os.time(t)
@@ -946,7 +948,7 @@ local function create_Feed()
 					return x
 				end
 			end
-			error(string.format('invalid day: %s', day_name))
+			error(string.format('invalid day: %q', day_name))
 		end
 		return self
 	end
@@ -963,9 +965,7 @@ local function create_Feed()
 			if not state.updated then
 				return 0
 			end
-			local t = os.date('*t', state.updated)
-			t.sec = t.sec + seconds
-			return os.time(t)
+			return state.updated + seconds
 		end
 		return self
 	end
