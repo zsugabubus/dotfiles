@@ -299,6 +299,19 @@ local function get_hostname()
 	return hostname
 end
 
+local function shesc(s)
+	return "'" .. string.gsub(s, "'", [['"'"']]) .. "'"
+end
+
+local function execute(args)
+	local t = {}
+	for _, arg in ipairs(args) do
+		table.insert(t, shesc(arg))
+	end
+	local status = os.execute(table.concat(t, ' '))
+	assert(status == 0)
+end
+
 local function create_Maildir()
 	local M = {}
 	M.__index = M
@@ -783,7 +796,7 @@ local function create_mime_word_encoder()
 	end
 end
 
-local function do_feeds_to_maildir(opts)
+local function do_update(opts)
 	local mime_word_enc = create_mime_word_encoder()
 	local sha1 = create_sha1()
 
@@ -836,18 +849,14 @@ local function do_feeds_to_maildir(opts)
 		return msg_id, buf:tostring()
 	end
 
-	local function process_entries(maildir, entries, state, name_override, reply_to)
+	local function process_entries(state, entries, callback)
 		state.cursor = state.cursor or 0
 		local new_cursor = state.cursor
 
 		for _, entry in ipairs(entries) do
 			if state.cursor < entry.date then
 				new_cursor = math.max(new_cursor, entry.date)
-
-				maildir:add_message(make_entry_mail(entry, name_override))
-				if reply_to then
-					maildir:add_message(make_entry_mail(assert(entry.parent), name_override))
-				end
+				callback(entry)
 			end
 		end
 
@@ -867,13 +876,17 @@ local function do_feeds_to_maildir(opts)
 		local feed_state = old_state[feed.id_] or {}
 
 		if feed:expiration(feed_state) <= now then
-			process_entries(
-				opts.maildir,
-				feed:fetch(feed_state, fetch_context),
-				feed_state,
-				feed.name_,
-				feed.reply_to_
-			)
+			local entries = feed:fetch(feed_state, fetch_context)
+
+			local processor = feed.process
+				or function(entry)
+					opts.maildir:add_message(make_entry_mail(entry, feed.name_))
+					if feed.reply_to_ then
+						opts.maildir:add_message(make_entry_mail(assert(entry.parent), feed.name_))
+					end
+				end
+
+			process_entries(feed_state, entries, processor)
 		else
 			-- print(string.format('Not expired: %s', feed.id_))
 		end
@@ -890,7 +903,7 @@ local function create_Feed()
 	M.__index = M
 
 	function M.new(cls, id, fn)
-		return setmetatable({}, cls):id(id):fn(fn)
+		return setmetatable({}, cls):id(id):fetcher(fn)
 	end
 
 	function M:id(id)
@@ -908,8 +921,13 @@ local function create_Feed()
 		return self
 	end
 
-	function M:fn(fn)
+	function M:fetcher(fn)
 		self.fetch = fn
+		return self
+	end
+
+	function M:processor(fn)
+		self.process = fn
 		return self
 	end
 
@@ -1115,24 +1133,49 @@ local function app(args)
 				:name(string.format('%s releases', repo))
 				:expires_on_days('Sat')
 		end,
+
+		transmission = function(feed_url, opts)
+			local filter = type(opts.filter) == 'function' and opts.filter
+				or function(entry)
+					for _, pattern in ipairs(opts.filter) do
+						if string.match(string.lower(entry.title), string.lower(pattern)) then
+							return true
+						end
+					end
+				end
+
+			return url(feed_url):processor(function(entry)
+				local result = filter(entry)
+
+				if not result then
+					return
+				end
+
+				execute({
+					'transmission-remote',
+					'--add',
+					entry.link,
+				})
+			end)
+		end,
 	}
 
 	local code = assert(loadfile(expand_path('~/.config/rss/feeds.lua')))
 	setfenv(code, env)
-	local feeds = assert(code())
+	local config = assert(code())
 
-	local state_manager = PersistentState:new(expand_path('=/feeds/state.json.gz'))
+	local state_manager = PersistentState:new(expand_path(assert(config.state)))
 	if args[1] == 'd' then
 		local state = state_manager:state() or {}
-		for _, feed in ipairs(feeds) do
+		for _, feed in ipairs(config) do
 			local feed_state = state[feed.id_] or {}
 			local expiration = feed:expiration(feed_state)
 			print(string.format('%s\t%d\t%s', feed.id_, expiration, os.date(RFC_7273, expiration)))
 		end
 	else
-		do_feeds_to_maildir({
-			feeds = feeds,
-			maildir = Maildir:new(expand_path('=/feeds')),
+		do_update({
+			feeds = config,
+			maildir = Maildir:new(expand_path(assert(config.maildir))),
 			state_manager = state_manager,
 		})
 	end
