@@ -1,3 +1,4 @@
+local buf_set_lines = vim.api.nvim_buf_set_lines
 local buf_set_text = vim.api.nvim_buf_set_text
 local config = vim.g.commenter or {}
 
@@ -47,6 +48,10 @@ end
 local get_commentstring = config.get_commentstring
 	or get_treesitter_commentstring
 
+local function parse(s)
+	return string.match(s, '^(.-) *%%s *(.-)$')
+end
+
 local function expand(c)
 	if c == '*' or c == '/' or c == '-' then
 		return '%' .. c .. '*'
@@ -54,46 +59,77 @@ local function expand(c)
 	return ''
 end
 
-local function comment_lines(buf, start_row, end_row, op)
-	local cms = get_commentstring(buf, start_row)
-	local cms_prefix, cms_suffix = string.match(cms, '^(.-) *%%s *(.-)$')
+local function left(lnum, n)
+	vim.cmd(lnum .. 'left' .. n)
+end
 
-	local lines = vim.api.nvim_buf_get_lines(buf, start_row, end_row, true)
+local function comment_lines(buf, start_row, end_row, op)
+	local l_part, r_part = parse(get_commentstring(buf, start_row))
 
 	local pattern = '^%s-()'
-		.. vim.pesc(cms_prefix)
-		.. expand(string.sub(cms_prefix, -1))
+		.. vim.pesc(l_part)
+		.. expand(string.sub(l_part, -1))
 		.. ' ?()'
-	if cms_suffix ~= '' then
+	if r_part ~= '' then
 		pattern = pattern
 			.. '.-() ?'
-			.. expand(string.sub(cms_suffix, 1, 1))
-			.. vim.pesc(cms_suffix)
+			.. expand(string.sub(r_part, 1, 1))
+			.. vim.pesc(r_part)
 			.. '()'
 	end
 
-	local indent = math.huge
-	for _, line in ipairs(lines) do
-		indent = math.min(indent, (string.find(line, '%S') or math.huge) - 1)
+	local lines = vim.api.nvim_buf_get_lines(buf, start_row, end_row, true)
+	local indents = {}
+
+	local indent
+	for i, line in ipairs(lines) do
+		if string.find(line, '%S') then
+			indents[i] = vim.fn.indent(start_row + i)
+			indent = math.min(indent or math.huge, indents[i])
+		end
 	end
+
+	local bo = vim.bo[buf]
+	local use_tabs = indent
+		and not bo.expandtab
+		and bo.vartabstop == ''
+		and (bo.shiftwidth == 0 or bo.shiftwidth == bo.tabstop)
+		and (indent % bo.tabstop) == 0
 
 	for i, line in ipairs(lines) do
 		local row = start_row + i - 1
-		local prefix_start, prefix_end, suffix_start, suffix_end =
-			string.match(line, pattern)
+		local l_start, l_end, r_start, r_end = string.match(line, pattern)
 
-		if op ~= true and prefix_start then
+		if op ~= true and l_start then
 			op = false
-			if suffix_start then
-				buf_set_text(buf, row, suffix_start - 1, row, suffix_end - 1, {})
+			if l_end == #line + 1 or (l_end == r_start and r_end == #line + 1) then
+				buf_set_lines(buf, row, row + 1, true, { '' })
+			else
+				if r_start then
+					buf_set_text(buf, row, r_start - 1, row, r_end - 1, {})
+				end
+				buf_set_text(buf, row, l_start - 1, row, l_end - 1, {})
+				left(row + 1, vim.fn.indent(row + 1))
 			end
-			buf_set_text(buf, row, prefix_start - 1, row, prefix_end - 1, {})
-		elseif op ~= false and string.find(line, '%S') then
+		elseif op ~= false and indents[i] then
 			op = true
-			if cms_suffix ~= '' then
-				buf_set_text(buf, row, #line, row, #line, { ' ' .. cms_suffix })
+			if r_part ~= '' then
+				buf_set_text(buf, row, #line, row, #line, { ' ' .. r_part })
 			end
-			buf_set_text(buf, row, indent, row, indent, { cms_prefix .. ' ' })
+			if use_tabs then
+				left(row + 1, indents[i] - indent)
+				buf_set_text(buf, row, 0, row, 0, { l_part .. ' ' })
+			else
+				buf_set_text(buf, row, 0, row, string.find(line, '%S') - 1, {
+					l_part .. string.rep(' ', indents[i] - indent + 1),
+				})
+			end
+			left(row + 1, indent)
+		elseif op == true then
+			buf_set_lines(buf, row, row + 1, true, { l_part .. r_part })
+			if indent then
+				left(row + 1, indent)
+			end
 		end
 	end
 
