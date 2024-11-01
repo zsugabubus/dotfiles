@@ -817,6 +817,7 @@ require('pack').add({
 		before = function()
 			nxo_map('gc', '<Plug>(commenter)')
 			map('n', 'gcc', '<Plug>(commenter-current-line)')
+			map('o', 'gc', '<Plug>(commenter)')
 		end,
 	},
 	{
