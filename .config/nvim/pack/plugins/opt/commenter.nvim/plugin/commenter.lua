@@ -13,6 +13,17 @@ keymap('', '<Plug>(commenter)', '', {
 
 keymap('n', '<Plug>(commenter-current-line)', '<Plug>(commenter)_', {})
 
+keymap('o', '<Plug>(commenter)', '', {
+	callback = function()
+		local row = api.nvim_win_get_cursor(0)[1]
+		local start_row, end_row =
+			require('commenter').get_comment_range(0, row - 1)
+		if start_row then
+			vim.cmd('normal! ' .. (start_row + 1) .. 'GV' .. (end_row + 1) .. 'G')
+		end
+	end,
+})
+
 function _G._commenter_operatorfunc()
 	require('commenter').comment_lines(
 		0,

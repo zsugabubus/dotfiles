@@ -148,8 +148,35 @@ local function comment_lines(buf, start_row, end_row, op)
 	end
 end
 
+local function get_comment_range(buf, row)
+	local l_part, r_part = parse(get_commentstring(buf, row))
+	local pattern = '^%s*' .. vim.pesc(l_part) .. '.*' .. vim.pesc(r_part) .. '$'
+
+	local function is_commented(row)
+		local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1]
+		return line and string.find(line, pattern)
+	end
+
+	if not is_commented(row) then
+		return
+	end
+
+	local start_row = row
+	while is_commented(start_row - 1) do
+		start_row = start_row - 1
+	end
+
+	local end_row = row
+	while is_commented(end_row + 1) do
+		end_row = end_row + 1
+	end
+
+	return start_row, end_row
+end
+
 return {
 	comment_lines = comment_lines,
+	get_comment_range = get_comment_range,
 	get_buf_commentstring = get_buf_commentstring,
 	get_treesitter_commentstring = get_treesitter_commentstring,
 }

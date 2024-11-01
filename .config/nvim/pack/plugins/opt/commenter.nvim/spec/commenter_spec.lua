@@ -249,3 +249,66 @@ describe('get_commentstring', function()
 		vim:assert_lines({ '0 a', '0 b', '2 c' })
 	end)
 end)
+
+describe('textobject', function()
+	it('is empty on an uncommented line', function()
+		vim:set_lines({ '#', 'x', '#' })
+		vim:feed('2Gdgc')
+		vim:assert_lines({ '#', 'x', '#' })
+	end)
+
+	it('is empty on a blank line', function()
+		vim:set_lines({ '#', ' ', '#' })
+		vim:feed('2Gdgc')
+		vim:assert_lines({ '#', ' ', '#' })
+	end)
+
+	it(
+		'is the whole commented region when cursor is in the middle of it',
+		function()
+			vim:set_lines({ 'x', '#', '#', '#', '#', '#', 'x' })
+			vim:feed('4Gdgc')
+			vim:assert_lines({ 'x', 'x' })
+		end
+	)
+
+	it('works when comment region is on buffer boundaries', function()
+		vim:set_lines({ '#' })
+		vim:feed('dgc')
+		vim:assert_lines({ '' })
+	end)
+
+	it('allows whitespace before comment', function()
+		vim.o.cms = '/*%s*/'
+		vim:set_lines({ ' \t /**/' })
+		vim:feed('dgc')
+		vim:assert_lines({ '' })
+	end)
+
+	it('does not allow whitespace after comment', function()
+		vim.o.cms = '/*%s*/'
+		vim:set_lines({ '/**/ ' })
+		vim:feed('dgc')
+		vim:assert_lines({ '/**/ ' })
+	end)
+
+	it('does not include empty lines', function()
+		vim:set_lines({ '#', '', '#', '', '#' })
+		vim:feed('3Gdgc')
+		vim:assert_lines({ '#', '', '', '#' })
+	end)
+
+	it('handles special pattern characters in commentstring', function()
+		vim.o.cms = '[*]%s[*]'
+		vim:set_lines({ '[*]x[*]' })
+		vim:feed('dgc')
+		vim:assert_lines({ '' })
+	end)
+
+	it('ignores space padding in commentstring', function()
+		vim.o.commentstring = '/*  %s  */'
+		vim:set_lines({ '/*x*/' })
+		vim:feed('dgc')
+		vim:assert_lines({ '' })
+	end)
+end)
