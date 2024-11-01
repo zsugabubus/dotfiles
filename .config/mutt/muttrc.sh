@@ -20,6 +20,7 @@ echo 'set spoolfile=+'"$(readlink .spool)"
 # if we inserted a dummy x mailbox that is simply a waste of space. This
 # way heading line serves as the inbox.
 for dir in */inbox */cur; do
+	test "$dir" = "${dir#'*/'}" || continue
 	maildir=${dir%/*}
 
 	case $dir in
@@ -42,6 +43,7 @@ for dir in */inbox */cur; do
 done
 
 for signature in */signature; do
+	test "$signature" = "${signature#'*/'}" || continue
 	mgroup=${signature%/*}
 	echo "folder-hook $mgroup 'set signature==$signature'"
 done
