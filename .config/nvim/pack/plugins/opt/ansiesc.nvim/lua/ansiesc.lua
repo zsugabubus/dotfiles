@@ -34,19 +34,19 @@ end
 
 local function pen_to_hl_group(pen)
 	return sformat(
-		'_ansiesc_%s_%s_%s_%s%s%s%s%s%s%s%s%s',
+		'_ansiesc_%s_%s_%s_%s',
 		pen.fg and ssub(pen.fg, 2) or '',
 		pen.bg and ssub(pen.bg, 2) or '',
 		pen.sp and ssub(pen.sp, 2) or '',
-		pen.bold and 'b' or '',
-		pen.italic and 'i' or '',
-		pen.underline and 'u' or '',
-		pen.underdouble and 'd' or '',
-		pen.undercurl and 'c' or '',
-		pen.underdotted and 'o' or '',
-		pen.underdashed and 'a' or '',
-		pen.reverse and 'r' or '',
-		pen.strikethrough and 's' or ''
+		(pen.bold and 'b' or '')
+			.. (pen.italic and 'i' or '')
+			.. (pen.underline and 'u' or '')
+			.. (pen.underdouble and 'd' or '')
+			.. (pen.undercurl and 'c' or '')
+			.. (pen.underdotted and 'o' or '')
+			.. (pen.underdashed and 'a' or '')
+			.. (pen.reverse and 'r' or '')
+			.. (pen.strikethrough and 's' or '')
 	)
 end
 
