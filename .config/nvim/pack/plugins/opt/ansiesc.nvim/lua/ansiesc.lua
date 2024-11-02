@@ -1,3 +1,5 @@
+local table_clear = require('table.clear')
+
 local api = vim.api
 
 local ns = api.nvim_create_namespace('ansiesc')
@@ -59,7 +61,6 @@ local function get_palette_color(i)
 end
 
 local function make_sgr_parser()
-	local table_clear = require('table.clear')
 	local params = {}
 
 	return function(s)
@@ -94,7 +95,7 @@ local function apply_sgr(pen, params)
 		local Ps = params[i]
 		i = i + 1
 		if Ps == 0 then
-			pen = {}
+			table_clear(pen)
 		elseif Ps == 1 then
 			pen.bold = true
 		elseif Ps == 3 then
