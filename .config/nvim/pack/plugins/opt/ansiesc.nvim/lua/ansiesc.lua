@@ -60,11 +60,10 @@ end
 local function make_ansi_parser()
 	local string_gsub = string.gsub
 
-	local start_cols
-	local sgrs
+	local start_cols = {}
+	local sgrs = {}
 	local offset
 
-	-- Creating a new closure on every line is expensive.
 	local function f(i, sgr, j)
 		table.insert(start_cols, i + offset)
 		table.insert(sgrs, sgr)
@@ -73,8 +72,8 @@ local function make_ansi_parser()
 	end
 
 	return function(s)
-		start_cols = {}
-		sgrs = {}
+		table_clear(start_cols)
+		table_clear(sgrs)
 		offset = -1
 		return string_gsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
 	end
