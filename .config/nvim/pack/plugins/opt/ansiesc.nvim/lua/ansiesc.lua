@@ -100,10 +100,12 @@ local function make_sgr_parser()
 				tinsert(params, j <= i and '0' or ssub(s, i, j - 1))
 				i = j + 1
 			else
-				tinsert(params, i > #s and '0' or ssub(s, i))
-				return params
+				break
 			end
 		end
+
+		tinsert(params, i > #s and '0' or ssub(s, i))
+		return params
 	end
 end
 
