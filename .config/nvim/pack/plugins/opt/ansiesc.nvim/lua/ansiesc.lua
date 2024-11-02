@@ -1,6 +1,18 @@
-local table_clear = require('table.clear')
-
 local api = vim.api
+local ipairs = ipairs
+local next = next
+local sbyte = string.byte
+local sfind = string.find
+local sformat = string.format
+local sgsub = string.gsub
+local smatch = string.match
+local ssub = string.sub
+local tclear = require('table.clear')
+local tinsert = table.insert
+
+local buf_add_highlight = api.nvim_buf_add_highlight
+local buf_set_lines = api.nvim_buf_set_lines
+local set_hl = api.nvim_set_hl
 
 local ns = api.nvim_create_namespace('ansiesc')
 local group = api.nvim_create_augroup('ansiesc', {})
@@ -13,11 +25,11 @@ local function is_default_pen(pen)
 end
 
 local function pen_to_hl_group(pen)
-	return string.format(
+	return sformat(
 		'_ansiesc_%s_%s_%s_%s%s%s%s%s',
-		pen.fg and string.sub(pen.fg, 2) or '',
-		pen.bg and string.sub(pen.bg, 2) or '',
-		pen.sp and string.sub(pen.sp, 2) or '',
+		pen.fg and ssub(pen.fg, 2) or '',
+		pen.bg and ssub(pen.bg, 2) or '',
+		pen.sp and ssub(pen.sp, 2) or '',
 		pen.bold and 'b' or '',
 		pen.italic and 'i' or '',
 		pen.underline and 'u' or '',
@@ -27,10 +39,8 @@ local function pen_to_hl_group(pen)
 end
 
 local function hl_group_to_pen(hl_group)
-	local fg, bg, sp, b, i, u, r, s = string.match(
-		hl_group,
-		'^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)(s?)$'
-	)
+	local fg, bg, sp, b, i, u, r, s =
+		smatch(hl_group, '^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)(s?)$')
 	return {
 		fg = fg ~= '' and '#' .. fg or nil,
 		bg = bg ~= '' and '#' .. bg or nil,
@@ -51,31 +61,29 @@ local function add_highlight(buffer, row, start_col, end_col, pen)
 	local hl_group = pen_to_hl_group(pen)
 	if not hl_cache[hl_group] then
 		hl_cache[hl_group] = true
-		api.nvim_set_hl(0, hl_group, pen)
+		set_hl(0, hl_group, pen)
 	end
 
-	api.nvim_buf_add_highlight(buffer, ns, hl_group, row, start_col, end_col)
+	buf_add_highlight(buffer, ns, hl_group, row, start_col, end_col)
 end
 
 local function make_ansi_parser()
-	local string_gsub = string.gsub
-
 	local start_cols = {}
 	local sgrs = {}
 	local offset
 
 	local function f(i, sgr, j)
-		table.insert(start_cols, i + offset)
-		table.insert(sgrs, sgr)
+		tinsert(start_cols, i + offset)
+		tinsert(sgrs, sgr)
 		offset = offset - (j - i)
 		return ''
 	end
 
 	return function(s)
-		table_clear(start_cols)
-		table_clear(sgrs)
+		tclear(start_cols)
+		tclear(sgrs)
 		offset = -1
-		return string_gsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
+		return sgsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
 	end
 end
 
@@ -83,16 +91,16 @@ local function make_sgr_parser()
 	local params = {}
 
 	return function(s)
-		table_clear(params)
+		tclear(params)
 		local i = 1
 
 		while true do
-			local j = string.find(s, ';', i, true)
+			local j = sfind(s, ';', i, true)
 			if j then
-				table.insert(params, j <= i and '0' or string.sub(s, i, j - 1))
+				tinsert(params, j <= i and '0' or ssub(s, i, j - 1))
 				i = j + 1
 			else
-				table.insert(params, i > #s and '0' or string.sub(s, i))
+				tinsert(params, i > #s and '0' or ssub(s, i))
 				return params
 			end
 		end
@@ -100,7 +108,7 @@ local function make_sgr_parser()
 end
 
 local function color(r, g, b)
-	return string.format('#%02x%02x%02x', r, g, b)
+	return sformat('#%02x%02x%02x', r, g, b)
 end
 
 local function get_palette()
@@ -110,7 +118,7 @@ local function get_palette()
 		for _, b in ipairs(x) do
 			for _, g in ipairs(x) do
 				for _, r in ipairs(x) do
-					table.insert(palette, color(r, g, b))
+					tinsert(palette, color(r, g, b))
 				end
 			end
 		end
@@ -125,20 +133,20 @@ local function get_palette()
 
 	local cube = { 0 }
 	for i = 1, 5 do
-		table.insert(cube, 0x37 + 0x28 * i)
+		tinsert(cube, 0x37 + 0x28 * i)
 	end
 
 	for _, r in ipairs(cube) do
 		for _, g in ipairs(cube) do
 			for _, b in ipairs(cube) do
-				table.insert(palette, color(r, g, b))
+				tinsert(palette, color(r, g, b))
 			end
 		end
 	end
 
 	for i = 0, 23 do
 		local c = 0x08 + 0x0a * i
-		table.insert(palette, color(c, c, c))
+		tinsert(palette, color(c, c, c))
 	end
 
 	return palette
@@ -166,7 +174,7 @@ local function apply_sgr(pen, params)
 		local Ps = params[i]
 		i = i + 1
 		if Ps == '0' then
-			table_clear(pen)
+			tclear(pen)
 		elseif Ps == '1' then
 			pen.bold = true
 		elseif Ps == '3' then
@@ -197,7 +205,7 @@ local function apply_sgr(pen, params)
 			or Ps == '36'
 			or Ps == '37'
 		then
-			pen.fg = get_palette_color(string.byte(Ps, 2) - 48)
+			pen.fg = get_palette_color(sbyte(Ps, 2) - 48)
 		elseif Ps == '38' then
 			i, pen.fg = parse_sgr_color(params, i)
 		elseif Ps == '39' then
@@ -212,7 +220,7 @@ local function apply_sgr(pen, params)
 			or Ps == '46'
 			or Ps == '47'
 		then
-			pen.bg = get_palette_color(string.byte(Ps, 2) - 48)
+			pen.bg = get_palette_color(sbyte(Ps, 2) - 48)
 		elseif Ps == '48' then
 			i, pen.bg = parse_sgr_color(params, i)
 		elseif Ps == '49' then
@@ -229,7 +237,7 @@ local function apply_sgr(pen, params)
 			or Ps == '96'
 			or Ps == '97'
 		then
-			pen.fg = get_palette_color(string.byte(Ps, 2) - 40)
+			pen.fg = get_palette_color(sbyte(Ps, 2) - 40)
 		elseif
 			Ps == '100'
 			or Ps == '101'
@@ -240,7 +248,7 @@ local function apply_sgr(pen, params)
 			or Ps == '106'
 			or Ps == '107'
 		then
-			pen.bg = get_palette_color(string.byte(Ps, 3) - 40)
+			pen.bg = get_palette_color(sbyte(Ps, 3) - 40)
 		end
 	end
 	return pen
@@ -254,7 +262,7 @@ local function highlight_buffer(buffer)
 		local line_without_sgr, start_cols, sgrs = parse_ansi(line)
 
 		if line ~= line_without_sgr then
-			api.nvim_buf_set_lines(buffer, row - 1, row, true, { line_without_sgr })
+			buf_set_lines(buffer, row - 1, row, true, { line_without_sgr })
 
 			local pen = {}
 			local start_col = 0
@@ -276,7 +284,7 @@ api.nvim_create_autocmd('ColorScheme', {
 		palette = nil
 		for hl_group in pairs(hl_cache) do
 			local pen = hl_group_to_pen(hl_group)
-			api.nvim_set_hl(0, hl_group, pen)
+			set_hl(0, hl_group, pen)
 		end
 	end,
 })
