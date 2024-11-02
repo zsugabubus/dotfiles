@@ -89,10 +89,10 @@ local function make_sgr_parser()
 		while true do
 			local j = string.find(s, ';', i, true)
 			if j then
-				table.insert(params, tonumber(string.sub(s, i, j - 1)) or 0)
+				table.insert(params, j <= i and '0' or string.sub(s, i, j - 1))
 				i = j + 1
 			else
-				table.insert(params, tonumber(string.sub(s, i)) or 0)
+				table.insert(params, i > #s and '0' or string.sub(s, i))
 				return params
 			end
 		end
@@ -152,9 +152,9 @@ local function get_palette_color(i)
 end
 
 local function parse_sgr_color(params, i)
-	if params[i] == 2 then
+	if params[i] == '2' then
 		return i + 4, color(params[i + 1], params[i + 2], params[i + 3])
-	elseif params[i] == 5 then
+	elseif params[i] == '5' then
 		return i + 2, get_palette_color(params[i + 1])
 	end
 	return i, nil
@@ -165,46 +165,82 @@ local function apply_sgr(pen, params)
 	while i <= #params do
 		local Ps = params[i]
 		i = i + 1
-		if Ps == 0 then
+		if Ps == '0' then
 			table_clear(pen)
-		elseif Ps == 1 then
+		elseif Ps == '1' then
 			pen.bold = true
-		elseif Ps == 3 then
+		elseif Ps == '3' then
 			pen.italic = true
-		elseif Ps == 4 then
+		elseif Ps == '4' then
 			pen.underline = true
-		elseif Ps == 7 then
+		elseif Ps == '7' then
 			pen.reverse = true
-		elseif Ps == 9 then
+		elseif Ps == '9' then
 			pen.strikethrough = true
-		elseif Ps == 21 then
+		elseif Ps == '21' then
 			pen.bold = nil
-		elseif Ps == 22 then
+		elseif Ps == '22' then
 			pen.bold = nil
-		elseif Ps == 23 then
+		elseif Ps == '23' then
 			pen.italic = nil
-		elseif Ps == 24 then
+		elseif Ps == '24' then
 			pen.underline = nil
-		elseif Ps == 27 then
+		elseif Ps == '27' then
 			pen.reverse = nil
-		elseif 30 <= Ps and Ps <= 37 then
-			pen.fg = get_palette_color(Ps - 30)
-		elseif Ps == 38 then
+		elseif
+			Ps == '30'
+			or Ps == '31'
+			or Ps == '32'
+			or Ps == '33'
+			or Ps == '34'
+			or Ps == '35'
+			or Ps == '36'
+			or Ps == '37'
+		then
+			pen.fg = get_palette_color(string.byte(Ps, 2) - 48)
+		elseif Ps == '38' then
 			i, pen.fg = parse_sgr_color(params, i)
-		elseif Ps == 39 then
+		elseif Ps == '39' then
 			pen.fg = nil
-		elseif 40 <= Ps and Ps <= 47 then
-			pen.bg = get_palette_color(Ps - 40)
-		elseif Ps == 48 then
+		elseif
+			Ps == '40'
+			or Ps == '41'
+			or Ps == '42'
+			or Ps == '43'
+			or Ps == '44'
+			or Ps == '45'
+			or Ps == '46'
+			or Ps == '47'
+		then
+			pen.bg = get_palette_color(string.byte(Ps, 2) - 48)
+		elseif Ps == '48' then
 			i, pen.bg = parse_sgr_color(params, i)
-		elseif Ps == 49 then
+		elseif Ps == '49' then
 			pen.bg = nil
-		elseif Ps == 58 then
+		elseif Ps == '58' then
 			i, pen.sp = parse_sgr_color(params, i)
-		elseif 90 <= Ps and Ps <= 97 then
-			pen.fg = get_palette_color(8 + (Ps - 90))
-		elseif 100 <= Ps and Ps <= 107 then
-			pen.bg = get_palette_color(8 + (Ps - 100))
+		elseif
+			Ps == '90'
+			or Ps == '91'
+			or Ps == '92'
+			or Ps == '93'
+			or Ps == '94'
+			or Ps == '95'
+			or Ps == '96'
+			or Ps == '97'
+		then
+			pen.fg = get_palette_color(string.byte(Ps, 2) - 40)
+		elseif
+			Ps == '100'
+			or Ps == '101'
+			or Ps == '102'
+			or Ps == '103'
+			or Ps == '104'
+			or Ps == '105'
+			or Ps == '106'
+			or Ps == '107'
+		then
+			pen.bg = get_palette_color(string.byte(Ps, 3) - 40)
 		end
 	end
 	return pen
