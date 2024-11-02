@@ -33,7 +33,7 @@ describe(':AnsiEsc', function()
 		}
 		vim:set_lines({
 			'\x1b[1m012\x1b[3;4;7;9;38;2;1;2;3;48;2;4;5;6;58;2;7;8;9m345',
-			'6\x1b[m7\x1b[999999999999;;;;;;;;;;;;;;;;;m8\x1b[9999m',
+			'6\x1b[m7\x1b[m8\x1b[9999m',
 		})
 		vim.cmd.AnsiEsc()
 		vim:assert_lines({ '012345', '678' })
@@ -49,9 +49,10 @@ it('parses SGR correctly', function()
 		vim:set_lines({
 			string.format('\x1b[%sm012\x1b[%s;0mdefault', params, params),
 		})
-		vim.cmd.doautocmd('colorscheme')
+		vim.cmd.doautocmd('ColorScheme')
 		vim.cmd.AnsiEsc()
-
+		vim.cmd.highlight('clear')
+		vim.cmd.doautocmd('ColorScheme')
 		return vim:assert_highlights({
 			hl and {
 				region = { 0, 0, 0, 3 },
@@ -68,9 +69,25 @@ it('parses SGR correctly', function()
 	test_hl('3', italic)
 	test_hl('3;23', nil)
 
-	local underline = { underline = true, cterm = { underline = true } }
-	test_hl('4', underline)
-	test_hl('4;24', nil)
+	local function test_underline(s)
+		local underline = { underline = true, cterm = { underline = true } }
+		test_hl(s .. '4', underline)
+		test_hl(s .. '4:0', nil)
+		test_hl(s .. '4:1', underline)
+		test_hl(s .. '4:2', { underdouble = true, cterm = { underdouble = true } })
+		test_hl(s .. '4:3', { undercurl = true, cterm = { undercurl = true } })
+		test_hl(s .. '4:4', { underdotted = true, cterm = { underdotted = true } })
+		test_hl(s .. '4:5', { underdashed = true, cterm = { underdashed = true } })
+		test_hl(s .. '24', nil)
+	end
+
+	test_underline('')
+	test_underline('4;')
+	test_underline('4:1;')
+	test_underline('4:2;')
+	test_underline('4:3;')
+	test_underline('4:4;')
+	test_underline('4:5;')
 
 	local reverse = { reverse = true, cterm = { reverse = true } }
 	test_hl('7', reverse)
@@ -179,4 +196,5 @@ it('parses SGR correctly', function()
 	test_hl('3;', nil)
 	test_hl('1;;3', italic)
 	test_hl('1;0;3', italic)
+	test_hl('1;0:0', bold)
 end)

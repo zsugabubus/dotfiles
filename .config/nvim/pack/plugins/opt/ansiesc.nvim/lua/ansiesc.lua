@@ -24,23 +24,37 @@ local function is_default_pen(pen)
 	return next(pen) == nil
 end
 
+local function reset_pen_underline(pen)
+	pen.underline = nil
+	pen.underdouble = nil
+	pen.undercurl = nil
+	pen.underdotted = nil
+	pen.underdashed = nil
+end
+
 local function pen_to_hl_group(pen)
 	return sformat(
-		'_ansiesc_%s_%s_%s_%s%s%s%s%s',
+		'_ansiesc_%s_%s_%s_%s%s%s%s%s%s%s%s%s',
 		pen.fg and ssub(pen.fg, 2) or '',
 		pen.bg and ssub(pen.bg, 2) or '',
 		pen.sp and ssub(pen.sp, 2) or '',
 		pen.bold and 'b' or '',
 		pen.italic and 'i' or '',
 		pen.underline and 'u' or '',
+		pen.underdouble and 'd' or '',
+		pen.undercurl and 'c' or '',
+		pen.underdotted and 'o' or '',
+		pen.underdashed and 'a' or '',
 		pen.reverse and 'r' or '',
 		pen.strikethrough and 's' or ''
 	)
 end
 
 local function hl_group_to_pen(hl_group)
-	local fg, bg, sp, b, i, u, r, s =
-		smatch(hl_group, '^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(r?)(s?)$')
+	local fg, bg, sp, b, i, u, d, c, o, a, r, s = smatch(
+		hl_group,
+		'^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(d?)(c?)(o?)(a?)(r?)(s?)$'
+	)
 	return {
 		fg = fg ~= '' and '#' .. fg or nil,
 		bg = bg ~= '' and '#' .. bg or nil,
@@ -48,6 +62,10 @@ local function hl_group_to_pen(hl_group)
 		bold = b ~= '' or nil,
 		italic = i ~= '' or nil,
 		underline = u ~= '' or nil,
+		underdouble = d ~= '' or nil,
+		undercurl = c ~= '' or nil,
+		underdotted = o ~= '' or nil,
+		underdashed = a ~= '' or nil,
 		reverse = r ~= '' or nil,
 		strikethrough = s ~= '' or nil,
 	}
@@ -181,8 +199,21 @@ local function apply_sgr(pen, params)
 			pen.bold = true
 		elseif Ps == '3' then
 			pen.italic = true
-		elseif Ps == '4' then
+		elseif Ps == '4' or Ps == '4:1' then
+			reset_pen_underline(pen)
 			pen.underline = true
+		elseif Ps == '4:2' then
+			reset_pen_underline(pen)
+			pen.underdouble = true
+		elseif Ps == '4:3' then
+			reset_pen_underline(pen)
+			pen.undercurl = true
+		elseif Ps == '4:4' then
+			reset_pen_underline(pen)
+			pen.underdotted = true
+		elseif Ps == '4:5' then
+			reset_pen_underline(pen)
+			pen.underdashed = true
 		elseif Ps == '7' then
 			pen.reverse = true
 		elseif Ps == '9' then
@@ -193,8 +224,8 @@ local function apply_sgr(pen, params)
 			pen.bold = nil
 		elseif Ps == '23' then
 			pen.italic = nil
-		elseif Ps == '24' then
-			pen.underline = nil
+		elseif Ps == '24' or Ps == '4:0' then
+			reset_pen_underline(pen)
 		elseif Ps == '27' then
 			pen.reverse = nil
 		elseif
