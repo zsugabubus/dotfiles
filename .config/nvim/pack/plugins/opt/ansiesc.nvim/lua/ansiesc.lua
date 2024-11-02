@@ -8,137 +8,6 @@ local group = api.nvim_create_augroup('ansiesc', {})
 local hl_cache = {}
 local palette
 
-local function color(r, g, b)
-	return string.format('#%02x%02x%02x', r, g, b)
-end
-
-local function get_palette()
-	local palette = {}
-
-	for _, x in ipairs({ { 0, 0xff }, { 0, 0xff } }) do
-		for _, b in ipairs(x) do
-			for _, g in ipairs(x) do
-				for _, r in ipairs(x) do
-					table.insert(palette, color(r, g, b))
-				end
-			end
-		end
-	end
-
-	palette[7] = color(0xc0, 0xc0, 0xc0)
-	palette[8] = color(0x80, 0x80, 0x80)
-
-	for i = 1, 16 do
-		palette[i] = vim.g['terminal_color_' .. (i - 1)] or palette[i]
-	end
-
-	local cube = { 0 }
-	for i = 1, 5 do
-		table.insert(cube, 0x37 + 0x28 * i)
-	end
-
-	for _, r in ipairs(cube) do
-		for _, g in ipairs(cube) do
-			for _, b in ipairs(cube) do
-				table.insert(palette, color(r, g, b))
-			end
-		end
-	end
-
-	for i = 0, 23 do
-		local c = 0x08 + 0x0a * i
-		table.insert(palette, color(c, c, c))
-	end
-
-	return palette
-end
-
-local function get_palette_color(i)
-	if not palette then
-		palette = get_palette()
-	end
-	return palette[i + 1]
-end
-
-local function make_sgr_parser()
-	local params = {}
-
-	return function(s)
-		table_clear(params)
-		local i = 1
-
-		while true do
-			local j = string.find(s, ';', i, true)
-			if j then
-				table.insert(params, tonumber(string.sub(s, i, j - 1)) or 0)
-				i = j + 1
-			else
-				table.insert(params, tonumber(string.sub(s, i)) or 0)
-				return params
-			end
-		end
-	end
-end
-
-local function parse_sgr_color(params, i)
-	if params[i] == 2 then
-		return i + 4, color(params[i + 1], params[i + 2], params[i + 3])
-	elseif params[i] == 5 then
-		return i + 2, get_palette_color(params[i + 1])
-	end
-	return i, nil
-end
-
-local function apply_sgr(pen, params)
-	local i = 1
-	while i <= #params do
-		local Ps = params[i]
-		i = i + 1
-		if Ps == 0 then
-			table_clear(pen)
-		elseif Ps == 1 then
-			pen.bold = true
-		elseif Ps == 3 then
-			pen.italic = true
-		elseif Ps == 4 then
-			pen.underline = true
-		elseif Ps == 7 then
-			pen.reverse = true
-		elseif Ps == 9 then
-			pen.strikethrough = true
-		elseif Ps == 21 then
-			pen.bold = nil
-		elseif Ps == 22 then
-			pen.bold = nil
-		elseif Ps == 23 then
-			pen.italic = nil
-		elseif Ps == 24 then
-			pen.underline = nil
-		elseif Ps == 27 then
-			pen.reverse = nil
-		elseif 30 <= Ps and Ps <= 37 then
-			pen.fg = get_palette_color(Ps - 30)
-		elseif Ps == 38 then
-			i, pen.fg = parse_sgr_color(params, i)
-		elseif Ps == 39 then
-			pen.fg = nil
-		elseif 40 <= Ps and Ps <= 47 then
-			pen.bg = get_palette_color(Ps - 40)
-		elseif Ps == 48 then
-			i, pen.bg = parse_sgr_color(params, i)
-		elseif Ps == 49 then
-			pen.bg = nil
-		elseif Ps == 58 then
-			i, pen.sp = parse_sgr_color(params, i)
-		elseif 90 <= Ps and Ps <= 97 then
-			pen.fg = get_palette_color(8 + (Ps - 90))
-		elseif 100 <= Ps and Ps <= 107 then
-			pen.bg = get_palette_color(8 + (Ps - 100))
-		end
-	end
-	return pen
-end
-
 local function is_default_pen(pen)
 	return next(pen) == nil
 end
@@ -209,6 +78,137 @@ local function make_ansi_parser()
 		offset = -1
 		return string_gsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
 	end
+end
+
+local function make_sgr_parser()
+	local params = {}
+
+	return function(s)
+		table_clear(params)
+		local i = 1
+
+		while true do
+			local j = string.find(s, ';', i, true)
+			if j then
+				table.insert(params, tonumber(string.sub(s, i, j - 1)) or 0)
+				i = j + 1
+			else
+				table.insert(params, tonumber(string.sub(s, i)) or 0)
+				return params
+			end
+		end
+	end
+end
+
+local function color(r, g, b)
+	return string.format('#%02x%02x%02x', r, g, b)
+end
+
+local function get_palette()
+	local palette = {}
+
+	for _, x in ipairs({ { 0, 0xff }, { 0, 0xff } }) do
+		for _, b in ipairs(x) do
+			for _, g in ipairs(x) do
+				for _, r in ipairs(x) do
+					table.insert(palette, color(r, g, b))
+				end
+			end
+		end
+	end
+
+	palette[7] = color(0xc0, 0xc0, 0xc0)
+	palette[8] = color(0x80, 0x80, 0x80)
+
+	for i = 1, 16 do
+		palette[i] = vim.g['terminal_color_' .. (i - 1)] or palette[i]
+	end
+
+	local cube = { 0 }
+	for i = 1, 5 do
+		table.insert(cube, 0x37 + 0x28 * i)
+	end
+
+	for _, r in ipairs(cube) do
+		for _, g in ipairs(cube) do
+			for _, b in ipairs(cube) do
+				table.insert(palette, color(r, g, b))
+			end
+		end
+	end
+
+	for i = 0, 23 do
+		local c = 0x08 + 0x0a * i
+		table.insert(palette, color(c, c, c))
+	end
+
+	return palette
+end
+
+local function get_palette_color(i)
+	if not palette then
+		palette = get_palette()
+	end
+	return palette[i + 1]
+end
+
+local function parse_sgr_color(params, i)
+	if params[i] == 2 then
+		return i + 4, color(params[i + 1], params[i + 2], params[i + 3])
+	elseif params[i] == 5 then
+		return i + 2, get_palette_color(params[i + 1])
+	end
+	return i, nil
+end
+
+local function apply_sgr(pen, params)
+	local i = 1
+	while i <= #params do
+		local Ps = params[i]
+		i = i + 1
+		if Ps == 0 then
+			table_clear(pen)
+		elseif Ps == 1 then
+			pen.bold = true
+		elseif Ps == 3 then
+			pen.italic = true
+		elseif Ps == 4 then
+			pen.underline = true
+		elseif Ps == 7 then
+			pen.reverse = true
+		elseif Ps == 9 then
+			pen.strikethrough = true
+		elseif Ps == 21 then
+			pen.bold = nil
+		elseif Ps == 22 then
+			pen.bold = nil
+		elseif Ps == 23 then
+			pen.italic = nil
+		elseif Ps == 24 then
+			pen.underline = nil
+		elseif Ps == 27 then
+			pen.reverse = nil
+		elseif 30 <= Ps and Ps <= 37 then
+			pen.fg = get_palette_color(Ps - 30)
+		elseif Ps == 38 then
+			i, pen.fg = parse_sgr_color(params, i)
+		elseif Ps == 39 then
+			pen.fg = nil
+		elseif 40 <= Ps and Ps <= 47 then
+			pen.bg = get_palette_color(Ps - 40)
+		elseif Ps == 48 then
+			i, pen.bg = parse_sgr_color(params, i)
+		elseif Ps == 49 then
+			pen.bg = nil
+		elseif Ps == 58 then
+			i, pen.sp = parse_sgr_color(params, i)
+		elseif 90 <= Ps and Ps <= 97 then
+			pen.fg = get_palette_color(8 + (Ps - 90))
+		elseif 100 <= Ps and Ps <= 107 then
+			pen.bg = get_palette_color(8 + (Ps - 100))
+		end
+	end
+	return pen
 end
 
 local parse_ansi = make_ansi_parser()
