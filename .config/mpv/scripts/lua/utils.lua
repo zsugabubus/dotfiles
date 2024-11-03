@@ -63,10 +63,6 @@ function M.register_script_messages(name, registry)
 	end)
 end
 
-function M.shesc(s)
-	return string.format("'%s'", string.gsub(s, "'", [['"'"']]))
-end
-
 M.script_opts = mp.command_native({ 'expand-path', '~~/script-opts' })
 
 function M.do_script_opt(name)

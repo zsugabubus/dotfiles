@@ -1,24 +1,32 @@
-local utils = require('utils')
+local function xclip(data)
+	mp.command_native({
+		name = 'subprocess',
+		detach = true,
+		playback_only = false,
+		stdin_data = data,
+		args = {
+			'xclip',
+			'-selection',
+			'clipboard',
+		},
+	})
+end
 
-local function yank()
+mp.register_script_message('yank-title', function()
 	local artist = mp.get_property_native('metadata/by-key/Artist', nil)
 	local title = (
 		mp.get_property_native('metadata/by-key/Title', nil)
 		or mp.get_property_native('media-title', nil)
 	)
 	local version = mp.get_property_native('metadata/by-key/Version', nil)
-	local title = ('%s%s%s%s'):format(
+
+	local s = table.concat({
 		artist or '',
 		artist and ' - ' or '',
 		title,
-		version and (' (%s)'):format(version) or ''
-	)
-	os.execute(
-		('printf %%s %s | xclip -selection clipboard &'):format(utils.shesc(title))
-	)
-	mp.osd_message('Yanked: ' .. title)
-end
+		version and (' (%s)'):format(version) or '',
+	})
 
-utils.register_script_messages('yank-title', {
-	yank = yank,
-})
+	xclip(s)
+	mp.osd_message('Yanked: ' .. s)
+end)
