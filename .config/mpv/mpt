@@ -491,6 +491,7 @@ local function edit(s, line, callback)
 	process = uv.spawn(os.getenv('EDITOR') or 'vim', {
 		args = { ('+%d'):format(line), '--', tmpname },
 		stdio = { 0, 1, 2 },
+		cwd = props['working-directory'],
 	}, function(code)
 		process:close()
 		enter_program()
