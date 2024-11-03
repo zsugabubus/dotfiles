@@ -18,44 +18,38 @@ function M.reduce_bool(b, action)
 	end
 end
 
-local function buf_put_human_keys(buf, t)
-	local first = true
-	local prev
-
-	for k in pairs(t) do
-		assert(type(k) == 'string')
-		if prev then
-			if not first then
-				buf:put(', ')
-				first = false
-			end
-			buf:putf("'%s'", prev)
-		end
-		prev = k
-	end
-
-	if prev then
-		if not first then
-			buf:put(' or ', prev)
-		end
-		buf:putf("'%s'", prev)
-	else
-		buf:putf('(nothing)')
-	end
-end
-
 function M.register_script_messages(name, registry)
+	local function get_command_values()
+		local t = {}
+		for k in pairs(registry) do
+			table.insert(t, k)
+		end
+		table.sort(t)
+		return table.concat(t, ', ')
+	end
+
 	mp.register_script_message(name, function(command, ...)
+		if not command then
+			mp.msg.error(
+				('Missing %s command, possible values: %s.'):format(
+					name,
+					get_command_values()
+				)
+			)
+			return
+		end
+
 		command = string.gsub(command, '-', '_')
 		local fn = registry[command]
 
 		if not fn then
-			local buf = require('string.buffer').new()
-			buf:putf("Invalid argument to 'script-messge %s'.", name)
-			buf:putf(" Got '%s', expected ", command)
-			buf_put_human_keys(buf, registry)
-			buf:put(". (Note that '_' and '-' are not distinguished.)")
-			mp.msg.warn(buf:tostring())
+			mp.msg.error(
+				('Invalid %s command %s, possible values: %s.'):format(
+					name,
+					command,
+					get_command_values()
+				)
+			)
 			return
 		end
 
