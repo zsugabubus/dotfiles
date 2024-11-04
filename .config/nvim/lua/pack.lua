@@ -1,43 +1,48 @@
 local api = vim.api
+local concat = table.concat
+local find = string.find
+local gmatch = string.gmatch
+local gsub = string.gsub
+local insert = table.insert
 local ipairs = ipairs
-local string_find = string.find
-local string_format = string.format
-local string_gmatch = string.gmatch
-local string_gsub = string.gsub
-local string_sub = string.sub
-local table_insert = table.insert
+local pcall = pcall
+local sub = string.sub
 local uv = vim.loop
+
+local fs_access = uv.fs_access
+local fs_scandir = uv.fs_scandir
+local fs_scandir_next = uv.fs_scandir_next
 
 local lua2path = {}
 
-local function echo_error(...)
-	api.nvim_echo({
-		{ 'pack: ', 'ErrorMsg' },
-		{ string_format(...), 'ErrorMsg' },
-	}, true, {})
+local function notify_error(...)
+	local s = string.format(...)
+	vim.schedule(function()
+		vim.notify(s, vim.log.levels.ERROR)
+	end)
 end
 
-local function dir_empty()
+local function noop()
 	-- Do nothing.
 end
 
-local function dir(path)
-	local handle = uv.fs_scandir(path)
+local function list_dir(path)
+	local handle = fs_scandir(path)
 	if handle then
-		return uv.fs_scandir_next, handle
+		return fs_scandir_next, handle
 	end
-	return dir_empty
+	return noop
 end
 
 -- pack_plugin_dirs[name] = {package_dir}/pack/*/opt/{name}
 local function find_package_plugins(package_dir, pack_plugin_dirs)
 	local pack_dir = package_dir .. '/pack'
-	for star, kind in dir(pack_dir) do
+	for star, kind in list_dir(pack_dir) do
 		if kind ~= 'file' then
-			local opt_dir = string_format('%s/%s/opt', pack_dir, star)
-			for name, kind in dir(opt_dir) do
+			local opt_dir = pack_dir .. '/' .. (star .. '/opt')
+			for name, kind in list_dir(opt_dir) do
 				if kind ~= 'file' then
-					local path = string_format('%s/%s', opt_dir, name)
+					local path = opt_dir .. '/' .. name
 					if not pack_plugin_dirs[name] then
 						pack_plugin_dirs[name] = path
 					end
@@ -51,7 +56,7 @@ local function source_file(file, trace)
 	local span = trace('source ' .. file)
 
 	local ok, err
-	if string_sub(file, -4) == '.lua' then
+	if find(file, '.lua', -4, true) then
 		ok, err = loadfile(file)
 		if ok then
 			ok, err = pcall(ok)
@@ -60,15 +65,15 @@ local function source_file(file, trace)
 		ok, err = pcall(api.nvim_cmd, { cmd = 'source', args = { file } }, {})
 	end
 	if not ok then
-		echo_error('Error detected while processing %s:\n%s', file, err)
+		notify_error('Error detected while processing %s:\n%s', file, err)
 	end
 
 	trace(span)
 end
 
-local function source_dir(path, trace)
-	for name, kind in dir(path) do
-		local path = string_format('%s/%s', path, name)
+local function source_dir(dir, trace)
+	for name, kind in list_dir(dir) do
+		local path = dir .. '/' .. name
 		if kind == 'directory' then
 			source_dir(path, trace)
 		else
@@ -95,15 +100,15 @@ local function package_loader(name)
 		end
 	end
 
-	local dot = string_find(name, '.', 1, true)
+	local dot = find(name, '.', 1, true)
 	if not dot then
 		return
 	end
-	local head = string_sub(name, 1, dot - 1)
+	local head = sub(name, 1, dot - 1)
 	local path = lua2path[head]
 	if path then
-		local tail = string_sub(name, dot)
-		local prefix = path .. string_gsub(tail, '%.', '/')
+		local tail = sub(name, dot)
+		local prefix = path .. gsub(tail, '%.', '/')
 
 		local code = loadfile(prefix .. '.lua')
 		if code then
@@ -122,7 +127,7 @@ local function plugin_hook(plugin, name)
 	if fn then
 		local ok, err = pcall(fn, plugin)
 		if not ok then
-			echo_error('Plugin %s: %s() failed:\n%s', plugin.name, name, err)
+			notify_error('Plugin %s: %s() failed:\n%s', plugin.name, name, err)
 		end
 	end
 end
@@ -143,23 +148,19 @@ local function add(opts)
 
 	local span = trace('find pack plugins')
 
-	for package_dir in
-		string_gmatch(api.nvim_get_option_value('packpath', {}), '[^,]+')
-	do
+	for package_dir in gmatch(api.nvim_get_option_value('packpath', {}), '[^,]+') do
 		find_package_plugins(package_dir, pack_plugin_dirs)
 	end
 
 	local span = trace(span, 'find rtp plugins')
 
-	for path in
-		string_gmatch(api.nvim_get_option_value('runtimepath', {}), '[^,]+')
-	do
-		table_insert(rtp_middle, path)
+	for path in gmatch(api.nvim_get_option_value('runtimepath', {}), '[^,]+') do
+		insert(rtp_middle, path)
 
 		local plugin_dir = path .. '/plugin'
-		for name in dir(plugin_dir) do
+		for name in list_dir(plugin_dir) do
 			if not rtp_plugin_files[name] then
-				local path = string_format('%s/%s', plugin_dir, name)
+				local path = plugin_dir .. '/' .. name
 				rtp_plugin_files[name] = path
 			end
 		end
@@ -174,22 +175,22 @@ local function add(opts)
 
 			local plugin_dir = pack_plugin_dirs[plugin.name]
 			if plugin_dir then
-				table_insert(plugins, plugin)
-				table_insert(rtp_before, plugin_dir)
-				table_insert(source_dirs_before, plugin_dir .. '/plugin')
+				insert(plugins, plugin)
+				insert(rtp_before, plugin_dir)
+				insert(source_dirs_before, plugin_dir .. '/plugin')
 
 				local after_dir = plugin_dir .. '/after'
-				if uv.fs_access(after_dir, 'x') then
-					table_insert(rtp_after, after_dir)
-					table_insert(source_dirs_after, after_dir .. '/plugin')
+				if fs_access(after_dir, 'x') then
+					insert(rtp_after, after_dir)
+					insert(source_dirs_after, after_dir .. '/plugin')
 				end
 			else
 				local plugin_file = rtp_plugin_files[plugin.name]
 				if plugin_file then
-					table_insert(plugins, plugin)
-					table_insert(source_files_before, plugin_file)
+					insert(plugins, plugin)
+					insert(source_files_before, plugin_file)
 				else
-					echo_error('Plugin %s not found', plugin.name)
+					notify_error('Plugin %s not found', plugin.name)
 				end
 			end
 		end
@@ -207,17 +208,17 @@ local function add(opts)
 
 	local rtp = rtp_before
 	for _, path in ipairs(rtp_middle) do
-		table_insert(rtp, path)
+		insert(rtp, path)
 	end
 	for _, path in ipairs(rtp_after) do
-		table_insert(rtp, path)
+		insert(rtp, path)
 	end
-	api.nvim_set_option_value('runtimepath', table.concat(rtp, ','), {})
+	api.nvim_set_option_value('runtimepath', concat(rtp, ','), {})
 
 	local span = trace(span, 'initialize plugins')
 
 	if package.loaders[2] ~= package_loader then
-		table_insert(package.loaders, 2, package_loader)
+		insert(package.loaders, 2, package_loader)
 	end
 	api.nvim_set_option_value('loadplugins', false, {})
 
@@ -225,8 +226,8 @@ local function add(opts)
 
 	for _, plugin_dir in ipairs(rtp) do
 		local lua_dir = plugin_dir .. '/lua'
-		for name in dir(lua_dir) do
-			local path = string_format('%s/%s', lua_dir, name)
+		for name in list_dir(lua_dir) do
+			local path = lua_dir .. '/' .. name
 			lua2path[name] = path
 		end
 	end
