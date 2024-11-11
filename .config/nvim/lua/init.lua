@@ -851,6 +851,9 @@ require('pack').add({
 		'git.nvim',
 		before = function()
 			map('n', 'sd', ':Gdiff<CR>')
+			xmap('n', 's@', function()
+				return '<Cmd>Gdiff @~' .. vim.v.count .. '<CR>'
+			end)
 			map('n', 'sgb', ':Gblame<CR>')
 			map('x', 'sgl', ':Glog<CR>')
 			map('n', 'gf', '<Plug>(git-goto-file)')
