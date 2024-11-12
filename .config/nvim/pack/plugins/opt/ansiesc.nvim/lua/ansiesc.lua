@@ -24,6 +24,8 @@ local function is_default_pen(pen)
 	return next(pen) == nil
 end
 
+local reset_pen = tclear
+
 local function reset_pen_underline(pen)
 	pen.underline = nil
 	pen.underdouble = nil
@@ -194,7 +196,7 @@ local function apply_sgr(pen, params)
 		local Ps = params[i]
 		i = i + 1
 		if Ps == '0' then
-			tclear(pen)
+			reset_pen(pen)
 		elseif Ps == '1' then
 			pen.bold = true
 		elseif Ps == '3' then
@@ -284,26 +286,26 @@ local function apply_sgr(pen, params)
 			pen.bg = get_palette_color(sbyte(Ps, 3) - 40)
 		end
 	end
-	return pen
 end
 
 local parse_ansi = make_ansi_parser()
 local parse_sgr = make_sgr_parser()
 
 local function highlight_buffer(buffer)
+	local pen = {}
 	for row, line in ipairs(api.nvim_buf_get_lines(buffer, 0, -1, false)) do
 		local line_without_sgr, start_cols, sgrs = parse_ansi(line)
 
 		if line ~= line_without_sgr then
 			buf_set_lines(buffer, row - 1, row, true, { line_without_sgr })
 
-			local pen = {}
+			reset_pen(pen)
 			local start_col = 0
 
 			for i, end_col in ipairs(start_cols) do
 				add_highlight(buffer, row - 1, start_col, end_col, pen)
 				start_col = end_col
-				pen = apply_sgr(pen, parse_sgr(sgrs[i]))
+				apply_sgr(pen, parse_sgr(sgrs[i]))
 			end
 
 			add_highlight(buffer, row - 1, start_col, -1, pen)
