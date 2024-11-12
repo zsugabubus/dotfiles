@@ -389,6 +389,7 @@ remap('n', 's/', 'ss/')
 map('x', 'ss', ':s//g<Left><Left>')
 remap('x', 's/', 'ss/')
 smap('n', 'sw', ':set wrap!<CR>')
+smap('n', 'sh', ':nohlsearch<CR>')
 smap('n', 'se', ':edit<CR>')
 smap('n', 's<space>', ':nmap <lt>buffer> <lt>space> <lt>C-d><CR>')
 
