@@ -33,8 +33,14 @@ function M.join(base, rev)
 	return string.format('%s:%s', base_rev, base_path)
 end
 
-function M.parent_tree(rev)
-	return string.match(rev, '^(:?[^:]*:.-)[^/]-/?$')
+function M.parent_tree(rev, nth)
+	for _ = 1, nth do
+		rev = string.match(rev, '^(:?[^:]*:.-)[^/]-/?$')
+		if not rev then
+			return
+		end
+	end
+	return rev
 end
 
 function M.suffix(rev, suffix)
