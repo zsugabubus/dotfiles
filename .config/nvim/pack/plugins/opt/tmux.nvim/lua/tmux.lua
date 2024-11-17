@@ -3,9 +3,6 @@ local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
 
-local buf_user_command = api.nvim_buf_create_user_command
-local buf_keymap = api.nvim_buf_set_keymap
-
 local function filter_completions(list, s)
 	if s == '' then
 		return list
@@ -67,6 +64,10 @@ local function get_cwd(target)
 	return vim.uv.fs_readlink(string.format('/proc/%d/cwd', get_pid(target)))
 end
 
+local function trigger(name, source_opts)
+	api.nvim_exec_autocmds(name, { buffer = source_opts.buffer })
+end
+
 return {
 	BufReadCmd_buffers = function(opts)
 		local buffer_name = string.sub(opts.match, 16)
@@ -82,7 +83,7 @@ return {
 			bo.filetype = 'tmuxlist'
 			bo.readonly = true
 			bo.modeline = false
-			buf_keymap(0, 'n', '<CR>', 'gf', {})
+			api.nvim_buf_set_keymap(0, 'n', '<CR>', 'gf', {})
 		else
 			read_system({ 'tmux', 'show-buffer', '-b', buffer_name }, true)
 			bo.buftype = 'acwrite'
@@ -126,6 +127,7 @@ return {
 		end
 	end,
 	BufReadCmd_panes = function(opts)
+		trigger('BufReadPre', opts)
 		local target = string.sub(opts.match, 14)
 		bo.buftype = 'nofile'
 		bo.swapfile = false
@@ -152,11 +154,12 @@ return {
 			if has_AnsiEsc then
 				cmd.AnsiEsc()
 			end
-			buf_user_command(0, 'Tcdhere', function()
+			api.nvim_buf_create_user_command(0, 'Tcdhere', function()
 				cmd.cd(get_cwd(target))
 			end, {})
 		end
 		bo.readonly = true
+		trigger('BufReadPost', opts)
 	end,
 	Tsplitwindow = function(opts)
 		fn.system({

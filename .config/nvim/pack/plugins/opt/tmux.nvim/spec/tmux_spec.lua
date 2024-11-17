@@ -343,6 +343,29 @@ describe('tmux://panes/{target}', function()
 			vim:assert_messages('')
 		end)
 	end)
+
+	it('triggers BufReadPre and BufReadPost', function()
+		vim:lua(function()
+			_G.calls = {}
+			_G.vim.api.nvim_create_autocmd({ 'BufReadPre', 'BufReadPost' }, {
+				callback = function(opts)
+					table.insert(_G.calls, { opts.event, _G.vim.fn.getline(1) })
+				end,
+			})
+		end)
+		tmux.new_session('-s', 'bufread', 'echo content')
+		vim.wait(25)
+		vim.cmd.edit('tmux://panes/bufread:')
+		assert.same(
+			{
+				{ 'BufReadPre', '' },
+				{ 'BufReadPost', 'content' },
+			},
+			vim:lua(function()
+				return _G.calls
+			end)
+		)
+	end)
 end)
 
 describe(':Tcd', function()
