@@ -338,22 +338,35 @@ local function set_client(client_)
 		end)
 	end
 
+	local function dirty_playlist()
+		playlist_changed = true
+
+		if not playlist_timer:is_active() then
+			playlist_timer:start(0, 1000, update_playlist)
+		end
+	end
+
 	client:on('property-change', function(event)
 		local name = event.name
 		local data = event.data
 
 		if name == 'playlist-count' then
-			playlist_changed = true
-
-			if not playlist_timer:is_active() then
-				playlist_timer:start(0, 1000, update_playlist)
-			end
+			dirty_playlist()
 		end
 
 		if name == 'time-pos' and data then
 			data = math.floor(data)
 		end
+
 		set_prop(name, data)
+	end)
+
+	client:on('client-message', function(event)
+		local arg1 = event.args[1]
+
+		if arg1 == 'playlist-changed' then
+			dirty_playlist()
+		end
 	end)
 
 	for i, name in ipairs({
@@ -542,6 +555,7 @@ local function edit_playlist()
 		end
 
 		client:request({ 'set_property', 'playlist', t })
+		client:request({ 'script-message', 'playlist-changed' })
 	end)
 end
 
