@@ -113,28 +113,34 @@ local function handle_read_autocmd(opts)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, true, lines)
 	bo.modifiable = false
 
-	if vim.v.shell_error == 0 then
-		local object_type = vim.fn.system(utils.make_args(repo, {
-			'cat-file',
-			'-t',
-			'--',
-			rev,
-		}))
-		if object_type == 'blob\n' then
-			local _, path = revision.split_path(rev)
-			local filetype, on_detect = vim.filetype.match({
-				buf = buf,
-				filename = path,
-			})
-			bo.filetype = filetype or ''
-			if on_detect then
-				on_detect(buf)
-			end
-		else
-			bo.filetype = 'git'
-		end
-	else
+	if vim.v.shell_error ~= 0 then
 		bo.filetype = 'giterror'
+		return
+	end
+
+	local object_type = vim.fn.system(utils.make_args(repo, {
+		'cat-file',
+		'-t',
+		'--',
+		rev,
+	}))
+
+	if object_type ~= 'blob\n' then
+		bo.filetype = 'git'
+		-- vim.bo[buf].modeline = true
+		return
+	end
+
+	local _, path = revision.split_path(rev)
+	local filetype, on_detect = vim.filetype.match({
+		buf = buf,
+		filename = path,
+	})
+
+	bo.modeline = true
+	bo.filetype = filetype or ''
+	if on_detect then
+		on_detect(buf)
 	end
 end
 

@@ -138,6 +138,15 @@ describe('git://', function()
 		assert.same('git', vim.bo.filetype)
 	end)
 
+	it('has modeline disabled for commits', function()
+		git_init()
+		git_config_user()
+		git_commit(' vim: invalid')
+		vim.cmd.edit('git://@')
+		assert.matches('^commit', vim.fn.getline(1))
+		assert.matches(' vim: invalid', vim.fn.getline('$'))
+	end)
+
 	it('shows full stat names', function()
 		setup()
 		local f = string.rep('a', 100)
@@ -155,15 +164,31 @@ describe('git://', function()
 		assert.same('c', vim.bo.filetype)
 	end)
 
+	it('has modeline enabled for blobs', function()
+		git_init()
+		git_config_user()
+		mkfile('file', { ' vim: ft=via-modeline' })
+		git_add()
+		git_commit()
+		vim.cmd.edit('git://@:file')
+		assert.same('via-modeline', vim.bo.filetype)
+	end)
+
 	it('reads tree', function()
 		setup()
 		vim.cmd.edit('git://@:')
-		vim:assert_lines({
-			'tree @:',
-			'',
-			'a/',
-		})
+		vim:assert_lines({ 'tree @:', '', 'a/' })
 		assert.same('git', vim.bo.filetype)
+	end)
+
+	it('has modeline disabled for trees', function()
+		git_init()
+		git_config_user()
+		mkfile(' vim: invalid')
+		git_add()
+		git_commit()
+		vim.cmd.edit('git://@:')
+		vim:assert_lines({ 'tree @:', '', ' vim: invalid' })
 	end)
 
 	it('works with git dir', function()
