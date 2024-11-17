@@ -540,6 +540,21 @@ autocmd({ 'FocusGained', 'VimEnter' }, {
 	end,
 })
 
+autocmd('FocusGained', {
+	group = group,
+	nested = true,
+	callback = function()
+		for _, buf in ipairs(api.nvim_list_bufs()) do
+			if
+				string.sub(fn.bufname(buf), 1, 13) == 'tmux://panes/'
+				and not bo[buf].modified
+			then
+				api.nvim_buf_call(buf, cmd.edit)
+			end
+		end
+	end,
+})
+
 do
 	local colors_dir = fn.stdpath('config') .. '/colors'
 
