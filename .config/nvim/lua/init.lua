@@ -372,8 +372,6 @@ xmap('n', 's;', function()
 end)
 map('n', 's,', 'A,<Esc>')
 
-map('n', 's<C-g>', ':! stat %<CR>')
-
 fmap('n', 'sb', function()
 	local x = not wo.scrollbind
 	for _, win in ipairs(api.nvim_tabpage_list_wins(0)) do
