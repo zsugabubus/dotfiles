@@ -380,8 +380,15 @@ fmap('n', 'sb', function()
 		wo[win][0].scrollbind = x
 	end
 end)
-smap('n', 'sp', [[vip:sort /\v^(#!)@!\A*\zs/<CR>]])
-smap('n', 'sq', ':Qread<CR>')
+function _G.sort()
+	cmd([[:'[,']sort /\v^(#!)@!\A*\zs/]])
+end
+remap('x', 'gs', "<Esc>'<V'><Esc>gs'<V'>")
+xmap('n', 'gs', function()
+	o.operatorfunc = 'v:lua.sort'
+	return 'g@'
+end)
+remap('n', 'sp', 'gsip')
 smap('n', 'sq', ':Qf<CR>')
 smap('n', 'sQ', ':tabnew|Qe<CR>')
 smap('n', 'st', ':Tlast<CR>')
