@@ -26,7 +26,7 @@ local function handle_user_command()
 	local source_win = api.nvim_get_current_win()
 	local source_file = fn.expand('%:p')
 
-	local rev = buffer.buf_get_rev(source_buf)
+	local git_dir, rev = buffer.buf_get_rev(source_buf)
 	local path
 	if rev then
 		rev, path = revision.split_path(rev)
@@ -36,7 +36,16 @@ local function handle_user_command()
 
 	vim.cmd('topleft vsplit')
 
-	local buf = fn.bufnr(string.format('git-blame://%s:%s', rev, path), true)
+	local buf = fn.bufnr(
+		string.format(
+			'git-blame://%s%s%s:%s',
+			git_dir or '',
+			git_dir and '//' or '',
+			rev,
+			path
+		),
+		true
+	)
 	vim.b[buf].git_related_win = source_win
 	vim.cmd.buffer(buf)
 end
@@ -64,8 +73,9 @@ local function handle_read_autocmd(opts)
 	vim.bo[buf].bufhidden = 'wipe'
 	buffer.buf_init(buf)
 
-	local repo = Repository.from_current_buf()
-	local rev, path = revision.split_path(buffer.buf_get_rev(buf))
+	local git_dir, rev_path = buffer.buf_get_rev(buf)
+	local repo = Repository.from_path_or_current_buf(git_dir)
+	local rev, path = revision.split_path(rev_path)
 
 	local commit
 	local start_row, end_row
@@ -84,7 +94,7 @@ local function handle_read_autocmd(opts)
 				return
 			end
 
-			buffer.goto_revision(commit.hash)
+			buffer.goto_revision(git_dir, commit.hash)
 		end,
 	})
 
@@ -210,7 +220,7 @@ local function handle_read_autocmd(opts)
 		end
 
 		if auto_preview and utils.get_previewwindow() then
-			buffer.goto_revision(current_commit.hash)
+			buffer.goto_revision(git_dir, current_commit.hash)
 		end
 	end
 

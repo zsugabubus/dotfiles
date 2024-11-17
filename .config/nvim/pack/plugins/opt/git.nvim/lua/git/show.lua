@@ -90,10 +90,10 @@ end
 
 local function handle_read_autocmd(opts)
 	local buf = opts.buf
-	local rev = buffer.buf_get_rev(buf)
-
 	buffer.buf_init(buf)
-	local repo = Repository.from_current_buf()
+
+	local git_dir, rev = buffer.buf_get_rev(buf)
+	local repo = Repository.from_path_or_current_buf(git_dir)
 
 	local lines = vim.fn.systemlist(utils.make_args(repo, {
 		'show',

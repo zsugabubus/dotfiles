@@ -8,8 +8,13 @@ local fn = vim.fn
 local M = {}
 
 function M.buf_get_rev(buf)
-	local s = api.nvim_buf_get_name(buf)
-	return string.match(s, '^git[^:]*://(.*)')
+	local name = api.nvim_buf_get_name(buf)
+	local s = string.match(name, '^git[^:]*://(.*)')
+	if not s then
+		return
+	end
+	local git_dir, rev = string.match(s, '^(..-)//(.*)')
+	return git_dir, rev or s
 end
 
 local function buf_map(buf, lhs, rhs)
@@ -25,9 +30,11 @@ local function buf_map(buf, lhs, rhs)
 	end
 end
 
-function M.goto_revision(rev, lnum)
+function M.goto_revision(git_dir, rev, lnum)
 	local use_preview = vim.b.git_use_preview
-	local file = fn.fnameescape('git://' .. rev)
+	local file = fn.fnameescape(
+		string.format('git://%s%s%s', git_dir or '', git_dir and '//' or '', rev)
+	)
 	local lnum_cmd = lnum and string.format('+%d ', lnum) or ''
 
 	-- May block file open since it can make rev expand to nothing.
@@ -124,21 +131,25 @@ end
 
 function M.goto_object()
 	local cfile = fn.expand('<cfile>')
+	local git_dir, rev = M.buf_get_rev(0)
 
 	if string.match(cfile, '^%x%x%x%x+$') then
-		M.goto_revision(cfile)
+		M.goto_revision(git_dir, cfile)
 		return
 	end
 
 	local pos = M.get_diff_source()
 	if pos then
-		M.goto_revision(revision.join(pos.commit, pos.path or cfile), pos.lnum)
+		M.goto_revision(
+			git_dir,
+			revision.join(pos.commit, pos.path or cfile),
+			pos.lnum
+		)
 		return
 	end
 
-	local rev = M.buf_get_rev(0)
 	if rev then
-		M.goto_revision(revision.join(rev, cfile))
+		M.goto_revision(git_dir, revision.join(rev, cfile))
 		return
 	end
 
@@ -146,20 +157,23 @@ function M.goto_object()
 end
 
 local function goto_parent_tree()
-	local parent = revision.parent_tree(M.buf_get_rev(0))
+	local git_dir, rev = M.buf_get_rev(0)
+	local parent = revision.parent_tree(rev)
 	if not parent then
 		utils.log_error('Not a tree-ish revision')
 		return
 	end
-	M.goto_revision(parent)
+	M.goto_revision(git_dir, parent)
 end
 
 local function goto_ancestor()
-	M.goto_revision(revision.ancestor(M.buf_get_rev(0), vim.v.count1))
+	local git_dir, rev = M.buf_get_rev(0)
+	M.goto_revision(git_dir, revision.ancestor(rev, vim.v.count1))
 end
 
 local function goto_parent()
-	M.goto_revision(revision.parent_commit(M.buf_get_rev(0), vim.v.count1))
+	local git_dir, rev = M.buf_get_rev(0)
+	M.goto_revision(git_dir, revision.parent_commit(rev, vim.v.count1))
 end
 
 function M.buf_init(buf)

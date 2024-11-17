@@ -23,16 +23,25 @@ local function handle_user_command(opts)
 		s = opts.args
 	elseif opts.range ~= 0 then
 		local rev, path
-		local rev_path = buffer.buf_get_rev(0)
+		local git_dir, rev_path = buffer.buf_get_rev(0)
 		if rev_path then
 			rev, path = revision.split_path(rev_path)
 		else
-			local repo = Repository.await(Repository.from_current_buf())
+			local repo = Repository.from_path_or_current_buf(git_dir)
+			repo = Repository.await(repo)
 			utils.ensure_work_tree(repo)
 			rev, path = '@', string.sub(fn.expand('%:p'), #repo.work_tree + 2)
 		end
 
-		s = string.format('%s:%s:%d-%d', rev, path, opts.line1, opts.line2)
+		s = string.format(
+			'%s%s%s:%s:%d-%d',
+			git_dir or '',
+			git_dir and '//' or '',
+			rev,
+			path,
+			opts.line1,
+			opts.line2
+		)
 	else
 		s = '@'
 	end
@@ -47,8 +56,11 @@ local function handle_complete(...)
 end
 
 local function handle_read_autocmd(opts)
-	local s = string.sub(opts.match, 11)
-	local rev, path_range = revision.split_path(s)
+	buffer.buf_init(0)
+
+	local git_dir, rev_path_range = buffer.buf_get_rev(0)
+	local repo = Repository.from_path_or_current_buf(git_dir)
+	local rev, path_range = revision.split_path(rev_path_range)
 
 	local path, start_lnum, end_lnum =
 		string.match(path_range, '^(.*):(%d*)%-(%d*)$')
@@ -56,10 +68,7 @@ local function handle_read_autocmd(opts)
 		path = path_range
 	end
 
-	buffer.buf_init(0)
 	vim.b.git_use_preview = true
-
-	local repo = Repository.from_current_buf()
 
 	local has_AnsiEsc = fn.exists(':AnsiEsc') == 2
 

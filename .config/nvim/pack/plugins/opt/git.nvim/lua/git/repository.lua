@@ -363,21 +363,11 @@ function M.from_path(path)
 	return repo
 end
 
-function M.from_buf(buf)
-	return M.from_path(assert(vim.b[buf].git_dir))
-end
-
 function M.from_current_buf()
-	local dir = vim.b.git_dir
-	if not dir then
-		if bo.buftype == '' then
-			dir = fn.expand('%:p:h')
-		else
-			dir = fn.getcwd()
-		end
-		vim.b.git_dir = dir
+	if bo.buftype ~= '' then
+		return M.from_path(fn.getcwd())
 	end
-	return M.from_path(dir)
+	return M.from_path(fn.expand('%:p:h'))
 end
 
 function M.await(repo)
@@ -418,6 +408,13 @@ local function get_status()
 	end
 
 	return repo.statusline
+end
+
+function M.from_path_or_current_buf(path)
+	if path then
+		return M.from_path(path)
+	end
+	return M.from_current_buf()
 end
 
 function M.status()
