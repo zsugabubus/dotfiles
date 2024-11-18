@@ -5,13 +5,38 @@ local title = require('title')
 local font_scale = 0.65
 
 local visible = false
+local old_visible
 local props = {}
 local forward
+local update
 local hide_timeout
 
-local old_visible
+local playlist_changed = false
 
-local update
+local function update_playlist()
+	playlist_changed = false
+	props['playlist'] = mp.get_property_native('playlist')
+	update()
+end
+
+local playlist_timer
+playlist_timer = mp.add_periodic_timer(0.1, function()
+	if not playlist_changed then
+		playlist_timer:kill()
+		return
+	end
+
+	update_playlist()
+end, true)
+
+local function dirty_playlist()
+	playlist_changed = true
+
+	if visible and not playlist_timer:is_enabled() then
+		playlist_timer:resume()
+		update_playlist()
+	end
+end
 
 local function set_visible(action)
 	local temporary = false
@@ -60,6 +85,9 @@ local function update_property(name, value)
 		if old ~= value then
 			forward = old <= value
 		end
+	elseif name == 'playlist-count' then
+		dirty_playlist()
+		return
 	end
 
 	props[name] = value
@@ -71,18 +99,13 @@ function update()
 	if old_visible ~= visible then
 		old_visible = visible
 
-		mp.unobserve_property(update_property)
-		mp.observe_property('osd-font-size', 'native', update_property)
-		mp.observe_property('osd-margin-y', 'native', update_property)
-		mp.observe_property('playlist-pos-1', 'native', update_property)
-
 		if visible then
-			mp.observe_property('playlist', 'native', update_property)
+			if playlist_changed then
+				update_playlist()
+			end
 		else
 			osd:remove()
 		end
-
-		return
 	end
 
 	if not visible then
@@ -106,10 +129,11 @@ function update()
 	for i = top, bottom do
 		local entry = playlist[i]
 		local display = title.from_playlist_entry(entry)
+		local current = i == pos
 		osd:N()
 		osd:h()
-		osd:put_cursor(entry.current)
-		osd:bold(entry.current)
+		osd:put_cursor(current)
+		osd:bold(current)
 		osd:put(display)
 		osd:bold(false)
 	end
@@ -135,10 +159,19 @@ hide_timeout = mp.add_timeout(
 	true
 )
 
+mp.observe_property('osd-font-size', 'native', update_property)
+mp.observe_property('osd-margin-y', 'native', update_property)
+mp.observe_property('playlist-pos-1', 'native', update_property)
+mp.observe_property('playlist-count', 'native', update_property)
+
 utils.register_script_messages('osd-playlist', {
 	visibility = set_visible,
 	scroll_half_screen = scroll_half_screen,
 })
+
+mp.register_script_message('playlist-changed', function()
+	dirty_playlist()
+end)
 
 mp.add_key_binding('Ctrl+d', function()
 	scroll_half_screen('down')
