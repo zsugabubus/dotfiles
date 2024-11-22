@@ -503,19 +503,22 @@ alias ffplay='ffplay -hide_banner'
 alias ffplayq='ffplay -hide_banner -nodisp -autoexit -loglevel quiet'
 alias ffprobe='ffprobe -hide_banner'
 
+function mpv() {
+	command mpv ${${${@:-.}/#--sort=/--script-opts=sort=}/#--nohup/--script-opts=hup=no}
+}
 alias mpv_cam='() { mpv "av://v4l2:/dev/video${1:-0}" }'
 alias mpv_test='mpv --input-test --force-window --idle'
 function mp() {
 	mpv \
 		--player-operation-mode=pseudo-gui \
 		--force-window=immediate \
-		${${@:-.}/#--sort=/--script-opts=sort=} \
+		${@:-.} \
 		2>/dev/null \
 		&!
 }
 compdef mp=mpv_hack
-alias mp.='mp -- *(.)'
-alias mp..='mp -- ***(.)'
+alias mp.='() { mp $@ -- *(.) }'
+alias mp..='() { mp $@ -- ***(.) }'
 alias mpm='() { eval mp "*(m-${1:-1}/)" }'
 compdef mpm=mpv_hack
 alias mpn='() { eval mp "*(.om[1,${1:-100}])" }'
