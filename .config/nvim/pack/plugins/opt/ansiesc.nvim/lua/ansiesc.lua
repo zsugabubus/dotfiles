@@ -298,18 +298,17 @@ local function highlight_buffer(buffer)
 
 		if line ~= line_without_sgr then
 			buf_set_lines(buffer, row - 1, row, true, { line_without_sgr })
-
-			reset_pen(pen)
-			local start_col = 0
-
-			for i, end_col in ipairs(start_cols) do
-				add_highlight(buffer, row - 1, start_col, end_col, pen)
-				start_col = end_col
-				apply_sgr(pen, parse_sgr(sgrs[i]))
-			end
-
-			add_highlight(buffer, row - 1, start_col, -1, pen)
 		end
+
+		local start_col = 0
+
+		for i, end_col in ipairs(start_cols) do
+			add_highlight(buffer, row - 1, start_col, end_col, pen)
+			start_col = end_col
+			apply_sgr(pen, parse_sgr(sgrs[i]))
+		end
+
+		add_highlight(buffer, row - 1, start_col, -1, pen)
 	end
 end
 

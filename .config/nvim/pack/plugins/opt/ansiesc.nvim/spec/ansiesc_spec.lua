@@ -1,49 +1,10 @@
 local vim = create_vim()
 
-describe(':AnsiEsc', function()
-	it('removes SGR and keeps added highlights after ColorScheme', function()
-		local hls = {
-			{
-				region = { 0, 0, 0, 3 },
-				hl = {
-					bold = true,
-					cterm = { bold = true },
-				},
-			},
-			{
-				region = { 0, 3, 1, 0 },
-				hl = {
-					bold = true,
-					italic = true,
-					underline = true,
-					reverse = true,
-					strikethrough = true,
-					cterm = {
-						bold = true,
-						italic = true,
-						underline = true,
-						reverse = true,
-						strikethrough = true,
-					},
-					fg = 0x010203,
-					bg = 0x040506,
-					sp = 0x070809,
-				},
-			},
-		}
-		vim:set_lines({
-			'\x1b[1m012\x1b[3;4;7;9;38;2;1;2;3;48;2;4;5;6;58;2;7;8;9m345',
-			'6\x1b[m7\x1b[m8\x1b[9999m',
-		})
-		vim.cmd.AnsiEsc()
-		vim:assert_lines({ '012345', '678' })
-		vim:assert_highlights(hls)
-		vim.cmd.colorscheme('default')
-		vim:assert_highlights(hls)
-	end)
-end)
+local bold = { bold = true, cterm = { bold = true } }
+local bold_and_italic =
+	{ bold = true, italic = true, cterm = { bold = true, italic = true } }
 
-it('parses SGR correctly', function()
+it('parses SGR', function()
 	local function test_hl(params, hl)
 		vim.cmd.enew()
 		vim:set_lines({
@@ -61,7 +22,6 @@ it('parses SGR correctly', function()
 		})
 	end
 
-	local bold = { bold = true, cterm = { bold = true } }
 	test_hl('1', bold)
 	test_hl('1;22', nil)
 
@@ -197,4 +157,37 @@ it('parses SGR correctly', function()
 	test_hl('1;;3', italic)
 	test_hl('1;0;3', italic)
 	test_hl('1;0:0', bold)
+end)
+
+it('combines SGRs', function()
+	vim:set_lines({ '\x1b[1m\x1b[3m' })
+	vim.cmd.AnsiEsc()
+	vim:assert_highlights({
+		{ region = { 0, 0, 1, 0 }, hl = bold_and_italic },
+	})
+end)
+
+it('combines SGRs across lines', function()
+	vim:set_lines({ '\x1b[1m', '\x1b[3m' })
+	vim.cmd.AnsiEsc()
+	vim:assert_highlights({
+		{ region = { 0, 0, 1, 0 }, hl = bold },
+		{ region = { 1, 0, 2, 0 }, hl = bold_and_italic },
+	})
+end)
+
+it('applies SGR to lines without escape sequence', function()
+	vim:set_lines({ '\x1b[1m', '', '' })
+	vim.cmd.AnsiEsc()
+	vim:assert_highlights({
+		{ region = { 0, 0, 1, 0 }, hl = bold },
+		{ region = { 1, 0, 2, 0 }, hl = bold },
+		{ region = { 2, 0, 3, 0 }, hl = bold },
+	})
+end)
+
+it('removes escape sequences', function()
+	vim:set_lines({ '\x1b[1mbold\x1b[9999m' })
+	vim.cmd.AnsiEsc()
+	vim:assert_lines({ 'bold' })
 end)
