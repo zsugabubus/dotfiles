@@ -149,19 +149,12 @@ local get_mediaklikk_streams = (function()
 	end
 end)()
 
-local visible = false
+local modal
+local update
+local old_visible = false
 local cursor = 0
 local props = {}
 local streams
-
-local old_visible
-
-local update
-
-local function set_visible(action)
-	visible = utils.reduce_bool(visible, action)
-	update()
-end
 
 local function set_cursor(action)
 	if action == 'up' then
@@ -228,7 +221,7 @@ end
 
 local update_timer
 update_timer = mp.add_periodic_timer(30, function()
-	if not visible then
+	if not modal:is_visible() then
 		streams = nil
 		update_timer:stop()
 		return
@@ -264,6 +257,8 @@ local function osd_put_progress(show, now)
 end
 
 function update()
+	local visible = modal:is_visible()
+
 	if old_visible ~= visible then
 		old_visible = visible
 
@@ -343,6 +338,8 @@ function update()
 end
 update = osd.update_wrap(update)
 
+modal = require('modal').new(update)
+
 mode:map({
 	UP = function()
 		set_cursor('up')
@@ -358,7 +355,7 @@ mode:map({
 	end,
 	ENTER = open,
 	ESC = function()
-		set_visible('hide')
+		modal:hide()
 	end,
 	['0..9'] = function(i)
 		set_cursor(i)
@@ -366,6 +363,6 @@ mode:map({
 })
 
 utils.register_script_messages('tv', {
-	visibility = set_visible,
+	visibility = modal.set_visibility,
 	reload = reload,
 })

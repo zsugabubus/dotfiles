@@ -2,22 +2,15 @@ local osd = require('osd').new()
 local mode = require('mode').new()
 local utils = require('utils')
 
-local visible = false
+local CURSOR_TYPE_UP = { video = 'sub', audio = 'video', sub = 'audio' }
+local CURSOR_TYPE_DOWN = { video = 'audio', audio = 'sub', sub = 'video' }
+
+local modal
+local update
+local old_visible = false
 local cursor_type, cursor_id = 'video', 0
 local props = {}
 local page_size = 21
-
-local old_visible
-
-local update
-
-local function set_visible(action)
-	visible = utils.reduce_bool(visible, action)
-	update()
-end
-
-local CURSOR_TYPE_UP = { video = 'sub', audio = 'video', sub = 'audio' }
-local CURSOR_TYPE_DOWN = { video = 'audio', audio = 'sub', sub = 'video' }
 
 local function set_cursor(action)
 	if action == 'up' then
@@ -91,6 +84,12 @@ local function update_property(name, value)
 	end
 
 	update()
+end
+
+local function update_tracklist()
+	if not old_visible then
+		update_property('track-list', mp.get_property_native('track-list'))
+	end
 end
 
 local TRACK_FLAGS = {
@@ -236,13 +235,15 @@ local function osd_put_track_list(name, track_type, paginate)
 end
 
 function update()
+	local visible = modal:is_visible()
+
 	if old_visible ~= visible then
 		old_visible = visible
 
 		mp.unobserve_property(update_property)
-		mp.observe_property('track-list', 'native', update_property)
 
 		if visible then
+			mp.observe_property('track-list', 'native', update_property)
 			mp.observe_property('audio-out-params', 'native', update_property)
 			mp.observe_property('audio-params', 'native', update_property)
 			mp.observe_property('mute', 'native', update_property)
@@ -289,6 +290,8 @@ function update()
 end
 update = osd.update_wrap(update)
 
+modal = require('modal').new(update)
+
 mode:map({
 	a = function()
 		set_cursor('audio')
@@ -322,7 +325,7 @@ mode:map({
 	end,
 	ENTER = 'SPACE',
 	ESC = function()
-		set_visible('hide')
+		modal:hide()
 	end,
 	['0..9'] = function(i)
 		if set_cursor(i) then
@@ -332,11 +335,10 @@ mode:map({
 })
 
 utils.register_script_messages('osd-tracks', {
-	visibility = set_visible,
+	visibility = modal.set_visibility,
 	cursor = function(action)
-		set_visible('show')
+		update_tracklist()
+		modal:show()
 		set_cursor(action)
 	end,
 })
-
-update()

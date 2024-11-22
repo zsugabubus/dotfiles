@@ -2,29 +2,22 @@ local osd = require('osd').new()
 local mode = require('mode').new()
 local utils = require('utils')
 
-local M = 1024 * 1024
-local G = 1024 * M
+local MiB = 1024 * 1024
+local GiB = 1024 * MiB
 
 local CHOICES = {
-	{ 'a', 125 * M, '125M' },
-	{ 'b', 512 * M, '512M' },
-	{ 'c', 1 * G, '1G' },
-	{ 'd', 2 * G, '2G' },
-	{ 'e', 4 * G, '4G' },
+	{ 'a', 125 * MiB, '125M' },
+	{ 'b', 512 * MiB, '512M' },
+	{ 'c', 1 * GiB, '1G' },
+	{ 'd', 2 * GiB, '2G' },
+	{ 'e', 4 * GiB, '4G' },
 }
 
-local visible = false
+local modal
+local update
+local old_visible = false
 local name = 'demuxer-max-back-bytes'
 local props = {}
-
-local old_visible
-
-local update
-
-local function set_visible(action)
-	visible = utils.reduce_bool(visible, action)
-	update()
-end
 
 local function update_property(name, value)
 	props[name] = value
@@ -32,6 +25,8 @@ local function update_property(name, value)
 end
 
 function update()
+	local visible = modal:is_visible()
+
 	if old_visible ~= visible then
 		old_visible = visible
 
@@ -76,12 +71,14 @@ function update()
 end
 update = osd.update_wrap(update)
 
+modal = require('modal').new(update)
+
 mode:map({
 	ESC = function()
-		set_visible('hide')
+		modal:hide()
 	end,
 	n = function()
-		set_visible('hide')
+		modal:hide()
 		mp.commandv('osd-msg-bar', 'set', 'cache', 'no')
 	end,
 })
@@ -89,14 +86,12 @@ mode:map({
 for _, choice in ipairs(CHOICES) do
 	local key, value = unpack(choice)
 	mode:map(key, function()
-		set_visible('hide')
+		modal:hide()
 		mp.commandv('osd-msg-bar', 'set', 'cache', 'yes')
 		mp.commandv('osd-msg-bar', 'set', name, value)
 	end)
 end
 
 utils.register_script_messages('osd-cache', {
-	visibility = set_visible,
+	visibility = modal.set_visibility,
 })
-
-update()

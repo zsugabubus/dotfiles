@@ -10,19 +10,12 @@ local PROPERTIES = {
 	{ name = 'hue', short_name = 'h', icon = 0xb },
 }
 
-local visible = false
+local modal
+local update
+local old_visible = false
 local cursor_id = 1
 local presets
 local props = {}
-
-local old_visible
-
-local update
-
-local function set_visible(action)
-	visible = utils.reduce_bool(visible, action)
-	update()
-end
 
 local function load_default_presets()
 	presets = utils.do_script_opt('color-presets.lua') or {}
@@ -145,6 +138,8 @@ for _, p in ipairs(PROPERTIES) do
 end
 
 function update()
+	local visible = modal:is_visible()
+
 	if old_visible ~= visible then
 		old_visible = visible
 
@@ -200,6 +195,8 @@ function update()
 end
 update = osd.update_wrap(update)
 
+modal = require('modal').new(update)
+
 mode:map({
 	UP = function()
 		set_cursor('up')
@@ -243,20 +240,20 @@ mode:map({
 	end,
 	['0..9'] = function(i)
 		if set_preset(i + 1) then
-			set_visible('hide')
+			modal:hide()
 		end
 	end,
 	F5 = function()
 		load_default_presets()
 	end,
 	ESC = function()
-		set_visible('hide')
+		modal:hide()
 	end,
 })
 
 utils.register_script_messages('osd-colors', {
-	visibility = set_visible,
+	visibility = modal.set_visibility,
 	preset = set_preset,
 })
 
-update()
+load_default_presets()

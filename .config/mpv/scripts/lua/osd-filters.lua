@@ -2,18 +2,11 @@ local osd = require('osd').new()
 local mode = require('mode').new()
 local utils = require('utils')
 
-local visible = false
+local modal
+local update
+local old_visible = false
 local cursor_tab, cursor_id = 'af', 0
 local props = { vf = {}, af = {} }
-
-local old_visible
-
-local update
-
-local function set_visible(action)
-	visible = utils.reduce_bool(visible, action)
-	update()
-end
 
 local function set_cursor(action)
 	local n = #props[cursor_tab]
@@ -144,6 +137,8 @@ local function osd_put_filters(name, t)
 end
 
 function update()
+	local visible = modal:is_visible()
+
 	if old_visible ~= visible then
 		old_visible = visible
 
@@ -177,6 +172,8 @@ function update()
 	osd:update()
 end
 update = osd.update_wrap(update)
+
+modal = require('modal').new(update)
 
 mode:map({
 	a = function()
@@ -220,14 +217,13 @@ mode:map({
 		end
 	end,
 	ESC = function()
-		set_visible('hide')
+		modal:hide()
 	end,
 })
 
 utils.register_script_messages('osd-filters', {
-	visibility = set_visible,
+	visibility = modal.set_visibility,
 	cursor = set_cursor,
 })
 
 set_default_filters()
-update()

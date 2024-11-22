@@ -1,14 +1,12 @@
 local osd = require('osd').new()
 local utils = require('utils')
 
+local update
 local visible = false
+local old_visible = false
 local props = {}
 
-local old_visible
-
-local update
-
-local function set_visible(action)
+local function set_visibility(action)
 	visible = utils.reduce_bool(visible, action)
 	update()
 end
@@ -80,7 +78,5 @@ end
 update = osd.update_wrap(update)
 
 utils.register_script_messages('osd-metadata', {
-	visibility = set_visible,
+	visibility = set_visibility,
 })
-
-update()

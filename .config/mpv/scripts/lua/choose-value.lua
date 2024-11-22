@@ -3,20 +3,13 @@ local utils = require('utils')
 local function build_chooser(name, choices_file)
 	local osd = require('osd').new()
 
-	local visible = false
+	local modal
+	local update
+	local old_visible = false
 	local is_property = mp.get_property(name) ~= nil
 	local mode
 	local choices
 	local props = {}
-
-	local old_visible
-
-	local update
-
-	local function set_visible(action)
-		visible = utils.reduce_bool(visible, action)
-		update()
-	end
 
 	local function update_choices()
 		choices = utils.do_script_opt(choices_file)
@@ -25,14 +18,14 @@ local function build_chooser(name, choices_file)
 
 		mode:map({
 			ESC = function()
-				set_visible('hide')
+				modal:hide()
 			end,
 		})
 
 		for _, choice in ipairs(choices) do
 			local key, value = unpack(choice)
 			mode:map(key, function()
-				set_visible('hide')
+				modal:hide()
 				if is_property then
 					mp.commandv('osd-msg-bar', 'set', name, value)
 				elseif type(value) == 'string' then
@@ -52,6 +45,8 @@ local function build_chooser(name, choices_file)
 	end
 
 	function update()
+		local visible = modal:is_visible()
+
 		if old_visible ~= visible then
 			old_visible = visible
 
@@ -96,11 +91,11 @@ local function build_chooser(name, choices_file)
 	end
 	update = osd.update_wrap(update)
 
-	utils.register_script_messages('choose-' .. name, {
-		visibility = set_visible,
-	})
+	modal = require('modal').new(update)
 
-	update()
+	utils.register_script_messages('choose-' .. name, {
+		visibility = modal.set_visibility,
+	})
 end
 
 for _, file in

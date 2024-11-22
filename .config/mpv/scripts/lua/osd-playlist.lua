@@ -4,12 +4,11 @@ local title = require('title')
 
 local font_scale = 0.65
 
-local visible = false
-local old_visible
+local modal
+local update
+local old_visible = false
 local props = {}
 local forward
-local update
-local hide_timeout
 
 local playlist_changed = false
 
@@ -32,31 +31,10 @@ end, true)
 local function dirty_playlist()
 	playlist_changed = true
 
-	if visible and not playlist_timer:is_enabled() then
+	if modal:is_visible() and not playlist_timer:is_enabled() then
 		playlist_timer:resume()
 		update_playlist()
 	end
-end
-
-local function set_visible(action)
-	local temporary = false
-
-	if action == 'show' or action == 'peek' then
-		temporary = action == 'peek' and (not visible or hide_timeout:is_enabled())
-		visible = true
-	elseif action == 'hide' then
-		visible = false
-	elseif action == 'toggle' or action == 'blink' then
-		temporary = action == 'blink'
-		visible = not visible
-	end
-
-	hide_timeout:kill()
-	if temporary then
-		hide_timeout:resume()
-	end
-
-	update()
 end
 
 local function compute_layout()
@@ -96,6 +74,8 @@ local function update_property(name, value)
 end
 
 function update()
+	local visible = modal:is_visible()
+
 	if old_visible ~= visible then
 		old_visible = visible
 
@@ -151,13 +131,7 @@ function update()
 end
 update = osd.update_wrap(update)
 
-hide_timeout = mp.add_timeout(
-	mp.get_property_number('osd-duration') / 1000,
-	function()
-		set_visible('hide')
-	end,
-	true
-)
+modal = require('modal').new(update)
 
 mp.observe_property('osd-font-size', 'native', update_property)
 mp.observe_property('osd-margin-y', 'native', update_property)
@@ -165,7 +139,7 @@ mp.observe_property('playlist-pos-1', 'native', update_property)
 mp.observe_property('playlist-count', 'native', update_property)
 
 utils.register_script_messages('osd-playlist', {
-	visibility = set_visible,
+	visibility = modal.set_visibility,
 	scroll_half_screen = scroll_half_screen,
 })
 
@@ -179,5 +153,3 @@ end)
 mp.add_key_binding('Ctrl+u', function()
 	scroll_half_screen('up')
 end)
-
-update()
