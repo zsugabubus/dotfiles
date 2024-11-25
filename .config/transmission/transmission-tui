@@ -2344,8 +2344,8 @@ transmission-daemon(1), transmission-remote(1).
 
 	local function edit(self, opts, callback)
 		local f = TmpFile:with_content(with_buffer(opts.input))
-		self:spawn_shell(M:editor(), {
-			args = { '--', f.path },
+		self:spawn_shell('sh', {
+			args = { '-c', M:editor() .. ' -- "$1"', 'sh', f.path },
 			stdio = { 0, 1, 2 },
 		}, function(err)
 			if err then
