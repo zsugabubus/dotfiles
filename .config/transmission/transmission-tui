@@ -2635,8 +2635,12 @@ transmission-daemon(1), transmission-remote(1).
 	function M:check_port()
 		self:set_messagef('Port: (...)')
 		render(self)
-		local response = self.transmission:call('port-test')
-		self:set_messagef('Port: %s', response['port-is-open'] and 'Open' or 'Closed')
+		local ok, response = self.transmission:call_unchecked('port-test')
+		if ok then
+			self:set_messagef('Port: %s', response['port-is-open'] and 'Open' or 'Closed')
+		else
+			self:set_messagef('Port test failed')
+		end
 	end
 
 	function M:call_method_on_torrents(method, action)
