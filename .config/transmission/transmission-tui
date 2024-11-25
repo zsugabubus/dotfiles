@@ -1913,7 +1913,7 @@ is a hackable Transmission client made for Vim-lovers.
 .TS
 allbox tab(:);
 lB lB lB lB.
-Title:Width:Always:Transmission Data Source
+Title:Width:Always:Transmission data source
 .T&
 l r c l.
 ]])
@@ -1945,7 +1945,7 @@ l r c l.
 .TS
 allbox tab(:);
 lB lB lB lB.
-Title:Key:Width:Transmission Data Source
+Title:Key:Width:Transmission data source
 .T&
 l l r l.
 ]])
