@@ -219,17 +219,15 @@ local function create_TransmissionSession()
 	local CONTENT_TYPE_HEADER = 'Content-Type'
 	local JSON_MIME_TYPE = 'application/json'
 
+	local DEFAULT_PROTOCOL = 'http://'
+	local DEFAULT_HOST = '127.0.0.1'
+	local DEFAULT_PORT = 9091
+	local DEFAULT_PATH = '/transmission/'
+
 	local M = {
 		RECENTLY_ACTIVE_MILLISECONDS = 60 * 1000,
-		DEFAULT_HOST = '127.0.0.1',
-		DEFAULT_PORT = 9091,
-		DEFAULT_PATH = '/transmission/',
 	}
 	M.__index = M
-
-	local function make_url(host, port, path)
-		return format('http://%s:%d%srpc', host, port, path)
-	end
 
 	local function make_headers(session_id)
 		return {
@@ -245,15 +243,21 @@ local function create_TransmissionSession()
 	function M.new(cls, opts)
 		return setmetatable({
 			_http = assert(opts.http),
-			_url = make_url(
-				opts.host or cls.DEFAULT_HOST,
-				opts.port or cls.DEFAULT_PORT,
-				opts.path or cls.DEFAULT_PATH
-			),
+			_url = assert(opts.url),
 			_headers = make_headers(nil),
 			_username = opts.username,
 			_password = opts.password,
 		}, cls)
+	end
+
+	function M.make_url(protocol, host, port, path)
+		return format(
+			'%s%s:%d%srpc',
+			protocol or DEFAULT_PROTOCOL,
+			host or DEFAULT_HOST,
+			port or DEFAULT_PORT,
+			path or DEFAULT_PATH
+		)
 	end
 
 	function M:request(body)
@@ -1345,10 +1349,13 @@ local function create_TransmissionTui()
 		end
 	end
 
-	function M.new(cls)
+	function M.new(cls, opts)
 		local self = setmetatable({
 			transmission = TransmissionSession:new({
 				http = HttpSession:new(),
+				url = opts.rpc_url,
+				username = opts.rpc_username,
+				password = opts.rpc_password,
 			}),
 			_key_handler = KeyHandler:new(),
 			_shellout = 1,
@@ -1391,6 +1398,60 @@ local function create_TransmissionTui()
 		self:set_default_files_keys()
 
 		return self
+	end
+
+	function M:parse_cli_args(args)
+		local function parse_auth(s)
+			return match(s, '^([^:]*):(.*)$')
+		end
+
+		local function parse_url(s)
+			local protocol, host_port, path = match(s, '^(https?://)([^/]+)(.*)')
+
+			if not protocol then
+				host_port, path = match(s, '^([^/]+)(.*)')
+			end
+
+			if path == '' then
+				path = nil
+			end
+
+			local host, port = match(host_port, '^(.+):(%d+)$')
+			port = tonumber(port or host_port)
+
+			if not port then
+				host = host_port
+			end
+
+			return protocol, host, port, path
+		end
+
+		local prog = match(args[0], '[^/]*$')
+		local username, password = parse_auth(os.getenv('TR_AUTH') or '')
+		local url
+
+		for _, s in ipairs(args) do
+			if s == '-h' or s == '--help' then
+				print(format(
+					[[
+Usage: %s [ HOST | PORT | HOST:PORT | http://HOST:PORT/PATH ]
+ncurses transmission client]],
+					prog
+				))
+				os.exit()
+			elseif not match(s, '^-') and not url then
+				url = TransmissionSession.make_url(parse_url(s))
+			else
+				io.stderr:write(format("%s: invalid option -- '%s'\n", prog, s))
+				os.exit(1)
+			end
+		end
+
+		return {
+			rpc_username = username,
+			rpc_password = password,
+			rpc_url = url or TransmissionSession.make_url(),
+		}
 	end
 
 	M._help = setmetatable({}, { __mode = 'k' })
@@ -3309,6 +3370,7 @@ end
 os.setlocale('')
 
 local TransmissionTui = create_TransmissionTui()
-local app = TransmissionTui:new()
+local opts = TransmissionTui:parse_cli_args(arg)
+local app = TransmissionTui:new(opts)
 app:set_scrolloff(5)
 app:run()
