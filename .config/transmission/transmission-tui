@@ -648,7 +648,7 @@ local function create_ListRenderer(curs)
 		win:scroll(list_manager:top() - self._old_top)
 		self._old_top = list_manager:top()
 
-		local columns = columns:render(list_manager:list(), list_manager:top(), list_manager:last())
+		local columns = columns:render(list_manager.list, list_manager:top(), list_manager:last())
 
 		win:cursor(0, 0)
 		win:put(' ')
@@ -656,11 +656,10 @@ local function create_ListRenderer(curs)
 		win:clrtoeol()
 
 		local y = 1
-		local cursor = list_manager:cursor()
 
-		for i = list_manager:top(), list_manager:len() do
-			local data = list_manager:get(i)
-			local current = cursor == i
+		for i = list_manager:top(), #list_manager.list do
+			local data = list_manager.list[i]
+			local current = list_manager.cursor == i
 
 			y = self.render_item(win, y, data, columns, current, all_selected, focused)
 
@@ -697,7 +696,7 @@ local function create_ListManager()
 
 	local function sort_now(self)
 		assert(self._comp)
-		sort(self._list, self._comp)
+		sort(self.list, self._comp)
 	end
 
 	local function invalidate_index_map(self)
@@ -706,7 +705,7 @@ local function create_ListManager()
 
 	local function make_index_map(self)
 		local t = {}
-		for i, item in ipairs(self._list) do
+		for i, item in ipairs(self.list) do
 			t[item.id] = i
 		end
 		return t
@@ -731,12 +730,12 @@ local function create_ListManager()
 			local i = index_of[item.id]
 
 			if can_insert and i == nil then
-				i = #self._list + 1
+				i = #self.list + 1
 				index_of[item.id] = i
 			end
 
 			if i ~= nil then
-				self._list[i] = item
+				self.list[i] = item
 				checks[i] = item
 			end
 		end
@@ -744,7 +743,7 @@ local function create_ListManager()
 		sort_now(self)
 
 		for wanted_index, wanted_item in pairs(checks) do
-			if self._list[wanted_index] ~= wanted_item then
+			if self.list[wanted_index] ~= wanted_item then
 				invalidate_index_map(self)
 				break
 			end
@@ -753,9 +752,9 @@ local function create_ListManager()
 
 	function M.new(cls)
 		return setmetatable({
-			_list = {},
+			list = {},
 			_top = 1,
-			_cursor = 0,
+			cursor = 0,
 			_height = 0,
 			_scrolloff = 0,
 		}, cls)
@@ -770,26 +769,14 @@ local function create_ListManager()
 		self:scroll_cursor_into_view()
 	end
 
-	function M:list()
-		return self._list
-	end
-
-	function M:len()
-		return #self._list
-	end
-
-	function M:get(key)
-		return assert(self._list[key])
-	end
-
 	function M:find_index_by_id(id)
 		return get_index_map(self)[id]
 	end
 
 	function M:set(items)
-		self._list = items
+		self.list = items
 		invalidate_index_map(self)
-		self:move_cursor(self._cursor)
+		self:move_cursor(self.cursor)
 		if self._comp then
 			sort_now(self)
 		end
@@ -826,12 +813,12 @@ local function create_ListManager()
 		sort(t)
 
 		for i = #t, 1, -1 do
-			remove(self._list, t[i])
+			remove(self.list, t[i])
 		end
 
 		invalidate_index_map(self)
 
-		self:set_cursor(self._cursor)
+		self:set_cursor(self.cursor)
 	end
 
 	function M:set_sort(comp)
@@ -846,14 +833,10 @@ local function create_ListManager()
 		self._scrolloff = n
 	end
 
-	function M:cursor()
-		return self._cursor
-	end
-
 	function M:set_cursor(index)
 		index = max(index, 1)
-		index = min(index, #self._list)
-		self._cursor = index
+		index = min(index, #self.list)
+		self.cursor = index
 	end
 
 	function M:top()
@@ -865,11 +848,11 @@ local function create_ListManager()
 	end
 
 	function M:last()
-		return min(#self._list, self:bottom())
+		return min(#self.list, self:bottom())
 	end
 
 	function M:set_top(index)
-		index = min(index, #self._list - self._height + 1)
+		index = min(index, #self.list - self._height + 1)
 		index = max(index, 1)
 		self._top = index
 	end
@@ -896,7 +879,7 @@ local function create_ListManager()
 	end
 
 	function M:move_cursor_by(amount)
-		self:move_cursor(self._cursor + amount)
+		self:move_cursor(self.cursor + amount)
 	end
 
 	function M:move_cursor_first()
@@ -904,7 +887,7 @@ local function create_ListManager()
 	end
 
 	function M:move_cursor_last()
-		self:move_cursor(#self._list)
+		self:move_cursor(#self.list)
 	end
 
 	function M:move_cursor_to_id(id)
@@ -917,7 +900,7 @@ local function create_ListManager()
 	end
 
 	function M:move_cursor_into_view()
-		self:set_cursor(self:compute_nearest_view_line(self._cursor))
+		self:set_cursor(self:compute_nearest_view_line(self.cursor))
 	end
 
 	function M:scroll_into_view(index)
@@ -925,7 +908,7 @@ local function create_ListManager()
 	end
 
 	function M:scroll_cursor_into_view()
-		self:scroll_into_view(self._cursor)
+		self:scroll_into_view(self.cursor)
 	end
 
 	function M:scroll_by(amount)
@@ -939,7 +922,7 @@ local function create_ListManager()
 
 	function M:scroll_and_move_by(amount)
 		self:set_top(self._top + amount)
-		self:set_cursor(self._cursor + amount)
+		self:set_cursor(self.cursor + amount)
 	end
 
 	function M:scroll_and_move_by_half_page(amount)
@@ -947,7 +930,7 @@ local function create_ListManager()
 	end
 
 	function M:scroll_cursor_to_view_line(index)
-		self:set_top(self._cursor - index)
+		self:set_top(self.cursor - index)
 	end
 
 	function M:scroll_cursor_to_top()
@@ -963,22 +946,6 @@ local function create_ListManager()
 	function M:scroll_cursor_to_middle()
 		local m = self:half_height()
 		self:scroll_cursor_to_view_line(m)
-	end
-
-	function M:cursor_id()
-		local item = self._list[self._cursor]
-		if item == nil then
-			return
-		end
-		return item.id
-	end
-
-	function M:ids()
-		local t = {}
-		for _, item in ipairs(self._list) do
-			insert(t, item.id)
-		end
-		return t
 	end
 
 	return M
@@ -1322,6 +1289,7 @@ local function create_TransmissionTui()
 
 		local ids = self:selected_torrent_ids()
 		self._details_ids = ids
+
 		if #ids == 0 then
 			list_manager:clear()
 			return
@@ -1967,12 +1935,26 @@ transmission-daemon(1), transmission-remote(1).
 		end)
 	end
 
+	function M:all_torrent_ids()
+		local t = {}
+		for _, torrent in ipairs(self._torrents.list) do
+			insert(t, assert(torrent.id))
+		end
+		return t
+	end
+
 	function M:selected_torrent_ids()
 		if self._torrents_all_selected then
-			return self._torrents:ids()
-		else
-			return { self._torrents:cursor_id() }
+			return self:all_torrent_ids()
 		end
+
+		local torrent = self._torrents.list[self._torrents.cursor]
+
+		if not torrent then
+			return {}
+		end
+
+		return { assert(torrent.id) }
 	end
 
 	local function will_update_torrents(self)
@@ -2046,7 +2028,7 @@ transmission-daemon(1), transmission-remote(1).
 		else
 			local response = self.transmission:call('torrent-get', {
 				fields = self._torrent_fields,
-				ids = self._torrents_filtered and self._torrents:ids() or nil,
+				ids = self._torrents_filtered and self:all_torrent_ids() or nil,
 			})
 			self._torrents:set(response.torrents)
 		end
@@ -2125,7 +2107,7 @@ transmission-daemon(1), transmission-remote(1).
 
 		local list_manager = self:focused_list()
 
-		win:putf('[%d/%d', list_manager:cursor(), list_manager:len())
+		win:putf('[%d/%d', list_manager.cursor, #list_manager.list)
 		if self._torrents_filtered and list_manager == self._torrents then
 			win:putf(' (%d)', stats.torrentCount)
 		end
@@ -2494,17 +2476,17 @@ transmission-daemon(1), transmission-remote(1).
 				return
 			end
 
-			local index = match(reply, '^%d+\n$')
-			if index then
-				self._torrents:move_cursor(index + 1)
+			local index0 = match(reply, '^%d+\n$')
+			if index0 then
+				self._torrents:move_cursor(index0 + 1)
 				return
 			end
 
 			local ids = {}
 
-			for index in gmatch(reply, '%d+') do
-				local torrent = self._torrents:get(index + 1)
-				insert(ids, torrent.id)
+			for index0 in gmatch(reply, '%d+') do
+				local torrent = self._torrents.list[index0 + 1]
+				insert(ids, assert(torrent.id))
 			end
 
 			if #ids == 0 then
@@ -2515,7 +2497,7 @@ transmission-daemon(1), transmission-remote(1).
 		end)
 
 		stdin:write(with_buffer(function(buf)
-			for _, torrent in ipairs(self._torrents:list()) do
+			for _, torrent in ipairs(self._torrents.list) do
 				buf:put(torrent.name, '\0')
 			end
 		end))
@@ -2818,7 +2800,7 @@ transmission-daemon(1), transmission-remote(1).
 	function M:show_filter_torrents()
 		edit(self, {
 			input = function(buf)
-				local columns = self._torrent_columns:render(self._torrents:list(), 1, self._torrents:len())
+				local columns = self._torrent_columns:render(self._torrents.list, 1, #self._torrents.list)
 
 				buf:put('# ID (1)')
 				for i, column in ipairs(columns) do
@@ -2827,7 +2809,7 @@ transmission-daemon(1), transmission-remote(1).
 
 				buf:put('\n\n')
 
-				for _, torrent in ipairs(self._torrents:list()) do
+				for _, torrent in ipairs(self._torrents.list) do
 					buf:putf('%d', torrent.id)
 					for _, column in ipairs(columns) do
 						buf:put('\t', column.display(torrent))
