@@ -190,7 +190,8 @@ local blocks = {
 		end
 	end),
 	bat_capacity = periodic(function(name)
-		local f = file(string.format('/sys/class/power_supply/%s/capacity', name))
+		local f =
+			file(sformat('/sys/class/power_supply/%s/capacity', name or 'BAT0'))
 
 		return function(o)
 			o.capacity = tonumber(f(20))
@@ -259,7 +260,7 @@ tmux(function(update_bar)
 	local cpu = blocks.cpu(update_bar)
 	local loadavg = blocks.loadavg(update_bar)
 	local ac_online = blocks.ac_online(update_bar)
-	local bat_capacity = blocks.bat_capacity(update_bar, 'BAT0')
+	local bat_capacity = blocks.bat_capacity(update_bar)
 
 	return function(buf)
 		net:interval(30)
