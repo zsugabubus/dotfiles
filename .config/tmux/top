@@ -291,6 +291,7 @@ tmux(function(update_bar)
 	local loadavg = blocks.loadavg(update_bar)
 	local ac_online = blocks.ac_online(update_bar)
 	local bat_capacity = blocks.bat_capacity(update_bar)
+	local tr = blocks.transmission(update_bar)
 
 	return function(buf)
 		net:interval(30)
@@ -303,6 +304,11 @@ tmux(function(update_bar)
 			buf:put('/#[fg=color33,bold]', bytes_long(net.tx_speed), '#[default]')
 		end
 		buf:put(' ')
+
+		tr:interval(300)
+		if (tr.paused_torrent_count or 0) > 0 then
+			buf:put(' 󰍇 ', tr.paused_torrent_count, ' ')
+		end
 
 		mem:interval(15)
 		buf:put(
