@@ -427,7 +427,6 @@ local function create_curs_width(curs, Window)
 
 	local mt = { __mode = 'kv' }
 	local cache
-	local cur_cols
 
 	return function(s)
 		local max_cols = curs.COLS
@@ -720,7 +719,7 @@ local function create_ListManager()
 		return self._index_map
 	end
 
-	local function upsert_many(self, items, insert)
+	local function upsert_many(self, items, can_insert)
 		if #items == 0 then
 			return
 		end
@@ -731,7 +730,7 @@ local function create_ListManager()
 		for _, item in ipairs(items) do
 			local i = index_of[item.id]
 
-			if insert and i == nil then
+			if can_insert and i == nil then
 				i = #self._list + 1
 				index_of[item.id] = i
 			end
@@ -1073,16 +1072,16 @@ local function create_TransmissionTui()
 	local with_buffer = create_with_buffer()
 	local KeyHandler = create_KeyHandler()
 
-	local function dir_empty()
+	local function noop()
 		-- Do nothing.
 	end
 
-	local function dir(path)
+	local function list_dir(path)
 		local handle = uv.fs_scandir(path)
 		if handle then
 			return uv.fs_scandir_next, handle
 		end
-		return dir_empty
+		return noop
 	end
 
 	local M = {}
@@ -1195,17 +1194,15 @@ local function create_TransmissionTui()
 	local function display_speed_and_peers(speed, peer_count)
 		if speed <= 0 and peer_count <= 0 then
 			return ''
-		else
-			return format('%s (%5s)', display_bytes(speed), display_number(peer_count))
 		end
+		return format('%s (%5s)', display_bytes(speed), display_number(peer_count))
 	end
 
 	local function display_speed_limit(speed, limited)
 		if not limited then
 			return ''
-		else
-			return display_bytes(speed)
 		end
+		return display_bytes(speed)
 	end
 
 	local function display_percent(n)
@@ -1235,9 +1232,8 @@ local function create_TransmissionTui()
 	local function display_timestamp(n)
 		if n <= 0 then
 			return ''
-		else
-			return date('%b %d %H:%M', n)
 		end
+		return date('%b %d %H:%M', n)
 	end
 
 	local function make_column(title, width, display, dependencies)
@@ -1322,7 +1318,7 @@ local function create_TransmissionTui()
 	end
 
 	local function update_list(self, list_manager, field_names)
-		assert(#field_names ~= 0)
+		assert(#field_names > 0)
 
 		local ids = self:selected_torrent_ids()
 		self._details_ids = ids
@@ -1498,9 +1494,8 @@ local function create_TransmissionTui()
 					return 'Stalled'
 				elseif data.isFinished then
 					return 'Finished'
-				else
-					return TORRENT_STATUS_NAME[data.status] or ''
 				end
+				return TORRENT_STATUS_NAME[data.status] or ''
 			end, { 'isStalled', 'isFinished', 'status' }),
 			up = make_bytes_column('Up', 'rateUpload'),
 			up_limit = make_speed_limit_column('Up Limit', 'uploadLimit', 'uploadLimited'),
@@ -2101,7 +2096,7 @@ transmission-daemon(1), transmission-remote(1).
 	)
 		win:put(title)
 		win:put(' ')
-		if current_bytes ~= 0 then
+		if current_bytes > 0 then
 			win:putf('%7s', display_bytes(speed))
 			if alt_speed_limit_enabled then
 				win:put('/')
@@ -2137,7 +2132,7 @@ transmission-daemon(1), transmission-remote(1).
 		win:put(']')
 
 		local paused = stats.pausedTorrentCount
-		if paused ~= 0 then
+		if paused > 0 then
 			win:putf(' %d paused', paused)
 		end
 
@@ -2426,9 +2421,8 @@ transmission-daemon(1), transmission-remote(1).
 	function M:focused_list()
 		if self._details_focused then
 			return assert(self._details_list)
-		else
-			return self._torrents
 		end
+		return self._torrents
 	end
 
 	function M:set_scrolloff(n)
@@ -2529,7 +2523,7 @@ transmission-daemon(1), transmission-remote(1).
 			stdin:close()
 		end)
 
-		stdout:read_start(function(err, data)
+		stdout:read_start(function(_, data)
 			if data then
 				reply = reply .. data
 			else
@@ -2604,7 +2598,7 @@ transmission-daemon(1), transmission-remote(1).
 
 	function M:call_method_on_torrents(method, action)
 		local ids = self:selected_torrent_ids()
-		if #ids ~= 0 then
+		if #ids > 0 then
 			self.transmission:call(method, {
 				ids = ids,
 			})
@@ -2722,7 +2716,7 @@ transmission-daemon(1), transmission-remote(1).
 					insert(t, '')
 				end
 				current_tier = tracker.tier
-				insert(t, tracker.announce)
+				insert(t, assert(tracker.announce))
 			end
 			return t
 		end
@@ -2784,9 +2778,8 @@ transmission-daemon(1), transmission-remote(1).
 					end
 				end
 
-				count = count + #ids
-
-				if #ids ~= 0 then
+				if #ids > 0 then
+					count = count + #ids
 					self.transmission:call('torrent-set', {
 						ids = ids,
 						trackerList = s,
@@ -2807,7 +2800,7 @@ transmission-daemon(1), transmission-remote(1).
 				elseif s == '' then
 					new_tier = true
 				else
-					if new_tier and #tracker_list ~= 0 then
+					if new_tier and #tracker_list > 0 then
 						insert(tracker_list, '')
 					end
 					new_tier = false
@@ -2827,7 +2820,7 @@ transmission-daemon(1), transmission-remote(1).
 			input = function(buf)
 				local columns = self._torrent_columns:render(self._torrents:list(), 1, self._torrents:len())
 
-				buf:putf('# ID (1)')
+				buf:put('# ID (1)')
 				for i, column in ipairs(columns) do
 					buf:putf('\t%s (%d)', column.title, i + 1)
 				end
@@ -3051,9 +3044,8 @@ transmission-daemon(1), transmission-remote(1).
 					end
 				end
 
-				count = count + #ids
-
-				if #ids ~= 0 then
+				if #ids > 0 then
+					count = count + #ids
 					self.transmission:call('torrent-set-location', {
 						ids = ids,
 						location = location,
@@ -3116,7 +3108,7 @@ transmission-daemon(1), transmission-remote(1).
 
 			local ids = parse_ids(data)
 
-			if #ids ~= 0 then
+			if #ids > 0 then
 				self.transmission:call('torrent-remove', {
 					ids = ids,
 					['delete-local-data'] = delete_local_data,
@@ -3167,7 +3159,7 @@ transmission-daemon(1), transmission-remote(1).
 
 			local ids = parse_ids(data)
 
-			if #ids ~= 0 then
+			if #ids > 0 then
 				self.transmission:call('torrent-verify', {
 					ids = ids,
 				})
@@ -3180,6 +3172,13 @@ transmission-daemon(1), transmission-remote(1).
 	local function add_torrents(self, collect_torrent_files, delete_after_add)
 		local function shesc(s)
 			return "'" .. gsub(s, "'", [['"'"']]) .. "'"
+		end
+
+		local function b64file(path)
+			local f = io.popen('base64 2>/dev/null -- ' .. shesc(path))
+			local s = assert(f:read('*a'))
+			assert(f:close())
+			return s
 		end
 
 		local new_ids = {}
@@ -3209,7 +3208,7 @@ transmission-daemon(1), transmission-remote(1).
 					end
 
 					local first = true
-					for name in dir('.') do
+					for name in list_dir('.') do
 						if match(name, '.%.torrent$') then
 							if first then
 								buf:put('\n')
@@ -3241,7 +3240,7 @@ transmission-daemon(1), transmission-remote(1).
 				local errored_items = {}
 
 				for s in parse_fields(data, '.+') do
-					local output = io.popen('base64 2>/dev/null -- ' .. shesc(s)):read('*a')
+					local output = b64file(s)
 
 					local ok, payload = self.transmission:call_unchecked('torrent-add', {
 						filename = output == '' and s or nil,
@@ -3250,7 +3249,8 @@ transmission-daemon(1), transmission-remote(1).
 					})
 
 					if ok then
-						insert(new_ids, assert((payload['torrent-added'] or payload['torrent-duplicate']).id))
+						local new_torrent = payload['torrent-added'] or payload['torrent-duplicate']
+						insert(new_ids, assert(new_torrent.id))
 						if delete_after_add and output ~= '' then
 							os.remove(s)
 						end
