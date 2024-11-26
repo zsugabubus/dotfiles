@@ -3,8 +3,12 @@ local uv = require('luv')
 
 local format = string.format
 local gmatch = string.gmatch
+local gsub = string.gsub
+local insert = table.insert
 local match = string.match
 local rep = string.rep
+local sort = table.sort
+local sub = string.sub
 
 local KiB = 1024
 local MiB = 1024 * KiB
@@ -34,6 +38,39 @@ local function bytes_long(n)
 	end
 end
 
+local function noop()
+	-- Do nothing.
+end
+
+local function list_dir(path)
+	local handle = uv.fs_scandir(path)
+	if handle then
+		return uv.fs_scandir_next, handle
+	end
+	return noop
+end
+
+local function debounce(fn, delay, interval)
+	local timer = uv.new_timer()
+	local should_call
+
+	local function handler()
+		if should_call then
+			should_call = false
+			fn()
+		else
+			timer:stop()
+		end
+	end
+
+	return function()
+		should_call = true
+		if not timer:is_active() then
+			timer:start(delay, interval, handler)
+		end
+	end
+end
+
 local function file(path)
 	local f = assert(io.open(path))
 	f:setvbuf('no')
@@ -47,22 +84,19 @@ end
 local function periodic(fn)
 	return function(update_bar, ...)
 		local o = {}
-
 		local timer = uv.new_timer()
 		local timer_secs = nil
 		local update_block = fn(...)
 		local interested = false
 
 		local function update()
-			if not interested then
+			if interested then
+				interested = false
+				update_block(o)
+				update_bar()
+			else
 				timer:stop()
-				return
 			end
-
-			interested = false
-
-			update_block(o)
-			update_bar()
 		end
 
 		function o:interval(secs)
@@ -183,7 +217,7 @@ local blocks = {
 		end
 	end),
 	ac_online = periodic(function(name)
-		local f = file(sformat('/sys/class/power_supply/%s/online', name or 'AC'))
+		local f = file(format('/sys/class/power_supply/%s/online', name or 'AC'))
 
 		return function(o)
 			o.online = f(1) == '1'
@@ -191,7 +225,7 @@ local blocks = {
 	end),
 	bat_capacity = periodic(function(name)
 		local f =
-			file(sformat('/sys/class/power_supply/%s/capacity', name or 'BAT0'))
+			file(format('/sys/class/power_supply/%s/capacity', name or 'BAT0'))
 
 		return function(o)
 			o.capacity = tonumber(f(20))
@@ -199,7 +233,7 @@ local blocks = {
 	end),
 	transmission = periodic(function(url, user)
 		local function get_session_stats(session_id)
-			local cmd = sformat(
+			local cmd = format(
 				[[curl '%s' --silent --user '%s' --header 'X-Transmission-Session-Id: %s' --json '{"method":"session-stats"}']],
 				url or 'http://localhost:9091/transmission/rpc',
 				user or ':',
@@ -212,11 +246,11 @@ local blocks = {
 		end
 
 		local function get_session_id()
-			return smatch(get_session_stats(), '.*: (%w+)')
+			return match(get_session_stats(), '.*: (%w+)')
 		end
 
 		local function json_number(s, pat)
-			return tonumber(smatch(s, pat .. ':(%d+)'))
+			return tonumber(match(s, pat .. ':(%d+)'))
 		end
 
 		return function(o)
@@ -227,12 +261,163 @@ local blocks = {
 			o.paused_torrent_count = ok and json_number(stats, '"pausedTorrentCount"')
 		end
 	end),
+	mail = function(update_bar, opts)
+		local folders = {}
+		local folders_by_display = {}
+		local ring_timer = uv.new_timer()
+		local ring_process
+
+		local function ring()
+			if ring_process then
+				return
+			end
+
+			ring_process = uv.spawn('ffplay', {
+				args = {
+					'-autoexit',
+					'-nodisp',
+					'-loglevel',
+					'error',
+					'--',
+					opts.bell_file,
+				},
+			}, function(code)
+				ring_process:close()
+				ring_process = nil
+				assert(code == 0)
+			end)
+		end
+
+		local function update_ring()
+			local should_ring = false
+
+			for _, folder in ipairs(folders) do
+				if not folder.silent and folder.unread then
+					should_ring = true
+					break
+				end
+			end
+
+			if should_ring then
+				if not ring_timer:is_active() then
+					ring_timer:start(0, 60 * 1000, ring)
+				end
+			else
+				ring_timer:stop()
+			end
+		end
+
+		local function count_files(path)
+			local n = 0
+			for _ in list_dir(path) do
+				n = n + 1
+			end
+			return n
+		end
+
+		local function load_config(path)
+			local ok, code = pcall(loadfile, path .. '/watch.lua')
+			if ok and code then
+				setfenv(code, {})
+				return code()
+			end
+		end
+
+		local function update_folders()
+			for _, folder in ipairs(folders) do
+				if not folder.root then
+					local display_root = match(folder.display, '^[^/]*')
+					folder.root = folders_by_display[display_root]
+				end
+			end
+		end
+
+		local function add_folder(path, fullname, config)
+			local name = match(fullname, '([^/]*)$')
+			local display = gsub(sub(fullname, 2), '/inbox$', '')
+			local folder = {
+				fullname = fullname,
+				display = display,
+				path = path,
+				name = name,
+				inbox = name == 'inbox',
+				new_mails = math.huge,
+				unread = false,
+				silent = false,
+			}
+			insert(folders, folder)
+			folders_by_display[display] = folder
+
+			for k, v in pairs(config or {}) do
+				folder[k] = v
+			end
+
+			update_folders()
+
+			local new_path = path .. '/new'
+
+			local function update_count()
+				local prev = folder.new_mails
+				local curr = count_files(new_path)
+				folder.new_mails = curr
+
+				if curr > prev then
+					folder.unread = true
+				elseif curr < prev then
+					folder.unread = false
+				end
+
+				update_bar()
+				update_ring()
+			end
+			local update_count = debounce(update_count, 50, 3000)
+
+			local fs_event = uv.new_fs_event()
+			fs_event:start(new_path, {}, function(err)
+				assert(not err, err)
+				update_count()
+			end)
+
+			update_count()
+		end
+
+		local function find_folders(path, fullname, config)
+			config = load_config(path) or config
+
+			if uv.fs_access(path .. '/new', 'x') then
+				add_folder(path, fullname, config)
+			end
+
+			for name, kind in list_dir(path) do
+				if
+					kind == 'file'
+					or sub(name, 1, 1) == '.'
+					or name == 'cur'
+					or name == 'new'
+					or name == 'tmp'
+				then
+					-- Ignore.
+				else
+					find_folders(path .. '/' .. name, fullname .. '/' .. name, config)
+				end
+			end
+		end
+
+		find_folders(assert(opts.mail_dir or os.getenv('MAIL')), '')
+
+		sort(folders, function(a, b)
+			if a.root.inbox ~= b.root.inbox then
+				return a.root.inbox
+			end
+			return a.display < b.display
+		end)
+
+		return { folders = folders }
+	end,
 }
 
 local function bar(fn, on_output)
 	local buf = require('string.buffer').new()
-	local timer = uv.new_timer()
-
 	local last_output
 	local write
 
@@ -250,24 +435,16 @@ local function bar(fn, on_output)
 		on_output(output)
 	end
 
-	local function schedule_update()
-		if timer:is_active() then
-			return
-		end
+	write = fn(debounce(update, 50, 500))
 
-		timer:start(100, 0, update)
-	end
-
-	write = fn(schedule_update)
-
-	schedule_update()
+	update()
 end
 
-local function tmux(fn)
+local function tmux(option, fn)
 	bar(fn, function(output)
 		local process
 		process = assert(uv.spawn('tmux', {
-			args = { 'set', '-g', '@status-top', output },
+			args = { 'set', '-g', option, output },
 		}, function(code)
 			process:close()
 			assert(code == 0)
@@ -275,14 +452,14 @@ local function tmux(fn)
 	end)
 end
 
-local function danger(cond)
-	if not cond then
-		return ''
+tmux('@status', function(update_bar)
+	local function danger(cond)
+		if not cond then
+			return ''
+		end
+		return '#[bg=red,fg=color255,bold]!!#[default]'
 	end
-	return '#[bg=red,fg=color255,bold]!!#[default]'
-end
 
-tmux(function(update_bar)
 	local net = blocks.net(update_bar, function(name)
 		return match(name, '^enp') or match(name, '^wl')
 	end)
@@ -292,8 +469,40 @@ tmux(function(update_bar)
 	local ac_online = blocks.ac_online(update_bar)
 	local bat_capacity = blocks.bat_capacity(update_bar)
 	local tr = blocks.transmission(update_bar)
+	local mail = blocks.mail(update_bar, {
+		bell_file = assert(os.getenv('HOME')) .. '/doc/bell.mp3',
+	})
 
 	return function(buf)
+		do
+			local empty = true
+
+			for _, folder in ipairs(mail.folders) do
+				if folder.new_mails > 0 then
+					if empty then
+						empty = false
+						buf:put('[')
+					else
+						buf:put(' ')
+					end
+
+					buf:putf(
+						'%s%s:%d%s',
+						folder.unread
+								and (folder.silent and '#[#{@status-mail-unread-silent-style}]' or '#[#{@status-mail-unread-style}]')
+							or '',
+						folder.display,
+						folder.new_mails,
+						folder.unread and '*#[default]' or ''
+					)
+				end
+			end
+
+			if not empty then
+				buf:put('] ')
+			end
+		end
+
 		net:interval(30)
 		buf:put(' ↓ ', bytes(net.rx_bytes))
 		if net.rx_speed > 50 * KiB then

@@ -1,12 +1,12 @@
 [Unit]
-Description=Tmux Top Generator
+Description=Tmux Status Generator
 After=tmux-server.service
 BindsTo=tmux-server.service
 
 [Service]
 Type=simple
-ExecStart=%E/tmux/top
-ExecStop=-tmux set -ug @status-top
+ExecStart=%E/tmux/status
+ExecStop=-tmux set -ug @status
 Restart=always
 
 [Install]
