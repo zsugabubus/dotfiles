@@ -183,7 +183,7 @@ local blocks = {
 		end
 	end),
 	ac_online = periodic(function(name)
-		local f = file(string.format('/sys/class/power_supply/%s/online', name))
+		local f = file(sformat('/sys/class/power_supply/%s/online', name or 'AC'))
 
 		return function(o)
 			o.online = f(1) == '1'
@@ -258,7 +258,7 @@ tmux(function(update_bar)
 	local mem = blocks.mem(update_bar)
 	local cpu = blocks.cpu(update_bar)
 	local loadavg = blocks.loadavg(update_bar)
-	local ac_online = blocks.ac_online(update_bar, 'AC')
+	local ac_online = blocks.ac_online(update_bar)
 	local bat_capacity = blocks.bat_capacity(update_bar, 'BAT0')
 
 	return function(buf)
