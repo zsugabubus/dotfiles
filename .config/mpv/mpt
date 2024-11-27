@@ -342,7 +342,7 @@ local function set_client(client_)
 		playlist_changed = true
 
 		if not playlist_timer:is_active() then
-			playlist_timer:start(0, 1000, update_playlist)
+			playlist_timer:start(0, 100, update_playlist)
 		end
 	end
 
