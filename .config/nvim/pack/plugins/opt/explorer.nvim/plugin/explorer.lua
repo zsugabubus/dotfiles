@@ -7,16 +7,16 @@ local autocmd = api.nvim_create_autocmd
 
 local group = api.nvim_create_augroup('explorer', {})
 
-local function dir_empty()
+local function lsdir_empty()
 	-- Do nothing.
 end
 
-local function dir(path)
+local function lsdir(path)
 	local handle = uv.fs_scandir(path)
 	if handle then
 		return uv.fs_scandir_next, handle
 	end
-	return dir_empty
+	return lsdir_empty
 end
 
 local function find(t, base, limit)
@@ -24,7 +24,7 @@ local function find(t, base, limit)
 		return
 	end
 
-	for name, kind in dir(base == '' and '.' or base) do
+	for name, kind in lsdir(base == '' and '.' or base) do
 		local path = base .. name
 		if kind == 'directory' then
 			table.insert(t, path .. '/')

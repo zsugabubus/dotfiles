@@ -1,4 +1,4 @@
-local vim = create_vim({ width = 200 })
+local vim = create_vim({ width = 200, isolate = false })
 
 local function tempname()
 	return vim.fn.tempname()
@@ -7,23 +7,21 @@ end
 
 describe('dir', function()
 	test('non-directory', function()
-		local function f()
+		local function is_directory()
 			return vim.bo.filetype == 'directory'
 		end
 
 		local dir = tempname()
+		local file = dir .. '/file'
 		vim.fn.mkdir(dir, 'p')
+		vim.fn.writefile({}, file)
 
 		vim.cmd.edit(vim.fn.fnameescape(dir))
-		assert.True(f())
-
-		local a = dir .. '/a'
-		vim.fn.writefile({}, a)
-		vim.cmd.edit(vim.fn.fnameescape(a))
-		assert.False(f())
-
+		assert.True(is_directory())
+		vim.cmd.edit(vim.fn.fnameescape(file))
+		assert.False(is_directory())
 		vim.cmd.edit(vim.fn.fnameescape(dir .. '/newfile'))
-		assert.False(f())
+		assert.False(is_directory())
 	end)
 
 	test('edit', function()
@@ -44,9 +42,7 @@ describe('dir', function()
 		vim.cmd.file(vim.fn.fnameescape(dir .. '//'))
 		vim:assert_lines({ a .. '/', ac .. '/', acc .. '/', b, d .. '/' })
 
-		assert.error_matches(function()
-			vim.cmd.write()
-		end, 'Cannot write')
+		assert.error_matches(vim.cmd.write, 'Cannot write')
 	end)
 
 	test(':chdir', function()
@@ -111,9 +107,7 @@ describe('http', function()
 		vim.cmd.edit(vim.fn.fnameescape('https://example.com#[1-10000]'))
 		assert.True(vim.fn.search('Example Domain') > 0)
 
-		assert.error_matches(function()
-			vim.cmd.write()
-		end, 'Cannot write')
+		assert.error_matches(vim.cmd.write, 'Cannot write')
 	end)
 
 	test('filetype', function()
@@ -180,9 +174,7 @@ describe('ssh', function()
 		})
 		assert.same('directory', vim.bo.filetype)
 
-		assert.error_matches(function()
-			vim.cmd.write()
-		end, 'Cannot write')
+		assert.error_matches(vim.cmd.write, 'Cannot write')
 	end)
 
 	describe('file', function()
@@ -262,8 +254,6 @@ describe('ssh', function()
 		assert.True(vim.bo.readonly)
 		vim:assert_messages('')
 
-		assert.error_matches(function()
-			vim.cmd.write()
-		end, 'Cannot write')
+		assert.error_matches(vim.cmd.write, 'Cannot write')
 	end)
 end)
