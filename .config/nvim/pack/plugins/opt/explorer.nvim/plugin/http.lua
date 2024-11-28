@@ -1,27 +1,25 @@
-local api = vim.api
-local bo = vim.bo
+local group = vim.api.nvim_create_augroup('explorer.http', {})
 
-local group = api.nvim_create_augroup('explorer.http', {})
-
-api.nvim_create_autocmd('BufReadCmd', {
+vim.api.nvim_create_autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'http://*,https://*',
 	nested = true,
 	callback = function(opts)
-		bo.buftype = 'nofile'
-		bo.swapfile = false
-		bo.modeline = false
+		vim.bo.buftype = 'nofile'
+		vim.bo.swapfile = false
 		local cmdline =
 			{ 'curl', '--silent', '--location', '--globoff', opts.match }
-		api.nvim_buf_set_lines(0, 0, -1, true, vim.fn.systemlist(cmdline))
-		local filetype, on_detect = vim.filetype.match({
-			buf = 0,
-			filename = string.match(
+		local contents = vim.fn.systemlist(cmdline)
+		vim.api.nvim_buf_set_lines(0, 0, -1, true, contents)
+		local ft, on_detect = vim.filetype.match({ contents = contents })
+		if not ft then
+			local filename = string.match(
 				string.match(opts.match, '//([^?#]*)'),
 				'/([^/]+)$'
-			) or '',
-		})
-		bo.filetype = filetype or ''
+			) or ''
+			ft, on_detect = vim.filetype.match({ buf = 0, filename = filename })
+		end
+		vim.bo.filetype = ft or ''
 		if on_detect then
 			on_detect(0)
 		end

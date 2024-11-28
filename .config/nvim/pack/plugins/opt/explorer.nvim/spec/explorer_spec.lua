@@ -118,11 +118,19 @@ describe('http', function()
 
 		mock_curl('<!doctype html>')
 
-		test_case('http://a.c', 'html')
-		test_case('http://b.c/', 'html')
-		test_case('http://0.0.0.0//a.c', 'c')
-		test_case('http://0.0.0.0/a.json?/a.c', 'json')
-		test_case('http://0.0.0.0/a.json#/a.c', 'json')
+		test_case('http://0.0.0.0/index.php', 'html')
+
+		mock_curl('')
+
+		test_case('http://site.c', '')
+		test_case('http://site.c/', '')
+		test_case('http://0.0.0.0/data.json?/hash.c', 'json')
+		test_case('http://0.0.0.0/data.json#/hash.c', 'json')
+		test_case('http://0.0.0.0//index2.php', 'php')
+
+		mock_curl(' vim: ft=modeline')
+
+		test_case('http://0.0.0.0/file', 'modeline')
 	end)
 end)
 
