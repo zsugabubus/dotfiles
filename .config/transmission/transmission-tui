@@ -2143,10 +2143,10 @@ transmission-daemon(1), transmission-remote(1).
 			win:putf('%7s', display_bytes(speed))
 			if alt_speed_limit_enabled then
 				win:put('/')
-				win:put(display_bytes(alt_speed_limit_kbyps * 1024))
+				win:put(display_bytes(alt_speed_limit_kbyps * 1000))
 			elseif speed_limit_enabled then
 				win:put('/')
-				win:put(display_bytes(speed_limit_kbyps * 1024))
+				win:put(display_bytes(speed_limit_kbyps * 1000))
 			end
 			win:put('  ')
 			win:put(display_bytes(current_bytes))
