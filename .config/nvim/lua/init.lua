@@ -890,6 +890,41 @@ require('pack').add({
 	},
 	{ 'man.lua' },
 	{
+		'markdown.nvim',
+		before = function()
+			autocmd('User', {
+				group = group,
+				pattern = 'MarkdownPreviewStart',
+				callback = function(opts)
+					fn.setreg('+', opts.data.browser_url)
+				end,
+			})
+
+			autocmd('FileType', {
+				group = group,
+				pattern = 'markdown',
+				callback = function()
+					api.nvim_buf_create_user_command(0, 'Preview', function(opts)
+						cmd.MarkdownPreviewStart(tostring(opts.count))
+					end, { count = true })
+				end,
+			})
+
+			autocmd('FileType', {
+				group = group,
+				pattern = 'markdown',
+				once = true,
+				callback = function(opts)
+					if opts.buf == 1 then
+						if not pcall(cmd.Preview, { count = 8080 }) then
+							cmd.Preview()
+						end
+					end
+				end,
+			})
+		end,
+	},
+	{
 		'multisearch.nvim',
 		before = function()
 			g.multisearch = {
