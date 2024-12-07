@@ -10,8 +10,9 @@ local function system(args)
 		capture_stdout = true,
 		args = args,
 	})
-	assert(child.status == 0)
-	return child.stdout
+	if child.status == 0 then
+		return child.stdout
+	end
 end
 
 local function tmpname()
@@ -45,6 +46,8 @@ local get_mediaklikk_streams = (function()
 			'Origin: https://m4sport.hu',
 			'--header',
 			'Referer: https://m4sport.hu/',
+			'--max-time',
+			'3',
 			url,
 		}
 
@@ -55,7 +58,7 @@ local get_mediaklikk_streams = (function()
 			table.insert(args, etag_file)
 		end
 
-		return system(args)
+		return system(args) or ''
 	end
 
 	local function get_url(stream)
