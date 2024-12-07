@@ -94,8 +94,8 @@ autocmd('WinNew', {
 
 autocmd('WinClosed', {
 	group = group,
-	callback = function()
-		wins[api.nvim_get_current_win()] = nil
+	callback = function(opts)
+		wins[tonumber(opts.match)] = nil
 	end,
 })
 
