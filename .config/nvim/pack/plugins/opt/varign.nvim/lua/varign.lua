@@ -15,6 +15,10 @@ local width = setmetatable({}, {
 })
 
 local function compute_vartabstop(buf)
+	local find = string.find
+	local max = math.max
+	local sub = string.sub
+
 	local result = {}
 
 	local lines = api.nvim_buf_get_lines(buf, 0, max_lines, false)
@@ -25,22 +29,22 @@ local function compute_vartabstop(buf)
 		local any = false
 
 		for i, line in ipairs(lines) do
-			local tab = string.find(line, '\t', start[i], true)
+			local tab = find(line, '\t', start[i], true)
 
 			local s = ''
 			if tab then
-				s = string.sub(line, start[i] or 1, tab - 1)
+				s = sub(line, start[i] or 1, tab - 1)
 				start[i] = tab + 1
 				any = true
 			elseif start[i] then
-				s = string.sub(line, start[i])
+				s = sub(line, start[i])
 				start[i] = #line + 1
 			else
 				start[i] = #line + 1
 			end
 
 			if #s * 2 > max_width then
-				max_width = math.max(max_width, width[s])
+				max_width = max(max_width, width[s])
 			end
 		end
 

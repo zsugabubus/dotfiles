@@ -19,7 +19,7 @@ if auto_attach ~= false then
 				end
 			else
 				local s = api.nvim_buf_get_lines(buf, 0, 1, false)[1]
-				if not string.find(s, '^[^\t]+\t[^\t]+\t[^\t]+') then
+				if not s:find('^[^\t]+\t[^\t]+\t[^\t]+') then
 					return
 				end
 			end
