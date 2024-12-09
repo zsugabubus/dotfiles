@@ -510,8 +510,8 @@ local function create_Columns(string_width)
 		for i = i, j do
 			local data = data_list[i]
 			local s = column.display(data)
-			local max_possible_width = #s * 2
-			if width < max_possible_width then
+			-- 1 byte <= 1 width.
+			if #s > width then
 				width = max(width, string_width(s))
 			end
 		end
