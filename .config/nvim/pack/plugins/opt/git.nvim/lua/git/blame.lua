@@ -185,18 +185,16 @@ local function handle_read_autocmd(opts)
 		return fn.winsaveview()
 	end)
 
-	vim.schedule(function()
-		api.nvim_win_call(win, function()
-			fn.winrestview({
-				lnum = content_view.lnum,
-				topfill = content_view.topfill,
-				topline = content_view.topline,
-			})
-		end)
-
-		wo[content_win][0].scrollbind = true
-		wo[win][0].scrollbind = true
+	api.nvim_win_call(win, function()
+		fn.winrestview({
+			topfill = content_view.topfill,
+			topline = content_view.topline,
+		})
 	end)
+	win_set_cursor_row(win, content_view.lnum)
+
+	wo[content_win][0].scrollbind = true
+	wo[win][0].scrollbind = true
 
 	local content_buf = api.nvim_win_get_buf(content_win)
 
