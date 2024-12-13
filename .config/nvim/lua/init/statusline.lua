@@ -1,19 +1,5 @@
 local group = vim.api.nvim_create_augroup('init/statusline', {})
 
-vim.g.lnum_status = ''
-local prev_lnum = 0
-
-vim.api.nvim_create_autocmd('CursorMoved', {
-	group = group,
-	callback = function()
-		local lnum = vim.api.nvim_win_get_cursor(0)[1]
-		if lnum ~= prev_lnum then
-			vim.g.lnum_status = string.format('%+d', lnum - prev_lnum)
-			prev_lnum = lnum
-		end
-	end,
-})
-
 vim.api.nvim_create_autocmd('WinLeave', {
 	group = group,
 	callback = function()
@@ -38,7 +24,7 @@ vim.api.nvim_create_autocmd({ 'VimEnter', 'WinEnter', 'BufWinEnter' }, {
 			"%(  %{&spell?&spelllang:''} %)",
 			"%(  %{substitute((empty(&fileencoding)?'utf-8':&fileencoding).(&bomb?',bom':'').','.&fileformat,'^utf-8,unix$','','')} %)",
 			'%( %{&filetype} %)',
-			'%3* %l(%{lnum_status})/%L,%-3v',
+			'%3* %l/%L,%-3v',
 		})
 	end,
 })
