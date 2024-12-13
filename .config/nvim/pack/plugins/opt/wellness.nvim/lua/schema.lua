@@ -79,7 +79,12 @@ local function validate_array_fields(value, item_schema, schema)
 	local unknown_fields = {}
 
 	for k, v in pairs(value) do
-		if type(k) == 'number' and k >= 1 and k <= #value then
+		if
+			type(k) == 'number'
+			and k >= 1
+			and k <= #value
+			and k == math.floor(k)
+		then
 			invalid_indexes[k] = item_schema:validate(v)
 		else
 			table.insert(unknown_fields, k)

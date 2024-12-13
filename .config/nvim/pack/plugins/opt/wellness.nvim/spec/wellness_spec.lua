@@ -209,14 +209,17 @@ describe('Array', function()
 			'- ERROR Expected `[2][1]` to be a `string`, but got a `boolean` value',
 			'- WARNING Unknown index `x` in `[3]`',
 			'- WARNING Unknown indexes `0`, `1000` in `[4]`',
+			'- WARNING Unknown index `1.5` in `[5]`',
 		}, function()
-			health.validate(
+			health.validate({}, {
 				{},
-				{ {}, { true, '' }, { '', x = 0 }, { [0] = 0, [1000] = 0 } },
-				function()
-					return Array(Array(String))
-				end
-			)
+				{ true, '' },
+				{ '', x = 0 },
+				{ [0] = 0, [1000] = 0 },
+				{ '', '', [1.5] = '' },
+			}, function()
+				return Array(Array(String))
+			end)
 		end)
 	end)
 end)
