@@ -338,9 +338,7 @@ test(':vimgrep workflow', function()
 	vim:assert_cursor('a.txt', 2, 4)
 	assert.False(vim.bo[vim.fn.bufnr('qf://0')].modified)
 
-	vim:assert_messages('')
-	vim.cmd.Cnext()
-	vim:assert_messages('E553: No more items')
+	assert.error_matches(vim.cmd.Cnext, 'E553: No more items')
 
 	vim.cmd.Copen()
 	vim:feed('ggddp')
@@ -350,7 +348,6 @@ test(':vimgrep workflow', function()
 
 	vim.cmd.Cnext()
 	vim:assert_cursor('a.txt', 1, 2)
-	vim:assert_messages('')
 end)
 
 test(':grep workflow', function()

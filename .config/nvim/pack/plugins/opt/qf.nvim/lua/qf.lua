@@ -195,8 +195,7 @@ local function proxy_cmd(opts)
 	end
 
 	if not ok then
-		msg = string.match(msg, '^Vim[^:]*:(.*)') or msg
-		api.nvim_echo({ { msg, 'ErrorMsg' } }, true, {})
+		api.nvim_err_writeln(string.match(msg, '^Vim[^:]*:(.*)') or msg)
 		return false
 	end
 
