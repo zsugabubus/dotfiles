@@ -400,6 +400,25 @@ smap('n', 'sh', ':nohlsearch<CR>')
 smap('n', 'se', ':edit<CR>')
 smap('n', 's<space>', ':nmap <lt>buffer> <lt>space> <lt>C-d><CR>')
 
+local function half_map(lhs, reg)
+	xmap('o', lhs, function()
+		local pos = fn.getpos('.')
+		local op = vim.v.operator
+		local func = o.operatorfunc
+		function _G.bracket(mode)
+			local v = mode == 'line' and 'V' or 'v'
+			o.operatorfunc = func
+			fn.setpos(reg, pos)
+			fn.feedkeys('`[' .. op .. v .. '`]', 'i')
+		end
+		o.operatorfunc = 'v:lua.bracket'
+		return '<Esc>g@'
+	end)
+end
+
+half_map(']', "'[")
+half_map('[', "']")
+
 map('n', 'Q', ':normal n.<CR>zz')
 
 -- Repeat over visual block
