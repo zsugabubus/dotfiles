@@ -4,6 +4,15 @@ local function complete(s)
 	return vim.fn.getcompletion(s, 'cmdline')
 end
 
+local function fake_git()
+	local dir = vim.fn.tempname()
+	local exe = dir .. '/git'
+	vim.fn.mkdir(dir)
+	vim.fn.writefile({ '#!/bin/sh' }, exe)
+	vim.fn.setfperm(exe, 'r-x------')
+	vim.fn.setenv('PATH', string.format('%s:%s', dir, vim.fn.getenv('PATH')))
+end
+
 local function mkdir(path)
 	vim.fn.mkdir(path, 'p')
 end
@@ -106,6 +115,8 @@ describe(':Gshow', function()
 	end)
 
 	it('edits git://', function()
+		fake_git()
+
 		vim.cmd.Gshow()
 		assert.same('git://@', vim.fn.bufname())
 
@@ -117,6 +128,13 @@ describe(':Gshow', function()
 
 		vim.cmd.Gshow('@:a %!*')
 		assert.same('git://@:a %!*', vim.fn.bufname())
+	end)
+
+	it('errors out on bad revision', function()
+		assert.error_matches(function()
+			vim.cmd.Gshow('bad-revision')
+		end, 'fatal: bad revision.*bad%-revision')
+		assert.same('git://bad-revision', vim.fn.bufname())
 	end)
 end)
 
@@ -210,25 +228,28 @@ describe('git://', function()
 	end)
 
 	it('works with root dir', function()
-		vim.cmd.edit('git://///@')
-		vim:assert_lines({
-			'fatal: not a git repository (or any of the parent directories): .git',
-		})
+		-- Theoretically. Just check the error message to see if it wants to use
+		-- the correct directory.
+		assert.error_matches(function()
+			vim.cmd.edit('git://///@')
+		end, 'fatal: not a git repository .*: %.git')
 	end)
 
-	it('shows error for bad dir', function()
-		vim.cmd.edit('git://no-such-dir//')
-		vim:assert_lines({
-			"fatal: cannot change to 'no-such-dir': No such file or directory",
-		})
-		assert.same('giterror', vim.bo.filetype)
+	it('errors out on bad dir', function()
+		assert.error_matches(function()
+			vim.cmd.edit('git://no-such-dir//')
+		end, "fatal: cannot change to 'no%-such%-dir': No such file or directory")
+		vim:assert_lines({ '' })
+		assert.same('', vim.bo.filetype)
 	end)
 
-	it('shows error for bad revision', function()
+	it('errors out on bad revision', function()
 		setup()
-		vim.cmd.edit('git://foo')
-		vim:assert_lines({ "fatal: bad revision 'foo'" })
-		assert.same('giterror', vim.bo.filetype)
+		assert.error_matches(function()
+			vim.cmd.edit('git://foo')
+		end, "fatal: bad revision 'foo'")
+		vim:assert_lines({ '' })
+		assert.same('', vim.bo.filetype)
 	end)
 
 	describe('gf', function()
@@ -251,6 +272,7 @@ describe('git://', function()
 
 	describe('u', function()
 		it('edits parent tree', function()
+			fake_git()
 			vim.cmd.edit('git://@:a/b/')
 			vim:feed('u')
 			assert.same('git://@:a/', vim.fn.bufname())
@@ -261,6 +283,7 @@ describe('git://', function()
 		end)
 
 		it('respects repo', function()
+			fake_git()
 			vim.cmd.edit('git:///path/to/repo//@:a/b/')
 			vim:feed('u')
 			assert.same('git:///path/to/repo//@:a/', vim.fn.bufname())
@@ -273,6 +296,7 @@ describe('git://', function()
 
 	describe('[count]u', function()
 		it("edits [count]'s parent tree", function()
+			fake_git()
 			vim.cmd.edit('git://@:1/2/3/4/')
 			vim:feed('3u')
 			assert.same('git://@:1/', vim.fn.bufname())
@@ -283,6 +307,7 @@ describe('git://', function()
 
 	describe('[count]~', function()
 		it("edits [count]'th generation ancestor of the commit", function()
+			fake_git()
 			vim.cmd.edit('git:///path/to/repo//@:a/b/')
 			vim:feed('3~')
 			assert.same('git:///path/to/repo//@~3:a/b/', vim.fn.bufname())
@@ -291,6 +316,7 @@ describe('git://', function()
 
 	describe('[count]^', function()
 		it("edits [count]'th parent of the commit", function()
+			fake_git()
 			vim.cmd.edit('git:///path/to/repo//@:a/b/')
 			vim:feed('3^')
 			assert.same('git:///path/to/repo//@^3:a/b/', vim.fn.bufname())
@@ -335,6 +361,8 @@ describe(':Gdiff', function()
 
 	it('shows diff against staged', function()
 		git_init()
+		mkfile('file')
+		git_add()
 
 		vim.cmd.edit('file')
 		vim.cmd.Gdiff()
@@ -350,16 +378,34 @@ describe(':Gdiff', function()
 
 	it('shows diff against commit', function()
 		git_init()
+		mkfile('file')
+		git_add()
+		git_config_user()
+		git_commit()
+		git_commit()
+
 		vim.cmd.edit('file')
-		vim.cmd.Gdiff('@~4')
+		vim.cmd.Gdiff('@~1')
+
 		vim.cmd.wincmd('p')
-		assert.same('git://@~4:file', vim.fn.bufname())
+
+		assert.same('git://@~1:file', vim.fn.bufname())
 	end)
 end)
 
 describe(':Gblame', function()
 	it('splits git-blame://', function()
-		git_init()
+		local work_dir = git_init()
+		mkfile('a %')
+		mkdir('a')
+		mkfile('a/b % < *')
+		git_add()
+		git_config_user()
+		git_commit()
+		git_commit()
+		git_commit()
+		git_commit()
+		git_commit()
 
 		vim.cmd.edit(vim.fn.fnameescape('a %'))
 		local a = vim.fn.expand('%:p')
@@ -372,9 +418,12 @@ describe(':Gblame', function()
 		vim.cmd.Gblame()
 		assert.same('git-blame://@~4:a/b % < *', vim.fn.bufname())
 
-		vim.cmd.edit(vim.fn.fnameescape('git://repo//@~4:a/b % < *'))
+		vim.cmd.edit(vim.fn.fnameescape('git://' .. work_dir .. '//@~4:a/b % < *'))
 		vim.cmd.Gblame()
-		assert.same('git-blame://repo//@~4:a/b % < *', vim.fn.bufname())
+		assert.same(
+			'git-blame://' .. work_dir .. '//@~4:a/b % < *',
+			vim.fn.bufname()
+		)
 	end)
 
 	it('binds scroll and cursor', function()
@@ -1028,6 +1077,7 @@ describe('gitrebase filetype', function()
 	end)
 
 	it('gf uses preview window to edit commit under the cursor', function()
+		fake_git()
 		vim:set_lines({ '0000' })
 		vim:feed('gf')
 		vim.cmd.wincmd('P')
@@ -1035,6 +1085,7 @@ describe('gitrebase filetype', function()
 	end)
 
 	it('<CR> is the same as gf but can be typed anywhere in the line', function()
+		fake_git()
 		vim:set_lines({ '0000 xxx' })
 		vim:feed('$\r')
 		vim.cmd.wincmd('P')
@@ -1048,6 +1099,7 @@ describe('<Plug>(git-goto-file)', function()
 	end)
 
 	it('edits commit under the cursor', function()
+		fake_git()
 		vim:set_lines({ 'abcdef' })
 		vim:feed('s')
 		assert.same('git://abcdef', vim.fn.bufname())

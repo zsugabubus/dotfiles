@@ -76,11 +76,4 @@ function M.get_previewwindow()
 	end
 end
 
-function M.log_error(message)
-	vim.api.nvim_echo({
-		{ 'git.nvim: ', 'ErrorMsg' },
-		{ message, 'ErrorMsg' },
-	}, true, {})
-end
-
 return M
