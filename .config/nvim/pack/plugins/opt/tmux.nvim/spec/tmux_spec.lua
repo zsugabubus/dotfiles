@@ -87,7 +87,7 @@ describe(':Tbuffer', function()
 		assert.same({ 'compx', 'xcomp' }, complete('Tbuffer cmp'))
 	end)
 
-	it('errors without arguments', function()
+	it('errors out without arguments', function()
 		assert.error_matches(vim.cmd.Tbuffer, 'Wrong number of arguments')
 	end)
 
@@ -192,7 +192,7 @@ end)
 
 describe(':Tpanes', function()
 	it('edits panes list without arguments', function()
-		vim.cmd.Tpanes()
+		assert.error_matches(vim.cmd.Tpanes, 'tmux: no current target')
 
 		assert.same('tmux://panes/', vim.fn.bufname())
 	end)
@@ -226,14 +226,16 @@ describe(':Tpane', function()
 		assert_completes_panes('Tpane')
 	end)
 
-	it('errors without arguments', function()
+	it('errors out without arguments', function()
 		assert.error_matches(vim.cmd.Tpane, 'Wrong number of arguments')
 	end)
 
 	it('edits pane with {target}', function()
 		local target = 'tpane' .. GARBAGE
 
-		vim.cmd.Tpane(target)
+		assert.error_matches(function()
+			vim.cmd.Tpane(target)
+		end, 'tmux: no current target')
 
 		assert.same('tmux://panes/' .. target, vim.fn.bufname())
 	end)
@@ -243,9 +245,10 @@ describe(':Tpane', function()
 		tmux.client('attach-session', '-t', 'tpane-bang')
 
 		-- Sanity check to see {last} does not exist.
-		vim.cmd('Tpane! {last}')
+		assert.error_matches(function()
+			vim.cmd('Tpane! {last}')
+		end, "tmux: can't find pane")
 		assert.same('tmux://panes/{last}', vim.fn.bufname())
-		assert.same('', vim.fn.getline(1))
 
 		tmux.new_window('-t', 'tpane-bang', 'echo')
 
@@ -295,12 +298,12 @@ describe('tmux://panes/{target}', function()
 		vim:assert_messages('')
 	end)
 
-	it('errors with invalid {target}', function()
+	it('errors out with invalid {target}', function()
 		tmux.new_session('true')
 
-		vim.cmd.edit('tmux://panes/does-not-exist')
-
-		vim:assert_messages("tmux: can't find pane: does-not-exist")
+		assert.error_matches(function()
+			vim.cmd.edit('tmux://panes/does-not-exist')
+		end, "tmux: can't find pane: does%-not%-exist")
 	end)
 
 	it('integrates with :AnsiEsc', function()
@@ -373,7 +376,7 @@ describe(':Tcd', function()
 		assert_completes_panes('Tcd')
 	end)
 
-	it('errors without arguments', function()
+	it('errors out without arguments', function()
 		assert.error_matches(vim.cmd.Tcd, 'Wrong number of arguments')
 	end)
 

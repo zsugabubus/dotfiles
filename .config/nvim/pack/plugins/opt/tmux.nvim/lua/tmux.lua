@@ -3,6 +3,8 @@ local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
 
+local echoerr = api.nvim_err_writeln
+
 local function filter_completions(list, s)
 	if s == '' then
 		return list
@@ -31,12 +33,8 @@ local function complete_panes(prefix)
 	return filter_completions(t, prefix)
 end
 
-local function log(s)
+local function echomsg(s)
 	api.nvim_echo({ { s, 'Normal' } }, true, {})
-end
-
-local function log_error(s)
-	api.nvim_echo({ { s, 'ErrorMsg' } }, true, {})
 end
 
 local function read_system(args, silent)
@@ -44,7 +42,7 @@ local function read_system(args, silent)
 	if vim.v.shell_error == 0 then
 		api.nvim_buf_set_lines(0, 0, -1, true, lines)
 	elseif not silent then
-		log_error('tmux: ' .. vim.trim(table.concat(lines, '\n')))
+		echoerr('tmux: ' .. vim.trim(table.concat(lines, '\n')))
 	end
 end
 
@@ -115,15 +113,10 @@ return {
 		}, opts.buf)
 		if vim.v.shell_error == 0 then
 			bo.modified = false
-			log(
-				string.format(
-					'"%s"%s written',
-					buffer_name,
-					output == 'found\n' and '' or ' [New]'
-				)
-			)
+			local new = output == 'found\n' and '' or ' [New]'
+			echomsg(string.format('"%s"%s written', buffer_name, new))
 		else
-			log_error("Can't write tmux buffer: " .. vim.trim(output))
+			echoerr("Can't write tmux buffer: " .. vim.trim(output))
 		end
 	end,
 	BufReadCmd_panes = function(opts)
@@ -208,9 +201,9 @@ return {
 				or api.nvim_buf_get_lines(0, opts.line1 - 1, opts.line2, {})
 		)
 		if vim.v.shell_error == 0 then
-			log('Buffer written')
+			echomsg('Buffer written')
 		else
-			log_error("Can't write buffer: " .. vim.trim(output))
+			echoerr("Can't write buffer: " .. vim.trim(output))
 		end
 	end,
 	Tcd = function(opts)
