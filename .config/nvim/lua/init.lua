@@ -1118,6 +1118,7 @@ require('pack').add({
 		end,
 	},
 	{ 'textobjects.nvim' },
+	{ 'tilde.nvim' },
 	{ 'tmux.nvim' },
 	{
 		'undowizard.nvim',
@@ -1129,7 +1130,6 @@ require('pack').add({
 	{ 'varign.nvim' },
 	{ 'vim-bufgrep' },
 	{ 'vim-pastereindent' },
-	{ 'vim-tilde' },
 	{ 'vimdent.nvim' },
 	{
 		'vnicode.nvim',
