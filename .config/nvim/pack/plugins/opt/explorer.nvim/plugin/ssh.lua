@@ -15,10 +15,6 @@ local function parse_opts(opts)
 	return destination, string.gsub(path, '//$', '/'), string.match(path, '//$')
 end
 
-local function echo(hl_group, ...)
-	api.nvim_echo({ { string.format(...), hl_group } }, true, {})
-end
-
 api.nvim_create_autocmd('BufReadCmd', {
 	group = group,
 	pattern = pattern,
@@ -67,10 +63,8 @@ api.nvim_create_autocmd('BufReadCmd', {
 		local writable = table.remove(output, 1)
 		if vim.v.shell_error ~= 0 then
 			bo.readonly = true
-			echo(
-				'ErrorMsg',
-				"Can't read file: %s",
-				vim.trim(table.concat(output, '\n'))
+			api.nvim_err_writeln(
+				"Can't read file: " .. vim.trim(table.concat(output, '\n'))
 			)
 			return
 		end
@@ -129,13 +123,12 @@ api.nvim_create_autocmd('BufWriteCmd', {
 		}
 		local output = fn.system(cmdline, opts.buf)
 		if vim.v.shell_error ~= 0 then
-			echo('ErrorMsg', "Can't write file: %s", vim.trim(output))
+			api.nvim_err_writeln("Can't write file: " .. vim.trim(output))
 			return
 		end
 		vim.bo.modified = false
 		local new = output == 'new\n'
-		echo(
-			'Normal',
+		local msg = string.format(
 			'"%s"%s %dL, %dB written on %s',
 			path,
 			new and ' [New]' or '',
@@ -143,6 +136,7 @@ api.nvim_create_autocmd('BufWriteCmd', {
 			fn.wordcount().bytes,
 			destination
 		)
+		api.nvim_echo({ { msg, 'Normal' } }, true, {})
 	end,
 })
 

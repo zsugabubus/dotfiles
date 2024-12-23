@@ -237,13 +237,9 @@ describe('ssh', function()
 		test('read error', function()
 			vim.fn.writefile({ '' }, f)
 			vim.fn.setfperm(f, '---------')
-			vim.cmd.edit(vim.fn.fnameescape(ssh .. f))
-			vim:assert_messages(
-				string.format(
-					"Can't read file: cat: %s: Permission denied",
-					vim.fn.shellescape(f)
-				)
-			)
+			assert.error_matches(function()
+				vim.cmd.edit(vim.fn.fnameescape(ssh .. f))
+			end, "Can't read file:.*Permission denied")
 			assert.True(vim.bo.readonly)
 		end)
 
@@ -252,7 +248,7 @@ describe('ssh', function()
 			vim.fn.setfperm(root, '---------')
 			vim.o.cmdheight = 5
 			vim.bo.modified = true
-			vim.cmd.write()
+			assert.error_matches(vim.cmd.write, "Can't write file")
 			assert.True(vim.bo.modified)
 		end)
 	end)
