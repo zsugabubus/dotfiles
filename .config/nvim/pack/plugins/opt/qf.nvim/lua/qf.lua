@@ -1,7 +1,14 @@
 local api = vim.api
 local bo = vim.bo
 local cmd = vim.cmd
+local find = string.find
 local fn = vim.fn
+local format = string.format
+local insert = table.insert
+local lower = string.lower
+local match = string.match
+local sort = table.sort
+local sub = string.sub
 
 local buf_keymap = api.nvim_buf_set_keymap
 local buf_user_command = api.nvim_buf_create_user_command
@@ -52,10 +59,10 @@ end
 
 local function make_bufnames()
 	return setmetatable({ [-1] = '', [0] = '' }, {
-		__index = function(t, k)
-			local s = fn.bufname(k)
-			t[k] = s
-			return s
+		__index = function(t, bufnr)
+			local bufname = fn.bufname(bufnr)
+			t[bufnr] = bufname
+			return bufname
 		end,
 	})
 end
@@ -124,24 +131,24 @@ local function qf2line(item, bufnames)
 
 	local s = ''
 	if lnum > 0 and col > 0 and end_col > 0 then
-		s = string.format('%d col %d-%d', lnum, col, end_col)
+		s = format('%d col %d-%d', lnum, col, end_col)
 	elseif lnum > 0 and col > 0 then
-		s = string.format('%d col %d', lnum, col)
+		s = format('%d col %d', lnum, col)
 	elseif lnum > 0 then
-		s = string.format('%d', lnum)
+		s = format('%d', lnum)
 	end
 
-	return string.format(
+	return format(
 		'%s|%s| %s',
 		bufnames[item.bufnr],
 		s,
-		string.sub(item.text, string.find(item.text, '%S') or 1)
+		sub(item.text, find(item.text, '%S') or 1)
 	)
 end
 
 local function buf_qf_id(buf)
 	local s = api.nvim_buf_get_name(buf)
-	local id = tonumber(string.match(s, 'q[fe]://(%d+)'))
+	local id = tonumber(match(s, 'q[fe]://(%d+)'))
 	return id
 end
 
@@ -179,9 +186,9 @@ local function proxy_cmd(opts)
 		bo[buf].buftype = 'quickfix'
 	end
 
-	local a, b = string.match(opts.name, '(.)(.*)')
+	local a, b = match(opts.name, '(.)(.*)')
 	local ok, msg = pcall(api.nvim_cmd, {
-		cmd = string.lower(a) .. b,
+		cmd = lower(a) .. b,
 		count = opts.count ~= -1 and opts.count or nil,
 		bang = opts.bang,
 		args = opts.fargs,
@@ -195,7 +202,7 @@ local function proxy_cmd(opts)
 	end
 
 	if not ok then
-		api.nvim_err_writeln(string.match(msg, '^Vim[^:]*:(.*)') or msg)
+		api.nvim_err_writeln(match(msg, '^Vim[^:]*:(.*)') or msg)
 		return false
 	end
 
@@ -300,7 +307,7 @@ local function read_qf_autocmd(opts)
 				break
 			end
 
-			table.insert(lines, string.format('qf://%d\t%s', qf.id, qf.title))
+			insert(lines, format('qf://%d\t%s', qf.id, qf.title))
 
 			i = i + 1
 		end
@@ -336,7 +343,7 @@ local function read_qf_autocmd(opts)
 		item.idx = i
 		local line = qf2line(item, bufnames)
 		line2item[line] = item
-		table.insert(lines, line)
+		insert(lines, line)
 	end
 
 	buf_set_lines_and_clear_undo(buf, lines)
@@ -412,7 +419,7 @@ local function write_qf_autocmd(opts)
 			new_idx = i
 		end
 		item.idx = i
-		table.insert(new_items, item)
+		insert(new_items, item)
 	end
 
 	assert(fn.setqflist({}, 'r', {
@@ -456,13 +463,13 @@ local function read_qe_autocmd(opts)
 
 	for buf, rows in pairs(buf_rows) do
 		for row in pairs(rows) do
-			table.insert(items, { buf = buf, row = row })
+			insert(items, { buf = buf, row = row })
 		end
 	end
 
 	local bufnames = make_bufnames()
 
-	table.sort(items, function(a, b)
+	sort(items, function(a, b)
 		if a.buf ~= b.buf then
 			return bufnames[a.buf] < bufnames[b.buf]
 		end
@@ -494,11 +501,11 @@ local function read_qe_autocmd(opts)
 		for _, line in
 			ipairs(api.nvim_buf_get_lines(buf, start_row, row + context, false))
 		do
-			table.insert(lines, line)
+			insert(lines, line)
 		end
 
 		if context > 0 then
-			table.insert(lines, '')
+			insert(lines, '')
 		end
 	end
 
@@ -548,7 +555,7 @@ local function read_qe_autocmd(opts)
 				if not details.invalid then
 					local item = buf_qe[buf].extmark2item[extmark_id]
 					local bufname = fn.bufname(item.buf)
-					cmd(string.format('pedit +%d %s', item.row, fn.fnameescape(bufname)))
+					cmd(format('pedit +%d %s', item.row, fn.fnameescape(bufname)))
 					return
 				end
 			end
@@ -598,7 +605,7 @@ local function write_qe_autocmd(opts)
 	bo.modified = false
 
 	local s = num_changes == 0 and '--No changes--'
-		or string.format(
+		or format(
 			'%d %s changed in %d %s',
 			num_changes,
 			num_changes == 1 and 'line' or 'lines',
