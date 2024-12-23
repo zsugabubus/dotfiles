@@ -2,26 +2,38 @@ local api = vim.api
 local bo = vim.bo
 local fn = vim.fn
 
+local autocmd = api.nvim_create_autocmd
+local echoerr = api.nvim_err_writeln
+
 local group = api.nvim_create_augroup('archive', {})
 
+local function echomsg(s)
+	api.nvim_echo({ { s, 'Normal' } }, true, {})
+end
+
 local function read_system(cmdline)
-	api.nvim_buf_set_lines(0, 0, -1, true, fn.systemlist(cmdline))
 	bo.buftype = 'nofile'
-	bo.readonly = true
 	bo.swapfile = false
+	local lines = fn.systemlist(cmdline)
+	if vim.v.shell_error ~= 0 then
+		echoerr(table.concat(lines, '\n'))
+		return false
+	end
+	api.nvim_buf_set_lines(0, 0, -1, true, lines)
+	bo.readonly = true
+	return true
 end
 
 local function archive(patterns, list_cmdline, extract_cmdline)
-	api.nvim_create_autocmd('BufReadCmd', {
+	autocmd('BufReadCmd', {
 		group = group,
 		pattern = patterns,
 		nested = true,
 		callback = function(opts)
 			vim.b.did_archive = true
 			local archive = opts.file
-			read_system(list_cmdline(archive))
 			bo.modeline = false
-			if vim.v.shell_error == 0 then
+			if read_system(list_cmdline(archive)) then
 				bo.filetype = 'archive'
 			else
 				bo.filetype = ''
@@ -38,7 +50,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 		end,
 	})
 
-	api.nvim_create_autocmd('BufReadCmd', {
+	autocmd('BufReadCmd', {
 		group = group,
 		pattern = string.gsub(patterns, ',', '//*,'),
 		nested = true,
@@ -54,8 +66,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 					bo.modeline = false
 					return
 				elseif archive then
-					read_system(extract_cmdline(archive, member))
-					if vim.v.shell_error ~= 0 then
+					if not read_system(extract_cmdline(archive, member)) then
 						bo.modeline = false
 						bo.filetype = ''
 						return
@@ -77,7 +88,7 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 end
 
 local function compress(pattern, prog)
-	api.nvim_create_autocmd('BufReadCmd', {
+	autocmd('BufReadCmd', {
 		group = group,
 		pattern = pattern,
 		nested = true,
@@ -87,12 +98,17 @@ local function compress(pattern, prog)
 			end
 			local file = opts.match
 			local cmdline = { prog, '-cd', '--', file }
-			api.nvim_buf_set_lines(0, 0, -1, true, fn.systemlist(cmdline))
+			local lines = fn.systemlist(cmdline)
 			if vim.v.shell_error ~= 0 then
-				bo.modeline = false
-				bo.buftype = 'nofile'
-				bo.filetype = ''
-				return
+				if not string.find(lines[#lines], ': No such file or directory$') then
+					echoerr(table.concat(lines, '\n'))
+					bo.modeline = false
+					bo.buftype = 'nofile'
+					bo.filetype = ''
+					return
+				end
+			else
+				api.nvim_buf_set_lines(0, 0, -1, true, lines)
 			end
 			bo.modeline = true
 			bo.buftype = 'acwrite'
@@ -107,7 +123,7 @@ local function compress(pattern, prog)
 		end,
 	})
 
-	api.nvim_create_autocmd('BufWriteCmd', {
+	autocmd('BufWriteCmd', {
 		group = group,
 		pattern = pattern,
 		nested = true,
@@ -124,18 +140,11 @@ local function compress(pattern, prog)
 			end
 			if not ok then
 				os.remove(tmpfile)
-			end
-			if not ok then
-				api.nvim_echo({ { err, 'ErrorMsg' } }, true, {})
+				echoerr(err)
 				return
 			end
 			bo.modified = false
-			api.nvim_echo({
-				{
-					string.format('"%s" written with %s', opts.file, prog),
-					'Normal',
-				},
-			}, true, {})
+			echomsg(string.format('"%s" written with %s', opts.file, prog))
 		end,
 	})
 end
