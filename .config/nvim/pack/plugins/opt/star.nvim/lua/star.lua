@@ -76,9 +76,7 @@ function M.search(flags)
 		local word, start_col, end_col = get_keyword(0, row, col)
 
 		if not word then
-			api.nvim_echo({
-				{ 'E348: No string under cursor', 'ErrorMsg' },
-			}, false, {})
+			api.nvim_err_writeln('E348: No string under cursor')
 			return
 		end
 
