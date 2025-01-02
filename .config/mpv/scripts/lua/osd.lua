@@ -180,12 +180,8 @@ function M:draw_rect_border(x0, y0, x1, y1, w)
 	self:draw_line(x0, y1)
 end
 
-local function deg2rad(deg)
-	return deg / 180 * math.pi
-end
-
 local function xy_offset(x, y, deg, length)
-	local rad = deg2rad(deg)
+	local rad = math.rad(deg)
 	return x + math.cos(rad) * length, y - math.sin(rad) * length
 end
 

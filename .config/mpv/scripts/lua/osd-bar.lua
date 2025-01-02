@@ -504,7 +504,7 @@ function update()
 		local chapters = props['chapter-list']
 		if chapters and #chapters > 0 then
 			local tri_height = main_fs / 8
-			local tri_side = tri_height / math.sin(45 / 180 * math.pi)
+			local tri_side = tri_height / math.sin(math.rad(45))
 
 			osd:r()
 			osd:pos(main_x0 + prog_margin, main_y0)
@@ -549,7 +549,7 @@ function update()
 			end
 
 			local tri_height = main_fs / 5
-			local tri_side = tri_height / math.sin(45 / 180 * math.pi)
+			local tri_side = tri_height / math.sin(math.rad(45))
 
 			osd:r()
 			osd:bord(1)
