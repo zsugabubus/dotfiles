@@ -121,6 +121,7 @@ local function do_filtersort(sort_by)
 	end
 
 	mp.set_property_native('playlist', t)
+	mp.commandv('script-message', 'playlist-changed')
 
 	local elapsed = mp.get_time() - start
 
