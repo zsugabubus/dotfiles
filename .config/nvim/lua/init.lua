@@ -891,19 +891,6 @@ autocmd('BufReadPost', {
 	end,
 })
 
-autocmd('VimLeave', {
-	group = group,
-	callback = function()
-		if vim.v.dying == 0 and vim.v.exiting == 0 and vim.v.this_session ~= '' then
-			cmd.mkession({ args = { vim.v.this_session }, bang = true })
-		end
-	end,
-})
-
-user_command('SourceSession', function()
-	cmd.source('Session.vim')
-end, {})
-
 user_command(
 	'Japan',
 	[[keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e]],
