@@ -14,12 +14,12 @@ local TMP_PREFIX =
 	utils.join_path(XDG_CACHE_DIR, 'mpv-' .. mp.get_script_name())
 
 local function pesc(s)
-	return string.gsub(s, '([^%w])', '%%%1')
+	return s:gsub('([^%w])', '%%%1')
 end
 
 local function add_subtitle(file)
 	local tmp_file
-	if string.find(file, '%.txt$') then
+	if file:find('%.txt$') then
 		tmp_file = TMP_PREFIX .. '.lrc'
 
 		local f = io.open(file, 'r')
@@ -42,25 +42,25 @@ local function patterns_from_filename(filename)
 
 	local function add_pattern(pattern)
 		for _, ext in pairs(SUBTITLE_EXTENSIONS) do
-			local full_pattern = string.format('^%s%%.%s$', pattern, ext)
+			local full_pattern = ('^%s%%.%s$'):format(pattern, ext)
 			table.insert(patterns, full_pattern)
 		end
 	end
 
 	add_pattern(pesc(filename))
 
-	local without_ext = string.match(filename, '^(.+)%..+$')
+	local without_ext = filename:match('^(.+)%..+$')
 	if without_ext then
 		add_pattern(pesc(without_ext))
 	end
 
-	local season, episode = string.match(filename, '[sS]0*(%d+)[eE]0*(%d+)')
+	local season, episode = filename:match('[sS]0*(%d+)[eE]0*(%d+)')
 	if not season then
-		season, episode = string.match(filename, '0*(%d+)[xX]0*(%d+)')
+		season, episode = filename:match('0*(%d+)[xX]0*(%d+)')
 	end
 	if season then
-		add_pattern(string.format('.*[sS]0*%s[eE]0*%s.*', season, episode))
-		add_pattern(string.format('.*%%D%s[xX]0*%s%%D.*', season, episode))
+		add_pattern(('.*[sS]0*%s[eE]0*%s.*'):format(season, episode))
+		add_pattern(('.*%%D%s[xX]0*%s%%D.*'):format(season, episode))
 	end
 
 	return patterns
@@ -71,7 +71,7 @@ local function search(path, patterns)
 	for _, file in ipairs(utils.readdir(path, 'files') or {}) do
 		num_files = num_files + 1
 		for _, pattern in ipairs(patterns) do
-			if string.find(file, pattern) then
+			if file:find(pattern) then
 				add_subtitle(utils.join_path(path, file))
 			end
 		end

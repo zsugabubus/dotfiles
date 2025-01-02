@@ -39,7 +39,7 @@ function M.register_script_messages(name, registry)
 			return
 		end
 
-		command = string.gsub(command, '-', '_')
+		command = command:gsub('-', '_')
 		local fn = registry[command]
 
 		if not fn then

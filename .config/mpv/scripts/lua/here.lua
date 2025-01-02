@@ -5,7 +5,7 @@ local mpv_here = os.getenv('XDG_RUNTIME_DIR') .. '/mpv_here'
 local path
 
 local function join_url(a, b)
-	if string.sub(b, 1, 1) == '/' or string.find(b, '^[a-z]+://') then
+	if b:find('^/') or b:find('^[a-z]+://') then
 		return b
 	end
 	return a .. '/' .. b
@@ -22,13 +22,13 @@ local function write()
 	end
 end
 
-mp.observe_property('path', 'native', function(_, x)
-	path = x
+mp.observe_property('path', 'native', function(_, value)
+	path = value
 	write()
 end)
 
-mp.observe_property('pause', 'native', function(_, x)
-	if not x then
+mp.observe_property('pause', 'native', function(_, value)
+	if not value then
 		write()
 	end
 end)

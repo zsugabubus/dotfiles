@@ -101,7 +101,7 @@ end
 for _, file in
 	ipairs(require('mp.utils').readdir(utils.script_opts, 'files') or {})
 do
-	local name = string.match(file, '^choose%-(.*)%.lua$')
+	local name = file:match('^choose%-(.*)%.lua$')
 	if name then
 		build_chooser(name, file)
 	end

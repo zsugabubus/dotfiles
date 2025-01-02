@@ -32,7 +32,7 @@ local get_mediaklikk_streams = (function()
 
 	local function parse_time(s)
 		local t = os.date('*t')
-		t.hour, t.min = string.match(s, '^(%d+):(%d+)$')
+		t.hour, t.min = s:match('^(%d+):(%d+)$')
 		t.sec = 0
 		return os.time(t)
 	end
@@ -63,12 +63,11 @@ local get_mediaklikk_streams = (function()
 
 	local function get_url(stream)
 		local response = fetch(
-			string.format(
-				'https://player.mediaklikk.hu/playernew/player.php?video=%s&noflash=yes',
+			('https://player.mediaklikk.hu/playernew/player.php?video=%s&noflash=yes'):format(
 				assert(stream.code)
 			)
 		)
-		local m = string.match(response, '"https[^"]-index%.m3u8')
+		local m = response:match('"https[^"]-index%.m3u8')
 		if not m then
 			return
 		end
@@ -145,7 +144,7 @@ local get_mediaklikk_streams = (function()
 		end
 
 		table.sort(streams, function(a, b)
-			return string.upper(a.name) < string.upper(b.name)
+			return a.name:upper() < b.name:upper()
 		end)
 
 		return streams
@@ -212,7 +211,7 @@ local function open()
 		return
 	end
 
-	url = string.format('%s#%s', url, stream.name)
+	url = ('%s#%s'):format(url, stream.name)
 	mp.commandv('loadfile', url, 'replace')
 
 	mp.osd_message('')
@@ -289,7 +288,7 @@ function update()
 	end
 
 	local now = os.time()
-	local fmt = string.format('%%%dd: ', #tostring(#streams))
+	local fmt = ('%%%dd: '):format(#tostring(#streams))
 	local fsc = osd:compute_fsc(props, #streams * 2, 0.8)
 
 	osd:clear()

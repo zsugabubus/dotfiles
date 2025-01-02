@@ -26,7 +26,7 @@ function M.new()
 
 	return setmetatable({
 		key_bindings = default_key_bindings,
-		binding_prefix = string.format('mode-%d-', serial),
+		binding_prefix = ('mode-%d-'):format(serial),
 		added = false,
 	}, M)
 end
@@ -41,11 +41,11 @@ function M:map(lhs, rhs)
 	end
 
 	-- A..B = f
-	local low, high = string.match(lhs, '(.+)%.%.(.+)')
+	local low, high = lhs:match('(.+)%.%.(.+)')
 	if low then
 		assert(type(rhs) == 'function', type(rhs))
-		for c = string.byte(low), string.byte(high) do
-			local i = c - string.byte(low)
+		for c = low:byte(), high:byte() do
+			local i = c - low:byte()
 			self:map(string.char(c), function(...)
 				rhs(i, ...)
 			end)

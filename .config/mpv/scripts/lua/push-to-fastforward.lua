@@ -19,7 +19,7 @@ mp.add_key_binding(nil, 'push-to-fastforward', function(event)
 
 	if down then
 		mp.set_property_number('speed', opts.speed)
-		mp.osd_message(string.format('▶▶ x%.2f', opts.speed))
+		mp.osd_message(('▶▶ x%.2f'):format(opts.speed))
 	else
 		mp.set_property_number('speed', 1)
 		mp.osd_message('')

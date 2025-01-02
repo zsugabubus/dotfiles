@@ -176,22 +176,22 @@ local function handle_mouse_seek_to_chapter(event)
 	mp.flush_keybindings()
 end
 
-local function osd_put_human_time(time)
+local function time_format(time)
 	local neg = time < 0
 	time = math.abs(time)
-	local hour = math.floor(time / 3600)
-	local min = math.floor(time / 60 % 60)
-	local sec = math.floor(time % 60)
-	osd:putf('%s%02d:%02d:%02d', neg and '-' or '', hour, min, sec)
+	local hour = time / 3600
+	local min = time / 60 % 60
+	local sec = time % 60
+	return '%s%02d:%02d:%02d', neg and '-' or '', hour, min, sec
 end
 
-local function osd_put_human_duration(duration)
-	local min = math.floor(duration / 60)
-	local sec = math.floor(duration % 60)
-	if min > 0 then
-		osd:putf('%dm%02ds', min, sec)
+local function duration_format(duration)
+	local min = duration / 60
+	local sec = duration % 60
+	if min >= 1 then
+		return '%dm%02ds', min, sec
 	else
-		osd:putf('%2ds', sec)
+		return '%2ds', sec
 	end
 end
 
@@ -443,7 +443,7 @@ function update()
 		if small then
 			osd:h()
 		end
-		osd_put_human_time(props['time-pos'] or 0)
+		osd:putf(time_format(props['time-pos'] or 0))
 		osd:n()
 
 		-- Right block.
@@ -454,16 +454,16 @@ function update()
 		osd:fn_monospace()
 		osd:an(small and 6 or 5)
 		if prog_hover then
-			osd_put_human_time(-(duration - mouse_time))
+			osd:putf(time_format(-(duration - mouse_time)))
 		elseif
 			main_hover == (props['demuxer-via-network'] or props['speed'] ~= 1)
 		then
-			osd_put_human_time(duration)
+			osd:putf(time_format(duration))
 		else
 			local time_remaininig = (props['duration'] or 0)
 				- (props['time-pos'] or 0)
 			local playtime_remaininig = time_remaininig / props['speed']
-			osd_put_human_time(-playtime_remaininig)
+			osd:putf(time_format(-playtime_remaininig))
 		end
 		if small then
 			osd:h()
@@ -492,7 +492,7 @@ function update()
 		osd:fn_monospace()
 		osd:an(5)
 		osd:put('Cache: ')
-		osd_put_human_duration(cache['cache-duration'] or 0)
+		osd:putf(duration_format(cache['cache-duration'] or 0))
 		osd:put('/', math.floor((cache['total-bytes'] or 0) / 1000 / 1000), 'M')
 		osd:n()
 	end
@@ -588,7 +588,7 @@ function update()
 		osd:an(mouse_align)
 		osd:c3(0x000000)
 		osd:h()
-		osd_put_human_time(mouse_time)
+		osd:putf(time_format(mouse_time))
 		osd:h()
 		osd:n()
 	end
@@ -666,7 +666,7 @@ utils.register_script_messages('osd-bar', {
 		local old_visibility = visibility
 		set_visibility(action)
 		if old_visibility ~= visibility then
-			mp.osd_message(string.format('Visibility: %s', visibility))
+			mp.osd_message(('Visibility: %s'):format(visibility))
 		end
 	end,
 	seek = function(...)

@@ -3,7 +3,7 @@ do
 
 	local seed = 0
 	for _ = 1, 4 do
-		seed = 256 * seed + string.byte(f:read(1), 1)
+		seed = 256 * seed + f:read(1):byte()
 	end
 	math.randomseed(seed)
 

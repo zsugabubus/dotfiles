@@ -14,8 +14,8 @@ local function handle(e)
 	end
 
 	local tile = get_tile()
-	local up = string.find(e.key_name, 'UP')
-	local scroll = string.find(e.key_name, 'WHEEL_') ~= nil
+	local up = e.key_name:find('UP')
+	local scroll = e.key_name:find('WHEEL_') ~= nil
 
 	if tile == 0 or tile == 3 then
 		if scroll then

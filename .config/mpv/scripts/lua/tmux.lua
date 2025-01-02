@@ -9,7 +9,7 @@ mp.register_script_message('tmux', function(keys)
 			'home',
 			'zsh',
 			'-ic',
-			string.format('mpt %s', mp.get_property_native('input-ipc-server')),
+			('mpt %s'):format(mp.get_property_native('input-ipc-server')),
 			';',
 			'run-shell',
 			'-d',

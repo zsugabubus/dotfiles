@@ -108,7 +108,7 @@ local function osd_put_track(track)
 	osd:put_cursor(current)
 	osd:bold(current)
 	osd:put_marker(track.selected)
-	osd:put(string.upper(string.sub(track.type, 1, 1)), ':')
+	osd:put(track.type:sub(1, 1):upper(), ':')
 	osd:h()
 	osd:put(track.id, ':')
 	osd:h()
@@ -135,8 +135,7 @@ local function osd_put_track(track)
 	end
 
 	if
-		track['demux-channels']
-		and not string.find(track['demux-channels'], 'unknown')
+		track['demux-channels'] and not track['demux-channels']:find('unknown')
 	then
 		osd:put(' ', track['demux-channels'])
 	else
@@ -222,7 +221,7 @@ local function osd_put_track_list(name, track_type, paginate)
 		osd:put_cursor(current)
 		osd:bold(current)
 		osd:put_marker(not selected_track)
-		osd:put(string.upper(string.sub(track_type, 1, 1)), ': ')
+		osd:put(track_type:sub(1, 1):upper(), ': ')
 		osd:put('0: none')
 		osd:bold(false)
 	end

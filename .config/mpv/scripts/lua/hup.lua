@@ -44,7 +44,7 @@ mp.observe_property('mute', 'native', function(_, value)
 end)
 
 local function is_disabled()
-	return string.match(mp.get_opt('hup') or '', '^[nNfF0]')
+	return (mp.get_opt('hup') or ''):match('^[nNfF0]')
 end
 
 local function handle_file_loaded()

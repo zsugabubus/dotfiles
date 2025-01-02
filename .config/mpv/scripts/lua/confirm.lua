@@ -56,7 +56,7 @@ local function confirm_if(cond, ...)
 			Esc = no,
 		}
 
-		mp.osd_message(string.format('Confirm %s? [Y/n]', argv[1]), 999999)
+		mp.osd_message(('Confirm %s? [Y/n]'):format(argv[1]), 999999)
 		for key, fn in pairs(BINDINGS) do
 			mp.add_forced_key_binding(key, key, fn)
 		end

@@ -52,7 +52,7 @@ local function apply_preset(preset)
 	for _, p in ipairs(PROPERTIES) do
 		mp.set_property_native(p.name, preset[p.name])
 	end
-	mp.osd_message(string.format('Color preset: %s', preset.name))
+	mp.osd_message(('Color preset: %s'):format(preset.name))
 end
 
 local function set_preset(action)
@@ -171,7 +171,7 @@ function update()
 		osd:put('\238\128', string.char(128 + p.icon))
 		osd:h()
 		osd:bold(current)
-		osd:put(string.upper(string.sub(p.name, 1, 1)), string.sub(p.name, 2), ': ')
+		osd:put(p.name:gsub('^.', string.upper), ': ')
 		osd:str(props[p.name])
 		osd:bold(false)
 		osd:N()

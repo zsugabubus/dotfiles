@@ -10,26 +10,26 @@ local filename_to_title = setmetatable({}, {
 	__index = function(t, k)
 		local s = k
 
-		if string.sub(s, 1, 2) == './' then
-			s = string.sub(s, 3)
-		elseif string.sub(s, 1, #cwd) == cwd then
-			s = string.sub(s, #cwd + 1)
+		if s:find('./', 1, true) == 1 then
+			s = s:sub(3)
+		elseif s:find(cwd, 1, true) == 1 then
+			s = s:sub(#cwd + 1)
 		end
 
-		s = string.gsub(s, '([^/])%.[0-9A-Za-z]+$', '%1')
+		s = s:gsub('([^/])%.[0-9A-Za-z]+$', '%1')
 
-		if not string.find(s, ' ', 1, true) then
+		if not s:find(' ', 1, true) then
 			local n = 0
 			for _, pattern in pairs(SPACE_PATTERNS) do
-				local x, xn = string.gsub(s, pattern, ' ')
+				local x, xn = s:gsub(pattern, ' ')
 				if xn > n then
 					s, n = x, xn
 				end
 			end
 		end
 
-		s = string.gsub(s, ' [0-9]+p[^/]*', '')
-		s = string.gsub(s, ' [1-9][0-9][0-9][0-9] [A-Za-z0-9][^/]', '')
+		s = s:gsub(' [0-9]+p[^/]*', '')
+		s = s:gsub(' [1-9][0-9][0-9][0-9] [A-Za-z0-9][^/]', '')
 
 		s = Osd.esc(s)
 		t[k] = s

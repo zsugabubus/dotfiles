@@ -11,10 +11,7 @@ M.__index = M
 local buf = require('string.buffer').new()
 
 local function esc_helper(s, nl)
-	s = string.gsub(s, '\\', '\\\u{FEFF}')
-	s = string.gsub(s, '{', '\\{')
-	s = string.gsub(s, '\n', nl)
-	return s
+	return (string.gsub(s, '\\', '\\\u{FEFF}'):gsub('{', '\\{'):gsub('\n', nl))
 end
 
 local function esc(s)
