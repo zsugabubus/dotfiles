@@ -100,7 +100,7 @@ describe('http', function()
 			'printf %s ' .. vim.fn.shellescape(response),
 		}, bin)
 		vim.fn.setfperm(bin, 'r-x------')
-		vim.fn.setenv('PATH', string.format('%s:%s', dir, vim.fn.getenv('PATH')))
+		vim.fn.setenv('PATH', ('%s:%s'):format(dir, vim.fn.getenv('PATH')))
 	end
 
 	test('edit', function()
@@ -147,7 +147,7 @@ describe('ssh', function()
 			'exec sh -c "$1"',
 		}, bin)
 		vim.fn.setfperm(bin, 'r-x------')
-		vim.fn.setenv('PATH', string.format('%s:%s', dir, vim.fn.getenv('PATH')))
+		vim.fn.setenv('PATH', ('%s:%s'):format(dir, vim.fn.getenv('PATH')))
 	end
 
 	local ssh = 'ssh://localhost'
@@ -208,7 +208,7 @@ describe('ssh', function()
 			assert.True(vim.bo.modified)
 			vim.cmd.write()
 			assert.False(vim.bo.modified)
-			vim:assert_messages(string.format('"%s" 3L, 13B written on localhost', f))
+			vim:assert_messages(('"%s" 3L, 13B written on localhost'):format(f))
 			assert.same({ 'new', 'content', '' }, vim.fn.readfile(f))
 		end)
 
@@ -216,9 +216,7 @@ describe('ssh', function()
 			vim.cmd.edit(vim.fn.fnameescape(ssh .. f))
 			vim:set_lines({ 'content' })
 			vim.cmd.write()
-			vim:assert_messages(
-				string.format('"%s" [New] 1L, 8B written on localhost', f)
-			)
+			vim:assert_messages(('"%s" [New] 1L, 8B written on localhost'):format(f))
 			assert.same({ 'content' }, vim.fn.readfile(f))
 		end)
 

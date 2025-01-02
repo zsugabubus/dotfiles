@@ -10,9 +10,7 @@ function M.check()
 		}) / Nil
 	end)
 	local vnicode = require('vnicode')
-	health.info(
-		string.format('`vim.g.vnicode.data_dir`: `%s`', vnicode.get_data_dir())
-	)
+	health.info(('`vim.g.vnicode.data_dir`: `%s`'):format(vnicode.get_data_dir()))
 
 	health.start('Data')
 	local ucds = vnicode.get_installed_ucds()
@@ -22,7 +20,7 @@ function M.check()
 			'Install a specific one with |:VnicodeInstall| {ucd-name}',
 		})
 	else
-		health.info(string.format('Installed UCDs: %s', table.concat(ucds, ', ')))
+		health.info(('Installed UCDs: %s'):format(table.concat(ucds, ', ')))
 	end
 
 	health.start('External tools')

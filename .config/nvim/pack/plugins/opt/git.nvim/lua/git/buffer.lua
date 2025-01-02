@@ -9,11 +9,11 @@ local M = {}
 
 function M.buf_get_rev(buf)
 	local name = api.nvim_buf_get_name(buf)
-	local s = string.match(name, '^git[^:]*://(.*)')
+	local s = name:match('^git[^:]*://(.*)')
 	if not s then
 		return
 	end
-	local git_dir, rev = string.match(s, '^(..-)//(.*)')
+	local git_dir, rev = s:match('^(..-)//(.*)')
 	return git_dir, rev or s
 end
 
@@ -33,9 +33,9 @@ end
 function M.goto_revision(git_dir, rev, lnum)
 	local use_preview = vim.b.git_use_preview
 	local file = fn.fnameescape(
-		string.format('git://%s%s%s', git_dir or '', git_dir and '//' or '', rev)
+		('git://%s%s%s'):format(git_dir or '', git_dir and '//' or '', rev)
 	)
-	local lnum_cmd = lnum and string.format('+%d ', lnum) or ''
+	local lnum_cmd = lnum and ('+%d '):format(lnum) or ''
 
 	-- May block file open since it can make rev expand to nothing.
 	local saved_wildignore = vim.go.wildignore
@@ -44,10 +44,10 @@ function M.goto_revision(git_dir, rev, lnum)
 	if use_preview then
 		local saved_previewheight = vim.go.previewheight
 		vim.go.previewheight = 82
-		cmd(string.format('topleft vertical pedit %s%s', lnum_cmd, file))
+		cmd(('topleft vertical pedit %s%s'):format(lnum_cmd, file))
 		vim.go.previewheight = saved_previewheight
 	else
-		cmd(string.format('edit %s%s', lnum_cmd, file))
+		cmd(('edit %s%s'):format(lnum_cmd, file))
 	end
 
 	vim.go.wildignore = saved_wildignore
@@ -81,7 +81,7 @@ function M.get_diff_source()
 	end
 
 	local s = api.nvim_buf_get_lines(0, row - 1, row, true)[1] or ''
-	local a_start, b_start = string.match(s, '^@@ %-(%d*),%d* %+(%d*)')
+	local a_start, b_start = s:match('^@@ %-(%d*),%d* %+(%d*)')
 
 	local a_path, b_path
 
@@ -90,8 +90,8 @@ function M.get_diff_source()
 			local s = api.nvim_buf_get_text(0, row - 1, 0, row - 1, 4, {})[1]
 			if s == '+++ ' then
 				local a, b = unpack(api.nvim_buf_get_lines(0, row - 2, row, true))
-				a_path = string.match(a, '%-%-%- [^/]*/(.*)')
-				b_path = string.match(b, '%+%+%+ [^/]*/(.*)')
+				a_path = a:match('%-%-%- [^/]*/(.*)')
+				b_path = b:match('%+%+%+ [^/]*/(.*)')
 				row = row - 2
 				break
 			end
@@ -103,8 +103,7 @@ function M.get_diff_source()
 
 	while row > 0 do
 		local s = api.nvim_buf_get_lines(0, row - 1, row, true)[1]
-		b_commit = string.match(s, '^commit (%x*)')
-			or string.match(s, '^[* ]*%x%x%x%x%x%x%x%x*')
+		b_commit = s:match('^commit (%x*)') or s:match('^[* ]*%x%x%x%x%x%x%x%x*')
 		if b_commit then
 			break
 		end
@@ -133,7 +132,7 @@ function M.goto_object()
 	local cfile = fn.expand('<cfile>')
 	local git_dir, rev = M.buf_get_rev(0)
 
-	if string.match(cfile, '^%x%x%x%x+$') then
+	if cfile:match('^%x%x%x%x+$') then
 		M.goto_revision(git_dir, cfile)
 		return
 	end
@@ -204,9 +203,9 @@ function _G._git_fde()
 	local s = api.nvim_buf_get_text(0, row - 1, 0, row - 1, 11, {})[1]
 	if s == '' then
 		return 0
-	elseif string.sub(s, 1, 3) == '@@ ' then
+	elseif s:sub(1, 3) == '@@ ' then
 		return '>2'
-	elseif string.sub(s, 1, 11) == 'diff --git ' then
+	elseif s:sub(1, 11) == 'diff --git ' then
 		return '>1'
 	end
 	return '='

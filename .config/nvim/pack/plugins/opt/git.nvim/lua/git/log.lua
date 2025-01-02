@@ -30,11 +30,10 @@ local function handle_user_command(opts)
 			local repo = Repository.from_path_or_current_buf(git_dir)
 			repo = Repository.await(repo)
 			utils.ensure_work_tree(repo)
-			rev, path = '@', string.sub(fn.expand('%:p'), #repo.work_tree + 2)
+			rev, path = '@', fn.expand('%:p'):sub(#repo.work_tree + 2)
 		end
 
-		s = string.format(
-			'%s%s%s:%s:%d-%d',
+		s = ('%s%s%s:%s:%d-%d'):format(
 			git_dir or '',
 			git_dir and '//' or '',
 			rev,
@@ -62,8 +61,7 @@ local function handle_read_autocmd(opts)
 	local repo = Repository.from_path_or_current_buf(git_dir)
 	local rev, path_range = revision.split_path(rev_path_range)
 
-	local path, start_lnum, end_lnum =
-		string.match(path_range, '^(.*):(%d*)%-(%d*)$')
+	local path, start_lnum, end_lnum = path_range:match('^(.*):(%d*)%-(%d*)$')
 	if not path then
 		path = path_range
 	end
@@ -87,10 +85,7 @@ local function handle_read_autocmd(opts)
 		local full_path = repo.work_tree .. '/' .. path
 
 		if start_lnum then
-			table.insert(
-				args,
-				string.format('-L%d,%d:%s', start_lnum, end_lnum, full_path)
-			)
+			table.insert(args, ('-L%d,%d:%s'):format(start_lnum, end_lnum, full_path))
 		else
 			table.insert(args, '--patch')
 			table.insert(args, '--')

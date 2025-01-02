@@ -12,9 +12,9 @@ function M.check()
 	end)
 	for _, name in ipairs((vim.g.multisearch or {}).highlights or {}) do
 		if next(vim.api.nvim_get_hl(0, { name = name })) ~= nil then
-			health.ok(string.format('Highlight %s found', name))
+			health.ok(('Highlight %s found'):format(name))
 		else
-			health.error(string.format('Highlight %s not found', name))
+			health.error(('Highlight %s not found'):format(name))
 		end
 	end
 end

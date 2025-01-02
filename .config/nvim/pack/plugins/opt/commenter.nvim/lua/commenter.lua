@@ -49,7 +49,7 @@ local get_commentstring = config.get_commentstring
 	or get_treesitter_commentstring
 
 local function parse(s)
-	return string.match(s, '^(.-) *%%s *(.-)$')
+	return s:match('^(.-) *%%s *(.-)$')
 end
 
 local function expand(c)
@@ -68,12 +68,12 @@ local function comment_lines(buf, start_row, end_row, op)
 
 	local pattern = '^%s-()'
 		.. vim.pesc(l_part)
-		.. expand(string.sub(l_part, -1))
+		.. expand(l_part:sub(-1))
 		.. ' ?()'
 	if r_part ~= '' then
 		pattern = pattern
 			.. '.-() ?'
-			.. expand(string.sub(r_part, 1, 1))
+			.. expand(r_part:sub(1, 1))
 			.. vim.pesc(r_part)
 			.. '()'
 	end
@@ -83,7 +83,7 @@ local function comment_lines(buf, start_row, end_row, op)
 
 	local indent
 	for i, line in ipairs(lines) do
-		if string.find(line, '%S') then
+		if line:find('%S') then
 			indents[i] = vim.fn.indent(start_row + i)
 			indent = math.min(indent or math.huge, indents[i])
 		end
@@ -98,7 +98,7 @@ local function comment_lines(buf, start_row, end_row, op)
 
 	for i, line in ipairs(lines) do
 		local row = start_row + i - 1
-		local l_start, l_end, r_start, r_end = string.match(line, pattern)
+		local l_start, l_end, r_start, r_end = line:match(pattern)
 
 		if op ~= true and l_start then
 			op = false
@@ -120,8 +120,8 @@ local function comment_lines(buf, start_row, end_row, op)
 				left(row + 1, indents[i] - indent)
 				buf_set_text(buf, row, 0, row, 0, { l_part .. ' ' })
 			else
-				buf_set_text(buf, row, 0, row, string.find(line, '%S') - 1, {
-					l_part .. string.rep(' ', indents[i] - indent + 1),
+				buf_set_text(buf, row, 0, row, line:find('%S') - 1, {
+					l_part .. (' '):rep(indents[i] - indent + 1),
 				})
 			end
 			left(row + 1, indent)
@@ -136,8 +136,7 @@ local function comment_lines(buf, start_row, end_row, op)
 	if op == nil or #lines > vim.go.report then
 		vim.api.nvim_echo({
 			{
-				op ~= nil and string.format(
-					'%d %s %s',
+				op ~= nil and ('%d %s %s'):format(
 					#lines,
 					#lines == 1 and 'line' or 'lines',
 					op and 'commented' or 'uncommented'
@@ -154,7 +153,7 @@ local function get_comment_range(buf, row)
 
 	local function is_commented(row)
 		local line = vim.api.nvim_buf_get_lines(buf, row, row + 1, false)[1]
-		return line and string.find(line, pattern)
+		return line and line:find(pattern)
 	end
 
 	if not is_commented(row) then

@@ -119,7 +119,7 @@ local function update_head(repo)
 	}, function(s)
 		if s ~= '' then
 			-- Trim "\n".
-			repo.head = string.sub(s, 1, -2)
+			repo.head = s:sub(1, -2)
 			repo.detached = false
 			return update_statusline(repo)
 		end
@@ -136,7 +136,7 @@ local function update_head(repo)
 				repo.head = nil
 			else
 				-- Trim "\n".
-				repo.head = string.sub(s, 1, -2)
+				repo.head = s:sub(1, -2)
 			end
 			return update_statusline(repo)
 		end)
@@ -163,7 +163,7 @@ local function update_ahead_behind(repo)
 		'--count',
 		'@{upstream}...@',
 	}, function(s)
-		local behind, ahead = string.match(s, '(%d+)\t(%d+)')
+		local behind, ahead = s:match('(%d+)\t(%d+)')
 		repo.behind = tonumber(behind)
 		repo.ahead = tonumber(ahead)
 		return update_statusline(repo)
@@ -246,8 +246,8 @@ local function update_modified(repo)
 		'--porcelain',
 	}, function(s)
 		s = '\n' .. s
-		repo.staged = string.find(s, '\n[MARC]') ~= nil
-		repo.modified = string.find(s, '\n.[MARC]') ~= nil
+		repo.staged = s:find('\n[MARC]') ~= nil
+		repo.modified = s:find('\n.[MARC]') ~= nil
 		return update_statusline(repo)
 	end)
 end
@@ -294,8 +294,7 @@ function M.from_path(path)
 			return
 		end
 
-		local bare, git_dir, work_tree =
-			string.match(s, '^([^\n]*)\n([^\n]*)\n([^\n]*)')
+		local bare, git_dir, work_tree = s:match('^([^\n]*)\n([^\n]*)\n([^\n]*)')
 
 		local repo = {
 			git_dir = git_dir,
@@ -388,7 +387,7 @@ local function is_status_enabled()
 	end
 
 	local bufname = api.nvim_buf_get_name(0)
-	if string.sub(bufname, 1, 4) == '/tmp' then
+	if bufname:sub(1, 4) == '/tmp' then
 		return false
 	end
 

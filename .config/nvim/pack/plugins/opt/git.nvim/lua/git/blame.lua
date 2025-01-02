@@ -37,8 +37,7 @@ local function handle_user_command()
 	vim.cmd('topleft vsplit')
 
 	local buf = fn.bufnr(
-		string.format(
-			'git-blame://%s%s%s:%s',
+		('git-blame://%s%s%s:%s'):format(
 			git_dir or '',
 			git_dir and '//' or '',
 			rev,
@@ -122,10 +121,10 @@ local function handle_read_autocmd(opts)
 	end
 
 	for _, line in ipairs(lines) do
-		local k, v = string.match(line, '^([^ ]+) ?(.*)')
+		local k, v = line:match('^([^ ]+) ?(.*)')
 		if #k == 40 then
 			local hash, sourceline, resultline, num_lines =
-				k, string.match(v, '^(%d+) (%d+) (%d+)')
+				k, v:match('^(%d+) (%d+) (%d+)')
 			start_row = resultline
 			end_row = resultline + num_lines - 1
 			max_row = math.max(max_row, end_row)
@@ -150,9 +149,8 @@ local function handle_read_autocmd(opts)
 	local commit2str = {}
 
 	for _, commit in pairs(commits) do
-		commit2str[commit] = string.format(
-			'%s %s %s',
-			string.sub(commit.hash, 1, 7),
+		commit2str[commit] = ('%s %s %s'):format(
+			commit.hash:sub(1, 7),
 			os.date('%Y-%m-%d', commit['author-time']),
 			commit['author']
 		)

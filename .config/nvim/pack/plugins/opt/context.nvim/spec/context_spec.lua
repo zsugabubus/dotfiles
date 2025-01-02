@@ -7,19 +7,14 @@ local function collapse(up, expected)
 			for i = 1, 10 do
 				table.insert(
 					lines,
-					string.format(
-						'%slevel %d, line %d',
-						string.rep('  ', level),
-						level,
-						#lines + 1
-					)
+					('%slevel %d, line %d'):format(('  '):rep(level), level, #lines + 1)
 				)
 			end
 		end
 
 		vim:resize(100, 9)
 		vim:set_lines(lines)
-		vim:feed('G' .. string.rep('k', up))
+		vim:feed('G' .. ('k'):rep(up))
 
 		vim.cmd.ContextEnable()
 

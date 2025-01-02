@@ -26,7 +26,7 @@ end, { desc = 'Concat files of argument list' })
 
 user_command('Narrow', function(opts)
 	local buf = api.nvim_get_current_buf()
-	cmd.edit(string.format('cat://%d:%d-%d', buf, opts.line1, opts.line2))
+	cmd.edit(('cat://%d:%d-%d'):format(buf, opts.line1, opts.line2))
 end, { range = 2, desc = 'Narrow buffer to the selected region' })
 
 autocmd('BufReadCmd', {

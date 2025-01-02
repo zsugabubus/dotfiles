@@ -121,8 +121,8 @@ describe(':FuzzyBuffers', function()
 		vim:assert_lines({
 			'>',
 			'[2/2]',
-			string.format('%3d     recent', recent),
-			string.format('%3d  +  [No Name]', unnamed),
+			('%3d     recent'):format(recent),
+			('%3d  +  [No Name]'):format(unnamed),
 			'~',
 		})
 

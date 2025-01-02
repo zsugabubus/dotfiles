@@ -10,7 +10,7 @@ local function autoload_user_command(opts)
 end
 
 local function autoload_complete(prefix, cmdline)
-	local name = vim.fn.fullcommand(string.match(cmdline, '([^ ]*)'))
+	local name = vim.fn.fullcommand(cmdline:match('([^ ]*)'))
 	return require('tmux')[name .. '_complete'](prefix)
 end
 
@@ -18,9 +18,7 @@ autocmd({ 'BufReadCmd', 'BufWriteCmd' }, {
 	group = group,
 	pattern = { 'tmux://buffers/*', 'tmux://panes/*' },
 	callback = function(opts)
-		local name = opts.event
-			.. '_'
-			.. string.match(opts.match, '^tmux://([^/]*)')
+		local name = opts.event .. '_' .. opts.match:match('^tmux://([^/]*)')
 		return require('tmux')[name](opts)
 	end,
 })

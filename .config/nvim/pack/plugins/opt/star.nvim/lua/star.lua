@@ -6,16 +6,12 @@ local go = vim.go
 local M = {}
 
 local function is_normal_mode()
-	return string.sub(api.nvim_get_mode().mode, 1, 1) == 'n'
+	return api.nvim_get_mode().mode:sub(1, 1) == 'n'
 end
 
 local function get_keyword(buf, row, col)
 	local re = vim.regex(
-		string.format(
-			[=[\v\k*%%%dc\k+|%%%dc[^[:keyword:]]*\zs\k+]=],
-			col + 1,
-			col + 1
-		)
+		([=[\v\k*%%%dc\k+|%%%dc[^[:keyword:]]*\zs\k+]=]):format(col + 1, col + 1)
 	)
 	local start_col, end_col = re:match_line(buf, row - 1, 0)
 
@@ -50,11 +46,7 @@ local function set_search(pattern, offset)
 	pcall(cmd.normal, {
 		bang = true,
 		args = {
-			string.format(
-				'/%s/%s\n',
-				string.gsub(string.gsub(pattern, '/', '\\/'), '\n', '\\n'),
-				offset
-			),
+			('/%s/%s\n'):format(pattern:gsub('/', '\\/'):gsub('\n', '\\n'), offset),
 		},
 	})
 
@@ -65,8 +57,8 @@ local function set_search(pattern, offset)
 end
 
 function M.search(flags)
-	local word = string.find(flags, 'w')
-	local forward = not string.find(flags, 'b')
+	local word = flags:find('w')
+	local forward = not flags:find('b')
 
 	local text
 	local offset
@@ -84,17 +76,16 @@ function M.search(flags)
 		if col + 1 == end_col then
 			offset = 'e'
 		else
-			offset = string.format('s+%d', math.max(0, col - start_col))
+			offset = ('s+%d'):format(math.max(0, col - start_col))
 		end
 	else
 		text = get_visual_text()
 		offset = ''
 	end
 
-	local pattern = string.format(
-		'\\V%s%s%s',
+	local pattern = ('\\V%s%s%s'):format(
 		word and '\\<' or '',
-		string.gsub(text, '\\', '\\\\'),
+		text:gsub('\\', '\\\\'),
 		word and '\\>' or ''
 	)
 	set_search(pattern, offset)

@@ -2,33 +2,39 @@ local api = vim.api
 local bo = vim.bo
 local fn = vim.fn
 
+local autocmd = api.nvim_create_autocmd
+local echoerr = api.nvim_err_writeln
 local shesc = fn.shellescape
 
 local group = api.nvim_create_augroup('explorer.ssh', {})
-local pattern = 'ssh://*'
+
+local function echomsg(...)
+	api.nvim_echo({ { string.format(...), 'Normal' } }, true, {})
+end
 
 local function parse_opts(opts)
-	local destination, path = string.match(opts.match, 'ssh://([^/]*)(.*)')
+	local destination, path = opts.match:match('ssh://([^/]*)(.*)')
 	if path == '' then
 		return destination, '/', false
 	end
-	return destination, string.gsub(path, '//$', '/'), string.match(path, '//$')
+	return destination, path:gsub('//$', '/'), path:match('//$')
 end
 
-api.nvim_create_autocmd('BufReadCmd', {
+autocmd('BufReadCmd', {
 	group = group,
-	pattern = pattern,
+	pattern = 'ssh://*',
 	nested = true,
 	callback = function(opts)
 		local destination, path, recursive = parse_opts(opts)
+
 		bo.buftype = 'nofile'
 		bo.swapfile = false
+
 		local cmdline = {
 			'ssh',
 			'--',
 			destination,
-			string.format(
-				[[
+			([[
 				if test -f %s; then
 					echo file
 					if test -w %s; then
@@ -48,7 +54,7 @@ api.nvim_create_autocmd('BufReadCmd', {
 					echo new
 					echo writable
 				fi
-				]],
+				]]):format(
 				shesc(path),
 				shesc(path),
 				shesc(path),
@@ -58,38 +64,46 @@ api.nvim_create_autocmd('BufReadCmd', {
 				shesc(path)
 			),
 		}
+
 		local output = fn.systemlist(cmdline)
 		local kind = table.remove(output, 1)
 		local writable = table.remove(output, 1)
+
 		if vim.v.shell_error ~= 0 then
 			bo.readonly = true
-			api.nvim_err_writeln(
-				"Can't read file: " .. vim.trim(table.concat(output, '\n'))
-			)
+			echoerr("Can't read file: " .. vim.trim(table.concat(output, '\n')))
 			return
 		end
+
 		if kind == 'dir' then
 			local prefix = 'ssh://'
 				.. destination
-				.. (recursive and '' or string.gsub(path .. '/', '//$', '/'))
+				.. (recursive and '' or (path .. '/'):gsub('//$', '/'))
+
 			-- Eat "." and "..".
 			if not recursive then
 				table.remove(output, 1)
 				table.remove(output, 1)
 			end
+
 			for i, path in ipairs(output) do
 				output[i] = prefix .. output[i]
 			end
 		end
+
 		api.nvim_buf_set_lines(0, 0, -1, true, output)
+
 		bo.readonly = writable == 'readonly'
+
 		if kind == 'file' or kind == 'new' then
-			bo.buftype = 'acwrite'
 			local filetype, on_detect = vim.filetype.match({
 				buf = 0,
 				filename = path,
 			})
+
+			bo.buftype = 'acwrite'
 			bo.filetype = filetype or ''
+
 			if on_detect then
 				on_detect(0)
 			end
@@ -102,33 +116,37 @@ api.nvim_create_autocmd('BufReadCmd', {
 	end,
 })
 
-api.nvim_create_autocmd('BufWriteCmd', {
+autocmd('BufWriteCmd', {
 	group = group,
-	pattern = pattern,
+	pattern = 'ssh://*',
 	nested = true,
 	callback = function(opts)
 		local destination, path = parse_opts(opts)
 		local tmp_path = path .. '~'
+
 		local cmdline = {
 			'ssh',
 			'--',
 			destination,
-			string.format(
-				'test -e %s || echo new && cat >%s && mv %s %s',
+			('test -e %s || echo new && cat >%s && mv %s %s'):format(
 				shesc(path),
 				shesc(tmp_path),
 				shesc(tmp_path),
 				shesc(path)
 			),
 		}
+
 		local output = fn.system(cmdline, opts.buf)
+		local new = output == 'new\n'
+
 		if vim.v.shell_error ~= 0 then
-			api.nvim_err_writeln("Can't write file: " .. vim.trim(output))
+			echoerr("Can't write file: " .. vim.trim(output))
 			return
 		end
+
 		vim.bo.modified = false
-		local new = output == 'new\n'
-		local msg = string.format(
+
+		echomsg(
 			'"%s"%s %dL, %dB written on %s',
 			path,
 			new and ' [New]' or '',
@@ -136,13 +154,12 @@ api.nvim_create_autocmd('BufWriteCmd', {
 			fn.wordcount().bytes,
 			destination
 		)
-		api.nvim_echo({ { msg, 'Normal' } }, true, {})
 	end,
 })
 
-api.nvim_create_autocmd('BufFilePost', {
+autocmd('BufFilePost', {
 	group = group,
-	pattern = pattern,
+	pattern = 'ssh://*',
 	nested = true,
 	callback = function()
 		vim.cmd.edit()

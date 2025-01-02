@@ -1,8 +1,6 @@
 local api = vim.api
 local fn = vim.fn
 
-local M = {}
-
 local enabled = false
 local context = {}
 local prev_win
@@ -47,8 +45,9 @@ local function update()
 					if not view then
 						view = fn.winsaveview()
 					end
-					local pattern =
-						string.format([=[\v\C^[ \t]*[("]*[a-zA-Z]%%<%dv]=], indent + 1)
+					local pattern = ([=[\v\C^[ \t]*[("]*[a-zA-Z]%%<%dv]=]):format(
+						indent + 1
+					)
 					line = fn.search(pattern, 'cbW', 0, 200)
 				end
 				search_cache[from_line] = line
@@ -128,8 +127,7 @@ local function update()
 			api.nvim_win_set_option(
 				item.win,
 				'winhighlight',
-				string.format(
-					'NormalFloat:%s,CursorLineNr:LineNr',
+				('NormalFloat:%s,CursorLineNr:LineNr'):format(
 					is_last and 'NormalUnderline' or 'Normal'
 				)
 			)
@@ -175,7 +173,7 @@ local function timer_callback()
 	end
 end
 
-function M.toggle(b)
+local function toggle(b)
 	if b == nil then
 		b = not enabled
 	end
@@ -222,4 +220,4 @@ function M.toggle(b)
 	update()
 end
 
-return M
+return { toggle = toggle }

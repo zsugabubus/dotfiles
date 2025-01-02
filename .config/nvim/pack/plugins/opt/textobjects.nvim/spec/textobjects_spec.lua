@@ -4,29 +4,29 @@ local function case_modes(init_lhs, lhs, input, expected)
 	test('visual mode', function()
 		vim:set_lines(input)
 		vim:feed(init_lhs)
-		vim:feed(string.format('v%sd', lhs))
+		vim:feed(('v%sd'):format(lhs))
 		vim:assert_lines(expected)
 	end)
 
 	test('operator-pending mode', function()
 		vim:set_lines(input)
 		vim:feed(init_lhs)
-		vim:feed(string.format('d%s', lhs))
+		vim:feed(('d%s'):format(lhs))
 		vim:assert_lines(expected)
 	end)
 end
 
 describe('ii', function()
 	local function trim_XO(s)
-		return string.sub(s, 2)
+		return s:sub(2)
 	end
 
 	local function is_X(s)
-		return string.sub(s, 1, 1) == 'X'
+		return s:sub(1, 1) == 'X'
 	end
 
 	local function not_XO(s)
-		return string.sub(s, 1, 1) == ' '
+		return s:sub(1, 1) == ' '
 	end
 
 	local function case(lines)

@@ -17,7 +17,7 @@ api.nvim_create_autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'output://*',
 	callback = function(opts)
-		local src = string.sub(opts.match, 10)
+		local src = opts.match:sub(10)
 		local output = api.nvim_exec2(src, { output = true }).output
 		api.nvim_buf_set_lines(0, 0, -1, false, vim.split(output, '\n'))
 		bo.buftype = 'nofile'

@@ -31,7 +31,7 @@ local function update()
 		return
 	end
 
-	local pattern = string.format([[\<\V%s\>]], string.gsub(cword, [[\]], [[\\]]))
+	local pattern = ([[\<\V%s\>]]):format(cword:gsub([[\]], [[\\]]))
 	for _, win in ipairs(wins) do
 		local w = vim.w[win]
 		w.cword_match_id =

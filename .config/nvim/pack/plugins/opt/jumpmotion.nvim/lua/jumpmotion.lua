@@ -148,7 +148,7 @@ local function make_word(n)
 	while k > 0 do
 		k = k - 1
 		k, i = math.floor(k / #alphabet), k % #alphabet + 1
-		word = string.sub(alphabet, i, i) .. word
+		word = alphabet:sub(i, i) .. word
 	end
 
 	return word
@@ -163,7 +163,7 @@ local function assign_keys(targets)
 			local key = make_word(n)
 			n = n + 1
 
-			local conflict = targets_by_key[string.sub(key, 1, -2)]
+			local conflict = targets_by_key[key:sub(1, -2)]
 			if conflict then
 				targets_by_key[conflict.key] = nil
 				conflict.key = key
@@ -202,8 +202,8 @@ local function map_target(target)
 		{
 			id = target.extmark_id,
 			virt_text = {
-				{ string.sub(target.key, 1, 1), 'JumpMotionHead' },
-				{ string.sub(target.key, 2), 'JumpMotionTail' },
+				{ target.key:sub(1, 1), 'JumpMotionHead' },
+				{ target.key:sub(2), 'JumpMotionTail' },
 			},
 			virt_text_pos = 'overlay',
 			priority = 1000,
@@ -243,8 +243,8 @@ local function pick_target(targets)
 		local new_targets = {}
 
 		for _, target in ipairs(targets) do
-			if string.sub(target.key, 1, #c) == c then
-				target.key = string.sub(target.key, #c + 1)
+			if target.key:sub(1, #c) == c then
+				target.key = target.key:sub(#c + 1)
 				table.insert(new_targets, target)
 			else
 				unmap_target(target)

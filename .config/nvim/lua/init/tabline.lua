@@ -8,7 +8,7 @@ local right = require('string.buffer').new()
 local output = require('string.buffer').new()
 
 local function esc(s)
-	return string.gsub(s, '%%', '%%%%')
+	return (s:gsub('%%', '%%%%'))
 end
 
 local function render_tabpage(s, tabpage, current)
@@ -20,7 +20,7 @@ local function render_tabpage(s, tabpage, current)
 	if name == '' then
 		name = '[No Name]'
 	else
-		name = string.match(name, '[^/]+/[^/]+/?$') or name
+		name = name:match('[^/]+/[^/]+/?$') or name
 	end
 
 	local flags = ''

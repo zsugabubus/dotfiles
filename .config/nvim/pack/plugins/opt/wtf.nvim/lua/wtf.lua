@@ -1,10 +1,6 @@
-local sfind = string.find
-local sgsub = string.gsub
-local sformat = string.format
-
 local function set_search(flags)
-	local till = sfind(flags, 't')
-	local forward = not sfind(flags, 'b')
+	local till = flags:find('t')
+	local forward = not flags:find('b')
 
 	local ok, char = pcall(vim.fn.getcharstr)
 	if not ok then
@@ -19,7 +15,7 @@ local function set_search(flags)
 end
 
 local function repeat_search(flags)
-	local forward = not sfind(flags, 'b')
+	local forward = not flags:find('b')
 
 	local state = vim.fn.getcharsearch()
 	local forward = (state.forward == 1) == forward
@@ -28,10 +24,13 @@ local function repeat_search(flags)
 
 	local flags = 'W' .. (forward and '' or 'b')
 
-	local pattern = sformat([[\V%s\v]], sgsub(state.char, '\\', '\\\\'))
-	if sfind(state.char, '[a-z]') then
-		pattern =
-			sformat([[\v\c(<%s|[_0-9]@<=%s|\u@=%s)]], pattern, pattern, pattern)
+	local pattern = ([[\V%s\v]]):format(state.char:gsub('\\', '\\\\'))
+	if state.char:find('[a-z]') then
+		pattern = ([[\v\c(<%s|[_0-9]@<=%s|\u@=%s)]]):format(
+			pattern,
+			pattern,
+			pattern
+		)
 	end
 
 	if till then

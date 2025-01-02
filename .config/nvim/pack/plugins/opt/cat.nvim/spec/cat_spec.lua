@@ -1,7 +1,7 @@
 local vim = create_vim({ isolate = false, height = 10 })
 
 local function cat(s)
-	return 'cat://' .. string.gsub(s, '[a-zA-Z.]+', vim.fn.bufnr)
+	return 'cat://' .. s:gsub('[a-zA-Z.]+', vim.fn.bufnr)
 end
 
 local function split_chars(s)

@@ -44,26 +44,25 @@ function M.align(opts)
 		end
 	end
 
-	local split_pat =
-		string.format('(.-)(%s*)(%s)(%s*)', vim.pesc(fill), pat, vim.pesc(fill))
+	local split_pat = ('(.-)(%s*)(%s)(%s*)'):format(
+		vim.pesc(fill),
+		pat,
+		vim.pesc(fill)
+	)
 	local lines = api.nvim_buf_get_lines(buf, start_lnum - 1, end_lnum, true)
 	for _, line in ipairs(lines) do
 		local parts = {}
 
-		local trail_text = string.gsub(
-			line,
-			split_pat,
-			function(text, left, sep, right)
-				if #parts >= count * 4 then
-					return nil
-				end
-				table.insert(parts, text)
-				table.insert(parts, #left / #fill)
-				table.insert(parts, sep)
-				table.insert(parts, #right / #fill)
-				return ''
+		local trail_text = line:gsub(split_pat, function(text, left, sep, right)
+			if #parts >= count * 4 then
+				return nil
 			end
-		)
+			table.insert(parts, text)
+			table.insert(parts, #left / #fill)
+			table.insert(parts, sep)
+			table.insert(parts, #right / #fill)
+			return ''
+		end)
 		table.insert(parts, trail_text)
 
 		table.insert(all_parts, parts)
@@ -92,7 +91,7 @@ function M.align(opts)
 
 				if align == 'left' and left then
 					local n = empty and left or margin_left
-					col = col + strwidth(string.rep(fill, n), col)
+					col = col + strwidth(fill:rep(n), col)
 					col = col + strwidth(sep, col)
 				end
 
@@ -132,7 +131,7 @@ function M.align(opts)
 		end
 
 		if align == 'right' then
-			end_col = end_col + strwidth(string.rep(fill, margin_right), end_col)
+			end_col = end_col + strwidth(fill:rep(margin_right), end_col)
 		end
 
 		k = k + 4
@@ -148,13 +147,13 @@ function M.align(opts)
 			start_col,
 			lnum - 1,
 			end_col,
-			{ string.rep(fill, new_len) }
+			{ fill:rep(new_len) }
 		)
 	end
 
 	api.nvim_echo({
 		{
-			string.format('%d lines aligned', end_lnum - start_lnum + 1),
+			('%d lines aligned'):format(end_lnum - start_lnum + 1),
 			'Normal',
 		},
 	}, false, {})

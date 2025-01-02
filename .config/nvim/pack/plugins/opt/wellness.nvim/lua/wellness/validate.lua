@@ -3,7 +3,7 @@ local S = require('schema')
 local health = vim.health
 
 local function is_ident(x)
-	return type(x) == 'string' and string.find(x, '^[a-zA-Z_][0-9a-zA-Z_]*$')
+	return type(x) == 'string' and x:find('^[a-zA-Z_][0-9a-zA-Z_]*$')
 end
 
 local function key_tostring(x)
@@ -12,12 +12,12 @@ local function key_tostring(x)
 	elseif type(x) == 'string' then
 		return vim.inspect(x)
 	else
-		return string.format('<%s>', type(x))
+		return ('<%s>'):format(type(x))
 	end
 end
 
 local function display_type(typename)
-	return string.format('`%s`', typename)
+	return ('`%s`'):format(typename)
 end
 
 local function display_path(path)
@@ -31,14 +31,14 @@ local function display_path(path)
 		end
 	end
 
-	return string.format('`%s`', s)
+	return ('`%s`'):format(s)
 end
 
 local function display_keys(keys)
 	local t = {}
 
 	for _, key in ipairs(keys) do
-		table.insert(t, string.format('`%s`', key_tostring(key)))
+		table.insert(t, ('`%s`'):format(key_tostring(key)))
 	end
 
 	table.sort(t)
@@ -61,7 +61,7 @@ local function stringify_schema(schema)
 	elseif ty == S.TableSchema then
 		return 'table'
 	elseif ty == S.ArraySchema then
-		return string.format('(%s)[]', stringify_schema(schema.item))
+		return ('(%s)[]'):format(stringify_schema(schema.item))
 	elseif ty == S.NamedSchema then
 		return schema.name
 	elseif ty == S.CallbackSchema then
@@ -72,15 +72,14 @@ local function stringify_schema(schema)
 end
 
 local function display_schema(schema)
-	return string.format('`%s`', stringify_schema(schema))
+	return ('`%s`'):format(stringify_schema(schema))
 end
 
 local function report_error(err, path)
 	local ty = getmetatable(err)
 	if ty == S.TypeError then
 		health.error(
-			string.format(
-				'Expected %s to be a %s, but got a %s value',
+			('Expected %s to be a %s, but got a %s value'):format(
 				display_path(path),
 				display_type(err.schema.typename or 'table'),
 				display_type(type(err.value))
@@ -98,8 +97,7 @@ local function report_error(err, path)
 
 		if type_errors_only then
 			health.error(
-				string.format(
-					'Expected %s to be a %s, but got a %s value',
+				('Expected %s to be a %s, but got a %s value'):format(
 					display_path(path),
 					display_schema(err.schema),
 					display_type(type(err.value))
@@ -122,14 +120,12 @@ local function report_error(err, path)
 
 		if #err.unknown_fields > 0 then
 			health.warn(
-				string.format(
-					'Unknown %s %s in %s',
+				('Unknown %s %s in %s'):format(
 					#err.unknown_fields == 1 and 'field' or 'fields',
 					display_keys(err.unknown_fields),
 					display_path(path)
 				),
-				string.format(
-					'Did you mean: %s',
+				('Did you mean: %s'):format(
 					display_keys(vim.tbl_keys(err.schema.fields))
 				)
 			)
@@ -143,8 +139,7 @@ local function report_error(err, path)
 
 		if #err.unknown_fields > 0 then
 			health.warn(
-				string.format(
-					'Unknown %s %s in %s',
+				('Unknown %s %s in %s'):format(
 					#err.unknown_fields == 1 and 'index' or 'indexes',
 					display_keys(err.unknown_fields),
 					display_path(path)
@@ -162,8 +157,7 @@ local function validate(path, value, schema)
 
 	if not err then
 		health.ok(
-			string.format(
-				'%s validated (a %s value)',
+			('%s validated (a %s value)'):format(
 				display_path(path),
 				display_type(type(value))
 			)

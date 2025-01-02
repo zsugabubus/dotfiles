@@ -39,7 +39,7 @@ api.nvim_create_autocmd('BufWriteCmd', {
 		local lines = api.nvim_buf_get_lines(0, 0, -1, true)
 		pcall(cmd.argdelete, '*')
 		for _, line in ipairs(lines) do
-			cmd(string.format('$argadd %s', fn.fnameescape(line)))
+			cmd(('$argadd %s'):format(fn.fnameescape(line)))
 		end
 		bo.modified = false
 		api.nvim_echo({ { 'arglist written', 'Normal' } }, false, {})

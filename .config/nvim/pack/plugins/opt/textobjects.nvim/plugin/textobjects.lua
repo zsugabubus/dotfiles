@@ -22,14 +22,12 @@ keymap('x', 'ii', '', {
 		local n = vim.fn.indent(vim.fn.prevnonblank('.'))
 
 		normal({ bang = true, args = { 'V' } })
-		if search(string.format([[\v\n\s*%%<%dv\S]], n + 1), '') == 0 then
+		if search(([[\v\n\s*%%<%dv\S]]):format(n + 1), '') == 0 then
 			normal({ bang = true, args = { 'G' } })
 		end
 
 		normal({ bang = true, args = { 'o' } })
-		if
-			search(string.format([[\v^\zs\s*%%<%dv\S.*\n\zs]], n + 1), 'eb') == 0
-		then
+		if search(([[\v^\zs\s*%%<%dv\S.*\n\zs]]):format(n + 1), 'eb') == 0 then
 			normal({ bang = true, args = { 'gg' } })
 		end
 	end,

@@ -133,11 +133,11 @@ describe('tmux://buffers/{buffer-name}', function()
 		vim.cmd.update()
 		assert.False(vim.bo.modified)
 		assert.same(CONTENT, tmux.get_buffer_lines(buffer_name))
-		vim:assert_messages(string.format('"%s" [New] written', buffer_name))
+		vim:assert_messages(('"%s" [New] written'):format(buffer_name))
 
 		vim.cmd.write()
 		assert.same(CONTENT, tmux.get_buffer_lines(buffer_name))
-		vim:assert_messages(string.format('"%s" written', buffer_name))
+		vim:assert_messages(('"%s" written'):format(buffer_name))
 	end)
 end)
 

@@ -52,15 +52,14 @@ local function archive(patterns, list_cmdline, extract_cmdline)
 
 	autocmd('BufReadCmd', {
 		group = group,
-		pattern = string.gsub(patterns, ',', '//*,'),
+		pattern = patterns:gsub(',', '//*,'),
 		nested = true,
 		callback = function(opts)
 			vim.b.did_archive = true
-			local match = opts.match
-			for pattern in string.gmatch(patterns, '[^,]+') do
-				local ext = vim.pesc(string.match(pattern, '^%*(.*)'))
-				local pattern = string.format('^(.-%s)//(.*)', ext)
-				local archive, member = string.match(match, pattern)
+			for pattern in patterns:gmatch('[^,]+') do
+				local ext = vim.pesc(pattern:match('^%*(.*)'))
+				local pattern = ('^(.-%s)//(.*)'):format(ext)
+				local archive, member = opts.match:match(pattern)
 				if archive and member == '' then
 					read_system(extract_cmdline(archive))
 					bo.modeline = false
@@ -100,7 +99,7 @@ local function compress(pattern, prog)
 			local cmdline = { prog, '-cd', '--', file }
 			local lines = fn.systemlist(cmdline)
 			if vim.v.shell_error ~= 0 then
-				if not string.find(lines[#lines], ': No such file or directory$') then
+				if not lines[#lines]:find(': No such file or directory$') then
 					echoerr(table.concat(lines, '\n'))
 					bo.modeline = false
 					bo.buftype = 'nofile'
@@ -114,7 +113,7 @@ local function compress(pattern, prog)
 			bo.buftype = 'acwrite'
 			local filetype, on_detect = vim.filetype.match({
 				buf = 0,
-				filename = string.sub(file, 1, -#pattern),
+				filename = file:sub(1, -#pattern),
 			})
 			bo.filetype = filetype or ''
 			if on_detect then
@@ -130,7 +129,7 @@ local function compress(pattern, prog)
 		callback = function(opts)
 			local file = opts.match
 			local tmpfile = file .. '~'
-			local cmdline = string.format('%s > %s', prog, fn.shellescape(tmpfile))
+			local cmdline = ('%s > %s'):format(prog, fn.shellescape(tmpfile))
 			local input = api.nvim_buf_get_text(0, 0, 0, -1, -1, {})
 			table.insert(input, '') -- Ensure ends with <EOL>.
 			local err = fn.system(cmdline, input)
@@ -144,7 +143,7 @@ local function compress(pattern, prog)
 				return
 			end
 			bo.modified = false
-			echomsg(string.format('"%s" written with %s', opts.file, prog))
+			echomsg(('"%s" written with %s'):format(opts.file, prog))
 		end,
 	})
 end

@@ -10,8 +10,8 @@ end
 
 local function from_bufname(s)
 	local ranges = {}
-	for x in string.gmatch(string.sub(s, 7), '[^,]+') do
-		local buf, from, to = string.match(x, '^(%d+):(%d*)%-(%d*)$')
+	for x in s:sub(7):gmatch('[^,]+') do
+		local buf, from, to = x:match('^(%d+):(%d*)%-(%d*)$')
 		table.insert(ranges, {
 			buf = tonumber(buf or x),
 			start_row = (tonumber(from) or 1) - 1,
@@ -27,10 +27,7 @@ local function to_bufname(ranges)
 		if x.start_row == 0 and x.end_row == -1 then
 			table.insert(t, x.buf)
 		else
-			table.insert(
-				t,
-				string.format('%d:%d-%d', x.buf, x.start_row + 1, x.end_row)
-			)
+			table.insert(t, ('%d:%d-%d'):format(x.buf, x.start_row + 1, x.end_row))
 		end
 	end
 	return 'cat://' .. table.concat(t, ',')
@@ -186,7 +183,7 @@ local function handle_write_autocmd(opts)
 	else
 		api.nvim_echo({
 			{
-				string.format('%d %s written', n, n == 1 and 'change' or 'changes'),
+				('%d %s written'):format(n, n == 1 and 'change' or 'changes'),
 				'Normal',
 			},
 		}, true, {})

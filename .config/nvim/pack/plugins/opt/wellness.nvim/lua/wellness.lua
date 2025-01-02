@@ -12,12 +12,10 @@ end
 local function check_executable(name)
 	if vim.fn.executable(name) == 1 then
 		health.ok(
-			string.format('`%s` executable found (`%s`)', name, vim.fn.exepath(name))
+			('`%s` executable found (`%s`)'):format(name, vim.fn.exepath(name))
 		)
 	else
-		health.error(
-			string.format('`%s` not found in `$PATH` or not executable', name)
-		)
+		health.error(('`%s` not found in `$PATH` or not executable'):format(name))
 	end
 end
 

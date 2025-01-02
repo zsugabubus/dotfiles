@@ -147,9 +147,8 @@ local function attach_to_current_buf()
 	should_update = false
 	timer:stop()
 
-	local git_name = string.format(
-		'git://@:%s',
-		string.sub(fn.expand('%:p'), #repo.work_tree + 2)
+	local git_name = ('git://@:%s'):format(
+		fn.expand('%:p'):sub(#repo.work_tree + 2)
 	)
 
 	a_buf = fn.bufnr(git_name, true)

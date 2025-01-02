@@ -17,26 +17,26 @@ local function handle_complete(prefix)
 		return
 	end
 
-	local rev, path, filter = string.match(prefix, '^([^:]+):(.-/?)([^/]*)$')
+	local rev, path, filter = prefix:match('^([^:]+):(.-/?)([^/]*)$')
 	if path then
 		-- Complete tree paths.
 		local output = utils.system(utils.make_args(repo, {
 			'ls-tree',
 			'-z',
 			'--full-tree',
-			string.format('%s:%s', rev, path),
+			('%s:%s'):format(rev, path),
 		}))
 
 		local result = {}
 
 		for object_type, object_path in
-			string.gmatch(output, '[^ ]* ([^ ]*)[^\t]*\t(%Z*)%z')
+			output:gmatch('[^ ]* ([^ ]*)[^\t]*\t(%Z*)%z')
 		do
-			if string.sub(object_path, 1, #filter) == filter then
+			if object_path:sub(1, #filter) == filter then
 				local indicator = object_type == 'tree' and '/' or ''
 				table.insert(
 					result,
-					string.format('%s:%s%s%s', rev, path, object_path, indicator)
+					('%s:%s%s%s'):format(rev, path, object_path, indicator)
 				)
 			end
 		end
@@ -53,7 +53,7 @@ local function handle_complete(prefix)
 			'^refs/(%s.*)',
 			'^(%s.*)',
 		}) do
-			patterns[i] = string.format(format, vim.pesc(prefix))
+			patterns[i] = format:format(vim.pesc(prefix))
 		end
 
 		local output = vim.fn.systemlist(utils.make_args(repo, {
@@ -64,9 +64,9 @@ local function handle_complete(prefix)
 		local result = {}
 
 		for _, x in ipairs(output) do
-			local refname = string.match(x, '^[^ ]* (.*)')
+			local refname = x:match('^[^ ]* (.*)')
 			for _, pattern in ipairs(patterns) do
-				local m = string.match(refname, pattern)
+				local m = refname:match(pattern)
 				if m then
 					table.insert(result, m)
 					-- Show the shortest match only.
@@ -76,10 +76,7 @@ local function handle_complete(prefix)
 		end
 
 		for name in vim.fs.dir(repo.git_dir) do
-			if
-				string.sub(name, 1, #prefix) == prefix
-				and string.sub(name, -4) == 'HEAD'
-			then
+			if name:sub(1, #prefix) == prefix and name:sub(-4) == 'HEAD' then
 				table.insert(result, name)
 			end
 		end

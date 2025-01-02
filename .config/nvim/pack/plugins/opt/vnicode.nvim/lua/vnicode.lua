@@ -31,17 +31,17 @@ local function get_data_dir()
 end
 
 local function get_ucd_url(ucd)
-	return string.format('https://www.unicode.org/Public/UCD/latest/ucd/%s', ucd)
+	return ('https://www.unicode.org/Public/UCD/latest/ucd/%s'):format(ucd)
 end
 
 local function get_ucd_path(ucd)
-	return string.format('%s/%s.xz', data_dir, ucd)
+	return ('%s/%s.xz'):format(data_dir, ucd)
 end
 
 local function get_installed_ucds()
 	local t = {}
 	for name in vim.fs.dir(data_dir) do
-		table.insert(t, string.match(name, '(.*)%.xz$'))
+		table.insert(t, name:match('(.*)%.xz$'))
 	end
 	return t
 end
@@ -51,8 +51,7 @@ local function install_ucd(ucd)
 	local dirname = vim.fs.dirname(filename)
 	fn.mkdir(dirname, 'p')
 	cmd(
-		string.format(
-			'! curl %s | xz > %s',
+		('! curl %s | xz > %s'):format(
 			fn.shellescape(get_ucd_url(ucd)),
 			fn.shellescape(filename)
 		)
@@ -70,7 +69,7 @@ local function get_codepoint_data(ucd, codepoint)
 		ucd_cache[ucd] = a
 
 		for i, line in ipairs(api.nvim_buf_get_lines(buf, 0, -1, true)) do
-			local m = string.match(line, '^[0-9A-F]+')
+			local m = line:match('^[0-9A-F]+')
 			if m then
 				local cp = tonumber(m, 16)
 				local n = math.floor(cp / BUCKET_SIZE)
@@ -89,7 +88,7 @@ local function get_codepoint_data(ucd, codepoint)
 	if row then
 		local line = api.nvim_buf_get_lines(a.buf, row - 1, row, true)[1]
 		-- :VnicodeView modifies the buffer and prepends ";" to the line.
-		line = string.sub(line, 2)
+		line = line:sub(2)
 		return unpack(vim.split(line, ';'))
 	end
 end
@@ -160,13 +159,13 @@ function Printer:chunks()
 end
 
 function Printer:codepoint_graphics(codepoint, general_category)
-	local group = string.sub(general_category, 1, 1)
+	local group = general_category:sub(1, 1)
 	self:put('< ')
 	if group == 'C' then
 		if codepoint < 0x20 then
-			self:put(string.format('^%c', string.byte('@') + codepoint), 'SpecialKey')
+			self:put(('^%c'):format(('@'):byte() + codepoint), 'SpecialKey')
 		else
-			self:put(string.format('<%x>', codepoint), 'SpecialKey')
+			self:put(('<%x>'):format(codepoint), 'SpecialKey')
 		end
 	elseif group == 'M' then
 		local DOTTED_CIRCLE = '\u{25cc}'
@@ -184,7 +183,7 @@ end
 function Printer:codepoint_hex(codepoint)
 	local width = math.ceil(math.log(codepoint) / math.log(16))
 	local width = math.max(width, 4)
-	self:put(string.format(string.format('U+%%0%dX', width), codepoint), 'Number')
+	self:put(('U+%%0%dX'):format(width):format(codepoint), 'Number')
 end
 
 function Printer:codepoint(codepoint)
@@ -193,11 +192,9 @@ function Printer:codepoint(codepoint)
 	local character_name = unicode_data.character_name
 
 	if alias_data and alias_data.alias_type == 'alternate' then
-		character_name =
-			string.format('%s/%s', alias_data.alias_name, character_name)
+		character_name = ('%s/%s'):format(alias_data.alias_name, character_name)
 	elseif alias_data and alias_data.alias_type == 'abbreviation' then
-		character_name =
-			string.format('%s (%s)', alias_data.alias_name, character_name)
+		character_name = ('%s (%s)'):format(alias_data.alias_name, character_name)
 	elseif alias_data and alias_data.alias_type ~= '' then
 		character_name = alias_data.alias_name
 	end
@@ -217,7 +214,7 @@ function Printer:codepoint(codepoint)
 	if unicode_data.decomposition ~= '' then
 		self:put(' = ')
 		local i = 1
-		for x in string.gmatch(unicode_data.decomposition, '[0-9A-F]+') do
+		for x in unicode_data.decomposition:gmatch('[0-9A-F]+') do
 			if i > 1 then
 				self:put('+')
 			end
@@ -243,7 +240,7 @@ end
 
 local function get_current_codepoints()
 	local function is_normal_mode()
-		return string.sub(api.nvim_get_mode().mode, 1, 1) == 'n'
+		return api.nvim_get_mode().mode:sub(1, 1) == 'n'
 	end
 
 	local function get_cursor_text()
@@ -335,7 +332,7 @@ end
 
 local function read_vnicode_autocmd(opts)
 	local buf = opts.buf
-	local text = string.sub(opts.match, 11)
+	local text = opts.match:sub(11)
 	local codepoints = fn.str2list(text)
 
 	local printer = Printer:new()

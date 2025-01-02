@@ -108,7 +108,7 @@ end)
 test('offscreen targets ignored', function()
 	vim:resize(25, 7)
 	vim.o.wrap = false
-	local s = string.rep('a', 1000)
+	local s = ('a'):rep(1000)
 	vim:set_lines({ s, s, s, s, s, s, s })
 	-- Remove onscreen "a"s.
 	vim:feed('500|2Gg0\x16g$6Gr ')
@@ -217,7 +217,7 @@ end)
 test('labels; nowrap', function()
 	vim:resize(27, 7)
 	vim.o.wrap = false
-	local s = string.rep('.', 100)
+	local s = ('.'):rep(100)
 	vim:set_lines({ s, s })
 	vim.fn.setreg('/', '.')
 	vim.api.nvim_input('s/')
@@ -254,7 +254,7 @@ end)
 
 test('labels; wrap', function()
 	vim:resize(27, 7)
-	vim:set_lines({ string.rep('.', 52) })
+	vim:set_lines({ ('.'):rep(52) })
 	vim.fn.setreg('/', '.')
 	vim.api.nvim_input('s/')
 	assert.same({
@@ -280,7 +280,7 @@ end)
 
 test('empty line after right offscreen', function()
 	vim.o.wrap = false
-	vim:set_lines({ string.rep(' ', 1000) .. 'a', '' })
+	vim:set_lines({ (' '):rep(1000) .. 'a', '' })
 	vim.api.nvim_input('sa')
 	assert.same({
 		'',

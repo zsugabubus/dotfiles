@@ -2,21 +2,24 @@ local api = vim.api
 local cmd = vim.cmd
 local fn = vim.fn
 local uv = vim.uv
+local bo = vim.bo
+local b = vim.b
 
 local autocmd = api.nvim_create_autocmd
+local keymap = api.nvim_buf_set_keymap
 
 local group = api.nvim_create_augroup('explorer', {})
 
-local function lsdir_empty()
+local function noop()
 	-- Do nothing.
 end
 
-local function lsdir(path)
+local function list_dir(path)
 	local handle = uv.fs_scandir(path)
 	if handle then
 		return uv.fs_scandir_next, handle
 	end
-	return lsdir_empty
+	return noop
 end
 
 local function find(t, base, limit)
@@ -24,7 +27,7 @@ local function find(t, base, limit)
 		return
 	end
 
-	for name, kind in lsdir(base == '' and '.' or base) do
+	for name, kind in list_dir(base == '' and '.' or base) do
 		local path = base .. name
 		if kind == 'directory' then
 			table.insert(t, path .. '/')
@@ -39,16 +42,14 @@ autocmd('BufEnter', {
 	group = group,
 	nested = true,
 	callback = function(opts)
-		if string.sub(opts.match, 1, 1) ~= '/' then
+		if opts.match:sub(1, 1) ~= '/' then
 			return
 		end
 
-		local bo = vim.bo
 		if bo.buftype ~= '' then
 			return
 		end
 
-		local b = vim.b
 		if b.loaded_explorer then
 			return
 		end
@@ -69,7 +70,7 @@ autocmd('BufEnter', {
 			nested = true,
 			callback = function(opts)
 				local root = fn.fnamemodify(opts.match, ':p:.')
-				local recursive = string.match(opts.file, '//$')
+				local recursive = opts.file:match('//$')
 
 				local lines = {}
 				find(lines, root, recursive and math.huge or 1)
@@ -87,7 +88,6 @@ autocmd('BufEnter', {
 			end,
 		})
 
-		local keymap = api.nvim_buf_set_keymap
 		keymap(0, 'n', '<Plug>(explorer-goto-parent)', '', {
 			callback = function()
 				cmd.edit(fn.fnameescape(fn.expand('%:p:h:h')))
@@ -95,7 +95,7 @@ autocmd('BufEnter', {
 		})
 		keymap(0, 'n', '<Plug>(explorer-recursive)', ':file %//<CR>', {
 			callback = function()
-				cmd.file(fn.fnameescape(string.gsub(fn.expand('%'), '/+$', '') .. '//'))
+				cmd.file(fn.fnameescape(fn.expand('%'):gsub('/+$', '') .. '//'))
 			end,
 		})
 		keymap(0, 'n', '<Plug>(explorer-cd)', ':cd <C-r>%<CR>:edit .<CR>', {})

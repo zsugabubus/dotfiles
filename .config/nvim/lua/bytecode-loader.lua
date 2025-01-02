@@ -21,9 +21,8 @@ function _G.loadfile(path)
 	local stat = uv.fs_stat(path) or NIL_STAT
 	trace(stat_span)
 
-	local path_key = string.gsub(path, '/', '%%')
-	local cache_path = string.format(
-		'%s/%s%%M=%s_%s,S=%s',
+	local path_key = path:gsub('/', '%%')
+	local cache_path = ('%s/%s%%M=%s_%s,S=%s'):format(
 		bytecode_dir,
 		path_key,
 		stat.mtime.sec,
@@ -38,8 +37,7 @@ function _G.loadfile(path)
 		local fast = trace(slow, 'loadfile(bytecode)')
 		loadfile(cache_path)
 		trace(diff)
-		diff.name = string.format(
-			'loadfile speedup: %.3f ms',
+		diff.name = ('loadfile speedup: %.3f ms'):format(
 			(Trace.total_time(slow) - Trace.total_time(fast)) / 1e6
 		)
 	end
@@ -58,7 +56,7 @@ function _G.loadfile(path)
 
 	uv.fs_mkdir(cache_dir, tonumber('700', 8), function()
 		uv.fs_mkdir(bytecode_dir, tonumber('700', 8), function()
-			local tmp_path = string.format('%s.%d~', cache_path, uv.os_getpid())
+			local tmp_path = ('%s.%d~'):format(cache_path, uv.os_getpid())
 			uv.fs_open(tmp_path, 'wx', tonumber('600', 8), function(err, fd)
 				if err then
 					return
@@ -98,12 +96,12 @@ function _G.loadfile(path)
 
 								-- Clean up old entries.
 								for _, entry in ipairs(entries) do
-									local name = string.match(entry.name, '(.*)%%.*[^~]$')
+									local name = entry.name:match('(.*)%%.*[^~]$')
 									if name == path_key then
 										uv.fs_unlink(
 											bytecode_dir .. '/' .. entry.name,
 											function(err, success)
-												if err and string.find(err, '^ENOENT:') then
+												if err and err:find('^ENOENT:') then
 													return
 												end
 												assert(not err, err)

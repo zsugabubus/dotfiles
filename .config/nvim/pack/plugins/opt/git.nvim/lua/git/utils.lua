@@ -2,7 +2,7 @@ local M = {}
 
 function M.gesc(s)
 	-- :h wildcards
-	return string.gsub(s, '[][?*]', '\\%0')
+	return s:gsub('[][?*]', '\\%0')
 end
 
 function M.ensure_work_tree(repo)
@@ -11,7 +11,7 @@ end
 
 -- vim.fn.shellescape() is not available from callbacks.
 local function shesc(s)
-	return string.format("'%s'", string.gsub(s, "'", [['"'"']]))
+	return ("'%s'"):format(s:gsub("'", [['"'"']]))
 end
 
 function M.make_args(repo, args)

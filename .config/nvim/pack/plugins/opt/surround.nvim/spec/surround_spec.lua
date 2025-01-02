@@ -8,10 +8,10 @@ local vim = create_vim({
 describe('text', function()
 	local function case(template, keys)
 		local function make_template(left, right)
-			return (string.gsub(string.gsub(template, '<', left), '>', right))
+			return (template:gsub('<', left):gsub('>', right))
 		end
 
-		assert(not string.find(template, 'X'))
+		assert(not template:find('X'))
 
 		test(keys, function()
 			-- Set line without markers.
@@ -28,7 +28,7 @@ describe('text', function()
 
 			-- Visual selection is correct.
 			vim:feed('gvd')
-			vim:assert_lines({ (string.gsub(template, '<.*>', '')) })
+			vim:assert_lines({ (template:gsub('<.*>', '')) })
 		end)
 	end
 

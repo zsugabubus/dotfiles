@@ -316,10 +316,7 @@ end)
 describe('check_executable()', function()
 	it('prints ok', function()
 		assert_health({
-			string.format(
-				'- OK `nvim` executable found (`%s`)',
-				vim.fn.exepath('nvim')
-			),
+			('- OK `nvim` executable found (`%s`)'):format(vim.fn.exepath('nvim')),
 		}, function()
 			health.check_executable('nvim')
 		end)

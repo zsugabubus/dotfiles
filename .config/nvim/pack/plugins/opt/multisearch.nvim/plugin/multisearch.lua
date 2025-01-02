@@ -20,7 +20,7 @@ local function get_pattern(s)
 		return ''
 	end
 
-	if go.smartcase and go.ignorecase and string.match(s, '[A-Z]') then
+	if go.smartcase and go.ignorecase and s:match('[A-Z]') then
 		s = '\\C' .. s
 	elseif go.ignorecase then
 		s = '\\c' .. s

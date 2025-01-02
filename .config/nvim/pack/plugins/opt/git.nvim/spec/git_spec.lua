@@ -10,7 +10,7 @@ local function fake_git()
 	vim.fn.mkdir(dir)
 	vim.fn.writefile({ '#!/bin/sh' }, exe)
 	vim.fn.setfperm(exe, 'r-x------')
-	vim.fn.setenv('PATH', string.format('%s:%s', dir, vim.fn.getenv('PATH')))
+	vim.fn.setenv('PATH', ('%s:%s'):format(dir, vim.fn.getenv('PATH')))
 end
 
 local function mkdir(path)
@@ -167,7 +167,7 @@ describe('git://', function()
 
 	it('shows full stat names', function()
 		setup()
-		local f = string.rep('a', 100)
+		local f = ('a'):rep(100)
 		mkfile(f)
 		git_add()
 		git_commit()
@@ -1173,7 +1173,7 @@ describe('<Plug>(git-goto-file)', function()
 			vim:set_lines(lines)
 			vim:feed('s')
 			assert.same(
-				string.format([[E447: Can't find file "%s" in path]], file),
+				([[E447: Can't find file "%s" in path]]):format(file),
 				vim.v.errmsg
 			)
 		end

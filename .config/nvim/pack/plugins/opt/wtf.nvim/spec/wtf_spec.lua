@@ -213,8 +213,7 @@ end)
 describe('f with lower-case character', function()
 	local function helper(c, input, expected)
 		local function sub(s)
-			local C = string.upper(c)
-			return (s:gsub('a', c):gsub('A', C))
+			return (s:gsub('a', c):gsub('A', c:upper()))
 		end
 
 		vim:set_lines({ sub(input) })

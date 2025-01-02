@@ -59,7 +59,7 @@ local function get_pid(target)
 end
 
 local function get_cwd(target)
-	return vim.uv.fs_readlink(string.format('/proc/%d/cwd', get_pid(target)))
+	return vim.uv.fs_readlink(('/proc/%d/cwd'):format(get_pid(target)))
 end
 
 local function trigger(name, source_opts)
@@ -68,7 +68,7 @@ end
 
 return {
 	BufReadCmd_buffers = function(opts)
-		local buffer_name = string.sub(opts.match, 16)
+		local buffer_name = opts.match:sub(16)
 		bo.swapfile = false
 		if buffer_name == '' then
 			read_system({
@@ -88,7 +88,7 @@ return {
 		end
 	end,
 	BufWriteCmd_buffers = function(opts)
-		local buffer_name = string.sub(opts.match, 16)
+		local buffer_name = opts.match:sub(16)
 		local output = fn.system({
 			'tmux',
 			'set',
@@ -114,14 +114,14 @@ return {
 		if vim.v.shell_error == 0 then
 			bo.modified = false
 			local new = output == 'found\n' and '' or ' [New]'
-			echomsg(string.format('"%s"%s written', buffer_name, new))
+			echomsg(('"%s"%s written'):format(buffer_name, new))
 		else
 			echoerr("Can't write tmux buffer: " .. vim.trim(output))
 		end
 	end,
 	BufReadCmd_panes = function(opts)
 		trigger('BufReadPre', opts)
-		local target = string.sub(opts.match, 14)
+		local target = opts.match:sub(14)
 		bo.buftype = 'nofile'
 		bo.swapfile = false
 		bo.modeline = false

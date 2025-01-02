@@ -10,11 +10,10 @@ local function handle_user_command(opts)
 	local repo = Repository.await(Repository.from_current_buf())
 	utils.ensure_work_tree(repo)
 
-	local path = string.sub(vim.fn.expand('%:p'), #repo.work_tree + 2)
-	local name = string.format('git://%s:%s', rev, path)
+	local path = vim.fn.expand('%:p'):sub(#repo.work_tree + 2)
+	local name = ('git://%s:%s'):format(rev, path)
 	vim.cmd(
-		string.format(
-			'diffthis | leftabove vsplit %s | diffthis | wincmd p',
+		('diffthis | leftabove vsplit %s | diffthis | wincmd p'):format(
 			vim.fn.fnameescape(name)
 		)
 	)

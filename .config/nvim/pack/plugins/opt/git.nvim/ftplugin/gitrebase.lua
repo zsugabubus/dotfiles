@@ -10,7 +10,7 @@ local function change_command(lhs, command)
 		expr = true,
 		callback = function()
 			function _G._git_rebase_operatorfunc()
-				vim.cmd(string.format("'[,']normal! 0ce%s", command))
+				vim.cmd(("'[,']normal! 0ce%s"):format(command))
 
 				vim.o.operatorfunc = '{->0}'
 

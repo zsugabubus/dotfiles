@@ -23,7 +23,7 @@ keymap('v', '<Plug>(surround)<CR>', '', {
 local function quote(c)
 	keymap('v', '<Plug>(surround)' .. c, '', {
 		callback = function()
-			local ccc = string.rep(c, 3)
+			local ccc = c:rep(3)
 			require('surround').surround_visual(c, c, ccc, ccc)
 		end,
 	})
@@ -54,10 +54,7 @@ parenthesis('<', '>')
 keymap('v', '<Plug>(surround)<', '', {
 	callback = function()
 		local s = vim.fn.input('<')
-		require('surround').surround_visual(
-			string.format('<%s>', s),
-			string.format('</%s>', s)
-		)
+		require('surround').surround_visual(('<%s>'):format(s), ('</%s>'):format(s))
 	end,
 })
 

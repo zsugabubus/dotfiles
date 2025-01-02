@@ -9,7 +9,7 @@ local ASYNC_API = {
 local debug = vim.env.TEST_DEBUG ~= nil
 
 local function print_log(s)
-	print(string.format('NVIM REMOTE: %s', s))
+	print(('NVIM REMOTE: %s'):format(s))
 end
 
 local function display(value)
@@ -25,7 +25,7 @@ local function display_varargs(...)
 end
 
 local function display_call(name, ...)
-	return string.format('%s(%s)', name, display_varargs(...))
+	return ('%s(%s)'):format(name, display_varargs(...))
 end
 
 local Nvim = {}
@@ -38,7 +38,7 @@ function Nvim.new(cls)
 		__index = function(t, k)
 			local function fn(...)
 				if debug then
-					print_log(display_call(string.format('vim.api.%s', k), ...))
+					print_log(display_call(('vim.api.%s'):format(k), ...))
 				end
 				if not ASYNC_API[k] then
 					self:assert_unblocked()
@@ -48,7 +48,7 @@ function Nvim.new(cls)
 					result = nil
 				end
 				if debug then
-					print_log(string.format('= %s', display(result)))
+					print_log(('= %s'):format(display(result)))
 				end
 				return result
 			end
@@ -140,7 +140,7 @@ function Nvim:save_global_options()
 		local t = {}
 		local output = vim.api.nvim_exec2('set!', { output = true }).output
 
-		for name in string.gmatch(output, '\n[n ][o ]([a-z]+)') do
+		for name in output:gmatch('\n[n ][o ]([a-z]+)') do
 			t[name] = get(name, GLOBAL)
 		end
 
@@ -202,7 +202,7 @@ function Nvim:get_screen()
 				table.insert(columns, vim.fn.nr2char(vim.fn.screenchar(y, x)))
 			end
 			local line = table.concat(columns)
-			line = string.gsub(line, ' +$', '')
+			line = line:gsub(' +$', '')
 			table.insert(lines, line)
 		end
 		return lines
@@ -301,7 +301,7 @@ function Nvim:load_plugin()
 end
 
 function Nvim:p()
-	self.api.nvim_input(string.rep('<C-C>', 10))
+	self.api.nvim_input(('<C-C>'):rep(10))
 	print(table.concat(self:get_screen(), '\n'))
 	print(self:vim('messages'))
 end

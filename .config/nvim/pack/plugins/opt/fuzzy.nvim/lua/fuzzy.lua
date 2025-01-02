@@ -50,7 +50,7 @@ local function choose(opts)
 
 						local t = {}
 
-						for x in string.gmatch(s, '(%Z*)%z') do
+						for x in s:gmatch('(%Z*)%z') do
 							table.insert(t, x)
 						end
 
@@ -72,16 +72,14 @@ local function choose(opts)
 		assert(f:close())
 
 		fn.termopen(
-			string.format(
-				'fzr --select-1 --exit-0 --read0 --print0 <%s >%s',
+			('fzr --select-1 --exit-0 --read0 --print0 <%s >%s'):format(
 				shesc(stdin),
 				shesc(stdout)
 			)
 		)
 	elseif opts.choices_cmd0 then
 		fn.termopen(
-			string.format(
-				'%s | fzr --select-1 --exit-0 --read0 --print0 >%s',
+			('%s | fzr --select-1 --exit-0 --read0 --print0 >%s'):format(
 				opts.choices_cmd0,
 				shesc(stdout)
 			)
@@ -111,7 +109,7 @@ local function buffers()
 
 			local flags = buf.changed == 0 and '' or '+'
 
-			table.insert(choices, string.format('%3d%3s\t%s', buf.bufnr, flags, name))
+			table.insert(choices, ('%3d%3s\t%s'):format(buf.bufnr, flags, name))
 		end
 	end
 
@@ -119,7 +117,7 @@ local function buffers()
 		title = 'Select buffer',
 		choices = choices,
 		callback = function(t)
-			local bufnr = assert(tonumber(string.match(t[1], '%d+')))
+			local bufnr = assert(tonumber(t[1]:match('%d+')))
 			cmd.buffer(bufnr)
 		end,
 	})
@@ -142,7 +140,7 @@ local function tags()
 	local choice_pri = {}
 
 	for _, tag in ipairs(fn.taglist('.', fn.expand('%:p'))) do
-		local s = string.format('%s\t\x1b[37m%s', tag.name, tag.filename)
+		local s = ('%s\t\x1b[37m%s'):format(tag.name, tag.filename)
 		local n = (counts[tag.name] or 0) + 1
 		counts[tag.name] = n
 		choice_pri[s] = n
@@ -155,8 +153,8 @@ local function tags()
 		callback = function(t)
 			local s = t[1]
 			local pri = assert(choice_pri[s])
-			local name = assert(string.match(s, '^[^\t]+'))
-			cmd(string.format('%d tag %s', pri, name))
+			local name = assert(s:match('^[^\t]+'))
+			cmd(('%d tag %s'):format(pri, name))
 		end,
 	})
 end

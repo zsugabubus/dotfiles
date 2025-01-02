@@ -3,7 +3,7 @@ local M = {}
 function M.canonical(rev)
 	return rev
 		:gsub('~(%d+)', function(n)
-			return string.rep('~', n)
+			return ('~'):rep(n)
 		end)
 		:gsub('%^%d*', function(s)
 			return (s == '^' or s == '^1') and '~' or s
@@ -14,11 +14,11 @@ function M.canonical(rev)
 end
 
 function M.split_path(rev)
-	return string.match(rev, '^(:?[^:]*):?(.-)/?$')
+	return rev:match('^(:?[^:]*):?(.-)/?$')
 end
 
 function M.join(base, rev)
-	if string.find(rev, '^refs/') or string.find(rev, '^%x%x%x%x%x*$') then
+	if rev:find('^refs/') or rev:find('^%x%x%x%x%x*$') then
 		return rev
 	end
 
@@ -30,12 +30,12 @@ function M.join(base, rev)
 		base_path = rev
 	end
 
-	return string.format('%s:%s', base_rev, base_path)
+	return ('%s:%s'):format(base_rev, base_path)
 end
 
 function M.parent_tree(rev, nth)
 	for _ = 1, nth do
-		rev = string.match(rev, '^(:?[^:]*:.-)[^/]-/?$')
+		rev = rev:match('^(:?[^:]*:.-)[^/]-/?$')
 		if not rev then
 			return
 		end
@@ -44,7 +44,7 @@ function M.parent_tree(rev, nth)
 end
 
 function M.suffix(rev, suffix)
-	local rev, rest = string.match(rev, '^(:?[^:]*)(.*)$')
+	local rev, rest = rev:match('^(:?[^:]*)(.*)$')
 	return M.canonical(rev .. suffix) .. rest
 end
 
