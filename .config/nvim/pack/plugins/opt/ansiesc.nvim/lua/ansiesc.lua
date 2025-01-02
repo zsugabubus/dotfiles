@@ -1,14 +1,14 @@
 local api = vim.api
+local byte = string.byte
+local clear = require('table.clear')
+local find = string.find
+local format = string.format
+local gsub = string.gsub
+local insert = table.insert
 local ipairs = ipairs
+local match = string.match
 local next = next
-local sbyte = string.byte
-local sfind = string.find
-local sformat = string.format
-local sgsub = string.gsub
-local smatch = string.match
-local ssub = string.sub
-local tclear = require('table.clear')
-local tinsert = table.insert
+local sub = string.sub
 
 local buf_add_highlight = api.nvim_buf_add_highlight
 local buf_set_lines = api.nvim_buf_set_lines
@@ -24,7 +24,7 @@ local function is_default_pen(pen)
 	return next(pen) == nil
 end
 
-local reset_pen = tclear
+local reset_pen = clear
 
 local function reset_pen_underline(pen)
 	pen.underline = nil
@@ -35,11 +35,11 @@ local function reset_pen_underline(pen)
 end
 
 local function pen_to_hl_group(pen)
-	return sformat(
+	return format(
 		'_ansiesc_%s_%s_%s_%s',
-		pen.fg and ssub(pen.fg, 2) or '',
-		pen.bg and ssub(pen.bg, 2) or '',
-		pen.sp and ssub(pen.sp, 2) or '',
+		pen.fg and sub(pen.fg, 2) or '',
+		pen.bg and sub(pen.bg, 2) or '',
+		pen.sp and sub(pen.sp, 2) or '',
 		(pen.bold and 'b' or '')
 			.. (pen.italic and 'i' or '')
 			.. (pen.underline and 'u' or '')
@@ -53,7 +53,7 @@ local function pen_to_hl_group(pen)
 end
 
 local function hl_group_to_pen(hl_group)
-	local fg, bg, sp, b, i, u, d, c, o, a, r, s = smatch(
+	local fg, bg, sp, b, i, u, d, c, o, a, r, s = match(
 		hl_group,
 		'^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(d?)(c?)(o?)(a?)(r?)(s?)$'
 	)
@@ -93,17 +93,17 @@ local function make_ansi_parser()
 	local offset
 
 	local function f(i, sgr, j)
-		tinsert(start_cols, i + offset)
-		tinsert(sgrs, sgr)
+		insert(start_cols, i + offset)
+		insert(sgrs, sgr)
 		offset = offset - (j - i)
 		return ''
 	end
 
 	return function(s)
-		tclear(start_cols)
-		tclear(sgrs)
+		clear(start_cols)
+		clear(sgrs)
 		offset = -1
-		return sgsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
+		return gsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
 	end
 end
 
@@ -111,26 +111,26 @@ local function make_sgr_parser()
 	local params = {}
 
 	return function(s)
-		tclear(params)
+		clear(params)
 		local i = 1
 
 		while true do
-			local j = sfind(s, ';', i, true)
+			local j = find(s, ';', i, true)
 			if j then
-				tinsert(params, j <= i and '0' or ssub(s, i, j - 1))
+				insert(params, j <= i and '0' or sub(s, i, j - 1))
 				i = j + 1
 			else
 				break
 			end
 		end
 
-		tinsert(params, i > #s and '0' or ssub(s, i))
+		insert(params, i > #s and '0' or sub(s, i))
 		return params
 	end
 end
 
 local function color(r, g, b)
-	return sformat('#%02x%02x%02x', r, g, b)
+	return format('#%02x%02x%02x', r, g, b)
 end
 
 local function get_palette()
@@ -140,7 +140,7 @@ local function get_palette()
 		for _, b in ipairs(x) do
 			for _, g in ipairs(x) do
 				for _, r in ipairs(x) do
-					tinsert(palette, color(r, g, b))
+					insert(palette, color(r, g, b))
 				end
 			end
 		end
@@ -155,20 +155,20 @@ local function get_palette()
 
 	local cube = { 0 }
 	for i = 1, 5 do
-		tinsert(cube, 0x37 + 0x28 * i)
+		insert(cube, 0x37 + 0x28 * i)
 	end
 
 	for _, r in ipairs(cube) do
 		for _, g in ipairs(cube) do
 			for _, b in ipairs(cube) do
-				tinsert(palette, color(r, g, b))
+				insert(palette, color(r, g, b))
 			end
 		end
 	end
 
 	for i = 0, 23 do
 		local c = 0x08 + 0x0a * i
-		tinsert(palette, color(c, c, c))
+		insert(palette, color(c, c, c))
 	end
 
 	return palette
@@ -240,7 +240,7 @@ local function apply_sgr(pen, params)
 			or Ps == '36'
 			or Ps == '37'
 		then
-			pen.fg = get_palette_color(sbyte(Ps, 2) - 48)
+			pen.fg = get_palette_color(byte(Ps, 2) - 48)
 		elseif Ps == '38' then
 			i, pen.fg = parse_sgr_color(params, i)
 		elseif Ps == '39' then
@@ -255,7 +255,7 @@ local function apply_sgr(pen, params)
 			or Ps == '46'
 			or Ps == '47'
 		then
-			pen.bg = get_palette_color(sbyte(Ps, 2) - 48)
+			pen.bg = get_palette_color(byte(Ps, 2) - 48)
 		elseif Ps == '48' then
 			i, pen.bg = parse_sgr_color(params, i)
 		elseif Ps == '49' then
@@ -272,7 +272,7 @@ local function apply_sgr(pen, params)
 			or Ps == '96'
 			or Ps == '97'
 		then
-			pen.fg = get_palette_color(sbyte(Ps, 2) - 40)
+			pen.fg = get_palette_color(byte(Ps, 2) - 40)
 		elseif
 			Ps == '100'
 			or Ps == '101'
@@ -283,7 +283,7 @@ local function apply_sgr(pen, params)
 			or Ps == '106'
 			or Ps == '107'
 		then
-			pen.bg = get_palette_color(sbyte(Ps, 3) - 40)
+			pen.bg = get_palette_color(byte(Ps, 3) - 40)
 		end
 	end
 end

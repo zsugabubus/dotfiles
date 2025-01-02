@@ -47,7 +47,7 @@ it('parses SGR correctly', function()
 	local function test_hl(params, hl)
 		vim.cmd.enew()
 		vim:set_lines({
-			string.format('\x1b[%sm012\x1b[%s;0mdefault', params, params),
+			('\x1b[%sm012\x1b[%s;0mdefault'):format(params, params),
 		})
 		vim.cmd.doautocmd('ColorScheme')
 		vim.cmd.AnsiEsc()
