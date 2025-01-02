@@ -2,9 +2,11 @@ local ffi = require('ffi')
 
 local api = vim.api
 local config = vim.g.colors or {}
+local format = string.format
 local max = math.max
 local min = math.min
 local schedule = vim.schedule
+local set_hl = api.nvim_set_hl
 
 local autocmd = api.nvim_create_autocmd
 local buf_add_hl = api.nvim_buf_add_highlight
@@ -45,8 +47,8 @@ local function rgb2hl(color)
 
 		local bg_bright = lib.nvim_is_bright_background_color(color) ~= 0
 
-		api.nvim_set_hl(0, hl_group, {
-			bg = string.format('#%06x', color),
+		set_hl(0, hl_group, {
+			bg = format('#%06x', color),
 			fg = bg_bright and '#000000' or '#ffffff',
 		})
 	end
@@ -72,7 +74,7 @@ local function highlight_lines(buf, start_row, end_row)
 
 	if start then
 		print(
-			string.format(
+			format(
 				'colors: %6d highlights on %5d-%5d (%5d) lines in %7.3fms',
 				count,
 				start_row,
@@ -193,7 +195,7 @@ end
 
 local function install_library()
 	vim.cmd(
-		string.format(
+		format(
 			'! set -x && cd -- %s && cargo build --release && mv -- target/release/libnvim_plugin_colors.so %s',
 			vim.fn.shellescape(get_rust_dir()),
 			vim.fn.shellescape(library_path)

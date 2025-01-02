@@ -20,7 +20,7 @@ function M.check()
 		health.ok('Library loadable')
 	else
 		health.error(
-			string.format('Library failed to load: %s', err),
+			('Library failed to load: %s'):format(err),
 			'Use |:ColorsInstall| to build and install library'
 		)
 	end
