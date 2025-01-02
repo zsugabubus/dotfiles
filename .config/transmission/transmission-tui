@@ -1,6 +1,25 @@
 #!/usr/bin/luajit
 -- https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md
 
+local abs = math.abs
+local concat = table.concat
+local date = os.date
+local find = string.find
+local floor = math.floor
+local format = string.format
+local gmatch = string.gmatch
+local gsub = string.gsub
+local insert = table.insert
+local lower = string.lower
+local match = string.match
+local max = math.max
+local min = math.min
+local remove = table.remove
+local rep = string.rep
+local sort = table.sort
+local sub = string.sub
+local upper = string.upper
+
 local function load_curl_library()
 	local ffi = require('ffi')
 
@@ -93,7 +112,7 @@ local function create_HttpSession()
 	local function make_header_list(t)
 		local list = nil
 		for k, v in pairs(t) do
-			local data = string.format('%s%s%s', k, v == '' and ';' or ':', v or '')
+			local data = format('%s%s%s', k, v == '' and ';' or ':', v or '')
 			local new_list = libcurl.curl_slist_append(list, data)
 			assert(new_list ~= nil)
 			if list ~= nil then
@@ -209,7 +228,7 @@ local function create_TransmissionSession()
 	M.__index = M
 
 	local function make_url(host, port, path)
-		return string.format('http://%s:%d%srpc', host, port, path)
+		return format('http://%s:%d%srpc', host, port, path)
 	end
 
 	local function make_headers(session_id)
@@ -389,7 +408,7 @@ int wscrl(WINDOW *, int);
 				return curs.waddnstr(self, s, #s)
 			end,
 			putf = function(self, ...)
-				return self:put(string.format(...))
+				return self:put(format(...))
 			end,
 			refresh = curs.wnoutrefresh,
 			resize = curs.wresize,
@@ -411,13 +430,13 @@ local function create_curs_width(curs, Window)
 	local cur_cols
 
 	return function(s)
-		local max = curs.COLS
-		if win_cols <= max then
+		local max_cols = curs.COLS
+		if win_cols <= max_cols then
 			cache = setmetatable({}, mt)
 			if not win then
 				win = Window.new(1, 1, 0, 0)
 			end
-			win_cols = max + 1
+			win_cols = max_cols + 1
 			win:resize(1, win_cols)
 		end
 		local n = cache[s]
@@ -426,7 +445,7 @@ local function create_curs_width(curs, Window)
 		end
 		win:cursor(0, 0)
 		win:put(s)
-		n = math.min(max, win:x())
+		n = min(max_cols, win:x())
 		cache[s] = n
 		return n
 	end
@@ -490,7 +509,7 @@ local function create_Columns(string_width)
 			local s = column.display(data)
 			local max_possible_width = #s * 2
 			if width < max_possible_width then
-				width = math.max(width, string_width(s))
+				width = max(width, string_width(s))
 			end
 		end
 		return width
@@ -517,7 +536,7 @@ local function create_Columns(string_width)
 						width = width,
 					}
 				end
-				table.insert(t, column)
+				insert(t, column)
 			end
 		end
 		return M:new(t)
@@ -539,7 +558,7 @@ local function create_Columns(string_width)
 		local t = {}
 
 		for k in pairs(wanted) do
-			table.insert(t, k)
+			insert(t, k)
 		end
 
 		return t
@@ -565,13 +584,13 @@ local function create_ListRenderer(curs)
 		if width < 0 then
 			-- Only numeric-like strings should be right aligned so length equals to
 			-- width.
-			win:put(string.rep(' ', -width - #s))
+			win:put(rep(' ', -width - #s))
 			win:put(s)
 		elseif width > 0 then
 			local x = win:x()
 			win:put(s)
 			local s_width = win:x() - x
-			win:put(string.rep(' ', width - s_width))
+			win:put(rep(' ', width - s_width))
 		else
 			win:put(s)
 		end
@@ -674,12 +693,12 @@ local function create_ListManager()
 	local function compute_cursor_view_range(self)
 		local m = self:half_height()
 		local n = self._scrolloff
-		return math.min(n, m), math.max(self._height - 1 - n, m)
+		return min(n, m), max(self._height - 1 - n, m)
 	end
 
-	local function sort(self)
+	local function sort_now(self)
 		assert(self._comp)
-		table.sort(self._list, self._comp)
+		sort(self._list, self._comp)
 	end
 
 	local function invalidate_index_map(self)
@@ -723,7 +742,7 @@ local function create_ListManager()
 			end
 		end
 
-		sort(self)
+		sort_now(self)
 
 		for wanted_index, wanted_item in pairs(checks) do
 			if self._list[wanted_index] ~= wanted_item then
@@ -744,7 +763,7 @@ local function create_ListManager()
 	end
 
 	function M:half_height()
-		return math.floor(self._height / 2)
+		return floor(self._height / 2)
 	end
 
 	function M:set_height(lines)
@@ -773,7 +792,7 @@ local function create_ListManager()
 		invalidate_index_map(self)
 		self:move_cursor(self._cursor)
 		if self._comp then
-			sort(self)
+			sort_now(self)
 		end
 	end
 
@@ -805,10 +824,10 @@ local function create_ListManager()
 			return
 		end
 
-		table.sort(t)
+		sort(t)
 
 		for i = #t, 1, -1 do
-			table.remove(self._list, t[i])
+			remove(self._list, t[i])
 		end
 
 		invalidate_index_map(self)
@@ -820,7 +839,7 @@ local function create_ListManager()
 		self._comp = comp
 		if self._comp then
 			invalidate_index_map(self)
-			sort(self)
+			sort_now(self)
 		end
 	end
 
@@ -833,8 +852,8 @@ local function create_ListManager()
 	end
 
 	function M:set_cursor(index)
-		index = math.max(index, 1)
-		index = math.min(index, #self._list)
+		index = max(index, 1)
+		index = min(index, #self._list)
 		self._cursor = index
 	end
 
@@ -847,28 +866,28 @@ local function create_ListManager()
 	end
 
 	function M:last()
-		return math.min(#self._list, self:bottom())
+		return min(#self._list, self:bottom())
 	end
 
 	function M:set_top(index)
-		index = math.min(index, #self._list - self._height + 1)
-		index = math.max(index, 1)
+		index = min(index, #self._list - self._height + 1)
+		index = max(index, 1)
 		self._top = index
 	end
 
 	function M:compute_view_top(index)
 		local a, b = compute_cursor_view_range(self)
 		local c = index - self._top
-		c = math.max(c, a)
-		c = math.min(c, b)
+		c = max(c, a)
+		c = min(c, b)
 		return index - c
 	end
 
 	function M:compute_nearest_view_line(index)
 		local a, b = compute_cursor_view_range(self)
 		local c = index
-		c = math.max(c, self._top + a)
-		c = math.min(c, self._top + b)
+		c = max(c, self._top + a)
+		c = min(c, self._top + b)
 		return c
 	end
 
@@ -958,7 +977,7 @@ local function create_ListManager()
 	function M:ids()
 		local t = {}
 		for _, item in ipairs(self._list) do
-			table.insert(t, item.id)
+			insert(t, item.id)
 		end
 		return t
 	end
@@ -982,11 +1001,11 @@ local function create_escaper()
 	}
 
 	local function esc(s)
-		return (string.gsub(s, '[\n\r\t\\]', ESC_TABLE))
+		return (gsub(s, '[\n\r\t\\]', ESC_TABLE))
 	end
 
 	local function unesc(s)
-		return (string.gsub(s, '\\.', UNESC_TABLE))
+		return (gsub(s, '\\.', UNESC_TABLE))
 	end
 
 	return esc, unesc
@@ -1112,14 +1131,14 @@ local function create_TransmissionTui()
 	}
 
 	local function display_key(name)
-		local x = string.match(name, '^^([A-Z])$')
+		local x = match(name, '^^([A-Z])$')
 		if x then
-			return string.format('<C-%s>', x)
+			return format('<C-%s>', x)
 		end
 
-		local x = string.match(name, '^KEY_(.+)')
+		local x = match(name, '^KEY_(.+)')
 		if x then
-			return string.format('<%s>', x)
+			return format('<%s>', x)
 		end
 
 		return name
@@ -1133,15 +1152,15 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < K then
-			return string.format('%dB', n)
+			return format('%dB', n)
 		elseif n < M then
-			return string.format('%.1fK', n / K)
+			return format('%.1fK', n / K)
 		elseif n < G then
-			return string.format('%.1fM', n / M)
+			return format('%.1fM', n / M)
 		elseif n < 100 * G then
-			return string.format('%.1fG', n / G)
+			return format('%.1fG', n / G)
 		else
-			return string.format('%dG', n / G)
+			return format('%dG', n / G)
 		end
 	end
 
@@ -1153,13 +1172,13 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < M then
-			return string.format('%ds', n)
+			return format('%ds', n)
 		elseif n < 2 * H then
-			return string.format('%dm', n / M)
+			return format('%dm', n / M)
 		elseif n < 2 * D then
-			return string.format('%dh', n / H)
+			return format('%dh', n / H)
 		else
-			return string.format('%dd', n / D)
+			return format('%dd', n / D)
 		end
 	end
 
@@ -1167,9 +1186,9 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < 100000 then
-			return string.format('%d', n)
+			return format('%d', n)
 		else
-			return string.format('%dK', n / 1000)
+			return format('%dK', n / 1000)
 		end
 	end
 
@@ -1177,7 +1196,7 @@ local function create_TransmissionTui()
 		if speed <= 0 and peer_count <= 0 then
 			return ''
 		else
-			return string.format('%s (%5s)', display_bytes(speed), display_number(peer_count))
+			return format('%s (%5s)', display_bytes(speed), display_number(peer_count))
 		end
 	end
 
@@ -1193,9 +1212,9 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < 0.1 then
-			return string.format('%.2f%%', math.max(0, n * 100 - 0.005))
+			return format('%.2f%%', max(0, n * 100 - 0.005))
 		elseif n < 1 then
-			return string.format('%.1f%%', n * 100 - 0.05)
+			return format('%.1f%%', n * 100 - 0.05)
 		else
 			return '100%'
 		end
@@ -1205,11 +1224,11 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < 10 then
-			return string.format('%.2fx', math.max(0, n - 0.005))
+			return format('%.2fx', max(0, n - 0.005))
 		elseif n < 100 then
-			return string.format('%.1fx', n - 0.05)
+			return format('%.1fx', n - 0.05)
 		else
-			return string.format('%dx', n)
+			return format('%dx', n)
 		end
 	end
 
@@ -1217,16 +1236,16 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		else
-			return os.date('%b %d %H:%M', n)
+			return date('%b %d %H:%M', n)
 		end
 	end
 
 	local function make_column(title, width, display, dependencies)
 		if width then
 			if width < 0 then
-				width = math.min(width, -#title)
+				width = min(width, -#title)
 			else
-				width = math.max(width, #title)
+				width = max(width, #title)
 			end
 		end
 		return Column:new():with_title(title):with_width(width):with_display(display, dependencies)
@@ -1288,14 +1307,14 @@ local function create_TransmissionTui()
 
 	local function make_string_array_column(title, field_name)
 		return make_column(title, nil, function(data)
-			return esc(table.concat(data[field_name], ', '))
+			return esc(concat(data[field_name], ', '))
 		end, field_name)
 	end
 
 	local function make_choices_column(title, choices, field_name)
 		local width = 0
 		for _, s in pairs(choices) do
-			width = math.max(width, #s)
+			width = max(width, #s)
 		end
 		return make_column(title, width, function(data)
 			return choices[data[field_name]] or ''
@@ -1336,7 +1355,7 @@ local function create_TransmissionTui()
 				t = list
 			else
 				for _, v in ipairs(list) do
-					table.insert(t, v)
+					insert(t, v)
 				end
 			end
 		end
@@ -1451,7 +1470,7 @@ local function create_TransmissionTui()
 				if data.error == 0 then
 					return ''
 				end
-				return string.format('%s: %s', MESSAGE_NAME[data.error], esc(data.errorString))
+				return format('%s: %s', MESSAGE_NAME[data.error], esc(data.errorString))
 			end, { 'error', 'errorString' }),
 			eta = make_seconds_column('ETA', 'eta'),
 			files = make_number_column('Files', 'file-count'),
@@ -1789,7 +1808,7 @@ local function create_TransmissionTui()
 
 		stdin:write(with_buffer(function(buf)
 			local function h1(s)
-				buf:putf('.SH "%s"\n', string.upper(s))
+				buf:putf('.SH "%s"\n', upper(s))
 			end
 
 			local function h2(s)
@@ -1815,11 +1834,11 @@ is a hackable Transmission client made for Vim-lovers.
 				local t = {}
 
 				for binding in key_table_bindings(key_table) do
-					table.insert(t, binding)
+					insert(t, binding)
 				end
 
-				table.sort(t, function(a, b)
-					return string.lower(a.keys) < string.lower(b.keys)
+				sort(t, function(a, b)
+					return lower(a.keys) < lower(b.keys)
 				end)
 
 				for _, binding in ipairs(t) do
@@ -1880,9 +1899,9 @@ l r c l.
 					buf:putf(
 						'%s:%s:%s:%s\n',
 						column.title,
-						column.width == nil and 'auto' or math.abs(column.width),
+						column.width == nil and 'auto' or abs(column.width),
 						column.optional and '' or 'X',
-						table.concat(
+						concat(
 							type(column.dependencies) == 'table' and column.dependencies
 								or { column.dependencies },
 							', '
@@ -1913,8 +1932,8 @@ l l r l.
 							'%s:%s:%s:%s\n',
 							column.title,
 							column.key,
-							column.width == nil and 'auto' or math.abs(column.width),
-							table.concat(
+							column.width == nil and 'auto' or abs(column.width),
+							concat(
 								type(column.dependencies) == 'table' and column.dependencies
 									or { column.dependencies },
 								', '
@@ -2049,12 +2068,12 @@ transmission-daemon(1), transmission-remote(1).
 	end
 
 	local function parse_fields(s, pat)
-		local lines = string.gmatch(s, '([^\n]*)\n?')
+		local lines = gmatch(s, '([^\n]*)\n?')
 		return function()
 			for line in lines do
-				if string.sub(line, 1, 1) ~= '#' then
-					if string.find(line, pat) then
-						return string.match(line, pat)
+				if sub(line, 1, 1) ~= '#' then
+					if find(line, pat) then
+						return match(line, pat)
 					end
 				end
 			end
@@ -2064,7 +2083,7 @@ transmission-daemon(1), transmission-remote(1).
 	local function parse_ids(s)
 		local t = {}
 		for id in parse_fields(s, '^%d+') do
-			table.insert(t, assert(tonumber(id)))
+			insert(t, assert(tonumber(id)))
 		end
 		return t
 	end
@@ -2203,7 +2222,7 @@ transmission-daemon(1), transmission-remote(1).
 	local function render(self)
 		if self._details_render then
 			local lines = curs.LINES - 1
-			local split = math.floor(lines * 1 / 3)
+			local split = floor(lines * 1 / 3)
 
 			self._main_win:move(0, 0)
 			self._main_win:resize(split, curs.COLS)
@@ -2226,7 +2245,7 @@ transmission-daemon(1), transmission-remote(1).
 	end
 
 	function M:set_messagef(...)
-		self._status_message = string.format(...)
+		self._status_message = format(...)
 	end
 
 	local function set_torrent_action_message(self, count, action)
@@ -2481,7 +2500,7 @@ transmission-daemon(1), transmission-remote(1).
 				return
 			end
 
-			local index = string.match(reply, '^%d+\n$')
+			local index = match(reply, '^%d+\n$')
 			if index then
 				self._torrents:move_cursor(index + 1)
 				return
@@ -2489,9 +2508,9 @@ transmission-daemon(1), transmission-remote(1).
 
 			local ids = {}
 
-			for index in string.gmatch(reply, '%d+') do
+			for index in gmatch(reply, '%d+') do
 				local torrent = self._torrents:get(index + 1)
-				table.insert(ids, torrent.id)
+				insert(ids, torrent.id)
 			end
 
 			if #ids == 0 then
@@ -2651,7 +2670,7 @@ transmission-daemon(1), transmission-remote(1).
 			fields = { 'id', 'queuePosition', 'name' },
 		}).torrents
 
-		table.sort(torrents, function(a, b)
+		sort(torrents, function(a, b)
 			return a.queuePosition < b.queuePosition
 		end)
 
@@ -2700,10 +2719,10 @@ transmission-daemon(1), transmission-remote(1).
 			local current_tier
 			for _, tracker in ipairs(tracker_stats) do
 				if current_tier and current_tier ~= tracker.tier then
-					table.insert(t, '')
+					insert(t, '')
 				end
 				current_tier = tracker.tier
-				table.insert(t, tracker.announce)
+				insert(t, tracker.announce)
 			end
 			return t
 		end
@@ -2715,10 +2734,10 @@ transmission-daemon(1), transmission-remote(1).
 
 		for _, torrent in ipairs(torrents) do
 			local tracker_list = tracker_stats_to_tracker_list(torrent.trackerStats)
-			local s = table.concat(tracker_list, '\n')
+			local s = concat(tracker_list, '\n')
 
 			torrents_by_trackers[s] = torrents_by_trackers[s] or {}
-			table.insert(torrents_by_trackers[s], torrent)
+			insert(torrents_by_trackers[s], torrent)
 
 			torrents_tracker_list[torrent.id] = s
 		end
@@ -2756,12 +2775,12 @@ transmission-daemon(1), transmission-remote(1).
 					return
 				end
 
-				local s = table.concat(tracker_list, '\n')
+				local s = concat(tracker_list, '\n')
 
 				for i = #ids, 1, -1 do
 					local id = ids[i]
 					if torrents_tracker_list[id] == s then
-						table.remove(ids, i)
+						remove(ids, i)
 					end
 				end
 
@@ -2781,18 +2800,18 @@ transmission-daemon(1), transmission-remote(1).
 			local new_tier = false
 
 			for s in parse_fields(data, '.*') do
-				local id = tonumber(string.match(s, '^%d+'))
+				local id = tonumber(match(s, '^%d+'))
 				if id then
 					commit()
-					table.insert(ids, id)
+					insert(ids, id)
 				elseif s == '' then
 					new_tier = true
 				else
 					if new_tier and #tracker_list ~= 0 then
-						table.insert(tracker_list, '')
+						insert(tracker_list, '')
 					end
 					new_tier = false
-					table.insert(tracker_list, s)
+					insert(tracker_list, s)
 				end
 			end
 
@@ -2926,7 +2945,7 @@ transmission-daemon(1), transmission-remote(1).
 					local file_id = i - 1
 					local selected = selected_files[file_id] == true
 					if selected ~= stat.wanted then
-						table.insert(selected and files_wanted or files_unwanted, file_id)
+						insert(selected and files_wanted or files_unwanted, file_id)
 					end
 				end
 
@@ -2977,7 +2996,7 @@ transmission-daemon(1), transmission-remote(1).
 			local s = esc(location)
 
 			torrents_by_location[s] = torrents_by_location[s] or {}
-			table.insert(torrents_by_location[s], torrent)
+			insert(torrents_by_location[s], torrent)
 
 			torrents_location[torrent.id] = location
 		end
@@ -3028,7 +3047,7 @@ transmission-daemon(1), transmission-remote(1).
 				for i = #ids, 1, -1 do
 					local id = ids[i]
 					if torrents_location[id] == location then
-						table.remove(ids, i)
+						remove(ids, i)
 					end
 				end
 
@@ -3047,10 +3066,10 @@ transmission-daemon(1), transmission-remote(1).
 			end
 
 			for s in parse_fields(data, '.+') do
-				local id = tonumber(string.match(s, '^%d+'))
+				local id = tonumber(match(s, '^%d+'))
 				if id then
 					commit()
-					table.insert(ids, id)
+					insert(ids, id)
 				else
 					assert(not location)
 					location = unesc(s)
@@ -3160,7 +3179,7 @@ transmission-daemon(1), transmission-remote(1).
 
 	local function add_torrents(self, collect_torrent_files, delete_after_add)
 		local function shesc(s)
-			return "'" .. string.gsub(s, "'", [['"'"']]) .. "'"
+			return "'" .. gsub(s, "'", [['"'"']]) .. "'"
 		end
 
 		local new_ids = {}
@@ -3191,7 +3210,7 @@ transmission-daemon(1), transmission-remote(1).
 
 					local first = true
 					for name in dir('.') do
-						if string.match(name, '.%.torrent$') then
+						if match(name, '.%.torrent$') then
 							if first then
 								buf:put('\n')
 								first = false
@@ -3231,17 +3250,14 @@ transmission-daemon(1), transmission-remote(1).
 					})
 
 					if ok then
-						table.insert(
-							new_ids,
-							assert((payload['torrent-added'] or payload['torrent-duplicate']).id)
-						)
+						insert(new_ids, assert((payload['torrent-added'] or payload['torrent-duplicate']).id))
 						if delete_after_add and output ~= '' then
 							os.remove(s)
 						end
 					else
-						table.insert(errored_items, {
+						insert(errored_items, {
 							filename = s,
-							comment = string.format('Error: %s', payload),
+							comment = format('Error: %s', payload),
 						})
 					end
 				end
