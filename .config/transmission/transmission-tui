@@ -3340,16 +3340,6 @@ transmission-daemon(1), transmission-remote(1).
 		sigpipe:unref()
 		sigpipe:start('sigpipe', function() end)
 
-		curs.initscr()
-		curs.noecho()
-		curs.curs_set(0)
-
-		self._main_win = Window.new(1, 0, 0, 0)
-		self._details_win = Window.new(1, 0, 0, 0)
-		self._status_win = Window.new(1, 0, 0, 0)
-		self._status_win:nodelay(true)
-		self._status_win:keypad(true)
-
 		update_session_info(self)
 		update_session_stats(self)
 		self:reload_all_torrents()
@@ -3359,6 +3349,16 @@ transmission-daemon(1), transmission-remote(1).
 			self._session_info.version,
 			self._session_info['rpc-version']
 		)
+
+		curs.initscr()
+		curs.noecho()
+		curs.curs_set(0)
+
+		self._main_win = Window.new(1, 0, 0, 0)
+		self._details_win = Window.new(1, 0, 0, 0)
+		self._status_win = Window.new(1, 0, 0, 0)
+		self._status_win:nodelay(true)
+		self._status_win:keypad(true)
 
 		self:enter_program()
 		uv.run()
