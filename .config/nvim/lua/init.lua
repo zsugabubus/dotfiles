@@ -1111,7 +1111,7 @@ require('pack').add({
 		'undowizard.nvim',
 		before = function()
 			map('n', 'su', ':Undotree<CR>:view<CR>')
-			map('n', 'sD', ':<C-U>Undodiff <C-R>=v:count<CR><CR>')
+			map('n', 'sU', ':<C-U>Undodiff <C-R>=v:count<CR><CR>')
 		end,
 	},
 	{ 'varign.nvim' },
