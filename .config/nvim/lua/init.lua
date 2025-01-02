@@ -451,7 +451,6 @@ cabbr('tcd', 'tcd %:p:h<C-Z>')
 
 cabbr('bg', 'BufGrep')
 cabbr('hg', 'helpgrep')
-cabbr('g', 'GREP')
 cabbr('gr', 'GREP')
 
 cabbr('m', 'Man')
