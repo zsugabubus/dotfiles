@@ -1081,6 +1081,7 @@ require('pack').add({
 			})
 		end,
 	},
+	{ 'pets.nvim' },
 	{ 'qf.nvim' },
 	{ 'register.nvim' },
 	{
