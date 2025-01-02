@@ -2,6 +2,8 @@ local osd = require('osd').new()
 local utils = require('utils')
 local title = require('title')
 
+local COMPLEX = { complex = true }
+
 local visibility = 'auto'
 local visible = false
 local hide_timeout
@@ -15,6 +17,7 @@ local base_sub_margin_y = mp.get_property_native('sub-margin-y')
 local mouse_time
 local chapter_pos
 
+local update
 local old_visibility
 local old_visible
 local old_prog_hover
@@ -22,30 +25,26 @@ local old_hover
 local old_mouse_y = 0
 local old_title
 
-local fsx_cache = {}
 local text_osd = mp.create_osd_overlay('ass-events')
 text_osd.hidden = true
 text_osd.compute_bounds = true
 
-local update
-
-local function measure_text(size)
-	size = math.floor(size)
-
-	local width = fsx_cache[size]
-	if not width then
-		text_osd.res_y = size * 2
-		text_osd.res_x = size * 2
-		text_osd.data = string.format('{\\q2\\fs%d\\fnmonospace}00', size)
-		local bounds = text_osd:update()
-		text_osd:remove()
-
-		width = bounds.x1 / 2
-		fsx_cache[size] = width
-	end
-
-	return width
+local function measure_text(fs, s)
+	text_osd.res_y = fs * 2 * #s
+	text_osd.res_x = 0
+	text_osd.data = ([[{\q2\fs%d\fnmonospace}%s]]):format(fs, s)
+	local result = text_osd:update()
+	text_osd:remove()
+	return result.x1
 end
+
+local side_width_cache = setmetatable({}, {
+	__index = function(t, size)
+		local width = measure_text(size, [[\h-00:00:00\h]])
+		t[size] = width
+		return width
+	end,
+})
 
 local function set_sub_margin_y(value)
 	if props['sub-margin-y'] ~= value then
@@ -196,14 +195,12 @@ local function osd_put_human_duration(duration)
 	end
 end
 
-local COMPLEX = { complex = true }
-
 function update()
-	local main_fs = math.max(math.floor(math.min(osd.width, osd.height) / 23), 30)
+	local main_fs = math.floor(math.max(math.min(osd.width, osd.height) / 23, 30))
 
 	local top_fs = main_fs * 0.625
 
-	local side_width = 11 * measure_text(main_fs)
+	local side_width = side_width_cache[main_fs]
 	local box_width = osd.width
 	local small = box_width < 4 * side_width
 	local very_small = box_width < 2 * side_width
