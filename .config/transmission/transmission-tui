@@ -3081,44 +3081,32 @@ transmission-daemon(1), transmission-remote(1).
 			local location
 			local count = 0
 
-			local function commit()
-				if not location then
-					return
-				end
-
-				local ids = {}
-
-				for _, torrent in ipairs(selected_torrents) do
-					if torrent.downloadDir ~= location then
-						insert(ids, assert(torrent.hashString))
-					end
-				end
-
-				if #ids > 0 then
-					count = count + #ids
-					self.transmission:call('torrent-set-location', {
-						ids = ids,
-						location = location,
-						move = true,
-					})
-				end
-
-				selected_torrents = {}
-				location = nil
-			end
-
 			for s in parse_fields(data, '.+') do
 				local n = tonumber(match(s, '^%d+'))
 				if n then
-					commit()
 					insert(selected_torrents, assert(torrents[n]))
 				else
-					assert(not location)
-					location = unesc(s)
+					local location = unesc(s)
+					local ids = {}
+
+					for _, torrent in ipairs(selected_torrents) do
+						if torrent.downloadDir ~= location then
+							insert(ids, assert(torrent.hashString))
+						end
+					end
+
+					if #ids > 0 then
+						count = count + #ids
+						self.transmission:call('torrent-set-location', {
+							ids = ids,
+							location = location,
+							move = true,
+						})
+					end
+
+					selected_torrents = {}
 				end
 			end
-
-			commit()
 
 			set_torrent_action_message(self, count, 'moved')
 		end)
