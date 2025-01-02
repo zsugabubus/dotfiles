@@ -3,3 +3,4 @@
 --output %(title)s.%(ext)s
 --force-ipv4
 --add-metadata
+--format 'bestvideo[height<=720]+bestaudio/best[height<=720]'
