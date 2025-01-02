@@ -11,7 +11,7 @@ describe(':Undotree', function()
 	it('edits undotree://X of current buffer', function()
 		local target_buf = vim.fn.bufnr()
 		vim.cmd.Undotree()
-		assert.same(string.format('undotree://%d', target_buf), vim.fn.bufname())
+		assert.same(('undotree://%d'):format(target_buf), vim.fn.bufname())
 	end)
 end)
 
@@ -33,7 +33,7 @@ describe('undotree://', function()
 
 	test('undo to', function()
 		vim:feed('ju')
-		assert.same(string.format('undotree://%d', target_buf), vim.fn.bufname())
+		assert.same(('undotree://%d'):format(target_buf), vim.fn.bufname())
 		assert.same(
 			{ '1-1', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' },
 			vim.fn.getbufline(0, 1, '$')
@@ -44,7 +44,7 @@ describe('undotree://', function()
 
 	test('preview deletions', function()
 		vim:feed('-')
-		vim.cmd.buffer(string.format('undo://%d/2', target_buf))
+		vim.cmd.buffer(('undo://%d/2'):format(target_buf))
 		assert.same(
 			{ '1-1', '2-22', '3-22', '4-22', '5-22', '6-22', '7-22' },
 			vim.fn.getline(1, '$')
@@ -55,7 +55,7 @@ describe('undotree://', function()
 
 	test('preview additions', function()
 		vim:feed('+')
-		vim.cmd.buffer(string.format('undo://%d/3', target_buf))
+		vim.cmd.buffer(('undo://%d/3'):format(target_buf))
 		assert.same(
 			{ '1-1', '2-22', '3-333', '4-22', '5-22', '6-22', '7-333' },
 			vim.fn.getline(1, '$')
@@ -130,7 +130,7 @@ describe(':Undodiff', function()
 
 		vim.cmd.wincmd('p')
 
-		assert.same(string.format('undo://%d/0', buf), vim.fn.bufname())
+		assert.same(('undo://%d/0'):format(buf), vim.fn.bufname())
 		assert.True(vim.wo.diff)
 	end)
 
@@ -143,6 +143,6 @@ describe(':Undodiff', function()
 		vim.cmd.Undodiff('1')
 
 		vim.cmd.wincmd('p')
-		assert.same(string.format('undo://%d/1', buf), vim.fn.bufname())
+		assert.same(('undo://%d/1'):format(buf), vim.fn.bufname())
 	end)
 end)

@@ -11,8 +11,7 @@ end, {})
 
 user_command('Undodiff', function(opts)
 	vim.cmd(
-		string.format(
-			'leftabove vsplit undo://%d/%d | diffthis | wincmd p | diffthis',
+		('leftabove vsplit undo://%d/%d | diffthis | wincmd p | diffthis'):format(
 			api.nvim_get_current_buf(),
 			opts.fargs[1] or '0'
 		)

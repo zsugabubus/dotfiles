@@ -1,10 +1,20 @@
 local api = vim.api
-local bo = vim.bo
 local cmd = vim.cmd
+local concat = table.concat
+local date = os.date
 local fn = vim.fn
+local format = string.format
+local gmatch = string.gmatch
+local insert = table.insert
+local match = string.match
+local max = math.max
+local rep = string.rep
+local sort = table.sort
 
-local autocmd = api.nvim_create_autocmd
+local buf_call = api.nvim_buf_call
+local buf_get_lines = api.nvim_buf_get_lines
 local buf_keymap = api.nvim_buf_set_keymap
+local buf_set_lines = api.nvim_buf_set_lines
 
 local MIN = 60
 local HOUR = 60 * MIN
@@ -21,7 +31,7 @@ local rundo_buf
 
 function _G._undowizard_foldtext()
 	local row = vim.v.foldstart
-	return api.nvim_buf_get_lines(0, row - 1, row, true)[1]
+	return buf_get_lines(0, row - 1, row, true)[1]
 end
 
 function _G._undowizard_foldexpr()
@@ -37,63 +47,59 @@ function _G._undowizard_foldexpr()
 end
 
 local function gsplit_lines(s)
-	return string.gmatch(s, '([^\n]+)\n?')
+	return gmatch(s, '([^\n]+)\n?')
 end
 
 local function elapsed_time_display(x)
 	if x <= 1 then
 		return 'just now'
 	elseif x < 2 * MIN then
-		return string.format('%d seconds ago', math.floor(x))
+		return format('%d seconds ago', x)
 	elseif x < 2 * HOUR then
-		return string.format('%d minutes ago', math.floor(x / MIN))
+		return format('%d minutes ago', x / MIN)
 	elseif x < 2 * DAY then
-		return string.format('%d hours ago', math.floor(x / HOUR))
+		return format('%d hours ago', x / HOUR)
 	else
-		return string.format('%d days ago', math.floor(x / DAY))
+		return format('%d days ago', x / DAY)
 	end
 end
 
 local function is_same_day(a, b)
-	return os.date('%Y-%m-%d', a) == os.date('%Y-%m-%d', b)
+	return date('%Y-%m-%d', a) == date('%Y-%m-%d', b)
 end
 
 local function is_same_year(a, b)
-	return os.date('%Y', a) == os.date('%Y', b)
+	return date('%Y', a) == date('%Y', b)
 end
 
 local function time_display(time, now)
 	local elapsed = now - time
 
-	local format
+	local fmt
 	if is_same_day(time, now) then
-		format = '%H:%M:%S'
+		fmt = '%H:%M:%S'
 	elseif elapsed < 7 * DAY then
-		format = '%a %H:%M:%S'
+		fmt = '%a %H:%M:%S'
 	elseif is_same_year(time, now) then
-		format = '%a %b %d %H:%M:%S'
+		fmt = '%a %b %d %H:%M:%S'
 	else
-		format = '%a %b %d %Y %H:%M:%S'
+		fmt = '%a %b %d %Y %H:%M:%S'
 	end
 
-	return string.format(
-		'%s (%s)',
-		elapsed_time_display(elapsed),
-		os.date(format, time)
-	)
+	return format('%s (%s)', elapsed_time_display(elapsed), date(fmt, time))
 end
 
 local function buf_get_undotree(buf)
 	local undotree
-	api.nvim_buf_call(buf, function()
+	buf_call(buf, function()
 		undotree = fn.undotree()
 	end)
 	return undotree
 end
 
 local function buf_undo(buf, undo_number)
-	api.nvim_buf_call(buf, function()
-		cmd(string.format('undo %d', undo_number))
+	buf_call(buf, function()
+		cmd(format('undo %d', undo_number))
 	end)
 end
 
@@ -107,29 +113,29 @@ local function buf_load_undo(buf, undo_number)
 
 		if not rundo_buf then
 			rundo_buf = api.nvim_create_buf(false, true)
-			bo[rundo_buf].undolevels = -1
+			vim.bo[rundo_buf].undolevels = -1
 		end
 
-		api.nvim_buf_call(buf, function()
+		buf_call(buf, function()
 			cmd.wundo(wundo_file)
 		end)
 
-		local contents = api.nvim_buf_get_lines(buf, 0, -1, true)
-		api.nvim_buf_set_lines(rundo_buf, 0, -1, true, contents)
+		local contents = buf_get_lines(buf, 0, -1, true)
+		buf_set_lines(rundo_buf, 0, -1, true, contents)
 
-		api.nvim_buf_call(rundo_buf, function()
-			cmd(string.format('silent rundo %s', wundo_file))
+		buf_call(rundo_buf, function()
+			cmd(format('silent rundo %s', wundo_file))
 			wundoed_max_number = fn.undotree().seq_last
 		end)
 	end
-	api.nvim_buf_call(rundo_buf, function()
-		cmd(string.format('silent undo %d', undo_number))
+	buf_call(rundo_buf, function()
+		cmd(format('silent undo %d', undo_number))
 	end)
 	return rundo_buf
 end
 
 local function buf_get_undo_lines(buf, undo_number, ...)
-	return api.nvim_buf_get_lines(buf_load_undo(buf, undo_number), ...)
+	return buf_get_lines(buf_load_undo(buf, undo_number), ...)
 end
 
 local function make_buf_undo_lines_lookup(buf)
@@ -137,8 +143,8 @@ local function make_buf_undo_lines_lookup(buf)
 		__index = function(t, undo_number)
 			local lines = buf_get_undo_lines(buf, undo_number, 0, -1, false)
 			-- Add trailing CR.
-			table.insert(lines, '')
-			local contents = table.concat(lines, '\n')
+			insert(lines, '')
+			local contents = concat(lines, '\n')
 			t[undo_number] = contents
 			return contents
 		end,
@@ -146,24 +152,24 @@ local function make_buf_undo_lines_lookup(buf)
 end
 
 local function make_undo_bufname(buf, undo_number)
-	return string.format('undo://%d/%d', buf, undo_number)
+	return format('undo://%d/%d', buf, undo_number)
 end
 
 local function parse_undo_bufname(name)
-	local buf, undo_number = string.match(name, '^undo://(%d+)/(%d+)')
+	local buf, undo_number = match(name, '^undo://(%d+)/(%d+)')
 	return assert(tonumber(buf)), assert(tonumber(undo_number))
 end
 
 local function get_target_buf(buf)
 	local name = api.nvim_buf_get_name(buf)
-	local target_buf = string.match(name, '^undotree://(%d+)')
+	local target_buf = match(name, '^undotree://(%d+)')
 	return assert(tonumber(target_buf))
 end
 
 local function get_current_undo_number()
 	for row = api.nvim_win_get_cursor(0)[1], 2, -1 do
-		local line = api.nvim_buf_get_lines(0, row - 1, row, true)[1]
-		local undo_number = string.match(line, '^ *(%d+)')
+		local line = buf_get_lines(0, row - 1, row, true)[1]
+		local undo_number = match(line, '^ *(%d+)')
 		if undo_number then
 			return tonumber(undo_number)
 		end
@@ -180,7 +186,7 @@ local function undotree_to_repo(undotree)
 	}
 
 	local function process_branch(entries, parent, level)
-		repo.max_level = math.max(repo.max_level, level)
+		repo.max_level = max(repo.max_level, level)
 
 		for _, entry in ipairs(entries) do
 			local commit = {
@@ -191,7 +197,7 @@ local function undotree_to_repo(undotree)
 				level = level,
 			}
 
-			table.insert(repo.commits, commit)
+			insert(repo.commits, commit)
 			repo.commit_by_number[commit.number] = commit
 
 			if undotree.seq_cur == commit.number then
@@ -219,7 +225,7 @@ local function undotree_to_repo(undotree)
 	repo.head = root
 	repo.saved = root
 
-	table.insert(repo.commits, root)
+	insert(repo.commits, root)
 	repo.commit_by_number[root.number] = root
 
 	process_branch(undotree.entries, root, 0)
@@ -281,9 +287,9 @@ local function open_current_undo_preview(repo, before_change)
 	end
 
 	local preview_buf = fn.bufnr(name)
-	api.nvim_buf_call(preview_buf, function()
+	buf_call(preview_buf, function()
 		cmd.normal({
-			args = { string.format('%dGV%dG\x1b', diff_range[2], diff_range[1]) },
+			args = { format('%dGV%dG\x1b', diff_range[2], diff_range[1]) },
 			bang = true,
 		})
 	end)
@@ -315,23 +321,22 @@ local function yank_undo_patch(repo, before_change)
 	local buf = fn.bufnr(name, true)
 	fn.bufload(buf)
 
-	api.nvim_buf_call(buf, function()
+	buf_call(buf, function()
 		cmd.normal({
-			args = { string.format('%dGV%dGy', diff_range[2], diff_range[1]) },
+			args = { format('%dGV%dGy', diff_range[2], diff_range[1]) },
 		})
 	end)
 end
 
 local function get_commit_symbol(commit, repo)
 	local current = repo.head == commit
-	local fmt = current and '(%s)' or ' %s '
-	local s = '*'
+	local c = '*'
 	if repo.saved == commit then
-		s = 'S'
+		c = 'S'
 	elseif commit.saved then
-		s = 's'
+		c = 's'
 	end
-	return string.format(fmt, s)
+	return format(current and '(%s)' or ' %s ', c)
 end
 
 local function get_commit_when(commit, now)
@@ -352,7 +357,7 @@ local function update(buf)
 		context = 1,
 	})
 
-	table.sort(repo.commits, function(a, b)
+	sort(repo.commits, function(a, b)
 		return a.time > b.time
 	end)
 
@@ -360,25 +365,20 @@ local function update(buf)
 	local fold_starts = {}
 	local cursor = 1
 
-	table.insert(
-		lines,
-		string.format('number       %swhen', string.rep(' ', repo.max_level))
-	)
+	insert(lines, format('number       %swhen', rep(' ', repo.max_level)))
 
 	for _, commit in ipairs(repo.commits) do
 		local current = repo.head == commit
 
-		table.insert(
-			lines,
-			string.format(
-				'%6s  %s%s%s  %s',
-				commit.number,
-				string.rep(' ', commit.level),
-				get_commit_symbol(commit, repo),
-				string.rep(' ', repo.max_level - commit.level),
-				get_commit_when(commit, now)
-			)
+		local line = format(
+			'%6s  %s%s%s  %s',
+			commit.number,
+			rep(' ', commit.level),
+			get_commit_symbol(commit, repo),
+			rep(' ', repo.max_level - commit.level),
+			get_commit_when(commit, now)
 		)
+		insert(lines, line)
 
 		if current then
 			cursor = #lines
@@ -388,19 +388,19 @@ local function update(buf)
 
 		if commit.diff_patch then
 			for line in gsplit_lines(commit.diff_patch) do
-				table.insert(lines, line)
+				insert(lines, line)
 			end
 		end
 	end
 
-	local bo = bo[buf]
+	local bo = vim.bo[buf]
 	bo.modifiable = true
-	api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	buf_set_lines(buf, 0, -1, false, lines)
 	bo.modifiable = false
 
 	buf_fold_starts[buf] = fold_starts
 
-	api.nvim_buf_call(buf, function()
+	buf_call(buf, function()
 		api.nvim_win_set_cursor(0, { cursor, 0 })
 		cmd.normal({ args = { 'zz' }, bang = true })
 	end)
@@ -461,7 +461,8 @@ end
 local function read_undo_autocmd(opts)
 	local target_buf, undo_number = parse_undo_bufname(opts.match)
 
-	local target_bo = bo[target_buf]
+	local bo = vim.bo[opts.buf]
+	local target_bo = vim.bo[target_buf]
 
 	bo.buftype = 'nofile'
 	bo.filetype = target_bo.filetype
@@ -472,11 +473,12 @@ local function read_undo_autocmd(opts)
 	local lines = buf_get_undo_lines(target_buf, undo_number, 0, -1, false)
 
 	bo.modifiable = true
-	api.nvim_buf_set_lines(0, 0, -1, false, lines)
+	buf_set_lines(opts.buf, 0, -1, false, lines)
 	bo.modifiable = false
 end
 
 local function read_undotree_autocmd(opts)
+	local bo = vim.bo[opts.buf]
 	bo.bufhidden = 'wipe'
 	bo.buflisted = false
 	bo.buftype = 'nofile'
@@ -498,7 +500,7 @@ local function read_undotree_autocmd(opts)
 	local buf = opts.buf
 	local target_buf = get_target_buf(buf)
 
-	local group = api.nvim_create_augroup(string.format('undotree/%d', buf), {})
+	local group = api.nvim_create_augroup(format('undotree/%d', buf), {})
 
 	api.nvim_create_autocmd('TextChanged', {
 		group = group,
@@ -507,7 +509,7 @@ local function read_undotree_autocmd(opts)
 			if not api.nvim_buf_is_valid(buf) then
 				return true
 			end
-			if bo[buf].readonly then
+			if bo.readonly then
 				return
 			end
 			update(buf)
@@ -517,7 +519,7 @@ local function read_undotree_autocmd(opts)
 	update(buf)
 end
 
-autocmd('BufUnload', {
+api.nvim_create_autocmd('BufUnload', {
 	group = group,
 	pattern = 'undotree://*',
 	callback = function(opts)
