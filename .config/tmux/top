@@ -1,31 +1,36 @@
 #!/usr/bin/luajit
 local uv = require('luv')
 
+local format = string.format
+local gmatch = string.gmatch
+local match = string.match
+local rep = string.rep
+
 local KiB = 1024
 local MiB = 1024 * KiB
 local GiB = 1024 * MiB
 
 local function bytes(n)
 	if n < KiB then
-		return string.format('%dB', n)
+		return format('%dB', n)
 	elseif n < MiB then
-		return string.format('%dK', n / KiB)
+		return format('%dK', n / KiB)
 	elseif n < GiB then
-		return string.format('%dM', n / MiB)
+		return format('%dM', n / MiB)
 	else
-		return string.format('%dG', n / GiB)
+		return format('%dG', n / GiB)
 	end
 end
 
 local function bytes_long(n)
 	if n < KiB then
-		return string.format('%dB', n)
+		return format('%dB', n)
 	elseif n < MiB then
-		return string.format('%dK', n / KiB)
+		return format('%dK', n / KiB)
 	elseif n < GiB then
-		return string.format('%.1fM', n / MiB)
+		return format('%.1fM', n / MiB)
 	else
-		return string.format('%.1fG', n / GiB)
+		return format('%.1fG', n / GiB)
 	end
 end
 
@@ -80,7 +85,7 @@ end
 
 local blocks = {
 	net = periodic(function(pred)
-		local pat = '\n *([^:\n]*): *(%d*) *' .. string.rep('%d* *', 7) .. '(%d*)'
+		local pat = '\n *([^:\n]*): *(%d*) *' .. rep('%d* *', 7) .. '(%d*)'
 
 		local f = file('/proc/net/dev')
 
@@ -93,7 +98,7 @@ local blocks = {
 			local rx_bytes = 0
 			local tx_bytes = 0
 
-			for name, rx, tx in string.gmatch(f(8192), pat) do
+			for name, rx, tx in gmatch(f(8192), pat) do
 				if pred(name) then
 					rx_bytes = rx_bytes + tonumber(rx)
 					tx_bytes = tx_bytes + tonumber(tx)
@@ -123,7 +128,7 @@ local blocks = {
 		local t = {}
 
 		return function(o)
-			for name, n in string.gmatch(f(84), '([^:]*): *(%d*) kB\n') do
+			for name, n in gmatch(f(84), '([^:]*): *(%d*) kB\n') do
 				t[name] = tonumber(n) * 1024
 			end
 
@@ -144,7 +149,7 @@ local blocks = {
 			local total = 0
 			local idle = 0
 
-			for n in string.gmatch(f('*l'), '%d+') do
+			for n in gmatch(f('*l'), '%d+') do
 				n = tonumber(n)
 				total = total + n
 				i = i + 1
@@ -171,7 +176,7 @@ local blocks = {
 
 		return function(o)
 			local avg_1, avg_5, avg_15 =
-				string.match(f(50), '^(%d*%.%d*) (%d*%.%d*) (%d*%.%d*)')
+				match(f(50), '^(%d*%.%d*) (%d*%.%d*) (%d*%.%d*)')
 			o.avg_1 = tonumber(avg_1)
 			o.avg_5 = tonumber(avg_5)
 			o.avg_15 = tonumber(avg_15)
@@ -248,7 +253,7 @@ end
 
 tmux(function(update_bar)
 	local net = blocks.net(update_bar, function(name)
-		return string.match(name, '^enp') or string.match(name, '^wl')
+		return match(name, '^enp') or match(name, '^wl')
 	end)
 	local mem = blocks.mem(update_bar)
 	local cpu = blocks.cpu(update_bar)
