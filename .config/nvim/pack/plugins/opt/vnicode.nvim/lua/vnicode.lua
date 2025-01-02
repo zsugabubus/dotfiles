@@ -64,15 +64,20 @@ local function get_codepoint_data(ucd, codepoint)
 	if not a then
 		local buf = fn.bufnr(get_ucd_path(ucd), true)
 		fn.bufload(buf)
+		local lines = api.nvim_buf_get_lines(buf, 0, -1, true)
 
 		a = { buf = buf }
 		ucd_cache[ucd] = a
 
-		for i, line in ipairs(api.nvim_buf_get_lines(buf, 0, -1, true)) do
-			local m = line:match('^[0-9A-F]+')
+		local floor = math.floor
+		local match = string.match
+		local tonumber = tonumber
+
+		for i, line in ipairs(lines) do
+			local m = match(line, '^[0-9A-F]+')
 			if m then
 				local cp = tonumber(m, 16)
-				local n = math.floor(cp / BUCKET_SIZE)
+				local n = floor(cp / BUCKET_SIZE)
 				local b = a[n]
 				if not b then
 					b = {}
