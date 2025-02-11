@@ -460,10 +460,9 @@ function update()
 		then
 			osd:putf(time_format(duration))
 		else
-			local time_remaininig = (props['duration'] or 0)
-				- (props['time-pos'] or 0)
-			local playtime_remaininig = time_remaininig / props['speed']
-			osd:putf(time_format(-playtime_remaininig))
+			local time_remaining = (props['duration'] or 0) - (props['time-pos'] or 0)
+			local playtime_remaining = time_remaining / props['speed']
+			osd:putf(time_format(-playtime_remaining))
 		end
 		if small then
 			osd:h()
