@@ -1,6 +1,7 @@
 ; inherits: javascript
 
 (mapped_type_clause "in" @keyword)
+(unary_expression "void" @keyword)
 [
   "declare"
   "implements"
