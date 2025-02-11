@@ -29,18 +29,9 @@ local function update()
 
 	osd:update()
 end
-update = osd.update_wrap(update)
-
-local update_timeout = mp.add_timeout(0.05, update, true)
 
 local function update_property(name, value)
-	if name == 'pause' and value then
-		-- Workaround for not updating screen after pause.
-		update_timeout:resume()
-	end
-
 	props[name] = value
-
 	update()
 end
 
