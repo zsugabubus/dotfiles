@@ -53,13 +53,15 @@ function update()
 		return
 	end
 
+	local metadata = props['metadata/list'] or {}
+
 	osd:clear()
 	osd:an(9)
-	osd:put_fsc(props, #props['metadata/list'], 0.5)
+	osd:put_fsc(props, #metadata, 0.5)
 	osd:an(9)
 	osd:bord(2)
 
-	for _, kv in pairs(props['metadata/list']) do
+	for _, kv in pairs(metadata) do
 		local k, v = unpack(kv)
 		osd:bold(true)
 		osd:str(k)
@@ -69,7 +71,7 @@ function update()
 		osd:N()
 	end
 
-	if #props['metadata/list'] == 0 then
+	if #metadata == 0 then
 		osd:put('(no metadata)')
 	end
 

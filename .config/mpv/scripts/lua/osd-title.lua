@@ -52,7 +52,7 @@ function update()
 
 	osd:clear()
 
-	osd_put_block(2, '%s', title.get_current_ass(osd))
+	osd_put_block(2, '%s', title.get_current_ass(osd) or '-')
 
 	for _, track in ipairs(props['track-list'] or {}) do
 		if track.selected then
