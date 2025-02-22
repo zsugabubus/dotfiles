@@ -326,13 +326,15 @@ local blocks = {
 		local function add_folder(path, fullname, config)
 			local name = match(fullname, '([^/]*)$')
 			local display = gsub(sub(fullname, 2), '/inbox$', '')
+			local new_path = path .. '/new'
+
 			local folder = {
 				fullname = fullname,
 				display = display,
 				path = path,
 				name = name,
 				inbox = name == 'inbox',
-				new_mails = math.huge,
+				new_mails = count_files(new_path),
 				unread = false,
 				silent = false,
 			}
@@ -344,8 +346,6 @@ local blocks = {
 			end
 
 			update_folders()
-
-			local new_path = path .. '/new'
 
 			local function update_count()
 				local prev = folder.new_mails
@@ -361,15 +361,13 @@ local blocks = {
 				update_bar()
 				update_ring()
 			end
-			local update_count = debounce(update_count, 50, 3000)
+			update_count = debounce(update_count, 50, 3000)
 
 			local fs_event = uv.new_fs_event()
 			fs_event:start(new_path, {}, function(err)
 				assert(not err, err)
 				update_count()
 			end)
-
-			update_count()
 		end
 
 		local function find_folders(path, fullname, config)
