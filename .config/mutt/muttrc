@@ -21,6 +21,7 @@ set include
 set mail_check=10
 set mail_check_recent=no
 set mail_check_stats mail_check_stats_interval=600
+set mailcap_path=$my_dotdir/mailcap
 set maildir_check_cur
 set mark_old=no
 set mbox_type=Maildir

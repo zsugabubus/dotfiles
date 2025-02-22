@@ -1,0 +1,5 @@
+application/pdf; zathura --fork %s;
+audio/*; mpv %s; needsterminal;
+image/*; mpv %s; needsterminal;
+text/html; lynx -assume_charset=%{charset} -display_charset=utf-8 -dump -force_html %s; copiousoutput;
+video/*; mpv %s; needsterminal;
