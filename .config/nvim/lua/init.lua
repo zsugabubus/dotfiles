@@ -982,7 +982,6 @@ require('pack').add({
 			map('n', 'sc', '<Plug>(cword-toggle)')
 		end,
 	},
-	{ 'editorconfig.lua' },
 	{ 'explorer.nvim' },
 	{
 		'fuzzy.nvim',
