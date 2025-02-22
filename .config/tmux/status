@@ -85,32 +85,23 @@ local function periodic(fn)
 	return function(update_bar, ...)
 		local o = {}
 		local timer = uv.new_timer()
-		local timer_secs = nil
+		local next_secs
 		local update_block = fn(...)
-		local interested = false
 
 		local function update()
-			if interested then
-				interested = false
+			if next_secs then
+				timer:start(next_secs * 1000, 0, update)
+				next_secs = nil
 				update_block(o)
 				update_bar()
-			else
-				timer:stop()
 			end
 		end
 
 		function o:interval(secs)
-			interested = true
-
-			if timer_secs == secs and timer:is_active() then
-				return
+			next_secs = secs
+			if not timer:is_active() then
+				update()
 			end
-
-			timer_secs = secs
-			local msecs = secs * 1000
-			timer:start(msecs, msecs, update)
-
-			update()
 		end
 
 		return o
