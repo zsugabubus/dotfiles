@@ -158,7 +158,6 @@ end
 local function update_ahead_behind(repo)
 	run(repo, {
 		'rev-list',
-		'--count',
 		'--left-right',
 		'--count',
 		'@{upstream}...@',
