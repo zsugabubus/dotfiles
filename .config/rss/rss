@@ -122,7 +122,7 @@ local function create_HttpSession()
 	local function make_header_list(t)
 		local list = nil
 		for k, v in pairs(t) do
-			local data = string.format('%s%s%s', k, v == '' and ';' or ':', v or '')
+			local data = ('%s%s%s'):format(k, v == '' and ';' or ':', v or '')
 			local new_list = libcurl.curl_slist_append(list, data)
 			assert(new_list ~= nil)
 			if list ~= nil then
@@ -267,11 +267,11 @@ local function create_xml_dom_parser(Node)
 			local closed_node = table.remove(stack)
 			if closed_node.text then
 				-- Trim whitespace.
-				closed_node.text = string.match(closed_node.text, '(%S.-)%s*$')
+				closed_node.text = closed_node.text:match('(%S.-)%s*$')
 			end
 		end,
 		CharacterData = function(_, s)
-			if string.find(s, '%S') then
+			if s:find('%S') then
 				local top_node = assert(stack[#stack])
 				top_node.text = top_node.text .. s
 			end
@@ -300,7 +300,7 @@ local function get_hostname()
 end
 
 local function shesc(s)
-	return "'" .. string.gsub(s, "'", [['"'"']]) .. "'"
+	return "'" .. s:gsub("'", [['"'"']]) .. "'"
 end
 
 local function execute(args)
@@ -322,7 +322,7 @@ local function create_Maildir()
 
 	function generate_name()
 		counter = counter + 1
-		return string.format('%s.%s_%d.%s', os.time(), pid, counter, hostname)
+		return ('%s.%s_%d.%s'):format(os.time(), pid, counter, hostname)
 	end
 
 	local function make_msg_ids_lookup(self)
@@ -335,7 +335,7 @@ local function create_Maildir()
 				if f ~= nil then
 					local data = assert(f:read(512))
 					assert(f:close())
-					local msg_id = assert(string.match(data, 'Message%-ID: *(<[^\r\n>]*>)'))
+					local msg_id = assert(data:match('Message%-ID: *(<[^\r\n>]*>)'))
 					t[msg_id] = path
 				end
 			end
@@ -345,7 +345,7 @@ local function create_Maildir()
 
 	local function create_dirs(path)
 		for _, x in ipairs({ 'tmp', 'cur', 'new' }) do
-			uv.fs_mkdir(string.format('%s/%s', path, x), tonumber('700', 8))
+			uv.fs_mkdir(('%s/%s'):format(path, x), tonumber('700', 8))
 		end
 	end
 
@@ -373,8 +373,8 @@ local function create_Maildir()
 		end
 
 		local name = generate_name()
-		local tmp_path = string.format('%s/tmp/%s', self._path, name)
-		local path = string.format('%s/new/%s', self._path, name)
+		local tmp_path = ('%s/tmp/%s'):format(self._path, name)
+		local path = ('%s/new/%s'):format(self._path, name)
 
 		local f = assert(io.open(tmp_path, 'w'))
 		assert(f:write(payload))
@@ -426,31 +426,29 @@ local function create_date_parser()
 
 	return function(s)
 		local year, month, day, hour, min, sec, tz_sign, tz_hour, tz_min =
-			string.match(s, '^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)([+-])(%d%d):?(%d%d)$')
+			s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)([+-])(%d%d):?(%d%d)$')
 		if day then
 			return make_time(year, month, day, hour, min, sec, parse_tz(tz_sign, tz_hour, tz_min))
 		end
 
 		local year, month, day, hour, min, sec =
-			string.match(s, '^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)Z$')
+			s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)Z$')
 		if year then
 			return make_time(year, month, day, hour, min, sec, TZ_GMT)
 		end
 
 		local year, month, day, hour, min, sec =
-			string.match(s, '^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)%.%d%d%dZ$')
+			s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)%.%d%d%dZ$')
 		if year then
 			return make_time(year, month, day, hour, min, sec, TZ_GMT)
 		end
 
-		local year, month, day, hour, min =
-			string.match(s, '^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d)Z$')
+		local year, month, day, hour, min = s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d)Z$')
 		if year then
 			return make_time(year, month, day, hour, min, 0, TZ_GMT)
 		end
 
-		local day, month_name, year, hour, min, sec, tz_sign, tz_hour, tz_min = string.match(
-			s,
+		local day, month_name, year, hour, min, sec, tz_sign, tz_hour, tz_min = s:match(
 			'^[A-Z][a-z][a-z], (%d%d) ([A-Z][a-z][a-z]) (%d%d%d%d) (%d%d):(%d%d):(%d%d) ([+-])(%d%d)(%d%d)$'
 		)
 		if day then
@@ -465,25 +463,23 @@ local function create_date_parser()
 			)
 		end
 
-		local day, month_name, year, hour, min, sec = string.match(
-			s,
-			'^[A-Z][a-z][a-z], (%d%d) ([A-Z][a-z][a-z]) (%d%d%d%d) (%d%d):(%d%d):(%d%d) GMT$'
-		)
+		local day, month_name, year, hour, min, sec =
+			s:match('^[A-Z][a-z][a-z], (%d%d) ([A-Z][a-z][a-z]) (%d%d%d%d) (%d%d):(%d%d):(%d%d) GMT$')
 		if day then
 			return make_time(year, MONTHS[month_name], day, hour, min, sec, TZ_GMT)
 		end
 
-		local year, month, day = string.match(s, '^(%d%d%d%d)-(%d%d)-(%d%d)$')
+		local year, month, day = s:match('^(%d%d%d%d)-(%d%d)-(%d%d)$')
 		if year then
 			return make_time(year, month, day, 0, 0, 0, TZ_GMT)
 		end
 
-		local year = string.match(s, '^(%d%d%d%d)$')
+		local year = s:match('^(%d%d%d%d)$')
 		if year then
 			return make_time(year, 1, 1, 0, 0, 0, TZ_GMT)
 		end
 
-		error(string.format('invalid date: %s', s))
+		error(('invalid date: %s'):format(s))
 	end
 end
 
@@ -495,7 +491,7 @@ local function test()
 			local time = parse_date(input)
 			local left = os.date('!%Y-%m-%d %H:%M:%S', time)
 			local right = expected
-			assert(left == right, string.format('Expected %s == %s', left, right))
+			assert(left == right, ('Expected %s == %s'):format(left, right))
 		end
 
 		local x = parse_date('1970-01-01T00:00:00Z')
@@ -522,7 +518,7 @@ local function create_feed_parser(parse_date)
 	end
 
 	local function guess_html_or_plain_payload(s)
-		return mime_payload(string.find(s, '^<') and TEXT_HTML or TEXT_PLAIN, s)
+		return mime_payload(s:find('^<') and TEXT_HTML or TEXT_PLAIN, s)
 	end
 
 	local function parse_rss_categories(node)
@@ -643,7 +639,7 @@ local function create_feed_parser(parse_date)
 		elseif root.tag == 'feed' then
 			return parse_atom(root)
 		else
-			error(string.format('invalid root tag: %s', root.tag))
+			error(('invalid root tag: %s'):format(root.tag))
 		end
 	end
 
@@ -672,14 +668,14 @@ local function create_base64_encoder()
 
 	return function(s)
 		local pad = 2 - ((#s - 1) % 3)
-		s = string.gsub(s .. string.rep('\0', pad), '...', function(cs)
+		s = (s .. ('\0'):rep(pad)):gsub('...', function(cs)
 			local a, b, c = string.byte(cs, 1, 3)
 			return alphabet[rshift(a, 2)]
 				.. alphabet[bor(lshift(band(a, 3), 4), rshift(b, 4))]
 				.. alphabet[bor(lshift(band(b, 15), 2), rshift(c, 6))]
 				.. alphabet[band(c, 63)]
 		end)
-		return string.sub(s, 1, #s - pad) .. string.rep('=', pad)
+		return s:sub(1, #s - pad) .. ('='):rep(pad)
 	end
 end
 
@@ -688,10 +684,10 @@ local function create_path_expander()
 	local home = os.getenv('HOME')
 
 	return function(path)
-		if string.sub(path, 1, 2) == '=/' or path == '=' then
-			return mail .. string.sub(path, 2)
-		elseif string.sub(path, 1, 2) == '~/' or path == '~' then
-			return home .. string.sub(path, 2)
+		if path:sub(1, 2) == '=/' or path == '=' then
+			return mail .. path:sub(2)
+		elseif path:sub(1, 2) == '~/' or path == '~' then
+			return home .. path:sub(2)
 		end
 		return path
 	end
@@ -734,7 +730,7 @@ local function create_PersistentState()
 	end
 
 	local function read(path)
-		local f = io.popen(string.format('gzip -dc -- %s', path))
+		local f = io.popen(('gzip -dc -- %s'):format(path))
 		if f then
 			local s = assert(f:read('*a'))
 			assert(f:close())
@@ -771,7 +767,7 @@ local function create_PersistentState()
 
 		local tmp_path = self._path .. '~'
 
-		local f = assert(io.popen(string.format('gzip -c9 > %s', tmp_path), 'w'))
+		local f = assert(io.popen(('gzip -c9 > %s'):format(tmp_path), 'w'))
 		assert(f:write(serialize(self._state)))
 		assert(f:close())
 
@@ -782,15 +778,15 @@ local function create_PersistentState()
 end
 
 local function parse_url_host(url)
-	return string.match(url, '://([^/]+)')
+	return url:match('://([^/]+)')
 end
 
 local function create_mime_word_encoder()
 	local b64enc = create_base64_encoder()
 
 	return function(s)
-		if string.find(s, '[\x01-\x19\x80-\xff]') then
-			return string.format('=?utf-8?b?%s?=', b64enc(s))
+		if s:find('[\x01-\x19\x80-\xff]') then
+			return ('=?utf-8?b?%s?='):format(b64enc(s))
 		end
 		return s
 	end
@@ -803,13 +799,13 @@ local function do_update(opts)
 	local buf = require('string.buffer'):new()
 
 	local function make_msg_id(data, host)
-		local left = string.lower(string.sub(sha1(data), 1, 10))
+		local left = sha1(data):sub(1, 10):lower()
 		local right = host
-		return string.format('<%s@%s>', left, right)
+		return ('<%s@%s>'):format(left, right)
 	end
 
 	local function sanitize_header(s)
-		return string.gsub(s, '[\n\r]', '')
+		return s:gsub('[\n\r]', '')
 	end
 
 	local function make_entry_mail(entry, name_override)
@@ -888,7 +884,7 @@ local function do_update(opts)
 
 			process_entries(feed_state, entries, processor)
 		else
-			-- print(string.format('Not expired: %s', feed.id_))
+			-- print(('Not expired: %s'):format(feed.id_))
 		end
 
 		new_state[feed.id_] = feed_state
@@ -966,7 +962,7 @@ local function create_Feed()
 					return x
 				end
 			end
-			error(string.format('invalid day: %q', day_name))
+			error(('invalid day: %q'):format(day_name))
 		end
 		return self
 	end
@@ -1010,7 +1006,7 @@ local function make_url_feed(Feed, parse_feed, http)
 
 			context.host_blacklist = context.host_blacklist or {}
 			if context.host_blacklist[host] then
-				print(string.format('Skip blacklisted: %s', url))
+				print(('Skip blacklisted: %s'):format(url))
 				return {}
 			end
 
@@ -1029,17 +1025,17 @@ local function make_url_feed(Feed, parse_feed, http)
 
 			if status == 429 then
 				context.host_blacklist[host] = true
-				print(string.format('Blacklist host: %s', host))
+				print(('Blacklist host: %s'):format(host))
 			elseif status < 500 then
 				state.updated = os.time()
 			end
 
 			if status ~= 200 then
-				print(string.format('Got HTTP %d: %s', status, url))
+				print(('Got HTTP %d: %s'):format(status, url))
 
 				local location = http:header('Location')
 				if location then
-					print(string.format('Moved %s -> %s', url, location))
+					print(('Moved %s -> %s'):format(url, location))
 				end
 
 				return {}
@@ -1064,7 +1060,7 @@ end
 
 local function make_system_feed(Feed, parse_feed)
 	return function(cmdline)
-		return Feed:new(string.format('system:%s', cmdline), function(self, state)
+		return Feed:new(('system:%s'):format(cmdline), function(self, state)
 			local f = assert(io.popen(cmdline))
 			local s = assert(f:read('*a'))
 			assert(f:close())
@@ -1095,8 +1091,8 @@ local function app(args)
 		exec = make_system_feed(Feed, parse_feed),
 
 		yt = function(channel_id)
-			return url(string.format('https://www.youtube.com/feeds/videos.xml?channel_id=%s', channel_id))
-				:id(string.format('yt:channel:%s', channel_id))
+			return url(('https://www.youtube.com/feeds/videos.xml?channel_id=%s'):format(channel_id))
+				:id(('yt:channel:%s'):format(channel_id))
 				:ttl_hours(12)
 		end,
 
@@ -1105,32 +1101,32 @@ local function app(args)
 		end,
 
 		reddit_submitted = function(username)
-			return url(string.format('https://www.reddit.com/user/%s/submitted.rss', username))
-				:id(string.format('reddit:user:submitted:%s', username))
+			return url(('https://www.reddit.com/user/%s/submitted.rss'):format(username))
+				:id(('reddit:user:submitted:%s'):format(username))
 				:name(username)
 				:ttl_hours(8)
 		end,
 
 		gitlab_commits = function(repo, branch)
 			branch = branch or 'master'
-			return url(string.format('https://gitlab.com/%s/-/commits/%s?format=atom', repo, branch))
-				:id(string.format('gitlab:commits:%s:%s', repo, branch))
-				:name(string.format('%s:%s commits', repo, branch))
+			return url(('https://gitlab.com/%s/-/commits/%s?format=atom'):format(repo, branch))
+				:id(('gitlab:commits:%s:%s'):format(repo, branch))
+				:name(('%s:%s commits'):format(repo, branch))
 				:expires_on_days('Sat')
 		end,
 
 		github_commits = function(repo, branch)
 			branch = branch or 'master'
-			return url(string.format('https://github.com/%s/commits/%s.atom', repo, branch))
-				:id(string.format('github:commits:%s:%s', repo, branch))
-				:name(string.format('%s:%s commits', repo, branch))
+			return url(('https://github.com/%s/commits/%s.atom'):format(repo, branch))
+				:id(('github:commits:%s:%s'):format(repo, branch))
+				:name(('%s:%s commits'):format(repo, branch))
 				:expires_on_days('Sat')
 		end,
 
 		github_releases = function(repo)
-			return url(string.format('https://github.com/%s/releases.atom', repo))
-				:id(string.format('github:releases:%s', repo))
-				:name(string.format('%s releases', repo))
+			return url(('https://github.com/%s/releases.atom'):format(repo))
+				:id(('github:releases:%s'):format(repo))
+				:name(('%s releases'):format(repo))
 				:expires_on_days('Sat')
 		end,
 
@@ -1138,7 +1134,7 @@ local function app(args)
 			local filter = type(opts.filter) == 'function' and opts.filter
 				or function(entry)
 					for _, pattern in ipairs(opts.filter) do
-						if string.match(string.lower(entry.title), string.lower(pattern)) then
+						if entry.title:lower():match(pattern:lower()) then
 							return true
 						end
 					end
@@ -1170,7 +1166,7 @@ local function app(args)
 		for _, feed in ipairs(config) do
 			local feed_state = state[feed.id_] or {}
 			local expiration = feed:expiration(feed_state)
-			print(string.format('%s\t%d\t%s', feed.id_, expiration, os.date(RFC_7273, expiration)))
+			print(('%s\t%d\t%s'):format(feed.id_, expiration, os.date(RFC_7273, expiration)))
 		end
 	else
 		do_update({
