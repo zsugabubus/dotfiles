@@ -1,40 +1,31 @@
 #!/usr/bin/luajit
 local uv = require('luv')
 
-local format = string.format
-local gmatch = string.gmatch
-local gsub = string.gsub
-local insert = table.insert
-local match = string.match
-local rep = string.rep
-local sort = table.sort
-local sub = string.sub
-
 local KiB = 1024
 local MiB = 1024 * KiB
 local GiB = 1024 * MiB
 
 local function bytes(n)
 	if n < KiB then
-		return format('%dB', n)
+		return ('%dB'):format(n)
 	elseif n < MiB then
-		return format('%dK', n / KiB)
+		return ('%dK'):format(n / KiB)
 	elseif n < GiB then
-		return format('%dM', n / MiB)
+		return ('%dM'):format(n / MiB)
 	else
-		return format('%dG', n / GiB)
+		return ('%dG'):format(n / GiB)
 	end
 end
 
 local function bytes_long(n)
 	if n < KiB then
-		return format('%dB', n)
+		return ('%dB'):format(n)
 	elseif n < MiB then
-		return format('%dK', n / KiB)
+		return ('%dK'):format(n / KiB)
 	elseif n < GiB then
-		return format('%.1fM', n / MiB)
+		return ('%.1fM'):format(n / MiB)
 	else
-		return format('%.1fG', n / GiB)
+		return ('%.1fG'):format(n / GiB)
 	end
 end
 
@@ -110,7 +101,7 @@ end
 
 local blocks = {
 	net = periodic(function(pred)
-		local pat = '\n *([^:\n]*): *(%d*) *' .. rep('%d* *', 7) .. '(%d*)'
+		local pat = '\n *([^:\n]*): *(%d*) *' .. ('%d* *'):rep(7) .. '(%d*)'
 
 		local f = file('/proc/net/dev')
 
@@ -123,7 +114,7 @@ local blocks = {
 			local rx_bytes = 0
 			local tx_bytes = 0
 
-			for name, rx, tx in gmatch(f(8192), pat) do
+			for name, rx, tx in f(8192):gmatch(pat) do
 				if pred(name) then
 					rx_bytes = rx_bytes + tonumber(rx)
 					tx_bytes = tx_bytes + tonumber(tx)
@@ -153,7 +144,7 @@ local blocks = {
 		local t = {}
 
 		return function(o)
-			for name, n in gmatch(f(84), '([^:]*): *(%d*) kB\n') do
+			for name, n in f(84):gmatch('([^:]*): *(%d*) kB\n') do
 				t[name] = tonumber(n) * 1024
 			end
 
@@ -174,7 +165,7 @@ local blocks = {
 			local total = 0
 			local idle = 0
 
-			for n in gmatch(f('*l'), '%d+') do
+			for n in f('*l'):gmatch('%d+') do
 				n = tonumber(n)
 				total = total + n
 				i = i + 1
@@ -201,14 +192,14 @@ local blocks = {
 
 		return function(o)
 			local avg_1, avg_5, avg_15 =
-				match(f(50), '^(%d*%.%d*) (%d*%.%d*) (%d*%.%d*)')
+				f(50):match('^(%d*%.%d*) (%d*%.%d*) (%d*%.%d*)')
 			o.avg_1 = tonumber(avg_1)
 			o.avg_5 = tonumber(avg_5)
 			o.avg_15 = tonumber(avg_15)
 		end
 	end),
 	ac_online = periodic(function(name)
-		local f = file(format('/sys/class/power_supply/%s/online', name or 'AC'))
+		local f = file(('/sys/class/power_supply/%s/online'):format(name or 'AC'))
 
 		return function(o)
 			o.online = f(1) == '1'
@@ -216,7 +207,7 @@ local blocks = {
 	end),
 	bat_capacity = periodic(function(name)
 		local f =
-			file(format('/sys/class/power_supply/%s/capacity', name or 'BAT0'))
+			file(('/sys/class/power_supply/%s/capacity'):format(name or 'BAT0'))
 
 		return function(o)
 			o.capacity = tonumber(f(20))
@@ -224,8 +215,7 @@ local blocks = {
 	end),
 	transmission = periodic(function(url, user)
 		local function get_session_stats(session_id)
-			local cmd = format(
-				[[curl '%s' --silent --user '%s' --header 'X-Transmission-Session-Id: %s' --json '{"method":"session-stats"}']],
+			local cmd = ([[curl '%s' --silent --user '%s' --header 'X-Transmission-Session-Id: %s' --json '{"method":"session-stats"}']]):format(
 				url or 'http://localhost:9091/transmission/rpc',
 				user or ':',
 				session_id or ''
@@ -237,11 +227,11 @@ local blocks = {
 		end
 
 		local function get_session_id()
-			return match(get_session_stats(), '.*: (%w+)')
+			return get_session_stats():match('.*: (%w+)')
 		end
 
 		local function json_number(s, pat)
-			return tonumber(match(s, pat .. ':(%d+)'))
+			return tonumber(s:match(pat .. ':(%d+)'))
 		end
 
 		return function(o)
@@ -317,15 +307,15 @@ local blocks = {
 		local function update_folders()
 			for _, folder in ipairs(folders) do
 				if not folder.root then
-					local display_root = match(folder.display, '^[^/]*')
+					local display_root = folder.display:match('^[^/]*')
 					folder.root = folders_by_display[display_root]
 				end
 			end
 		end
 
 		local function add_folder(path, fullname, config)
-			local name = match(fullname, '([^/]*)$')
-			local display = gsub(sub(fullname, 2), '/inbox$', '')
+			local name = fullname:match('([^/]*)$')
+			local display = fullname:sub(2):gsub('/inbox$', '')
 			local new_path = path .. '/new'
 
 			local folder = {
@@ -338,7 +328,7 @@ local blocks = {
 				unread = false,
 				silent = false,
 			}
-			insert(folders, folder)
+			table.insert(folders, folder)
 			folders_by_display[display] = folder
 
 			for k, v in pairs(config or {}) do
@@ -380,7 +370,7 @@ local blocks = {
 			for name, kind in list_dir(path) do
 				if
 					kind == 'file'
-					or sub(name, 1, 1) == '.'
+					or name:sub(1, 1) == '.'
 					or name == 'cur'
 					or name == 'new'
 					or name == 'tmp'
@@ -394,7 +384,7 @@ local blocks = {
 
 		find_folders(assert(opts.mail_dir or os.getenv('MAIL')), '')
 
-		sort(folders, function(a, b)
+		table.sort(folders, function(a, b)
 			if a.root.inbox ~= b.root.inbox then
 				return a.root.inbox
 			end
@@ -450,7 +440,7 @@ tmux('@status', function(update_bar)
 	end
 
 	local net = blocks.net(update_bar, function(name)
-		return match(name, '^enp') or match(name, '^wl')
+		return name:match('^enp') or name:match('^wl')
 	end)
 	local mem = blocks.mem(update_bar)
 	local cpu = blocks.cpu(update_bar)
