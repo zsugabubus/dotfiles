@@ -72,6 +72,13 @@ local function file(path)
 	end
 end
 
+local function popen(cmd, thismuch)
+	local f = io.popen(cmd)
+	local s = assert(f:read(thismuch))
+	assert(f:close())
+	return s
+end
+
 local function periodic(fn)
 	return function(update_bar, ...)
 		local o = {}
@@ -220,10 +227,7 @@ local blocks = {
 				user or ':',
 				session_id or ''
 			)
-			local f = io.popen(cmd)
-			local s = assert(f:read('*a'))
-			assert(f:close())
-			return s
+			return popen(cmd, '*a')
 		end
 
 		local function get_session_id()
@@ -393,6 +397,18 @@ local blocks = {
 
 		return { folders = folders }
 	end,
+	system_units = periodic(function()
+		return function(o)
+			local status = popen('systemctl is-system-running', '*l')
+			o.ok = status == 'starting' or status == 'running'
+		end
+	end),
+	user_units = periodic(function()
+		return function(o)
+			local status = popen('systemctl --user is-system-running', '*l')
+			o.ok = status == 'starting' or status == 'running'
+		end
+	end),
 }
 
 local function bar(fn, on_output)
@@ -451,6 +467,8 @@ tmux('@status', function(update_bar)
 	local mail = blocks.mail(update_bar, {
 		bell_file = assert(os.getenv('HOME')) .. '/doc/bell.mp3',
 	})
+	local system_units = blocks.system_units(update_bar)
+	local user_units = blocks.user_units(update_bar)
 
 	return function(buf)
 		do
@@ -520,6 +538,16 @@ tmux('@status', function(update_bar)
 				bat_capacity.capacity,
 				danger(bat_capacity.capacity < 50)
 			)
+		end
+
+		user_units:interval(300)
+		if not user_units.ok then
+			buf:put(' #[fg=red,bold][u]#[default] ')
+		end
+
+		system_units:interval(300)
+		if not system_units.ok then
+			buf:put(' #[fg=red,bold][U]#[default] ')
 		end
 	end
 end)
