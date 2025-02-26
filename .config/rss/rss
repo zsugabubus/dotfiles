@@ -1134,7 +1134,7 @@ local function main(args)
 			local filter = type(opts.filter) == 'function' and opts.filter
 				or function(entry)
 					for _, pattern in ipairs(opts.filter) do
-						if entry.title:lower():match(pattern:lower()) then
+						if entry.title:match(pattern) then
 							return true
 						end
 					end
