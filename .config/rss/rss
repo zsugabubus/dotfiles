@@ -199,16 +199,16 @@ local function create_HttpSession()
 	return M
 end
 
-local function dir_empty()
+local function noop()
 	-- Do nothing.
 end
 
-local function dir(path)
+local function list_dir(path)
 	local handle = uv.fs_scandir(path)
 	if handle then
 		return uv.fs_scandir_next, handle
 	end
-	return dir_empty
+	return noop
 end
 
 local function create_Node()
@@ -329,7 +329,7 @@ local function create_Maildir()
 		local t = {}
 		for _, x in ipairs({ 'cur', 'new' }) do
 			local mail_dir = self._path .. '/' .. x
-			for name in dir(mail_dir) do
+			for name in list_dir(mail_dir) do
 				local path = mail_dir .. '/' .. name
 				local f = io.open(path, 'r')
 				if f ~= nil then
@@ -1070,7 +1070,7 @@ local function make_system_feed(Feed, parse_feed)
 	end
 end
 
-local function app(args)
+local function main(args)
 	os.setlocale('C')
 
 	local HttpSession = create_HttpSession()
@@ -1178,4 +1178,4 @@ local function app(args)
 end
 
 -- test()
-app(arg)
+main(arg)
