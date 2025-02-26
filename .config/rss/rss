@@ -3,6 +3,17 @@ local uv = require('luv')
 
 local RFC_7273 = '%a, %d %b %Y %H:%M:%S %z'
 
+local function logger_factory(level)
+	return function(s)
+		io.stderr:write(('<%d>%s\n'):format(level, s))
+	end
+end
+
+local log_error = logger_factory(3)
+local log_warn = logger_factory(4)
+local log_info = logger_factory(6)
+local log_debug = logger_factory(7)
+
 local function create_sha1()
 	local ffi = require('ffi')
 
@@ -383,7 +394,7 @@ local function create_Maildir()
 		assert(os.rename(tmp_path, path))
 		self._msg_ids[msg_id] = path
 
-		-- print('New Message', msg_id, path)
+		log_debug(('New message: %s'):format(path))
 	end
 
 	return M
@@ -644,7 +655,6 @@ local function create_feed_parser(parse_date)
 	end
 
 	return function(s)
-		-- print("parse", s)
 		return parse_feed(parse_xml(s))
 	end
 end
@@ -761,7 +771,7 @@ local function create_PersistentState()
 
 	function M:save()
 		if deep_equal(self._state, self._original_state) then
-			print('State not changed')
+			log_debug('State unchanged')
 			return
 		end
 
@@ -867,8 +877,7 @@ local function do_update(opts)
 	local fetch_context = {}
 
 	for _, feed in ipairs(opts.feeds) do
-		-- print('Process', feed.id_)
-
+		log_debug(('Process feed: %s'):format(feed.id_))
 		local feed_state = old_state[feed.id_] or {}
 
 		if feed:expiration(feed_state) <= now then
@@ -884,7 +893,7 @@ local function do_update(opts)
 
 			process_entries(feed_state, entries, processor)
 		else
-			-- print(('Not expired: %s'):format(feed.id_))
+			log_debug(('Feed not expired: %s'):format(feed.id_))
 		end
 
 		new_state[feed.id_] = feed_state
@@ -1006,7 +1015,7 @@ local function make_url_feed(Feed, parse_feed, http)
 
 			context.host_blacklist = context.host_blacklist or {}
 			if context.host_blacklist[host] then
-				print(('Skip blacklisted: %s'):format(url))
+				log_debug(('Skip blacklisted: %s'):format(url))
 				return {}
 			end
 
@@ -1025,17 +1034,17 @@ local function make_url_feed(Feed, parse_feed, http)
 
 			if status == 429 then
 				context.host_blacklist[host] = true
-				print(('Blacklist host: %s'):format(host))
+				log_debug(('Blacklist host: %s'):format(host))
 			elseif status < 500 then
 				state.updated = os.time()
 			end
 
 			if status ~= 200 then
-				print(('Got HTTP %d: %s'):format(status, url))
+				log_error(('Got HTTP %d: %s'):format(status, url))
 
 				local location = http:header('Location')
 				if location then
-					print(('Moved %s -> %s'):format(url, location))
+					log_warn(('Moved %s to %s'):format(url, location))
 				end
 
 				return {}
@@ -1135,18 +1144,21 @@ local function main(args)
 				or function(entry)
 					for _, pattern in ipairs(opts.filter) do
 						if entry.title:match(pattern) then
+							log_debug(('Pattern %q matches %q'):format(pattern, entry.title))
 							return true
 						end
 					end
 				end
 
 			return url(feed_url):processor(function(entry)
+				log_debug(('New torrent: %q'):format(entry.title))
 				local result = filter(entry)
 
 				if not result then
 					return
 				end
 
+				log_info(('Add torrent to Transmission: %q'):format(entry.link))
 				execute({
 					'transmission-remote',
 					'--add',
