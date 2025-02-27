@@ -288,13 +288,18 @@ local function apply_sgr(pen, params)
 	end
 end
 
+local function strip_hyperlinks(s)
+	return gsub(s, '\x1b]8;.-\x1b\\', '')
+end
+
 local parse_ansi = make_ansi_parser()
 local parse_sgr = make_sgr_parser()
 
 local function highlight_buffer(buffer)
 	local pen = {}
 	for row, line in ipairs(api.nvim_buf_get_lines(buffer, 0, -1, false)) do
-		local line_without_sgr, start_cols, sgrs = parse_ansi(line)
+		local line_without_sgr, start_cols, sgrs =
+			parse_ansi(strip_hyperlinks(line))
 
 		if line ~= line_without_sgr then
 			buf_set_lines(buffer, row - 1, row, true, { line_without_sgr })

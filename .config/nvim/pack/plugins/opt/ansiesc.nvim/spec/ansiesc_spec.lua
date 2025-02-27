@@ -191,3 +191,14 @@ it('removes escape sequences', function()
 	vim.cmd.AnsiEsc()
 	vim:assert_lines({ 'bold' })
 end)
+
+it('removes hyperlinks', function()
+	local url1 = '\x1b]8;key=value:id=foo;https://example.com/\x1b\\'
+	local url2 = '\x1b]8;\x1b\\'
+	vim:set_lines({ ('1\x1b[1m%s\x1b[3m2%s\x1b[m3'):format(url1, url2) })
+	vim.cmd.AnsiEsc()
+	vim:assert_lines({ '123' })
+	vim:assert_highlights({
+		{ region = { 0, 1, 0, 2 }, hl = bold_and_italic },
+	})
+end)
