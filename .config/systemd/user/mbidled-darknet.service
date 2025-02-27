@@ -8,6 +8,12 @@ Type=simple
 ExecStart=torsocks mbidled -c "%t/mbsyncrc.darknet"
 Restart=always
 SyslogIdentifier=mbidled
+CapabilityBoundingSet=
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallFilter=@system-service
 
 [Install]
 WantedBy=default.target
