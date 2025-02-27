@@ -3,13 +3,34 @@ Description=Transmission BitTorrent Daemon
 After=network.target
 
 [Service]
-Type=notify
+CapabilityBoundingSet=
 ExecStart=transmission-daemon --config-dir "%E/transmission" --foreground
-SystemCallFilter=@system-service
+KeyringMode=private
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
 NoNewPrivileges=yes
-PrivateUsers=yes
+PrivateDevices=yes
+PrivateIPC=yes
 PrivateTmp=yes
+PrivateUsers=yes
+ProcSubset=pid
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=noaccess
 ProtectSystem=full
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @ipc @keyring
+SystemCallFilter=pipe pipe2
+Type=notify
 
 [Install]
 WantedBy=default.target
