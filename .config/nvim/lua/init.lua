@@ -369,7 +369,9 @@ map('n', '+', 'g+')
 map('n', '-', 'g-')
 
 smap('n', '<C-w>T', ':tab split<CR>')
-map('n', '<C-w>d', ':windo diffthis<CR>')
+xmap('n', '<C-w>d', function()
+	return wo.diff and ':diffoff!<CR>' or ':windo diffthis<CR>'
+end)
 
 xmap('n', 's;', function()
 	return 'A' .. (o.filetype == 'python' and ':' or ';') .. '<Esc>'
