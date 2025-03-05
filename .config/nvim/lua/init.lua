@@ -100,6 +100,7 @@ local o = vim.o
 local wo = vim.wo
 
 local autocmd = api.nvim_create_autocmd
+local buf_keymap = api.nvim_buf_set_keymap
 local keymap = api.nvim_set_keymap
 local user_command = api.nvim_create_user_command
 
@@ -124,6 +125,9 @@ end
 local SMAP_OPTS = { silent = true }
 local function smap(mode, lhs, rhs)
 	return keymap(mode, lhs, rhs, SMAP_OPTS)
+end
+local function bsmap(mode, lhs, rhs)
+	return buf_keymap(0, mode, lhs, rhs, SMAP_OPTS)
 end
 
 local function fmap(mode, lhs, callback)
@@ -806,14 +810,19 @@ filetype('xml,html', function()
 end)
 
 filetype('directory', function()
-	local keymap = api.nvim_buf_set_keymap
-	keymap(0, 'n', 'gu', '<Plug>(explorer-goto-parent)', SMAP_OPTS)
-	keymap(0, 'n', 'g.', '<Plug>(explorer-cd)', SMAP_OPTS)
-	keymap(0, 'n', '<CR>', 'Vgf', SMAP_OPTS)
+	bsmap('n', 'gu', '<Plug>(explorer-goto-parent)')
+	bsmap('n', 'g.', '<Plug>(explorer-cd)')
+	bsmap('n', '<CR>', 'Vgf')
 end)
 
 filetype('cucumber', function()
 	cmd.Varign()
+end)
+
+filetype('addresslist', function()
+	bsmap('n', 'T', ':MailTo<CR>')
+	bsmap('n', 'C', ':MailCc<CR>')
+	bsmap('n', 'B', ':MailBcc<CR>')
 end)
 
 autocmd('TextChanged', {
@@ -934,6 +943,7 @@ end)
 map('n', 'c-', ':cd -<CR>')
 
 require('pack').add({
+	{ 'addresslist.nvim' },
 	{
 		'align.nvim',
 		before = function()
