@@ -768,15 +768,11 @@ vim.filetype.add({
 })
 
 -- vim.treesitter pulls in lot's of Lua code.
-autocmd('FileType', {
-	group = group,
-	pattern = { 'typescriptreact', 'typescript' },
-	once = true,
-	callback = function()
-		vim.treesitter.language.register('tsx', 'typescriptreact')
-		vim.treesitter.language.register('tsx', 'typescript')
-	end,
-})
+filetype('typescriptreact,typescript', function()
+	vim.treesitter.language.register('tsx', 'typescriptreact')
+	vim.treesitter.language.register('tsx', 'typescript')
+	return true
+end)
 
 filetype('help', function()
 	vim.treesitter.stop()
