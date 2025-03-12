@@ -41,6 +41,7 @@ local CSP_DIRECTIVES = concat({
 
 local ALLOWED_ASSETS = {
 	svg = IMAGE_SVG,
+	png = 'image/png',
 }
 
 local group = api.nvim_create_augroup('markdown', {})
