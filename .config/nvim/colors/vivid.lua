@@ -198,17 +198,21 @@ local theme = {
 
 local span = trace(span, 'set highlights')
 
+local byte = string.byte
+local match = string.match
+local set_hl = vim.api.nvim_set_hl
+
 local function resolve(spec, k)
 	local v = spec[k]
 	if
-		type(v) == 'string' and string.byte(v, 1) ~= 35 -- '#'
+		type(v) == 'string' and byte(v, 1) ~= 35 -- '#'
 	then
-		local tn, tk = string.match(v, '([^.]+)%.([^.]+)')
+		local tn, tk = match(v, '([^.]+)%.([^.]+)')
 		spec[k] = theme[tn or v][tk or k]
 	end
 end
 
-local link_spec = {}
+local link_spec = { link = nil }
 for name, spec in pairs(theme) do
 	if type(spec) ~= 'string' then
 		resolve(spec, 'bg')
@@ -217,7 +221,7 @@ for name, spec in pairs(theme) do
 		link_spec.link = spec
 		spec = link_spec
 	end
-	vim.api.nvim_set_hl(0, name, spec)
+	set_hl(0, name, spec)
 end
 
 trace(span)
