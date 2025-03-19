@@ -1522,7 +1522,7 @@ ncurses transmission client]],
 				elseif data.isFinished then
 					return 'Finished'
 				end
-				return TORRENT_STATUS_NAME[data.status] or ''
+				return TORRENT_STATUS_NAME[data.status] or 'Unknown'
 			end, { 'isStalled', 'isFinished', 'status' }),
 			up = make_bytes_column('Up', 'rateUpload'),
 			up_limit = make_speed_limit_column('Up Limit', 'uploadLimit', 'uploadLimited'),
