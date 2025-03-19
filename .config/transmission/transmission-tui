@@ -1066,11 +1066,11 @@ local function create_TransmissionTui()
 	local TORRENT_STATUS_NAME = {
 		[0] = 'Paused',
 		'Check-Q',
-		'Check',
+		'Checking',
 		'Queued',
-		'Download',
+		'Downloading',
 		'Seed-Q',
-		'Seed',
+		'Seeding',
 	}
 
 	local MESSAGE_NAME = {
@@ -1516,7 +1516,7 @@ ncurses transmission client]],
 			end, { 'seedRatioLimit', 'seedRatioMode' }),
 			seed_time = make_seconds_column('Seed Time', 'secondsSeeding'),
 			size = make_bytes_column('Size', 'sizeWhenDone'),
-			status = make_column('Status', 8, function(data)
+			status = make_column('Status', 11, function(data)
 				if data.isStalled then
 					return 'Stalled'
 				elseif data.isFinished then
