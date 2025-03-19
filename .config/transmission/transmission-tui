@@ -1521,9 +1521,17 @@ ncurses transmission client]],
 					return 'Stalled'
 				elseif data.isFinished then
 					return 'Finished'
+				elseif
+					(data.status == 4 or data.status == 6)
+					and data.peersSendingToUs == 0
+					and data.peersGettingFromUs == 0
+				then
+					return 'Idle'
+				elseif data.status == 4 and data.peersSendingToUs == 0 then
+					return 'Uploading'
 				end
 				return TORRENT_STATUS_NAME[data.status] or 'Unknown'
-			end, { 'isStalled', 'isFinished', 'status' }),
+			end, { 'isStalled', 'isFinished', 'status', 'peersGettingFromUs', 'peersSendingToUs' }),
 			up = make_bytes_column('Up', 'rateUpload'),
 			up_limit = make_speed_limit_column('Up Limit', 'uploadLimit', 'uploadLimited'),
 			up_peers = make_speed_with_peers_column('Up (Peers)', 'rateUpload', 'peersGettingFromUs'),
