@@ -617,7 +617,7 @@ autocmd('InsertEnter', {
 		end
 
 		if ft:find('javascript') or ft:find('typescript') then
-			sm('<M-c>', 'const $1;')
+			sm('<M-c>', 'const $1')
 			sm('<M-i>', 'if ($1) {\n\t$2\n}')
 			sm('<M-e>', 'else if ($1) {\n\t$2\n}')
 			sm('<M-e><CR>', 'else {\n\t$1\n}')
