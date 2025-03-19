@@ -2,6 +2,7 @@
 -- https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md
 
 local abs = math.abs
+local ceil = math.ceil
 local concat = table.concat
 local date = os.date
 local find = string.find
@@ -1115,13 +1116,13 @@ local function create_TransmissionTui()
 		elseif n < K then
 			return format('%dB', n)
 		elseif n < M then
-			return format('%.1fK', n / K)
+			return format('%.1fK', ceil(n * 10 / K) / 10)
 		elseif n < G then
-			return format('%.1fM', n / M)
+			return format('%.1fM', ceil(n * 10 / M) / 10)
 		elseif n < 100 * G then
-			return format('%.1fG', n / G)
+			return format('%.1fG', ceil(n * 10 / G) / 10)
 		else
-			return format('%dG', n / G)
+			return format('%dG', ceil(n / G))
 		end
 	end
 
@@ -1135,11 +1136,11 @@ local function create_TransmissionTui()
 		elseif n < M then
 			return format('%ds', n)
 		elseif n < 2 * H then
-			return format('%dm', n / M)
+			return format('%dm', ceil(n / M))
 		elseif n < 2 * D then
-			return format('%dh', n / H)
+			return format('%dh', ceil(n / H))
 		else
-			return format('%dd', n / D)
+			return format('%dd', ceil(n / D))
 		end
 	end
 
@@ -1149,7 +1150,7 @@ local function create_TransmissionTui()
 		elseif n < 100000 then
 			return format('%d', n)
 		else
-			return format('%dK', n / 1000)
+			return format('%dK', ceil(n / 1000))
 		end
 	end
 
@@ -1171,9 +1172,9 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < 0.1 then
-			return format('%.2f%%', max(0, n * 100 - 0.005))
+			return format('%.2f%%', floor(n * 10000) / 100)
 		elseif n < 1 then
-			return format('%.1f%%', n * 100 - 0.05)
+			return format('%.1f%%', floor(n * 1000) / 10)
 		else
 			return '100%'
 		end
@@ -1183,9 +1184,9 @@ local function create_TransmissionTui()
 		if n <= 0 then
 			return ''
 		elseif n < 100 then
-			return format('%.1fx', n - 0.05)
+			return format('%.1f', floor(n * 10) / 10)
 		else
-			return format('%dx', n)
+			return format('%d', n)
 		end
 	end
 
