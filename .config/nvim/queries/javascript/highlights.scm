@@ -15,6 +15,8 @@
 
 (method_definition name: (property_identifier) @function.method)
 
+(class_body (method_definition name: ((property_identifier) @keyword
+  (#eq? @keyword "constructor"))))
 [
   "as"
   "break"
