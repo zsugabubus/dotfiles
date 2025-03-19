@@ -1505,7 +1505,7 @@ ncurses transmission client]],
 			peers = make_number_column('Peers', 'peersConnected'),
 			queue = make_ordinal_column('Queue', 'queuePosition'),
 			ratio = make_ratio_column('Ratio', 'uploadRatio'),
-			ratio_limit = make_column('Ratio Limit', -8, function(data)
+			ratio_limit = make_column('Ratio Limit', -5, function(data)
 				if data.seedRatioMode == 1 then
 					return display_ratio(data.seedRatioLimit)
 				elseif data.seedRatioMode == 2 then
