@@ -1182,8 +1182,6 @@ local function create_TransmissionTui()
 	local function display_ratio(n)
 		if n <= 0 then
 			return ''
-		elseif n < 10 then
-			return format('%.2fx', max(0, n - 0.005))
 		elseif n < 100 then
 			return format('%.1fx', n - 0.05)
 		else
