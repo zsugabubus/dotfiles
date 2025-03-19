@@ -55,8 +55,12 @@ local function handle_close(open, close)
 		return close
 	elseif s:sub(i, i) == close and balanced(s, i, open, close) then
 		return '<C-G>U<Right>'
-	elseif i == #s + 1 and balanced(s, i, open, close) then
-		local row = vim.fn.nextnonblank(vim.fn.line('.') + 1)
+	elseif
+		i == #s + 1
+		and s:sub(i - 1, i - 1):find('%S')
+		and balanced(s, i, open, close)
+	then
+		local row = vim.fn.line('.') + 1
 		local _, col = vim.fn.getline(row):find('^[ \t]*' .. vim.pesc(close))
 		if col then
 			return ('<C-O>:call cursor(%d,%d)<CR>'):format(row, col + 1)

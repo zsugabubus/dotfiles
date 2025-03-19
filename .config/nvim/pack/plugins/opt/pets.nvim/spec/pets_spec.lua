@@ -70,11 +70,8 @@ local function check_paren(open, close)
 	check_multiline({ ';', ')' }, '1GI)foo', { ')foo;', ')' })
 	check_multiline({ 'x', ')' }, '1GI)foo', { ')foox', ')' })
 	check_multiline({ '(', ')' }, '1GA)foo', { '()foo', ')' })
-	check_multiline(
-		{ '()', '', '   ', ')' },
-		'1GA)foo',
-		{ '()', '', '   ', ')foo' }
-	)
+	check_multiline({ '()', ' \t )' }, '1GA)foo', { '()', ' \t )foo' })
+	check_multiline({ '()', '', ')' }, '1GA)foo', { '())foo', '', ')' })
 	check_multiline({ '()', 'x)' }, '1GA)foo', { '())foo', 'x)' })
 end
 
@@ -112,7 +109,7 @@ local function check_quote(quote)
 	check('ix<Left>"', '""x')
 	check('i""x<Left>"', '"""x')
 	check('i""<Left>"', '""')
-	check('i""<Left><Left>"', '"""')
+	check('i""<Left><Left>"', '""')
 end
 
 test('parens', function()
