@@ -31,7 +31,6 @@ local function update()
 
 	do
 		local line = fn.prevnonblank(curr_line)
-		local view
 
 		while true do
 			if search_cache[line] then
@@ -42,13 +41,23 @@ local function update()
 				if indent == 0 then
 					line = 0
 				else
-					if not view then
-						view = fn.winsaveview()
+					line = line - 1
+					while line > 0 do
+						if fn.indent(line) < indent then
+							local s = api.nvim_buf_get_text(
+								curr_buf,
+								line - 1,
+								0,
+								line - 1,
+								100,
+								{}
+							)[1]
+							if s:find('^[ \t]*[^%]})#]-[a-zA-Z0-9]') then
+								break
+							end
+						end
+						line = line - 1
 					end
-					local pattern = ([=[\v\C^[ \t]*[("]*[a-zA-Z]%%<%dv]=]):format(
-						indent + 1
-					)
-					line = fn.search(pattern, 'cbW', 0, 200)
 				end
 				search_cache[from_line] = line
 			end
@@ -56,10 +65,6 @@ local function update()
 				break
 			end
 			table.insert(lines, 1, line)
-		end
-
-		if view then
-			fn.winrestview(view)
 		end
 	end
 
