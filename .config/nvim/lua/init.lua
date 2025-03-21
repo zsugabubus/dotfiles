@@ -354,7 +354,7 @@ xmap('n', '<M-!>', function()
 	return ':edit <C-R>p<C-Z>'
 end)
 smap('n', '<M-q>', ':quit<CR>')
-smap('n', '<M-w>', ':silent! wa|wa<CR>')
+smap('n', '<M-w>', ':silent! wa|silent! wa<CR>')
 
 -- Put the first line of the paragraph at the top of the window.
 xmap('n', 'z{', function()
