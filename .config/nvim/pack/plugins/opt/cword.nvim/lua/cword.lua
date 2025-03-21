@@ -1,8 +1,6 @@
 local api = vim.api
 local fn = vim.fn
 
-local M = {}
-
 local enabled = false
 local timer = vim.loop.new_timer()
 local cword
@@ -59,7 +57,7 @@ local function update_wins()
 	update()
 end
 
-function M.toggle(b)
+local function toggle(b)
 	if b == nil then
 		b = not enabled
 	end
@@ -102,8 +100,4 @@ function M.toggle(b)
 	update_wins()
 end
 
-function M.is_enabled()
-	return enabled
-end
-
-return M
+return { toggle = toggle }
