@@ -1,24 +1,13 @@
-local keymap = vim.api.nvim_set_keymap
 local user_command = vim.api.nvim_create_user_command
 
-local EMPTY = {}
-
-local function toggle()
+user_command('CwordToggle', function()
 	require('cword').toggle()
-end
+end, {})
 
-local function enable()
+user_command('CwordEnable', function()
 	require('cword').toggle(true)
-end
+end, {})
 
-local function disable()
+user_command('CwordDisable', function()
 	require('cword').toggle(false)
-end
-
-keymap('', '<Plug>(cword-toggle)', '', { callback = toggle })
-keymap('', '<Plug>(cword-enable)', '', { callback = enable })
-keymap('', '<Plug>(cword-disable)', '', { callback = disable })
-
-user_command('Cword', toggle, EMPTY)
-user_command('CwordEnable', enable, EMPTY)
-user_command('CwordDisable', disable, EMPTY)
+end, {})

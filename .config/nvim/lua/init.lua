@@ -884,7 +884,7 @@ require('pack').add({
 	{
 		'cword.nvim',
 		before = function()
-			map('n', 'sc', '<Plug>(cword-toggle)')
+			map('n', 'sc', '<Cmd>CwordToggle<CR>')
 		end,
 	},
 	{ 'explorer.nvim' },
