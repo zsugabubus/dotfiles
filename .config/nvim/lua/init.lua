@@ -878,7 +878,7 @@ require('pack').add({
 	{
 		'context.nvim',
 		before = function()
-			map('n', '<C-w>x', '<Plug>(context-toggle)')
+			map('n', '<C-w>x', '<Cmd>ContextToggle<CR>')
 		end,
 	},
 	{

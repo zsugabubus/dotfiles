@@ -1,24 +1,13 @@
-local keymap = vim.api.nvim_set_keymap
 local user_command = vim.api.nvim_create_user_command
 
-local EMPTY = {}
-
-local function toggle()
+user_command('ContextToggle', function()
 	require('context').toggle()
-end
+end, {})
 
-local function enable()
+user_command('ContextEnable', function()
 	require('context').toggle(true)
-end
+end, {})
 
-local function disable()
+user_command('ContextDisable', function()
 	require('context').toggle(false)
-end
-
-keymap('', '<Plug>(context-toggle)', '', { callback = toggle })
-keymap('', '<Plug>(context-enable)', '', { callback = enable })
-keymap('', '<Plug>(context-disable)', '', { callback = disable })
-
-user_command('Context', toggle, EMPTY)
-user_command('ContextEnable', enable, EMPTY)
-user_command('ContextDisable', disable, EMPTY)
+end, {})
