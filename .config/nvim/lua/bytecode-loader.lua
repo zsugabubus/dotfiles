@@ -2,24 +2,19 @@ local Trace = require('trace')
 local cache_dir = vim.fn.stdpath('cache')
 local bytecode_dir = cache_dir .. '/bytecode'
 local loadfile = loadfile -- Make it local.
-
-local NIL_STAT = {
-	mtime = {
-		sec = 0,
-		nsec = 0,
-	},
-	size = 0,
-}
+local uv = vim.loop
 
 function _G.loadfile(path)
 	local trace = Trace.trace
 	local span = trace('loadfile ' .. path)
 
-	local uv = vim.loop
-
 	local stat_span = trace('stat')
-	local stat = uv.fs_stat(path) or NIL_STAT
+	local stat, err = uv.fs_stat(path)
 	trace(stat_span)
+	if not stat then
+		trace(span)
+		return nil, err
+	end
 
 	local path_key = path:gsub('/', '%%')
 	local cache_path = ('%s/%s%%M=%s_%s,S=%s'):format(
