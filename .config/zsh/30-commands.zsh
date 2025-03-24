@@ -28,6 +28,7 @@ alias vd=vidir
 
 alias e=$EDITOR
 compdef e=$EDITOR
+alias e..='e ***(.)'
 
 alias g=git
 compdef g=git
