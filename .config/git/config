@@ -5,7 +5,6 @@
 	a = add --verbose
 	ae = a --edit
 	ap = a --patch
-	arej = apply --reject
 	au = a --update
 
 	b = branch --ignore-case --format '%(if)%(HEAD)%(then)%(color:bold red)%(end)%(align:25)%(refname:short)%(color:bold normal)%(push:trackshort)%(end)%(color:dim white) %(color:reset)%(contents:subject) %(color:bold blue)%(authorname)%(color:reset) %(color:nobold dim white)%(push:short)'
@@ -18,7 +17,6 @@
 	cc = "!f() { exec git c --edit --file .git/COMMIT_EDITMSG \"$@\"; }; f"
 	ccrb = "!f() { exec git c --edit --file .git/rebase-merge/message \"$@\"; }; f"
 	cf = c --fixup
-	cs = c --sign-off
 
 	co = checkout
 	cop = co --patch
@@ -35,14 +33,13 @@
 	f = fetch
 	fun = fetch --unshallow
 
-	l = log-formatted
+	l = log-oneline
 	la = l --all --full-history
 	lag = la --graph
-	ld = "!f() { exec git log \"$1@{1}..$1@{0}\"; }; f"
-	lf = log --follow --patch
-	lg = log-formatted --graph
-	ll = log --left-only --date=human-local --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset) %s %C(dim white)(%cd, %cr)%C(reset) %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
-	log-formatted = log --date-order --date=human-local --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset) %s %C(dim white)(%cd, %cr)%C(reset) %C(bold blue)%aN%C(reset)'
+	lg = log-oneline --graph
+	ll = log-full
+	log-full = log --left-only --date=human-local --pretty=format:'%C(yellow)%h%C(magenta)%G?%C(bold red)%d%C(reset) %s %C(dim white)(%cd, %cr)%C(reset) %C(bold blue)%aN %C(reset)%C(blue)<%ae>%C(reset)%n%n%-b'
+	log-oneline = log --date-order --date=human-local --pretty=format:'%C(yellow)%h%C(bold red)%d%C(reset) %s %C(dim white)(%cd, %cr)%C(reset) %C(bold blue)%aN%C(reset)'
 	log-vim = l
 	lp = ll --patch --stat
 	lpc = lp --ignore-all-space --word-diff --word-diff-regex=.
@@ -63,8 +60,8 @@
 	re = rb --edit-todo
 	ri = rb --interactive
 	riom = ri origin/master
-	rip = ri @{push}
 	riu = ri @{upstream}
+	riud = riu --ignore-date
 
 	rp = reset --patch
 	rs = remote show
@@ -77,7 +74,6 @@
 	sl = stash list --stat
 	slp = sl -p
 	sp = stash pop
-	ss = status --short --branch
 	st = stash push
 	stp = stash push --patch
 	stpull = "!git st && git pull && git sp"
@@ -92,6 +88,7 @@
 	hub = !git serve --enable=receive-pack
 
 	hx = h -x
+	ha = hx -omm -A
 
 [am]
 	threeWay = yes
