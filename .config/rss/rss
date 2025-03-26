@@ -4,6 +4,9 @@ local uv = require('luv')
 local RFC_7273 = '%a, %d %b %Y %H:%M:%S %z'
 
 local function logger_factory(level)
+	if level > (tonumber(os.getenv('RSS_LOG')) or 6) then
+		return function() end
+	end
 	return function(s)
 		io.stderr:write(('<%d>%s\n'):format(level, s))
 	end
