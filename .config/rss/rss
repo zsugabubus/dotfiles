@@ -1047,7 +1047,7 @@ local function make_url_feed(Feed, parse_feed, http)
 
 				local location = http:header('Location')
 				if location then
-					log_warn(('Moved %s to %s'):format(url, location))
+					log_warn(('New location: %s'):format(location))
 				end
 
 				return {}
