@@ -1,54 +1,170 @@
 #!/usr/bin/python
-from urllist import URLList
-from subprocess import check_output, run, Popen, CalledProcessError, DEVNULL
+from argparse import ArgumentParser
+from itertools import chain
+from subprocess import check_output, run, CalledProcessError
+from urllib.parse import parse_qs, urlparse, urlencode
+import email.policy
+import glob
+import os
 import re
+import socket
+import sys
 
 
-class MyURLList(URLList):
-    @classmethod
-    def map(cls, url):
-        return re.sub(r"\.gifv$", ".mp4", url)
+PRIORITY = {
+    r"reddit.*/comments/": 5,
+    r"reddit.*/user/": -6,
+    r"reddit.*/r/": -10,
+}
+MAPPING = {
+    r"^https://api.github.com/repos/(.*)/pulls/(.*)": r"https://github.com/\1/pull/\2",
+    r"^https://api.github.com/repos/(.*)/issues/(.*)": r"https://github.com/\1/issues/\2",
+}
+BLACKLIST = [
+    r"^http://(schemas\.|www\.w3\.org|schema\.org)",
+    r"//(preview|fonts|ssl|www\.gstatic)\.",
+    r"mailman/listinfo$",
+    r"/thumbnail/",
+    r"thumbs\.",
+    r"//[^/]*preview\.",
+    r"//[^/]*static\.[^/]*/",
+    r"/[a-z]*static/",
+    r"/assets/",
+]
+QPARAM_BLACKLIST = [
+    r"amp",
+    r"usp",
+    r"(utm|at)_(source|medium|campaign)",
+    r"tracking_.*",
+]
 
+URL_RE = r"https?://[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:\.?[-a-zA-Z0-9()@:%_\+~#?&/=])*"
+BLACKLIST_RE = "|".join(BLACKLIST)
+QPARAM_BLACKLIST_RE = "|".join(QPARAM_BLACKLIST)
+
+
+def map_url(url):
+    for pat, repl in MAPPING.items():
+        url = re.sub(pat, repl, url)
+    return url
+
+
+def get_priority(url):
+    return sum(n for pat, n in PRIORITY.items() if re.search(pat, url))
+
+
+def get_msg():
+    return email.message_from_binary_file(sys.stdin.buffer, policy=email.policy.default)
+
+
+def extract_urls(msg):
+    for url in msg.get_all("Link", []):
+        yield urlparse(url)
+    if body := msg.get_body(("html", "plain")):
+        for url in re.findall(URL_RE, body.get_content()):
+            yield urlparse(url)
+
+
+def filter_urls(urls):
+    for url in urls:
+        query = parse_qs(url.query, keep_blank_values=True)
+        query = {
+            key: value
+            for key, value in query.items()
+            if not re.search(QPARAM_BLACKLIST_RE, key)
+        }
+
+        # Remove redirection.
+        for value in chain(*query.values()):
+            if value.startswith("http:") or value.startswith("https:"):
+                url = value
+                break
+        else:
+            url = url._replace(query=urlencode(query, doseq=True)).geturl()
+
+        if not re.search(BLACKLIST_RE, url):
+            yield map_url(url)
+
+
+def sort_urls(urls):
+    return sorted(urls, key=get_priority, reverse=True)
+
+
+def unique_urls(urls):
+    return list(dict.fromkeys(urls))
+
+
+def get_urls():
+    return sort_urls(unique_urls(filter_urls(extract_urls(get_msg()))))
+
+
+def fzr(choices):
+    if len(choices) == 1:
+        return choices[0]
+    return check_output(["fzr"], input="\n".join(choices), encoding="utf-8").strip()
+
+
+def shell(cmdline, input):
+    return run(cmdline, input=input, encoding="utf-8").returncode == 0
+
+
+def tmux(url):
+    return shell(["tmux", "load-buffer", "-"], url)
+
+
+def xclip(url, selection):
+    return shell(["xclip", "-i", "-silent", "-selection", selection], url)
+
+
+# https://chromium.googlesource.com/chromium/src/+/master/chrome/browser/process_singleton_posix.cc#890
+def chromium(url):
+    config_dir = os.getenv("XDG_CONFIG_HOME", os.getenv("HOME") + "/.config")
+    tmpdir = os.getenv("TMPDIR", "/tmp")
+
+    def send_start(socket_path, *args):
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+            client.connect(socket_path)
+            client.send(
+                "\0".join(["START", os.getcwd(), "chromium", *args]).encode("utf-8")
+            )
+
+    for socket_path in [
+        config_dir + "/chromium/SingletonSocket",
+        *glob.iglob(glob.escape(tmpdir) + "/.org.chromium.Chromium.*/SingletonSocket"),
+    ]:
+        try:
+            send_start(socket_path, "--", url)
+            return True
+        except (NotADirectoryError, FileNotFoundError, ConnectionRefusedError):
+            continue
+    return False
+
+
+actions = {
+    "tmux": tmux,
+    "chromium": chromium,
+    "clipboard": lambda url: xclip(url, "clipboard"),
+    "x11-primary": lambda url: xclip(url, "primary"),
+    "x11-secondary": lambda url: xclip(url, "secondary"),
+    "x11-clipboard": lambda url: xclip(url, "clipboard"),
+}
+
+parser = ArgumentParser()
+parser.add_argument(
+    "action",
+    metavar="ACTION",
+    nargs="+",
+    choices=list(actions.keys()),
+    help="%(choices)s",
+)
+args = parser.parse_args()
 
 try:
-    url = check_output(
-        ["fzr", "-1"], input="\n".join(MyURLList.from_mail()).encode("utf-8")
-    )
+    url = fzr(get_urls())
 except CalledProcessError:
     pass
 except KeyboardInterrupt:
     pass
 else:
-
-    def is_running(cmd):
-        try:
-            run(
-                ["pidof", cmd],
-                stdin=DEVNULL,
-                stdout=DEVNULL,
-                stderr=DEVNULL,
-                check=True,
-            )
-            return True
-        except CalledProcessError:
-            return False
-
-    import sys
-
-    for action in sys.argv:
-        match action:
-            case "open":
-                if is_running("firefox"):
-                    import shlex
-                    Popen(
-                        shlex.join(["firefox", url.decode('utf-8')]),
-                        shell=True,
-                        stdin=DEVNULL,
-                    )
-                    break
-            case "copy":
-                run(
-                    ["xclip", "-i", "-silent", "-selection", "clipboard"],
-                    input=url,
-                )
-                break
+    if not any(actions[name](url) for name in args.action):
+        raise RuntimeError("No available actions")
