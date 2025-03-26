@@ -1076,6 +1076,10 @@ local function make_system_feed(Feed, parse_feed)
 			local f = assert(io.popen(cmdline))
 			local s = assert(f:read('*a'))
 			assert(f:close())
+			if s == '' then
+				log_error(('Got empty output: %s'):format(cmdline))
+				return {}
+			end
 			state.updated = os.time()
 			return parse_feed(s)
 		end)
