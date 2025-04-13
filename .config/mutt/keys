@@ -44,7 +44,8 @@ bind pager t tag-message
 
 # bind index,pager V view-raw-message
 bind index,pager v view-attachments
-bind index,pager | pipe-message
+macro index,pager | "<open-extview>$my_dotdir/htmlview<return>"
+macro index,pager * "<pipe-message>$my_dotdir/htmlview --pipe<return>"
 macro index,pager + "<pipe-message>$my_dotdir/urlview chromium clipboard tmux<return>"
 macro index,pager y "<pipe-message>$my_dotdir/urlview clipboard tmux<return>"
 

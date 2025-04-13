@@ -1,0 +1,362 @@
+#!/usr/bin/env python
+from argparse import ArgumentParser
+from http import HTTPStatus
+from signal import SIGINT, SIGTERM
+import asyncio
+import base64
+import email.policy
+import http.server
+import json
+import sys
+import urllib.parse
+import uuid
+
+EVENT_STREAM_HEADERS = {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache",
+}
+
+CSP = "; ".join(
+    [
+        "default-src 'none'",
+        "script-src 'nonce-{nonce}'",
+        "style-src 'unsafe-inline' {remote_content_source}",
+        "img-src data: {remote_content_source}",
+        "font-src {remote_content_source}",
+        "media-src {remote_content_source}",
+        "object-src {remote_content_source}",
+        "connect-src 'self'",
+    ]
+)
+
+HTML = """
+<!doctype html>
+<html>
+<head>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <script nonce="{nonce}">const remoteContentEnabled={remote_content_enabled};{js}</script>
+</body>
+</html>
+""".strip()
+
+JAVASCRIPT = """
+const bodyCSS = `
+img, video {
+    max-width: 100%;
+}
+`;
+
+const disconnected = (() => {
+    const span = document.createElement("span");
+    span.style = "font-weight: bold; color: red; display: none";
+    span.textContent = "Disconnected";
+    return span;
+})();
+
+const remoteContentToggle = (() => {
+    if (remoteContentEnabled) {
+        const a = document.createElement("a");
+        a.href = "/";
+        a.textContent = "Disable remote content (C)";
+        return a;
+    }
+    const a = document.createElement("a");
+    a.href = "/?enable-remote-content";
+    a.textContent = "Enable remote content (C)";
+    return a;
+})();
+
+const widthToggle = (() => {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    label.appendChild(input);
+    label.appendChild(document.createTextNode("Wide (w)"));
+    return label;
+})();
+
+const mail = document.createElement("main");
+
+document.body.appendChild(disconnected);
+document.body.appendChild(document.createTextNode(" "));
+document.body.appendChild(remoteContentToggle);
+document.body.appendChild(document.createTextNode(" "));
+document.body.appendChild(widthToggle);
+document.body.appendChild(mail);
+
+widthToggle.addEventListener("change", () => {
+    if (widthToggle.control.checked) {
+        localStorage.setItem("wide", "true");
+        mail.style = "";
+    } else {
+        localStorage.removeItem("wide");
+        mail.style = "margin: 0 auto; max-width: 80ch";
+    }
+});
+widthToggle.control.checked = Boolean(localStorage.getItem("wide"));
+widthToggle.dispatchEvent(new Event("change"));
+
+document.addEventListener("keydown", (event) => {
+    if (event.repeat) return;
+    if (event.key === "C") {
+        remoteContentToggle.click();
+    } else if (event.key === "w") {
+        widthToggle.click();
+    }
+});
+
+const events = new EventSource("/events");
+
+events.addEventListener("open", () => {
+    disconnected.style.display = "none";
+});
+
+events.addEventListener("error", () => {
+    disconnected.style.display = "";
+});
+
+events.addEventListener("message-change", (e) => {
+    const msg = JSON.parse(e.data);
+    console.log(msg);
+    if (!msg) {
+        document.title = `No message - htmlview`;
+        mail.replaceChildren();
+        return;
+    }
+
+    document.title = `${msg.subject} - htmlview`;
+
+    const attachments = (() => {
+        const ol = document.createElement("ol");
+        for (const attachment of msg.attachments) {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.href = attachment.url;
+            a.textContent = attachment.name;
+            li.appendChild(a);
+            ol.appendChild(li);
+        }
+        return ol;
+    })();
+
+    const subject = (() => {
+        const h = document.createElement("h1");
+        const a = document.createElement("a");
+        if (msg.link) a.href = msg.link;
+        a.textContent = msg.subject;
+        h.appendChild(a);
+        return h;
+    })();
+
+    const body = (() => {
+        if (msg.html) {
+            const div = document.createElement("div");
+            const shadow = div.attachShadow({ mode: "closed" });
+            shadow.innerHTML = `<style>${bodyCSS}</style>${msg.body}`;
+            for (const x of shadow.querySelectorAll('[src^="cid:"]')) {
+                const cid = x.src.slice(4);
+                x.src = msg.inline_attachments[cid]?.url;
+            }
+            return div;
+        }
+        const p = document.createElement("p");
+        p.style.whiteSpace = "pre-line";
+        p.textContent = msg.body;
+        return p;
+    })();
+
+    mail.replaceChildren(attachments, subject, body);
+});
+""".strip()
+
+current_msg = None
+current_msg_changed = asyncio.Event()
+
+
+def set_msg(msg):
+    global current_msg
+    global current_msg_changed
+    current_msg = msg
+    current_msg_changed.set()
+    current_msg_changed = asyncio.Event()
+
+
+def set_msg_from_file(f):
+    set_msg(email.message_from_binary_file(f, policy=email.policy.default))
+
+
+def make_event(event, data):
+    return f"event: {event}\ndata: {data}\n\n".encode("utf-8")
+
+
+def make_msg_data(msg):
+    body = msg.get_body(("html", "plain"))
+    return {
+        "subject": msg.get("Subject", ""),
+        "body": body.get_content() if body else "",
+        "html": body.get_content_type() == "text/html" if body else False,
+        "link": msg.get("Link"),
+        "inline_attachments": {
+            part["Content-ID"].strip("<>"): {
+                "url": make_data_url(part.get_content(), part.get_content_type()),
+            }
+            for part in msg.walk()
+            if part.get_content_disposition() == "inline" and "Content-ID" in part
+        },
+        "attachments": [
+            {
+                "name": part.get_filename(),
+                "url": f"/attachments/{i}/{urllib.parse.quote(part.get_filename())}",
+            }
+            for i, part in enumerate(msg.iter_attachments())
+        ],
+    }
+
+
+async def connect_stdin():
+    loop = asyncio.get_event_loop()
+    reader = asyncio.StreamReader()
+    protocol = asyncio.StreamReaderProtocol(reader)
+    await loop.connect_read_pipe(lambda: protocol, sys.stdin)
+    return reader
+
+
+async def watch_mutt():
+    stdin = await connect_stdin()
+    try:
+        while path := await stdin.readuntil(b"\n"):
+            path = path.removesuffix(b"\n")
+            if path:
+                with open(path, "rb") as f:
+                    set_msg_from_file(f)
+            else:
+                set_msg(None)
+    except asyncio.exceptions.IncompleteReadError:
+        pass
+
+
+async def read_request(reader):
+    request_line = (await reader.readline()).decode("ascii")
+    if not request_line:
+        return
+    method, uri, version = request_line.split(" ")
+    assert version == "HTTP/1.1\r\n"
+    while True:
+        header_line = await reader.readline()
+        if not header_line:
+            return
+        if header_line == b"\r\n":
+            break
+    return method, uri
+
+
+def make_head(status, headers):
+    return "\r\n".join(
+        [
+            f"HTTP/1.1 {status.value} {status.phrase}",
+            *[f"{name}: {value}" for name, value in headers.items()],
+            "\r\n",
+        ]
+    ).encode()
+
+
+def make_data_url(s, content_type):
+    return f"data:{content_type};base64,{base64.b64encode(s).decode()}"
+
+
+async def handle_request(writer, req):
+    method, uri = req
+    uri = urllib.parse.urlparse(uri)
+
+    async def reply(headers, body, status=HTTPStatus.OK):
+        headers["Content-Length"] = str(len(body))
+        writer.write(make_head(status, headers))
+        writer.write(body)
+        await writer.drain()
+
+    match [method, uri.path.split("/")]:
+        case ["GET", ["", "events"]]:
+            writer.write(make_head(HTTPStatus.OK, EVENT_STREAM_HEADERS))
+            while True:
+                await writer.drain()
+                changed = current_msg_changed
+                data = make_msg_data(current_msg) if current_msg else None
+                writer.write(
+                    make_event("message-change", json.dumps(data, ensure_ascii=False))
+                )
+                await changed.wait()
+        case ["GET", ["", ""]]:
+            nonce = uuid.uuid4()
+            remote_content_enabled = uri.query == "enable-remote-content"
+            await reply(
+                {
+                    "Content-Type": "text/html; charset=utf-8",
+                    "Content-Security-Policy": CSP.format(
+                        nonce=nonce,
+                        remote_content_source="http:" if remote_content_enabled else "",
+                    ),
+                    "Referrer-Policy": "no-referrer",
+                },
+                HTML.format(
+                    nonce=nonce,
+                    remote_content_enabled=json.dumps(remote_content_enabled),
+                    js=JAVASCRIPT,
+                ).encode(),
+            )
+        case ["GET", ["", "attachments", index, _]]:
+            part = list(current_msg.iter_attachments())[int(index)]
+            await reply({"Content-Type": part.get_content_type()}, part.get_content())
+        case ["GET", _]:
+            await reply({}, b"", status=HTTPStatus.NOT_FOUND)
+        case _:
+            await reply({}, b"", status=HTTPStatus.NOT_IMPLEMENTED)
+
+
+async def serve_http(reader, writer):
+    try:
+        while req := await read_request(reader):
+            await handle_request(writer, req)
+        writer.close()
+        await writer.wait_closed()
+    except ConnectionError:
+        pass
+
+
+async def create_http_server(port, silent):
+    server = await asyncio.start_server(serve_http, "127.0.0.1", port, reuse_port=True)
+    if not silent:
+        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
+        print(f"Serving on {addrs}")
+    async with server:
+        await server.serve_forever()
+
+
+def handle_interrupt():
+    for task in asyncio.all_tasks():
+        task.cancel()
+
+
+async def main():
+    loop = asyncio.get_running_loop()
+    for signal in [SIGINT, SIGTERM]:
+        loop.add_signal_handler(signal, handle_interrupt)
+
+    parser = ArgumentParser()
+    parser.add_argument("--pipe", action="store_true")
+    parser.add_argument("--port", type=int, default=8888)
+    args = parser.parse_args()
+
+    if args.pipe:
+        set_msg_from_file(sys.stdin.buffer)
+        await create_http_server(args.port, silent=False)
+    else:
+        asyncio.create_task(create_http_server(args.port, silent=True))
+        await watch_mutt()
+
+
+try:
+    asyncio.run(main())
+except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
+    pass
