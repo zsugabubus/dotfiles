@@ -154,8 +154,7 @@ local function cabbr(lhs, rhs)
 	cmd.cnoreabbrev(
 		'<expr>',
 		lhs,
-		string.format(
-			"getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s",
+		("getcmdtype() ==# ':' && getcmdpos() ==# %d ? %s : %s"):format(
 			#lhs + 1,
 			fn.string(rhs),
 			fn.string(lhs)
@@ -229,7 +228,7 @@ end
 do
 	local theme_file = fn.stdpath('config') .. '/theme.vim'
 
-	local function reload()
+	local function update_theme()
 		-- Avoid loading colorscheme twice.
 		vim.g.colors_name = nil
 		pcall(cmd.source, theme_file)
@@ -241,12 +240,12 @@ do
 		pattern = 'SIGUSR1',
 		nested = true,
 		callback = function()
-			reload()
+			update_theme()
 			cmd.redraw({ bang = true })
 		end,
 	})
 
-	reload()
+	update_theme()
 end
 
 do
@@ -260,7 +259,7 @@ do
 		end
 	end
 
-	local function update()
+	local function update_terminal_palette()
 		set_terminal_palette(vim.go.background == 'light' and {
 			'#080808',
 			'#ff0000',
@@ -286,11 +285,11 @@ do
 		group = group,
 		pattern = 'background',
 		callback = function()
-			update()
+			update_terminal_palette()
 		end,
 	})
 
-	update()
+	update_terminal_palette()
 end
 
 map('c', '<C-a>', '<Home>')
@@ -350,7 +349,7 @@ fmap('n', '<C-q>', function()
 end)
 
 xmap('n', '<M-!>', function()
-	fn.setreg('p', string.match(fn.expand('%'), '^(.*/)[^/]') or './')
+	fn.setreg('p', fn.expand('%'):match('^(.*/)[^/]') or './')
 	return ':edit <C-R>p<C-Z>'
 end)
 smap('n', '<M-q>', ':quit<CR>')
@@ -396,7 +395,6 @@ remap('n', 'sp', 'gsip')
 smap('n', 'sq', ':Qf<CR>')
 smap('n', 'sQ', ':tabnew|Qe<CR>')
 smap('n', 'st', ':Tlast<CR>')
-smap('n', 'sT', ':Qtmux<CR>')
 map('n', 'ss', ':%s//g<Left><Left>')
 remap('n', 's/', 'ss/')
 map('x', 'ss', ':s//g<Left><Left>')
@@ -432,7 +430,7 @@ map('x', '.', ':normal! .<CR>')
 
 -- Execute macro over visual range
 xmap('x', '@', function()
-	return string.format(':normal! @%s<CR>', fn.getcharstr())
+	return (':normal! @%s<CR>'):format(fn.getcharstr())
 end)
 
 -- Reindent inner % lines.
@@ -450,6 +448,14 @@ map('n', 'gr', ':GREP ')
 map('n', 'gw', ':GREP -swF <C-r>=shellescape(expand("<cword>"))<CR><CR>')
 map('x', '//', 'y:GREP -F <C-r>=shellescape(@", 1)<CR><CR>')
 remap('x', 'gr', '//')
+
+map('t', '<C-v>', '<C-\\><C-n>')
+
+fmap('n', 'cd', function()
+	cmd.cd(fn.expand('%:p' .. (':h'):rep(vim.v.count1)))
+end)
+
+map('n', 'c-', ':cd -<CR>')
 
 cabbr('ccd', 'cd %:p:h<C-Z>')
 cabbr('lcd', 'lcd %:p:h<C-Z>')
@@ -504,53 +510,29 @@ user_command('Glob', function(opts)
 	if opts.args == '' then
 		cmd(base)
 	else
-		cmd(string.format('%s -g %s', base, fn.shellescape(opts.args)))
+		cmd(('%s -g %s'):format(base, fn.shellescape(opts.args)))
 	end
 end, { nargs = '*' })
 
-do
-	local buf
+user_command(
+	'Japan',
+	[[keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e]],
+	{}
+)
 
-	user_command('Qtmux', function()
-		cmd.Tlast()
-		cmd.Tcdhere()
-		cmd.Qreadthis()
-	end, {})
+user_command('Rm', '! rm %', {})
 
-	user_command('Qreadthis', function()
-		buf = api.nvim_get_current_buf()
-		cmd.Qread()
-	end, {})
+user_command(
+	'Cut',
+	[[execute '<line1>,<line2>!cut -f'.join([1, <f-args>], ',')]],
+	{ nargs = '*', range = '%' }
+)
 
-	user_command('Qread', function()
-		api.nvim_buf_call(buf, function()
-			cmd.edit()
-
-			local saved = bo.errorformat
-
-			bo.errorformat = table.concat({
-				-- rust
-				'%Eerror[E%n]: %m',
-				'%Eerror: %m',
-				'%Wwarning: %m',
-				'%Nnote: %m',
-				'%C%*[ ]--> %f:%l:%c',
-				-- flake8
-				'%f:%l:%c: %m',
-				-- pytest
-				'%f:%l: %m',
-				-- vitest
-				'\\ FILE  %f:%l:%c',
-				-- git status
-				'\\        %m:   %f',
-			}, ',')
-
-			cmd.Cbuffer()
-
-			bo.errorformat = saved
-		end)
-	end, {})
-end
+user_command(
+	'Csv',
+	[[set buftype=nowrite|silent keeppattern %s/\v("[^"]*"|[^",]*),/\1\t/g|Varign]],
+	{}
+)
 
 autocmd({ 'FocusGained', 'VimEnter' }, {
 	group = group,
@@ -590,30 +572,24 @@ autocmd('FocusGained', {
 	nested = true,
 	callback = function()
 		for _, buf in ipairs(api.nvim_list_bufs()) do
-			if
-				string.sub(fn.bufname(buf), 1, 13) == 'tmux://panes/'
-				and not bo[buf].modified
-			then
+			if fn.bufname(buf):find('^tmux://panes/') and not bo[buf].modified then
 				api.nvim_buf_call(buf, cmd.edit)
 			end
 		end
 	end,
 })
 
-do
-	local colors_dir = fn.stdpath('config') .. '/colors'
-
-	autocmd('BufWritePost', {
-		group = group,
-		pattern = '*.vim,*.lua',
-		callback = function(opts)
-			local dir = fn.fnamemodify(opts.file, ':p:h')
-			if dir == colors_dir then
-				fn.system({ 'pkill', '-x', 'nvim', '-USR1' })
-			end
-		end,
-	})
-end
+autocmd('BufWritePost', {
+	group = group,
+	pattern = '*.lua',
+	callback = function(opts)
+		local dir = fn.fnamemodify(opts.file, ':p:h')
+		local colors_dir = fn.stdpath('config') .. '/colors'
+		if dir == colors_dir then
+			fn.system({ 'pkill', '-x', 'nvim', '-USR1' })
+		end
+	end,
+})
 
 autocmd('BufNewFile', {
 	group = group,
@@ -632,7 +608,7 @@ autocmd('BufNewFile', {
 		end)
 
 		once('BufWritePost', function(opts)
-			if string.sub(fn.getline(1), 1, 2) == '#!' then
+			if fn.getline(1):find('^#!') then
 				local uv = vim.loop
 				local bit = require('bit')
 				local mode = uv.fs_stat(opts.file).mode
@@ -642,83 +618,6 @@ autocmd('BufNewFile', {
 		end)
 	end,
 })
-
-vim.filetype.add({
-	pattern = {
-		['/tmp/fstab%.'] = 'fstab',
-		['.*'] = {
-			function(path, bufnr)
-				local content = api.nvim_buf_get_lines(bufnr, 0, 1, false)[1]
-				if string.match(content, '^[* ]*%x%x%x%x%x%x') then
-					return 'git'
-				end
-				if string.match(content, '^%-+BEGIN.*PRIVATE KEY') then
-					return 'privatekey',
-						function()
-							vim.schedule(function()
-								cmd('silent keeppattern normal! zE2GV/^-/-1\rzf')
-							end)
-						end
-				end
-			end,
-			{ priority = -math.huge },
-		},
-	},
-})
-
--- vim.treesitter pulls in lot's of Lua code.
-filetype('typescriptreact,typescript', function()
-	vim.treesitter.language.register('tsx', 'typescriptreact')
-	vim.treesitter.language.register('tsx', 'typescript')
-	return true
-end)
-
-filetype('help', function()
-	vim.treesitter.stop()
-end)
-
-filetype('lua,python,typescript,typescriptreact', function()
-	vim.treesitter.start()
-end)
-
-filetype(
-	'vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*,*sh,json,jsonc',
-	function()
-		bo.tabstop = 2
-	end
-)
-
-filetype('awk,python,rust', function()
-	bo.tabstop = 4
-end)
-
-filetype('gitcommit,markdown', function()
-	api.nvim_set_option_value('spell', true, { scope = 'local' })
-end)
-
-filetype('json', function()
-	bo.equalprg = 'jq'
-end)
-
-filetype('xml,html', function()
-	bo.equalprg = 'xmllint --encode UTF-8 --html --nowrap --dropdtd --format -'
-end)
-
-filetype('directory', function()
-	bsmap('n', 'gu', '<Plug>(explorer-goto-parent)')
-	bsmap('n', 'g.', '<Plug>(explorer-cd)')
-	bsmap('n', '<CR>', 'Vgf')
-end)
-
-filetype('cucumber', function()
-	cmd.Varign()
-end)
-
-filetype('addresslist', function()
-	bsmap('n', 'T', ':MailTo<CR>')
-	bsmap('n', 'C', ':MailCc<CR>')
-	bsmap('n', 'B', ':MailBcc<CR>')
-end)
 
 autocmd('TextChanged', {
 	group = group,
@@ -795,14 +694,6 @@ autocmd('BufReadPost', {
 	end,
 })
 
-user_command(
-	'Japan',
-	[[keepjumps keeppatterns lockmarks silent %s/\m\s\+$//e]],
-	{}
-)
-
-map('t', '<C-v>', '<C-\\><C-n>')
-
 autocmd('TermClose', {
 	group = group,
 	callback = function()
@@ -817,25 +708,82 @@ autocmd('FocusLost', {
 	end,
 })
 
-user_command('Rm', '! rm %', {})
+vim.filetype.add({
+	pattern = {
+		['/tmp/fstab%.'] = 'fstab',
+		['.*'] = {
+			function(path, bufnr)
+				local content = fn.getline(1)
+				if content:find('^[* ]*%x%x%x%x%x%x') then
+					return 'git'
+				end
+				if content:find('^%-+BEGIN.*PRIVATE KEY') then
+					return 'privatekey',
+						function()
+							vim.schedule(function()
+								cmd('set foldtext=-|silent keeppattern normal! zE2GV/^-/-1\rzf')
+							end)
+						end
+				end
+			end,
+			{ priority = -math.huge },
+		},
+	},
+})
 
-user_command(
-	'Cut',
-	[[execute '<line1>,<line2>!cut -f'.join([1, <f-args>], ',')]],
-	{ nargs = '*', range = '%' }
-)
-
-user_command(
-	'Csv',
-	[[set buftype=nowrite|silent keeppattern %s/\v("[^"]*"|[^",]*),/\1\t/g|Varign]],
-	{}
-)
-
-fmap('n', 'cd', function()
-	cmd.cd(vim.fn.expand('%:p' .. string.rep(':h', vim.v.count1)))
+-- vim.treesitter pulls in lot's of Lua code.
+filetype('typescriptreact,typescript', function()
+	vim.treesitter.language.register('tsx', 'typescriptreact')
+	vim.treesitter.language.register('tsx', 'typescript')
+	return true
 end)
 
-map('n', 'c-', ':cd -<CR>')
+filetype('help', function()
+	vim.treesitter.stop()
+end)
+
+filetype('lua,python,typescript,typescriptreact', function()
+	vim.treesitter.start()
+end)
+
+filetype(
+	'vim,lua,yaml,css,stylus,xml,php,html,pug,gdb,vue,meson,*script*,*sh,json,jsonc',
+	function()
+		bo.tabstop = 2
+	end
+)
+
+filetype('awk,python,rust', function()
+	bo.tabstop = 4
+end)
+
+filetype('gitcommit,markdown', function()
+	wo[0][0]['spell'] = true
+end)
+
+filetype('json', function()
+	bo.equalprg = 'jq'
+end)
+
+filetype('xml,html', function()
+	bo.equalprg = 'xmllint --encode UTF-8 --html --nowrap --dropdtd --format -'
+end)
+
+filetype('directory', function()
+	bsmap('n', 'gu', '<Plug>(explorer-goto-parent)')
+	bsmap('n', 'g.', '<Plug>(explorer-cd)')
+	bsmap('n', '<CR>', 'Vgf')
+end)
+
+filetype('cucumber', function()
+	cmd.Varign()
+end)
+
+filetype('addresslist', function()
+	bsmap('n', 'T', ':MailTo<CR>')
+	bsmap('n', 'C', ':MailCc<CR>')
+	bsmap('n', 'B', ':MailBcc<CR>')
+end)
 
 require('pack').add({
 	{ 'addresslist.nvim' },
