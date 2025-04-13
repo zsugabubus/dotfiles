@@ -113,12 +113,10 @@ function __prompt_vcs_info() {
 	if [[ -d $gitdir/rebase-merge ]]; then
 		op=REBASE
 	elif [[ -d $gitdir/rebase-apply ]]; then
-		if [[ -f $gitdir/rebase-apply/rebasing ]]; then
-			op=REBASE
-		elif [[ -f $gitdir/rebase-apply/applying ]]; then
+		if [[ -f $gitdir/rebase-apply/applying ]]; then
 			op=AM
 		else
-			op=AM/REBASE
+			op=REBASE
 		fi
 	elif [[ -f $gitdir/MERGE_HEAD ]]; then
 		op=MERGE
