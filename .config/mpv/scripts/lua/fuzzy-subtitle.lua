@@ -1,12 +1,6 @@
 local utils = require('mp.utils')
 
-local SUBTITLE_EXTENSIONS = { 'srt', 'lrc', 'txt' }
-
-local XDG_CACHE_DIR = (
-	os.getenv('XDG_CACHE_DIR') or utils.join_path(os.getenv('HOME'), '.cache')
-)
-local TMP_PREFIX =
-	utils.join_path(XDG_CACHE_DIR, 'mpv-' .. mp.get_script_name())
+local SUBTITLE_EXTS = { 'srt', 'lrc', 'txt', 'vtt' }
 
 local function pesc(s)
 	return s:gsub('([^%w])', '%%%1')
@@ -17,22 +11,18 @@ local function remove_ext(filename)
 end
 
 local function add_subtitle(file)
-	local tmp_file
 	if file:find('%.txt$') then
-		tmp_file = TMP_PREFIX .. '.lrc'
-
-		local f = io.open(file, 'r')
-		local tmp = io.open(tmp_file, 'w')
-		tmp:write('[0:0.0] ')
-		tmp:write(f:read('*all'))
-		tmp:close()
-		f:close()
-	end
-
-	mp.commandv('sub-add', tmp_file or file)
-
-	if tmp_file then
-		os.remove(tmp_file)
+		local tmpfile = os.tmpname() .. '.lrc'
+		local f = assert(io.open(file, 'r'))
+		local tmp = assert(io.open(tmpfile, 'w'))
+		assert(tmp:write('[0:0.0] '))
+		assert(tmp:write(f:read('*all')))
+		assert(tmp:close())
+		assert(f:close())
+		mp.commandv('sub-add', tmpfile)
+		os.remove(tmpfile)
+	else
+		mp.commandv('sub-add', file)
 	end
 end
 
@@ -40,9 +30,8 @@ local function patterns_from_filename(filename)
 	local patterns = {}
 
 	local function add_pattern(pattern)
-		for _, ext in pairs(SUBTITLE_EXTENSIONS) do
-			local full_pattern = ('^%s%%.%s$'):format(pattern, ext)
-			table.insert(patterns, full_pattern)
+		for _, ext in pairs(SUBTITLE_EXTS) do
+			table.insert(patterns, ('^%s%%.%s$'):format(pattern, ext))
 		end
 	end
 
@@ -61,9 +50,10 @@ local function patterns_from_filename(filename)
 end
 
 local function search(path, patterns)
-	local num_files = 0
+	local file_count = 0
+
 	for _, file in ipairs(utils.readdir(path, 'files') or {}) do
-		num_files = num_files + 1
+		file_count = file_count + 1
 		for _, pattern in ipairs(patterns) do
 			if file:find(pattern) then
 				add_subtitle(utils.join_path(path, file))
@@ -71,7 +61,7 @@ local function search(path, patterns)
 		end
 	end
 
-	if num_files <= 1 then
+	if file_count <= 1 then
 		for _, dir in ipairs(utils.readdir(path, 'dirs') or {}) do
 			search(utils.join_path(path, dir), patterns)
 		end
