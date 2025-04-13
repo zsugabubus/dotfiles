@@ -19,6 +19,8 @@ local CRLF = '\r\n'
 local ETAG = 'etag'
 local IF_NONE_MATCH = 'if-none-match'
 local NO_CACHE = 'no-cache'
+local NO_REFERRER = 'no-referrer'
+local REFERRER_POLICY = 'referrer-policy'
 
 local CHARSET_UTF8 = '; charset=utf-8'
 
@@ -367,6 +369,7 @@ local function serve_http(client)
 			serve_public_file(req, '/index.html', {
 				[CONTENT_TYPE] = TEXT_HTML_UTF8,
 				[CONTENT_SECURITY_POLICY] = CSP_DIRECTIVES,
+				[REFERRER_POLICY] = NO_REFERRER,
 			})
 		elseif req.method == 'GET' and req.path == '/.index.mjs' then
 			serve_public_file(req, '/index.mjs', {
