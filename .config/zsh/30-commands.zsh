@@ -333,7 +333,9 @@ function light() {
 alias fm='findmnt --real -o TARGET,SOURCE,FSTYPE,SIZE,USED,AVAIL,USE%,OPTIONS'
 alias fr='free -hwt'
 alias hh='HOME=$PWD'
+compdef hh=-
 alias ht='HOME=${TMPDIR:-/tmp} XDG_RUNTIME_DIR=${TMPDIR:-/tmp}'
+compdef ht=-
 alias ssh='noglob ssh'
 alias systemctl='noglob systemctl'
 alias vlock='nice -20 vlock'
@@ -510,6 +512,7 @@ function mutt n() {
 	fi
 	TERM=$term command mutt -n "$@"
 }
+compdef n=mutt
 
 function catty() {
 	socat -u SYSTEM:"$*",openpty -
