@@ -8,12 +8,12 @@ local function join_lines(t)
 	return table.concat(t, '\n')
 end
 
-local function from_bufname(s)
+local function ranges_from_bufname(bufname)
 	local ranges = {}
-	for x in s:sub(7):gmatch('[^,]+') do
-		local buf, from, to = x:match('^(%d+):(%d*)%-(%d*)$')
+	for s in bufname:sub(7):gmatch('[^,]+') do
+		local buf, from, to = s:match('^(%d+):(%d*)%-(%d*)$')
 		table.insert(ranges, {
-			buf = tonumber(buf or x),
+			buf = tonumber(buf or s),
 			start_row = (tonumber(from) or 1) - 1,
 			end_row = tonumber(to) or -1,
 		})
@@ -21,19 +21,19 @@ local function from_bufname(s)
 	return ranges
 end
 
-local function to_bufname(ranges)
+local function ranges_to_bufname(ranges)
 	local t = {}
-	for _, x in ipairs(ranges) do
-		if x.start_row == 0 and x.end_row == -1 then
-			table.insert(t, x.buf)
+	for _, r in ipairs(ranges) do
+		if r.start_row == 0 and r.end_row == -1 then
+			table.insert(t, r.buf)
 		else
-			table.insert(t, ('%d:%d-%d'):format(x.buf, x.start_row + 1, x.end_row))
+			table.insert(t, ('%d:%d-%d'):format(r.buf, r.start_row + 1, r.end_row))
 		end
 	end
 	return 'cat://' .. table.concat(t, ',')
 end
 
-local function sorted(ranges)
+local function sorted_range_indexes(ranges)
 	local t = {}
 	for i = 1, #ranges do
 		t[i] = i
@@ -49,8 +49,8 @@ local function sorted(ranges)
 	return t
 end
 
-local function is_overlapping(ranges)
-	local ris = sorted(ranges)
+local function is_ranges_overlapping(ranges)
+	local ris = sorted_range_indexes(ranges)
 	for i = 2, #ris do
 		local x = ranges[ris[i - 1]]
 		local y = ranges[ris[i]]
@@ -63,9 +63,11 @@ end
 
 local function handle_read_autocmd(opts)
 	local n = 0
-	local ranges = from_bufname(opts.match)
+	local ranges = ranges_from_bufname(opts.match)
 
 	local modifiable = true
+	local readonly = false
+	local filetype = ''
 
 	local saved_undolevels = bo.undolevels
 	bo.undolevels = -1
@@ -73,7 +75,7 @@ local function handle_read_autocmd(opts)
 	bo.modeline = false
 	bo.readonly = false
 	bo.modifiable = true
-	if is_overlapping(ranges) then
+	if is_ranges_overlapping(ranges) then
 		bo.buftype = 'nowrite'
 	else
 		bo.buftype = 'acwrite'
@@ -81,27 +83,27 @@ local function handle_read_autocmd(opts)
 
 	api.nvim_buf_clear_namespace(0, ns, 0, -1)
 
-	for i, x in ipairs(ranges) do
-		fn.bufload(x.buf)
+	for i, r in ipairs(ranges) do
+		fn.bufload(r.buf)
 
-		if bo[x.buf].readonly then
-			bo.readonly = true
+		if bo[r.buf].readonly then
+			readonly = true
 		end
 
-		if not bo[x.buf].modifiable then
+		if not bo[r.buf].modifiable then
 			modifiable = false
 		end
 
 		if i == 1 then
-			bo.filetype = bo[x.buf].filetype
+			filetype = bo[r.buf].filetype
 		end
 
-		local lines = api.nvim_buf_get_lines(x.buf, x.start_row, x.end_row, true)
-		api.nvim_buf_set_lines(0, i == 1 and 0 or -1, -1, true, lines)
+		local lines = api.nvim_buf_get_lines(r.buf, r.start_row, r.end_row, true)
+		api.nvim_buf_set_lines(0, n, -1, true, lines)
 
 		if #ranges > 1 then
 			api.nvim_buf_set_extmark(0, ns, n, 0, {
-				virt_lines = { { { fn.bufname(x.buf), 'Normal' } } },
+				virt_lines = { { { fn.bufname(r.buf), 'Normal' } } },
 				virt_lines_above = true,
 			})
 		end
@@ -110,13 +112,15 @@ local function handle_read_autocmd(opts)
 	end
 
 	bo.modifiable = modifiable
+	bo.readonly = readonly
+	bo.filetype = filetype
 	bo.undolevels = saved_undolevels
 end
 
 local function handle_write_autocmd(opts)
-	local n = 0
-	local ranges = from_bufname(opts.match)
-	local ris = sorted(ranges)
+	local changes = 0
+	local ranges = ranges_from_bufname(opts.match)
+	local ris = sorted_range_indexes(ranges)
 
 	local marks = #ranges == 1 and { { 0, 0, 0 } }
 		or api.nvim_buf_get_extmarks(0, ns, 0, -1, {})
@@ -151,7 +155,7 @@ local function handle_write_autocmd(opts)
 				true,
 				src_lines
 			)
-			n = n + 1
+			changes = changes + 1
 		end
 
 		local d = #lines - #existing_lines
@@ -174,16 +178,19 @@ local function handle_write_autocmd(opts)
 		end
 	end
 
-	vim.cmd('keepalt file ' .. to_bufname(ranges))
+	vim.cmd('keepalt file ' .. ranges_to_bufname(ranges))
 
 	bo.modified = false
 
-	if n == 0 then
+	if changes == 0 then
 		api.nvim_echo({ { '--No changes--', 'Normal' } }, false, {})
 	else
 		api.nvim_echo({
 			{
-				('%d %s written'):format(n, n == 1 and 'change' or 'changes'),
+				('%d %s written'):format(
+					changes,
+					changes == 1 and 'change' or 'changes'
+				),
 				'Normal',
 			},
 		}, true, {})

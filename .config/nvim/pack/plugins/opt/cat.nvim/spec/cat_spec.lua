@@ -26,7 +26,7 @@ describe(':Cat', function()
 		)
 	end)
 
-	it('narrows to expanded paths', function()
+	it('opens cat:// buffer with the expanded paths', function()
 		vim.o.wildignore = '*.bak'
 		vim.cmd.edit('b.txt')
 		vim.cmd('Cat a* %')
