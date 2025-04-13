@@ -18,7 +18,7 @@ local presets
 local props = {}
 
 local function load_default_presets()
-	presets = utils.do_script_opt('color-presets.lua') or {}
+	presets = utils.read_lua_options('colors.lua') or {}
 	table.insert(presets, 1, { name = 'none' })
 
 	-- Normalize.

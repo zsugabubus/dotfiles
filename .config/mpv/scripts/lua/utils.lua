@@ -59,7 +59,7 @@ end
 
 M.script_opts = mp.command_native({ 'expand-path', '~~/script-opts' })
 
-function M.do_script_opt(name)
+function M.read_lua_options(name)
 	local utils = require('mp.utils')
 	local ok, content = pcall(dofile, utils.join_path(M.script_opts, name))
 	if ok then
