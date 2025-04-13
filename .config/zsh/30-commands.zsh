@@ -341,21 +341,49 @@ alias systemctl='noglob systemctl'
 alias vlock='nice -20 vlock'
 
 function M() {
+	local opt_with_net opt_user=(user) opt_host=(bubble) opt_cwd=(${PWD?})
+	zparseopts -D -F -K -- n=opt_with_net u:=opt_user h:=opt_host C:=opt_cwd || return 1
+	local new_user=$opt_user[-1]
+	local new_host=$opt_host[-1]
+	local new_home=/home/$new_user
+	local new_cwd=$opt_cwd[-1]
 	bwrap \
-		--unsetenv SHLVL \
-		--ro-bind / / \
+		--as-pid-1 \
+		--die-with-parent \
+		--unshare-all \
+		${opt_with_net:+--share-net} \
+		--hostname "$new_host" \
+		--uid "${UID?}" \
+		--gid "${GID?}" \
+		--clearenv \
+		--setenv DISPLAY "$DISPLAY" \
+		--setenv HOME "$new_home" \
+		--setenv USER "$new_user" \
+		--setenv PATH '/usr/local/bin:/usr/bin' \
+		--setenv TERM "${TERM:-dummy}" \
 		--dev /dev \
 		--proc /proc \
+		--ro-bind /bin{,} \
+		--ro-bind /usr{,} \
+		--ro-bind /lib{,} \
+		--ro-bind /lib64{,} \
+		--ro-bind /etc{,} \
+		--ro-bind-data 3 /etc/group \
+		3<<<"$new_user:x:$UID:" \
+		--ro-bind-data 4 /etc/passwd \
+		4<<<"$new_user:x:$UID:$GID::$new_home:$SHELL" \
 		--tmpfs /tmp \
-		--bind ${${:-~m}:A}{,} \
-		--bind $PWD:A{,} \
-		--tmpfs ~/.config/passwords \
-		--unshare-{user,ipc,pid,uts,cgroup} \
-		--hostname bubble \
-		--die-with-parent \
-		--as-pid-1 \
-		--chdir $PWD \
-		/$SHELL
+		--ro-bind ~m $new_home/mem \
+		--ro-bind {~,$new_home}/.config \
+		--ro-bind {~,$new_home}/.zshenv \
+		--ro-bind {~,$new_home}/.dir_colors \
+		--ro-bind {~,$new_home}/.XCompose \
+		--ro-bind {~,$new_home}/.cache/zsh \
+		--ro-bind {~,$new_home}/.cache/zcompdump \
+		--ro-bind {~,$new_home}/.local/share/nvim \
+		--bind "$PWD" "$new_cwd" \
+		--chdir "$new_cwd" \
+		-- ${*:-$SHELL}
 }
 
 function pacman_history() {
