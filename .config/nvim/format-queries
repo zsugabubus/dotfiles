@@ -466,7 +466,7 @@ write_node = function(w, node, indent)
 		write_capture_names(w, node.capture_names)
 	elseif node.comment then
 		w:put('; ')
-		w:put(node.comment)
+		w:put(vim.trim(node.comment))
 		w:new_line()
 	elseif node.field_name then
 		w:put(node.field_name)
