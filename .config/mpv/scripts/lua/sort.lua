@@ -29,7 +29,9 @@ local sort_options = {
 }
 
 local extension_blacklist = {
+	ass = true,
 	exe = true,
+	lrc = true,
 	nfo = true,
 	part = true,
 	pdf = true,
@@ -38,6 +40,7 @@ local extension_blacklist = {
 	srt = true,
 	torrent = true,
 	txt = true,
+	vtt = true,
 }
 
 local function should_remove(s)
