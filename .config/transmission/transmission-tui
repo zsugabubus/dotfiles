@@ -1,6 +1,9 @@
 #!/usr/bin/luajit
 -- https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md
 
+local ffi = require('ffi')
+local uv = require('luv')
+
 local abs = math.abs
 local ceil = math.ceil
 local concat = table.concat
@@ -22,8 +25,6 @@ local sub = string.sub
 local upper = string.upper
 
 local function load_curl_library()
-	local ffi = require('ffi')
-
 	ffi.cdef([[
 struct curl_slist;
 
@@ -81,9 +82,7 @@ typedef size_t write_callback(char *, size_t, size_t, void *);
 	return ffi.load('curl')
 end
 
-local function create_HttpSession()
-	local ffi = require('ffi')
-
+local HttpSession = (function()
 	local libcurl = load_curl_library()
 	local body = require('string.buffer').new()
 
@@ -168,7 +167,6 @@ local function create_HttpSession()
 	function M:request(url, opts)
 		body:reset()
 		libcurl.curl_easy_reset(self.handle)
-
 		set_url(self, url)
 		set_enable_compression(self)
 		if opts then
@@ -186,7 +184,6 @@ local function create_HttpSession()
 			end
 		end
 		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_WRITEFUNCTION, write_callback))
-
 		check(libcurl.curl_easy_perform(self.handle))
 	end
 
@@ -211,9 +208,9 @@ local function create_HttpSession()
 	end
 
 	return M
-end
+end)()
 
-local function create_TransmissionSession()
+local TransmissionSession = (function()
 	local json = require('cjson')
 
 	local SESSION_ID_HEADER = 'X-Transmission-Session-Id'
@@ -298,9 +295,9 @@ local function create_TransmissionSession()
 	end
 
 	return M
-end
+end)()
 
-local function create_with_buffer()
+local with_buffer = (function()
 	local buf = require('string.buffer'):new()
 
 	local function with(callback)
@@ -310,9 +307,9 @@ local function create_with_buffer()
 	end
 
 	return with
-end
+end)()
 
-local function create_TmpFile()
+local TmpFile = (function()
 	local M = {}
 	M.__index = M
 
@@ -349,11 +346,9 @@ local function create_TmpFile()
 	end
 
 	return M
-end
+end)()
 
-local function load_ncurses_library()
-	local ffi = require('ffi')
-
+local curs, Window = (function()
 	local curs = ffi.load('ncursesw')
 
 	ffi.cdef([[
@@ -424,9 +419,9 @@ int wscrl(WINDOW *, int);
 	})
 
 	return curs, Window
-end
+end)()
 
-local function create_curs_width(curs, Window)
+local curs_width = (function()
 	local win
 	local win_cols = 0
 
@@ -453,9 +448,9 @@ local function create_curs_width(curs, Window)
 		cache[s] = n
 		return n
 	end
-end
+end)()
 
-local function create_Column()
+local Column = (function()
 	local M = {}
 	M.__index = M
 
@@ -485,9 +480,9 @@ local function create_Column()
 	end
 
 	return M
-end
+end)()
 
-local function create_Columns(string_width)
+local Columns = (function()
 	local M = {}
 	M.__index = M
 
@@ -507,13 +502,13 @@ local function create_Columns(string_width)
 	end
 
 	local function compute_column_width(column, data_list, i, j)
-		local width = string_width(column.title)
+		local width = curs_width(column.title)
 		for i = i, j do
 			local data = data_list[i]
 			local s = column.display(data)
 			-- 1 byte <= 1 width.
 			if #s > width then
-				width = max(width, string_width(s))
+				width = max(width, curs_width(s))
 			end
 		end
 		return width
@@ -569,9 +564,9 @@ local function create_Columns(string_width)
 	end
 
 	return M
-end
+end)()
 
-local function create_ListRenderer(curs)
+local ListRenderer = (function()
 	local M = {}
 	M.__index = M
 
@@ -687,9 +682,9 @@ local function create_ListRenderer(curs)
 	end
 
 	return M
-end
+end)()
 
-local function create_ListManager()
+local ListManager = (function()
 	local M = {}
 	M.__index = M
 
@@ -945,9 +940,9 @@ local function create_ListManager()
 	end
 
 	return M
-end
+end)()
 
-local function create_escaper()
+local esc, unesc = (function()
 	local ESC_TABLE = {
 		['\n'] = '\\n',
 		['\r'] = '\\r',
@@ -971,9 +966,9 @@ local function create_escaper()
 	end
 
 	return esc, unesc
-end
+end)()
 
-local function create_KeyHandler()
+local KeyHandler = (function()
 	local M = {}
 	M.__index = M
 
@@ -1004,7 +999,7 @@ local function create_KeyHandler()
 	end
 
 	return M
-end
+end)()
 
 local function list_equal(a, b)
 	if #a ~= #b then
@@ -1018,35 +1013,19 @@ local function list_equal(a, b)
 	return true
 end
 
-local function create_TransmissionTui()
-	local ffi = require('ffi')
-	local uv = require('luv')
+local function noop()
+	-- Do nothing.
+end
 
-	local curs, Window = load_ncurses_library()
-	local curs_width = create_curs_width(curs, Window)
-	local TmpFile = create_TmpFile()
-	local HttpSession = create_HttpSession()
-	local TransmissionSession = create_TransmissionSession()
-	local ListManager = create_ListManager()
-	local ListRenderer = create_ListRenderer(curs)
-	local Columns = create_Columns(curs_width)
-	local Column = create_Column()
-	local esc, unesc = create_escaper()
-	local with_buffer = create_with_buffer()
-	local KeyHandler = create_KeyHandler()
-
-	local function noop()
-		-- Do nothing.
+local function list_dir(path)
+	local handle = uv.fs_scandir(path)
+	if handle then
+		return uv.fs_scandir_next, handle
 	end
+	return noop
+end
 
-	local function list_dir(path)
-		local handle = uv.fs_scandir(path)
-		if handle then
-			return uv.fs_scandir_next, handle
-		end
-		return noop
-	end
-
+local TransmissionTui = (function()
 	local M = {}
 	M.__index = M
 
@@ -3375,12 +3354,14 @@ transmission-daemon(1), transmission-remote(1).
 	setmetatable(M, nil)
 
 	return M
+end)()
+
+local function main()
+	os.setlocale('')
+	local opts = TransmissionTui:parse_cli_args(arg)
+	local app = TransmissionTui:new(opts)
+	app:set_scrolloff(5)
+	app:run()
 end
 
-os.setlocale('')
-
-local TransmissionTui = create_TransmissionTui()
-local opts = TransmissionTui:parse_cli_args(arg)
-local app = TransmissionTui:new(opts)
-app:set_scrolloff(5)
-app:run()
+main()
