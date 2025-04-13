@@ -38,8 +38,7 @@ if [[ $content =~ '^\s*(([a-z-]{3,}):\S*)\s*$' ]]; then
 		LBUFFER="curl -L ${(q-)content} | git apply"
 		return
 	elif [[ -z $BUFFER && $content =~ '^https?://((www.)?youtube.com|youtu.be)/' ]]; then
-		LBUFFER=' yt-dlp'
-		RBUFFER=' -f22'
+		LBUFFER='yt'
 	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
 		content="https://raw.githubusercontent.com/${match[1]}/${match[2]}"
 		if [[ -z $BUFFER ]]; then
