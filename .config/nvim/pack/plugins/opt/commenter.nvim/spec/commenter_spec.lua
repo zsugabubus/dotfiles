@@ -231,7 +231,7 @@ describe('uses treesitter to find commentstring', function()
 			'<!-- x -->',
 			'<!-- # x -->',
 			'```c',
-			'/* int x; */',
+			'// int x;',
 			'```',
 		})
 	end)
