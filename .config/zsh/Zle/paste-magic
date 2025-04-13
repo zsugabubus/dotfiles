@@ -42,10 +42,10 @@ if [[ $content =~ '^\s*(([a-z-]{3,}):\S*)\s*$' ]]; then
 	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
 		content="https://raw.githubusercontent.com/${match[1]}/${match[2]}"
 		if [[ -z $BUFFER ]]; then
-			LBUFFER='curl -LO '
+			LBUFFER='curl -L --remote-name-all'
 		fi
 	elif [[ -z $BUFFER ]]; then
-		LBUFFER='curl -LO'
+		LBUFFER='curl -L --remote-name-all'
 	fi
 
 	LBUFFER_space
