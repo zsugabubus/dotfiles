@@ -1,18 +1,12 @@
 local function update()
 	mp.unregister_event(update)
 
-	local url = mp.get_property_native('path')
-	if not url then
-		return
-	end
-
-	local bytes
-	if url:find('://') then
-		bytes = '512M'
+	local network = mp.get_property_native('path'):find('://')
+	if network then
+		mp.set_property_native('demuxer-max-back-bytes', '512M')
 	else
-		bytes = '125M'
+		mp.set_property_native('demuxer-max-back-bytes', '64M')
 	end
-	mp.set_property_native('demuxer-max-back-bytes', bytes)
 end
 mp.register_event('start-file', update)
 
