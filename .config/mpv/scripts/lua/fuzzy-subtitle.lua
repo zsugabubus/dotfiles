@@ -12,6 +12,10 @@ local function pesc(s)
 	return s:gsub('([^%w])', '%%%1')
 end
 
+local function remove_ext(filename)
+	return filename:match('^(.+)%..+$') or filename
+end
+
 local function add_subtitle(file)
 	local tmp_file
 	if file:find('%.txt$') then
@@ -42,12 +46,7 @@ local function patterns_from_filename(filename)
 		end
 	end
 
-	add_pattern(pesc(filename))
-
-	local without_ext = filename:match('^(.+)%..+$')
-	if without_ext then
-		add_pattern(pesc(without_ext))
-	end
+	add_pattern(pesc(remove_ext(filename)) .. '.*')
 
 	local season, episode = filename:match('[sS]0*(%d+)[eE]0*(%d+)')
 	if not season then
