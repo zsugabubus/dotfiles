@@ -3,11 +3,11 @@ local mode = require('mode').new()
 local utils = require('utils')
 
 local PROPERTIES = {
-	{ name = 'brightness', short_name = 'b', icon = 0xa },
-	{ name = 'contrast', short_name = 'c', icon = 0x7 },
-	{ name = 'gamma', short_name = 'g', icon = 0xa },
-	{ name = 'saturation', short_name = 's', icon = 0x8 },
-	{ name = 'hue', short_name = 'h', icon = 0xb },
+	{ name = 'brightness', icon = 0xa },
+	{ name = 'contrast', icon = 0x7 },
+	{ name = 'gamma', icon = 0xa },
+	{ name = 'saturation', icon = 0x8 },
+	{ name = 'hue', icon = 0xb },
 }
 
 local modal
@@ -24,7 +24,7 @@ local function load_default_presets()
 	-- Normalize.
 	for _, preset in ipairs(presets) do
 		for _, p in ipairs(PROPERTIES) do
-			preset[p.name] = preset[p.name] or preset[p.short_name] or 0
+			preset[p.name] = preset[p.name] or 0
 		end
 	end
 
