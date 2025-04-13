@@ -10,11 +10,15 @@ local function update()
 end
 mp.register_event('start-file', update)
 
--- Ensure that we have at least as much bytes available forward than as
--- backward, so seeking back in a live stream does not accidentally stop
--- reading it.
 mp.observe_property('demuxer-max-back-bytes', 'native', function(_, value)
-	mp.set_property_number('demuxer-max-bytes', 2 * value)
+	-- Ensure that we have at least as much bytes available forward than as
+	-- backward, so seeking back in a live stream does not accidentally stop
+	-- reading it.
+	if mp.get_property_native('demuxer-via-network') then
+		mp.set_property_native('demuxer-max-bytes', 2 * value)
+	else
+		mp.set_property_native('demuxer-max-bytes', value)
+	end
 end)
 
 mp.add_key_binding(nil, 'select-cache', function()
