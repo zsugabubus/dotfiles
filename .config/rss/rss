@@ -1,7 +1,13 @@
 #!/usr/bin/luajit
+local ffi = require('ffi')
+local json = require('cjson')
+local lxp = require('lxp')
 local uv = require('luv')
 
 local RFC_7273 = '%a, %d %b %Y %H:%M:%S %z'
+local SECONDS_PER_MINUTE = 60
+local SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
+local SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR
 
 local function logger_factory(level)
 	if level > (tonumber(os.getenv('RSS_LOG')) or 6) then
@@ -17,9 +23,54 @@ local log_warn = logger_factory(4)
 local log_info = logger_factory(6)
 local log_debug = logger_factory(7)
 
-local function create_sha1()
-	local ffi = require('ffi')
+local function noop()
+	-- Do nothing.
+end
 
+local function list_dir(path)
+	local handle = uv.fs_scandir(path)
+	if handle then
+		return uv.fs_scandir_next, handle
+	end
+	return noop
+end
+
+local function get_hostname()
+	local f = assert(io.open('/etc/hostname'))
+	local hostname = assert(f:read('*l'))
+	assert(f:close())
+	return hostname
+end
+
+local function shesc(s)
+	return "'" .. s:gsub("'", [['"'"']]) .. "'"
+end
+
+local function execute(args)
+	local t = {}
+	for _, arg in ipairs(args) do
+		table.insert(t, shesc(arg))
+	end
+	local status = os.execute(table.concat(t, ' '))
+	assert(status == 0)
+end
+
+local function format_duration(d)
+	if d >= 2 * SECONDS_PER_DAY then
+		return ('%d days'):format(d / SECONDS_PER_DAY)
+	elseif d >= 26 * SECONDS_PER_HOUR then
+		return ('1 day and %d hours'):format((d - SECONDS_PER_DAY) / SECONDS_PER_HOUR)
+	elseif d >= 2 * SECONDS_PER_HOUR then
+		return ('%d hours'):format(d / SECONDS_PER_HOUR)
+	elseif d >= 2 * SECONDS_PER_MINUTE then
+		return ('%d minutes'):format(d / SECONDS_PER_MINUTE)
+	elseif d == 1 then
+		return '1 second'
+	end
+	return ('%d seconds'):format(d)
+end
+
+local sha1 = (function()
 	local ssl = ffi.load('ssl.so')
 
 	ffi.cdef([[
@@ -43,14 +94,13 @@ int OPENSSL_buf2hexstr_ex(char *, size_t, size_t *, const unsigned char *, long,
 	end
 
 	local evp_type = ssl.EVP_sha1()
+
 	return function(data)
 		return generic(data, evp_type)
 	end
-end
+end)()
 
 local function load_curl_library()
-	local ffi = require('ffi')
-
 	ffi.cdef([[
 struct curl_slist;
 
@@ -70,6 +120,7 @@ typedef enum {
 } CURLcode;
 
 typedef enum {
+	CURLOPT_SSL_VERIFYPEER = 0 + 64,
 	CURLOPT_URL = 10000 + 2,
 	CURLOPT_HTTPHEADER = 10000 + 23,
 	CURLOPT_ACCEPT_ENCODING = 10000 + 102,
@@ -104,9 +155,7 @@ typedef size_t write_callback(char *, size_t, size_t, void *);
 	return ffi.load('curl')
 end
 
-local function create_HttpSession()
-	local ffi = require('ffi')
-
+local HttpSession = (function()
 	local libcurl = load_curl_library()
 	local body = require('string.buffer').new()
 
@@ -114,7 +163,7 @@ local function create_HttpSession()
 
 	local function check(result)
 		if result ~= libcurl.CURLE_OK then
-			error(ffi.string(libcurl.curl_easy_strerror(result)))
+			error(ffi.string(libcurl.curl_easy_strerror(result)), 0)
 		end
 	end
 
@@ -168,6 +217,10 @@ local function create_HttpSession()
 		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_ACCEPT_ENCODING, ''))
 	end
 
+	local function set_no_verify_peer(self)
+		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_SSL_VERIFYPEER, long(0)))
+	end
+
 	function M.new(cls)
 		return setmetatable({
 			handle = ffi.gc(libcurl.curl_easy_init(), libcurl.curl_easy_cleanup),
@@ -177,16 +230,17 @@ local function create_HttpSession()
 	function M:request(url, opts)
 		body:reset()
 		libcurl.curl_easy_reset(self.handle)
-
 		set_url(self, url)
 		set_enable_compression(self)
 		if opts then
 			if opts.headers then
 				set_headers(self, opts.headers)
 			end
+			if opts.insecure then
+				set_no_verify_peer(self)
+			end
 		end
 		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_WRITEFUNCTION, write_callback))
-
 		check(libcurl.curl_easy_perform(self.handle))
 	end
 
@@ -211,122 +265,9 @@ local function create_HttpSession()
 	end
 
 	return M
-end
+end)()
 
-local function noop()
-	-- Do nothing.
-end
-
-local function list_dir(path)
-	local handle = uv.fs_scandir(path)
-	if handle then
-		return uv.fs_scandir_next, handle
-	end
-	return noop
-end
-
-local function create_Node()
-	local M = {}
-	M.__index = M
-
-	function M:find(tag)
-		for _, child in ipairs(self) do
-			if child.tag == tag then
-				return child
-			end
-		end
-	end
-
-	function M:texts()
-		local t = {}
-		for _, child in ipairs(self) do
-			if child.text ~= '' then
-				t[child.tag] = child.text
-			end
-		end
-		return t
-	end
-
-	function M:find_all(tag)
-		return function(self, i)
-			for i, child in next, self, i do
-				if child.tag == tag then
-					return i, child
-				end
-			end
-		end,
-			self
-	end
-
-	return M
-end
-
-local function create_xml_dom_parser(Node)
-	local lxp = require('lxp')
-
-	local stack
-
-	local CALLBACKS = {
-		StartElement = function(_, tag, attribs)
-			local parent_node = assert(stack[#stack])
-			local node = setmetatable({
-				tag = tag,
-				attribs = attribs,
-				text = '',
-			}, Node)
-			table.insert(parent_node, node)
-			table.insert(stack, node)
-		end,
-		EndElement = function()
-			local closed_node = table.remove(stack)
-			if closed_node.text then
-				-- Trim whitespace.
-				closed_node.text = closed_node.text:match('(%S.-)%s*$')
-			end
-		end,
-		CharacterData = function(_, s)
-			if s:find('%S') then
-				local top_node = assert(stack[#stack])
-				top_node.text = top_node.text .. s
-			end
-		end,
-	}
-
-	return function(s)
-		local root = {}
-		stack = { root }
-
-		local parser = lxp.new(CALLBACKS)
-		parser:parse(s)
-		parser:parse()
-		parser:close()
-
-		assert(#root == 1)
-		return root[1]
-	end
-end
-
-local function get_hostname()
-	local f = assert(io.open('/etc/hostname'))
-	local hostname = assert(f:read('*l'))
-	assert(f:close())
-	return hostname
-end
-
-local function shesc(s)
-	return "'" .. s:gsub("'", [['"'"']]) .. "'"
-end
-
-local function execute(args)
-	local t = {}
-	for _, arg in ipairs(args) do
-		table.insert(t, shesc(arg))
-	end
-	local status = os.execute(table.concat(t, ' '))
-	assert(status == 0)
-end
-
-local function create_Maildir()
+local Maildir = (function()
 	local M = {}
 	M.__index = M
 
@@ -334,7 +275,7 @@ local function create_Maildir()
 	local pid = uv.getpid()
 	local counter = 0
 
-	function generate_name()
+	local function gen_name()
 		counter = counter + 1
 		return ('%s.%s_%d.%s'):format(os.time(), pid, counter, hostname)
 	end
@@ -346,7 +287,7 @@ local function create_Maildir()
 			for name in list_dir(mail_dir) do
 				local path = mail_dir .. '/' .. name
 				local f = io.open(path, 'r')
-				if f ~= nil then
+				if f then
 					local data = assert(f:read(512))
 					assert(f:close())
 					local msg_id = assert(data:match('Message%-ID: *(<[^\r\n>]*>)'))
@@ -365,9 +306,7 @@ local function create_Maildir()
 
 	function M.new(cls, path)
 		create_dirs(path)
-		return setmetatable({
-			_path = assert(path),
-		}, cls)
+		return setmetatable({ _path = assert(path) }, cls)
 	end
 
 	function M:msg_ids()
@@ -386,7 +325,7 @@ local function create_Maildir()
 			return
 		end
 
-		local name = generate_name()
+		local name = gen_name()
 		local tmp_path = ('%s/tmp/%s'):format(self._path, name)
 		local path = ('%s/new/%s'):format(self._path, name)
 
@@ -397,13 +336,13 @@ local function create_Maildir()
 		assert(os.rename(tmp_path, path))
 		self._msg_ids[msg_id] = path
 
-		log_debug(('New message: %s'):format(path))
+		return path
 	end
 
 	return M
-end
+end)()
 
-local function create_date_parser()
+local parse_date = (function()
 	local t = os.date('!*t', 0)
 	local local_tz_offset = os.time(t)
 
@@ -439,91 +378,159 @@ local function create_date_parser()
 	}
 
 	return function(s)
-		local year, month, day, hour, min, sec, tz_sign, tz_hour, tz_min =
-			s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)([+-])(%d%d):?(%d%d)$')
-		if day then
-			return make_time(year, month, day, hour, min, sec, parse_tz(tz_sign, tz_hour, tz_min))
+		do
+			local year, month, day, hour, min, sec, tz_sign, tz_hour, tz_min =
+				s:match('^(%d%d%d%d)-(%d%d)-(%d%d)T(%d%d):(%d%d):(%d%d)([+-])(%d%d):?(%d%d)$')
+			if day then
+				return make_time(year, month, day, hour, min, sec, parse_tz(tz_sign, tz_hour, tz_min))
+			end
 		end
 
-		local year, month, day, hour, min, sec =
-			s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)Z$')
-		if year then
-			return make_time(year, month, day, hour, min, sec, TZ_GMT)
+		do
+			local year, month, day, hour, min, sec =
+				s:match('^(%d%d%d%d)-(%d%d)-(%d%d)T(%d%d):(%d%d):(%d%d)Z$')
+			if year then
+				return make_time(year, month, day, hour, min, sec, TZ_GMT)
+			end
 		end
 
-		local year, month, day, hour, min, sec =
-			s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)%.%d%d%dZ$')
-		if year then
-			return make_time(year, month, day, hour, min, sec, TZ_GMT)
+		do
+			local year, month, day, hour, min, sec =
+				s:match('^(%d%d%d%d)-(%d%d)-(%d%d)T(%d%d):(%d%d):(%d%d)%.%d%d%dZ$')
+			if year then
+				return make_time(year, month, day, hour, min, sec, TZ_GMT)
+			end
 		end
 
-		local year, month, day, hour, min = s:match('^(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d)Z$')
-		if year then
-			return make_time(year, month, day, hour, min, 0, TZ_GMT)
+		do
+			local year, month, day, hour, min = s:match('^(%d%d%d%d)-(%d%d)-(%d%d)T(%d%d):(%d%d)Z$')
+			if year then
+				return make_time(year, month, day, hour, min, 0, TZ_GMT)
+			end
 		end
 
-		local day, month_name, year, hour, min, sec, tz_sign, tz_hour, tz_min = s:match(
-			'^[A-Z][a-z][a-z], (%d%d) ([A-Z][a-z][a-z]) (%d%d%d%d) (%d%d):(%d%d):(%d%d) ([+-])(%d%d)(%d%d)$'
-		)
-		if day then
-			return make_time(
-				year,
-				MONTHS[month_name],
-				day,
-				hour,
-				min,
-				sec,
-				parse_tz(tz_sign, tz_hour, tz_min)
-			)
+		do
+			local day, month_name, year, hour, min, sec, tz_sign, tz_hour, tz_min =
+				s:match('^..., (%d%d) (%u%l%l) (%d%d%d%d) (%d%d):(%d%d):(%d%d) ([+-])(%d%d)(%d%d)$')
+			if day then
+				return make_time(
+					year,
+					assert(MONTHS[month_name]),
+					day,
+					hour,
+					min,
+					sec,
+					parse_tz(tz_sign, tz_hour, tz_min)
+				)
+			end
 		end
 
-		local day, month_name, year, hour, min, sec =
-			s:match('^[A-Z][a-z][a-z], (%d%d) ([A-Z][a-z][a-z]) (%d%d%d%d) (%d%d):(%d%d):(%d%d) GMT$')
-		if day then
-			return make_time(year, MONTHS[month_name], day, hour, min, sec, TZ_GMT)
+		do
+			local day, month_name, year, hour, min, sec =
+				s:match('^..., (%d%d) (%u%l%l) (%d%d%d%d) (%d%d):(%d%d):(%d%d) GMT$')
+			if day then
+				return make_time(year, assert(MONTHS[month_name]), day, hour, min, sec, TZ_GMT)
+			end
 		end
 
-		local year, month, day = s:match('^(%d%d%d%d)-(%d%d)-(%d%d)$')
-		if year then
-			return make_time(year, month, day, 0, 0, 0, TZ_GMT)
+		do
+			local year, month, day = s:match('^(%d%d%d%d)-(%d%d)-(%d%d)$')
+			if year then
+				return make_time(year, month, day, 0, 0, 0, TZ_GMT)
+			end
 		end
 
-		local year = s:match('^(%d%d%d%d)$')
-		if year then
-			return make_time(year, 1, 1, 0, 0, 0, TZ_GMT)
+		do
+			local year = s:match('^(%d%d%d%d)$')
+			if year then
+				return make_time(year, 1, 1, 0, 0, 0, TZ_GMT)
+			end
 		end
 
 		error(('invalid date: %s'):format(s))
 	end
-end
+end)()
 
-local function test()
-	do
-		local parse_date = create_date_parser()
+local XmlNode = (function()
+	local M = {}
+	M.__index = M
 
-		local function case(input, expected)
-			local time = parse_date(input)
-			local left = os.date('!%Y-%m-%d %H:%M:%S', time)
-			local right = expected
-			assert(left == right, ('Expected %s == %s'):format(left, right))
+	function M:find(tag)
+		for _, child in ipairs(self) do
+			if child.tag == tag then
+				return child
+			end
 		end
-
-		local x = parse_date('1970-01-01T00:00:00Z')
-		assert(x == 0, x)
-		case('2000', '2000-01-01 00:00:00')
-		case('2000-01-02', '2000-01-02 00:00:00')
-		case('2000-01-02T03:04Z', '2000-01-02 03:04:00')
-		case('2000-01-02T03:04:05Z', '2000-01-02 03:04:05')
-		case('Xxx, 02 Jan 2000 03:04:05 +0404', '2000-01-01 23:00:05')
-		case('2000-01-02T03:04:05-03:30', '2000-01-02 06:34:05')
-		case('2000-01-02T03:04:05-0330', '2000-01-02 06:34:05')
-		case('2000-01-02T03:04:05.678Z', '2000-01-02 03:04:05')
 	end
-end
 
-local function create_feed_parser(parse_date)
-	local parse_xml = create_xml_dom_parser(create_Node())
+	function M:texts()
+		local t = {}
+		for _, child in ipairs(self) do
+			if child.text ~= '' then
+				t[child.tag] = child.text
+			end
+		end
+		return t
+	end
 
+	function M:find_all(tag)
+		return function(self, i)
+			for i, child in next, self, i do
+				if child.tag == tag then
+					return i, child
+				end
+			end
+		end,
+			self
+	end
+
+	return M
+end)()
+
+local parse_xml = (function()
+	local stack
+
+	local CALLBACKS = {
+		StartElement = function(_, tag, attribs)
+			local parent_node = assert(stack[#stack])
+			local node = setmetatable({
+				tag = tag,
+				attribs = attribs,
+				text = '',
+			}, XmlNode)
+			table.insert(parent_node, node)
+			table.insert(stack, node)
+		end,
+		EndElement = function()
+			local closed_node = table.remove(stack)
+			if closed_node.text then
+				-- Trim whitespace.
+				closed_node.text = closed_node.text:match('(%S.-)%s*$')
+			end
+		end,
+		CharacterData = function(_, s)
+			if s:find('%S') then
+				local top_node = assert(stack[#stack])
+				top_node.text = top_node.text .. s
+			end
+		end,
+	}
+
+	return function(s)
+		local root = {}
+		stack = { root }
+
+		local parser = lxp.new(CALLBACKS)
+		parser:parse(s)
+		parser:parse()
+		parser:close()
+
+		assert(#root == 1)
+		return root[1]
+	end
+end)()
+
+local parse_feed = (function()
 	local TEXT_HTML = 'text/html; charset="utf-8"'
 	local TEXT_PLAIN = 'text/plain; charset="utf-8"'
 
@@ -647,7 +654,7 @@ local function create_feed_parser(parse_date)
 		return entries
 	end
 
-	local function parse_feed(root)
+	local function parse_root(root)
 		if root.tag == 'rss' then
 			return parse_rss(root)
 		elseif root.tag == 'feed' then
@@ -658,11 +665,11 @@ local function create_feed_parser(parse_date)
 	end
 
 	return function(s)
-		return parse_feed(parse_xml(s))
+		return parse_root(parse_xml(s))
 	end
-end
+end)()
 
-local function create_base64_encoder()
+local base64_encode = (function()
 	local bit = require('bit')
 
 	local rshift = bit.rshift
@@ -672,10 +679,10 @@ local function create_base64_encoder()
 
 	-- stylua: ignore start
 	local alphabet = { [0] =
-		 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-		 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-		 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+		'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+		'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+		'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
 	}
 	-- stylua: ignore end
 
@@ -690,20 +697,13 @@ local function create_base64_encoder()
 		end)
 		return s:sub(1, #s - pad) .. ('='):rep(pad)
 	end
-end
+end)()
 
-local function create_path_expander()
-	local mail = os.getenv('MAIL')
-	local home = os.getenv('HOME')
-
-	return function(path)
-		if path:sub(1, 2) == '=/' or path == '=' then
-			return mail .. path:sub(2)
-		elseif path:sub(1, 2) == '~/' or path == '~' then
-			return home .. path:sub(2)
-		end
-		return path
+local function mime_encode(s)
+	if s:find('[^ -~]') then
+		return ('=?utf-8?b?%s?='):format(base64_encode(s))
 	end
+	return s
 end
 
 local function deep_equal(a, b)
@@ -715,236 +715,77 @@ local function deep_equal(a, b)
 				return false
 			end
 		end
-
 		for k, a_k in pairs(a) do
 			if not deep_equal(b[k], a_k) then
 				return false
 			end
 		end
-
 		return true
-	else
-		return false
 	end
+	return false
 end
 
-local function create_PersistentState()
-	local json = require('cjson')
+local function shallow_copy(a)
+	local copy = {}
+	for k, v in pairs(a) do
+		copy[k] = v
+	end
+	return copy
+end
 
-	local M = {}
+local function read_state(path)
+	local f = assert(io.popen(('gzip -dc -- %s'):format(shesc(path))))
+	local s = assert(f:read('*a'))
+	assert(f:close())
+	return s == '' and {} or json.decode(s)
+end
+
+local function write_state(path, state)
+	local tmp_path = path .. '~'
+	local f = assert(io.popen(('gzip -c9 > %s'):format(shesc(tmp_path)), 'w'))
+	assert(f:write(json.encode(state)))
+	assert(f:close())
+	assert(os.rename(tmp_path, path))
+end
+
+local Feed = (function()
+	local M = {
+		_filter = function()
+			return true
+		end,
+	}
 	M.__index = M
 
-	local function deserialize(s)
-		return json.decode(s)
-	end
-
-	local function serialize(data)
-		return json.encode(data)
-	end
-
-	local function read(path)
-		local f = io.popen(('gzip -dc -- %s'):format(path))
-		if f then
-			local s = assert(f:read('*a'))
-			assert(f:close())
-			if s == '' then
-				return
-			end
-			return s
-		end
-	end
-
-	function M.new(cls, path)
-		local s = read(path)
-		local self = setmetatable({
-			_path = path,
-			_original_state = s and deserialize(s),
-			_state = s and deserialize(s),
-		}, cls)
-		return self
-	end
-
-	function M:state()
-		return self._state
-	end
-
-	function M:set_state(x)
-		self._state = x
-	end
-
-	function M:save()
-		if deep_equal(self._state, self._original_state) then
-			log_debug('State unchanged')
-			return
-		end
-
-		local tmp_path = self._path .. '~'
-
-		local f = assert(io.popen(('gzip -c9 > %s'):format(tmp_path), 'w'))
-		assert(f:write(serialize(self._state)))
-		assert(f:close())
-
-		assert(os.rename(tmp_path, self._path))
-	end
-
-	return M
-end
-
-local function parse_url_host(url)
-	return url:match('://([^/]+)')
-end
-
-local function create_mime_word_encoder()
-	local b64enc = create_base64_encoder()
-
-	return function(s)
-		if s:find('[\x01-\x19\x80-\xff]') then
-			return ('=?utf-8?b?%s?='):format(b64enc(s))
-		end
-		return s
-	end
-end
-
-local function do_update(opts)
-	local mime_word_enc = create_mime_word_encoder()
-	local sha1 = create_sha1()
-
-	local buf = require('string.buffer'):new()
-
-	local function make_msg_id(data, host)
-		local left = sha1(data):sub(1, 10):lower()
-		local right = host
-		return ('<%s@%s>'):format(left, right)
-	end
-
-	local function sanitize_header(s)
-		return s:gsub('[\n\r]', '')
-	end
-
-	local function make_entry_mail(entry, name_override)
-		local host = assert(parse_url_host(entry.link))
-		local msg_id = make_msg_id(entry.id, host)
-
-		buf:reset()
-
-		buf:putf('Received: mrss; %s\n', os.date(RFC_7273))
-		if entry.parent then
-			buf:putf('In-Reply-To: %s\n', make_msg_id(entry.parent.id, host))
-		end
-		buf:putf('Message-ID: %s\n', msg_id)
-		buf:putf('Date: %s\n', os.date(RFC_7273, entry.date))
-		buf:putf(
-			'From: "%s" <feed@%s>\n',
-			sanitize_header(name_override or (entry.parent or entry).title),
-			host
-		)
-		buf:putf('Subject: %s\n', mime_word_enc(sanitize_header(entry.title)))
-		buf:putf('Link: %s\n', sanitize_header(entry.link))
-		if entry.parent then
-			for _, category in ipairs(entry.parent.categories) do
-				buf:putf('X-Category: %s\n', sanitize_header(category))
-			end
-		end
-		for _, category in ipairs(entry.categories) do
-			buf:putf('X-Category: %s\n', sanitize_header(category))
-		end
-		if entry.content then
-			buf:putf('Content-Type: %s\n', entry.content.mime_type)
-			buf:put('Content-Transfer-Encoding: 8bit\n')
-			buf:put('\n')
-			buf:put(entry.content.payload)
-		end
-
-		return msg_id, buf:tostring()
-	end
-
-	local function process_entries(state, entries, callback)
-		state.cursor = state.cursor or 0
-		local new_cursor = state.cursor
-
-		for _, entry in ipairs(entries) do
-			if state.cursor < entry.date then
-				new_cursor = math.max(new_cursor, entry.date)
-				callback(entry)
-			end
-		end
-
-		state.cursor = new_cursor
-	end
-
-	local now = os.time()
-
-	local old_state = opts.state_manager:state() or {}
-	local new_state = {}
-
-	local fetch_context = {}
-
-	for _, feed in ipairs(opts.feeds) do
-		log_debug(('Process feed: %s'):format(feed.id_))
-		local feed_state = old_state[feed.id_] or {}
-
-		if feed:expiration(feed_state) <= now then
-			local entries = feed:fetch(feed_state, fetch_context)
-
-			local processor = feed.process
-				or function(entry)
-					opts.maildir:add_message(make_entry_mail(entry, feed.name_))
-					if feed.reply_to_ then
-						opts.maildir:add_message(make_entry_mail(assert(entry.parent), feed.name_))
-					end
-				end
-
-			process_entries(feed_state, entries, processor)
-		else
-			log_debug(('Feed not expired: %s'):format(feed.id_))
-		end
-
-		new_state[feed.id_] = feed_state
-	end
-
-	opts.state_manager:set_state(new_state)
-	opts.state_manager:save()
-end
-
-local function create_Feed()
-	local M = {}
-	M.__index = M
-
-	function M.new(cls, id, fn)
-		return setmetatable({}, cls):id(id):fetcher(fn)
+	function M.new(cls)
+		return setmetatable({}, cls)
 	end
 
 	function M:id(id)
-		self.id_ = assert(id)
+		self._id = id
 		return self
 	end
 
-	function M:name(name)
-		self.name_ = name
+	function M:from(fn)
+		self._from = fn
 		return self
 	end
 
-	function M:reply_to(yes)
-		self.reply_to_ = yes
+	function M:to(fn)
+		self._to = fn
 		return self
 	end
 
-	function M:fetcher(fn)
-		self.fetch = fn
+	function M:filter(fn)
+		self._filter = fn
 		return self
 	end
 
-	function M:processor(fn)
-		self.process = fn
-		return self
-	end
-
-	function M:expires_at_hour(hour)
-		function self:expiration(state)
-			if not state.updated then
+	function M:at_hour(hour)
+		function self._expiry(updated)
+			if not updated then
 				return 0
 			end
-			local t = os.date('*t', state.updated)
+			local t = os.date('*t', updated)
 			if hour <= t.hour then
 				t.day = t.day + 1
 			end
@@ -957,17 +798,17 @@ local function create_Feed()
 		return self
 	end
 
-	function M:expires_on_days(day_name)
-		function self:expiration(state)
-			if not state.updated then
+	function M:on_weekday(day_name)
+		function self._expiry(updated)
+			if not updated then
 				return 0
 			end
-			local t = os.date('*t', state.updated)
+			local t = os.date('*t', updated)
 			t.hour = 0
 			t.min = 0
 			t.sec = 0
 			t.isdst = nil
-			for i = 1, 7 do
+			for _ = 1, 7 do
 				t.day = t.day + 1
 				local x = os.time(t)
 				if os.date('%a', x) == day_name then
@@ -979,222 +820,349 @@ local function create_Feed()
 		return self
 	end
 
-	function M:expires_never()
-		function self:expiration(state)
-			return math.huge
-		end
-		return self
-	end
-
 	function M:ttl_seconds(seconds)
-		function self:expiration(state)
-			if not state.updated then
+		function self._expiry(updated)
+			if not updated then
 				return 0
 			end
-			return state.updated + seconds
+			return updated + seconds
 		end
 		return self
 	end
 
 	function M:ttl_minutes(minutes)
-		return self:ttl_seconds(minutes * 60)
+		return self:ttl_seconds(minutes * SECONDS_PER_MINUTE)
 	end
 
 	function M:ttl_hours(hours)
-		return self:ttl_minutes(hours * 60)
+		return self:ttl_seconds(hours * SECONDS_PER_HOUR)
 	end
 
 	function M:ttl_days(days)
-		return self:ttl_hours(days * 24)
+		return self:ttl_seconds(days * SECONDS_PER_DAY)
+	end
+
+	function M:disable()
+		function self._expiry() end
+		return self
 	end
 
 	return M
-end
+end)()
 
-local function make_url_feed(Feed, parse_feed, http)
-	return function(url)
-		return Feed:new(url, function(self, state, context)
-			local host = assert(parse_url_host(url))
-
-			context.host_blacklist = context.host_blacklist or {}
-			if context.host_blacklist[host] then
-				log_debug(('Skip blacklisted: %s'):format(url))
-				return {}
+local function update_feeds(feeds, state_path)
+	local function process_entries(entries, cursor, callback)
+		local new_cursor = cursor
+		for _, entry in ipairs(entries) do
+			if entry.date > cursor then
+				new_cursor = math.max(new_cursor, entry.date)
+				callback(entry)
 			end
+		end
+		return new_cursor
+	end
 
-			http:request(url, {
-				headers = {
-					['User-Agent'] = 'Mozilla/5.0 x' .. os.date('%S'),
-					['If-Modified-Since'] = state.last_modified,
-					['If-None-Match'] = state.etag,
-				},
-			})
+	local function process_feed(feed, state)
+		local now = os.time()
+		local expiry = feed._expiry(state.updated)
 
-			state.last_modified = http:header('Last-Modified')
-			state.etag = http:header('ETag')
+		if not expiry then
+			log_debug(('Feed %s is disabled'):format(feed._id))
+			return
+		elseif expiry == 0 then
+			log_info(('Feed %s is new'):format(feed._id))
+		elseif expiry > now then
+			log_debug(
+				('Feed %s expires in %s at %s'):format(
+					feed._id,
+					format_duration(expiry - now),
+					os.date(RFC_7273, expiry)
+				)
+			)
+			return
+		else
+			log_debug(
+				('Feed %s expired %s ago at %s'):format(
+					feed._id,
+					format_duration(now - expiry),
+					os.date(RFC_7273, expiry)
+				)
+			)
+		end
 
-			local status = http:status()
+		log_debug(('Fetch feed %s'):format(feed._id))
+		local entries = feed._from(state)
+		if not entries then
+			return
+		end
 
-			if status == 429 then
-				context.host_blacklist[host] = true
-				log_debug(('Blacklist host: %s'):format(host))
-			elseif status < 500 then
-				state.updated = os.time()
+		state.updated = os.time()
+		state.cursor = process_entries(entries, state.cursor or 0, function(entry)
+			if not feed._filter(entry) then
+				log_debug(('Feed %s filtered: %s'):format(feed._id, entry.title))
+				return
 			end
-
-			if status ~= 200 then
-				log_error(('Got HTTP %d: %s'):format(status, url))
-
-				local location = http:header('Location')
-				if location then
-					log_warn(('New location: %s'):format(location))
-				end
-
-				return {}
-			end
-
-			return parse_feed(http:body())
+			feed._to(entry)
 		end)
+	end
+
+	local old_state = read_state(state_path)
+	local new_state = {}
+
+	for _, feed in ipairs(feeds) do
+		assert(not new_state[feed._id], ('duplicated feed: %s'):format(feed._id))
+		local feed_state = shallow_copy(old_state[feed._id] or {})
+		process_feed(feed, feed_state)
+		new_state[feed._id] = feed_state
+	end
+
+	if deep_equal(new_state, old_state) then
+		log_debug('State unchanged')
+	else
+		write_state(state_path, new_state)
 	end
 end
 
-local function make_file_feed(Feed, parse_feed)
+local expand_path = (function()
+	local mail = os.getenv('MAIL')
+	local home = os.getenv('HOME')
+
 	return function(path)
-		return Feed:new(path, function(self, state)
-			local f = assert(io.open(path))
-			local s = assert(f:read('*a'))
-			assert(f:close())
-			state.updated = os.time()
-			return parse_feed(s)
-		end)
+		if path:sub(1, 2) == '=/' or path == '=' then
+			return assert(mail, '$MAIL unset') .. path:sub(2)
+		elseif path:sub(1, 2) == '~/' or path == '~' then
+			return assert(home, '$HOME unset') .. path:sub(2)
+		end
+		return path
 	end
+end)()
+
+local function extract_url_host(url)
+	return url:match('://([^/]+)')
 end
 
-local function make_system_feed(Feed, parse_feed)
-	return function(cmdline)
-		return Feed:new(('system:%s'):format(cmdline), function(self, state)
-			local f = assert(io.popen(cmdline))
-			local s = assert(f:read('*a'))
-			assert(f:close())
-			if s == '' then
-				log_error(('Got empty output: %s'):format(cmdline))
-				return {}
-			end
-			state.updated = os.time()
-			return parse_feed(s)
-		end)
+local gen_mail = (function()
+	local function gen_msg_id(data, host)
+		return ('<%s@%s>'):format(sha1(data):sub(1, 10):lower(), host)
 	end
-end
+
+	local function sanitize(s)
+		return s:gsub('[\n\r]', '')
+	end
+
+	local buf = require('string.buffer'):new()
+
+	return function(entry, name_override)
+		local host = assert(extract_url_host(entry.link))
+		local msg_id = gen_msg_id(entry.id, host)
+		buf:reset()
+		buf:putf('Received: mrss; %s\n', os.date(RFC_7273))
+		if entry.parent then
+			buf:putf('In-Reply-To: %s\n', gen_msg_id(entry.parent.id, host))
+		end
+		buf:putf('Message-ID: %s\n', msg_id)
+		buf:putf('Date: %s\n', os.date(RFC_7273, entry.date))
+		buf:putf(
+			'From: "%s" <feed@%s>\n',
+			sanitize(name_override or (entry.parent or entry).title),
+			host
+		)
+		buf:putf('Subject: %s\n', mime_encode(sanitize(entry.title)))
+		buf:putf('Link: %s\n', sanitize(entry.link))
+		if entry.parent then
+			for _, category in ipairs(entry.parent.categories) do
+				buf:putf('X-Category: %s\n', sanitize(category))
+			end
+		end
+		for _, category in ipairs(entry.categories) do
+			buf:putf('X-Category: %s\n', sanitize(category))
+		end
+		if entry.content then
+			buf:putf('Content-Type: %s\n', entry.content.mime_type)
+			buf:put('Content-Transfer-Encoding: 8bit\n')
+			buf:put('\n')
+			buf:put(entry.content.payload)
+		end
+		return msg_id, buf:tostring()
+	end
+end)()
 
 local function main(args)
 	os.setlocale('C')
 
-	local HttpSession = create_HttpSession()
-	local Maildir = create_Maildir()
-	local PersistentState = create_PersistentState()
-
 	local http = HttpSession:new()
-	local parse_date = create_date_parser()
-	local parse_feed = create_feed_parser(parse_date)
-	local expand_path = create_path_expander()
-	local Feed = create_Feed()
-
-	local url = make_url_feed(Feed, parse_feed, http)
-
-	local env = {
-		url = url,
-
-		exec = make_system_feed(Feed, parse_feed),
-
-		yt = function(channel_id)
-			return url(('https://www.youtube.com/feeds/videos.xml?channel_id=%s'):format(channel_id))
-				:id(('yt:channel:%s'):format(channel_id))
-				:ttl_hours(12)
+	local host_blacklist = {}
+	local maildirs = setmetatable({}, {
+		__mode = 'v',
+		__index = function(t, path)
+			log_debug(('Opening maildir at %s'):format(path))
+			local maildir = Maildir:new(path)
+			t[path] = maildir
+			return maildir
 		end,
+	})
 
-		blog = function(...)
-			return url(...):expires_on_days('Sun')
+	_G.rss = {
+		feed = function()
+			return Feed:new()
 		end,
+		http = function(url, opts)
+			local user_agent = opts and opts.user_agent
+			local insecure = opts and opts.insecure
+			return function(state)
+				local host = assert(extract_url_host(url))
 
-		reddit_submitted = function(username)
-			return url(('https://www.reddit.com/user/%s/submitted.rss'):format(username))
-				:id(('reddit:user:submitted:%s'):format(username))
-				:name(username)
-				:ttl_hours(8)
-		end,
-
-		gitlab_commits = function(repo, branch)
-			branch = branch or 'master'
-			return url(('https://gitlab.com/%s/-/commits/%s?format=atom'):format(repo, branch))
-				:id(('gitlab:commits:%s:%s'):format(repo, branch))
-				:name(('%s:%s commits'):format(repo, branch))
-				:expires_on_days('Sat')
-		end,
-
-		github_commits = function(repo, branch)
-			branch = branch or 'master'
-			return url(('https://github.com/%s/commits/%s.atom'):format(repo, branch))
-				:id(('github:commits:%s:%s'):format(repo, branch))
-				:name(('%s:%s commits'):format(repo, branch))
-				:expires_on_days('Sat')
-		end,
-
-		github_releases = function(repo)
-			return url(('https://github.com/%s/releases.atom'):format(repo))
-				:id(('github:releases:%s'):format(repo))
-				:name(('%s releases'):format(repo))
-				:expires_on_days('Sat')
-		end,
-
-		transmission = function(feed_url, opts)
-			local filter = type(opts.filter) == 'function' and opts.filter
-				or function(entry)
-					for _, pattern in ipairs(opts.filter) do
-						if entry.title:match(pattern) then
-							log_debug(('Pattern %q matches %q'):format(pattern, entry.title))
-							return true
-						end
-					end
-				end
-
-			return url(feed_url):processor(function(entry)
-				log_debug(('New torrent: %q'):format(entry.title))
-				local result = filter(entry)
-
-				if not result then
+				if host_blacklist[host] then
+					log_debug('Skip blacklisted')
 					return
 				end
 
-				log_info(('Add torrent to Transmission: %q'):format(entry.link))
-				execute({
-					'transmission-remote',
-					'--add',
-					entry.link,
-				})
-			end)
+				local ok, err = pcall(function()
+					http:request(url, {
+						headers = {
+							['User-Agent'] = user_agent,
+							['If-Modified-Since'] = state.last_modified,
+							['If-None-Match'] = state.etag,
+						},
+						insecure = insecure,
+					})
+				end)
+				if not ok then
+					log_error(('Request GET %s failed: %s'):format(url, err))
+					return
+				end
+
+				local status = http:status()
+				log_debug(('GET %s %d'):format(url, status))
+
+				if status == 304 then
+					log_debug('Not modified')
+					return {}
+				end
+
+				if status == 429 then
+					log_debug(('Blacklist host: %s'):format(host))
+					host_blacklist[host] = true
+					return
+				end
+
+				if status ~= 200 then
+					log_error(('Got HTTP %d: %s'):format(status, url))
+					local location = http:header('Location')
+					if location then
+						log_warn(('New location: %s'):format(location))
+					end
+					return
+				end
+
+				state.last_modified = http:header('Last-Modified')
+				state.etag = http:header('ETag')
+
+				return parse_feed(http:body())
+			end
+		end,
+		maildir = function(path, opts)
+			local maildir = maildirs[expand_path(path)]
+			local name = opts and opts.name
+			local reply_to = opts and opts.reply_to
+			local function deliver(entry)
+				local mail_path = maildir:add_message(gen_mail(entry, name))
+				if mail_path then
+					log_debug(
+						('New message %s: [%s] %s'):format(
+							mail_path,
+							os.date('%Y-%m-%d', entry.date),
+							entry.title
+						)
+					)
+				else
+					log_debug(('Message already exists: %s'):format(entry.title))
+				end
+			end
+			return function(entry)
+				deliver(entry)
+				if reply_to then
+					deliver(assert(entry.parent))
+				end
+			end
+		end,
+		cmd = function(cmdline)
+			return function()
+				log_debug(('Execute %s'):format(cmdline))
+				local f = assert(io.popen(cmdline))
+				local s = assert(f:read('*a'))
+				assert(f:close())
+				if s == '' then
+					log_error(('Got empty output: %s'):format(cmdline))
+					return
+				end
+				return parse_feed(s)
+			end
+		end,
+		transmission = function()
+			return function(entry)
+				local url = entry.link
+				log_debug(('Add torrent to Transmission: %s'):format(url))
+				execute({ 'transmission-remote', '--add', url })
+			end
+		end,
+		include = function(patterns)
+			return function(entry)
+				for _, pattern in ipairs(patterns) do
+					if entry.title:find(pattern) then
+						return true
+					end
+				end
+			end
+		end,
+		exclude = function(...)
+			local include = _G.rss.include(...)
+			return function(...)
+				return not include(...)
+			end
 		end,
 	}
 
-	local code = assert(loadfile(expand_path('~/.config/rss/feeds.lua')))
-	setfenv(code, env)
-	local config = assert(code())
-
-	local state_manager = PersistentState:new(expand_path(assert(config.state)))
-	if args[1] == 'd' then
-		local state = state_manager:state() or {}
-		for _, feed in ipairs(config) do
-			local feed_state = state[feed.id_] or {}
-			local expiration = feed:expiration(feed_state)
-			print(('%s\t%d\t%s'):format(feed.id_, expiration, os.date(RFC_7273, expiration)))
-		end
-	else
-		do_update({
-			feeds = config,
-			maildir = Maildir:new(expand_path(assert(config.maildir))),
-			state_manager = state_manager,
-		})
-	end
+	local config_path = assert(args[1], 'Missing config file')
+	local config = assert(dofile(config_path))
+	update_feeds(config, expand_path(assert(config.state)))
 end
 
+local function test()
+	local function eq(left, right)
+		assert(left == right, ('Expected %q == %q'):format(left, right))
+	end
+
+	local function parse_date_and_format(s)
+		return os.date('!%Y-%m-%d %H:%M:%S', parse_date(s))
+	end
+	eq(0, parse_date('1970-01-01T00:00:00Z'))
+	eq('2000-01-01 00:00:00', parse_date_and_format('2000'))
+	eq('2000-01-02 00:00:00', parse_date_and_format('2000-01-02'))
+	eq('2000-01-02 03:04:00', parse_date_and_format('2000-01-02T03:04Z'))
+	eq('2000-01-02 03:04:05', parse_date_and_format('2000-01-02T03:04:05Z'))
+	eq('2000-01-01 23:00:05', parse_date_and_format('Xxx, 02 Jan 2000 03:04:05 +0404'))
+	eq('2000-01-02 06:34:05', parse_date_and_format('2000-01-02T03:04:05-03:30'))
+	eq('2000-01-02 06:34:05', parse_date_and_format('2000-01-02T03:04:05-0330'))
+	eq('2000-01-02 03:04:05', parse_date_and_format('2000-01-02T03:04:05.678Z'))
+
+	eq('0 seconds', format_duration(0))
+	eq('1 second', format_duration(1))
+	eq('60 seconds', format_duration(60))
+	eq('119 seconds', format_duration(119))
+	eq('2 minutes', format_duration(120))
+	eq('60 minutes', format_duration(3600))
+	eq('90 minutes', format_duration(1.5 * 3600))
+	eq('119 minutes', format_duration(2 * 3600 - 1))
+	eq('2 hours', format_duration(2 * 3600))
+	eq('24 hours', format_duration(24 * 3600))
+	eq('25 hours', format_duration(25 * 3600))
+	eq('25 hours', format_duration(26 * 3600 - 1))
+	eq('1 day and 2 hours', format_duration(26 * 3600))
+	eq('1 day and 23 hours', format_duration(48 * 3600 - 1))
+	eq('2 days', format_duration(48 * 3600))
+	eq('100 days', format_duration(100 * 24 * 3600))
+end
 -- test()
+
 main(arg)
