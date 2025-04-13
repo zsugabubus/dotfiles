@@ -2,11 +2,6 @@ local utils = require('mp.utils')
 
 local SUBTITLE_EXTENSIONS = { 'srt', 'lrc', 'txt' }
 
-local CODEC_BLACKLIST = {
-	mp3 = true,
-	flac = true,
-}
-
 local XDG_CACHE_DIR = (
 	os.getenv('XDG_CACHE_DIR') or utils.join_path(os.getenv('HOME'), '.cache')
 )
@@ -84,16 +79,22 @@ local function search(path, patterns)
 	end
 end
 
-mp.register_event('start-file', function()
-	local path = mp.get_property('path')
-	if not path then
+local function has_video()
+	for _, track in ipairs(mp.get_property_native('track-list')) do
+		if track.type == 'video' and not track.albumart then
+			return true
+		end
+	end
+end
+
+mp.register_event('file-loaded', function()
+	if not has_video() then
 		return
 	end
 
-	for _, track in ipairs(mp.get_property_native('track-list')) do
-		if CODEC_BLACKLIST[track.codec] then
-			return
-		end
+	local path = mp.get_property('path')
+	if path:find('://') then
+		return
 	end
 
 	local dirname, filename = utils.split_path(path)
