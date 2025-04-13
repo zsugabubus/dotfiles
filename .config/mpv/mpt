@@ -107,12 +107,12 @@ function Client:on(name, on_event)
 	self.event_handlers[name] = on_event
 end
 
-function Client:connect(on_connect)
+function Client:connect(callback)
 	self.request_id = 0
 	self.reply_handlers = {}
 	self.pipe:connect(self.ipc_server, function(err)
 		if err then
-			return on_connect(self, err)
+			return callback(err)
 		end
 
 		local buffer = ''
@@ -143,7 +143,7 @@ function Client:connect(on_connect)
 			end
 		end)
 
-		return on_connect(self)
+		return callback()
 	end)
 end
 
@@ -163,7 +163,6 @@ end
 
 local client
 local tmpname
-local local_bindings
 local props = {
 	volume = 0,
 	speed = 1,
@@ -228,7 +227,7 @@ local function render_playlist()
 	win:refresh()
 end
 
-local function human_time(sec)
+local function format_time(sec)
 	local sign = sec < 0 and '-' or ''
 	sec = math.abs(sec)
 	return ('%s%02d:%02d'):format(sign, math.floor(sec / 60), sec % 60)
@@ -264,8 +263,8 @@ local function render_status()
 		'[%d/%d] %s / %s (%2d%%) ',
 		props['playlist-pos-1'],
 		props['playlist-count'],
-		human_time(props['time-pos'] or 0),
-		human_time(props.duration or 0),
+		format_time(props['time-pos'] or 0),
+		format_time(props.duration or 0),
 		100 * pct
 	)
 	if props.speed ~= 1 then
@@ -314,77 +313,6 @@ local function set_prop(name, data)
 	end
 end
 
-local function set_client(client_)
-	client = client_
-	render(false)
-	playlist_timer:stop()
-
-	if not client then
-		return
-	end
-
-	local playlist_changed = false
-
-	local function update_playlist()
-		if not playlist_changed then
-			playlist_timer:stop()
-			return
-		end
-
-		playlist_changed = false
-
-		client:request({ 'get_property', 'playlist' }, function(reply)
-			set_prop('playlist', reply.data)
-		end)
-	end
-
-	local function dirty_playlist()
-		playlist_changed = true
-
-		if not playlist_timer:is_active() then
-			playlist_timer:start(0, 100, update_playlist)
-		end
-	end
-
-	client:on('property-change', function(event)
-		local name = event.name
-		local data = event.data
-
-		if name == 'playlist-count' then
-			dirty_playlist()
-		end
-
-		if name == 'time-pos' and data then
-			data = math.floor(data)
-		end
-
-		set_prop(name, data)
-	end)
-
-	client:on('client-message', function(event)
-		local arg1 = event.args[1]
-
-		if arg1 == 'playlist-changed' then
-			dirty_playlist()
-		end
-	end)
-
-	for i, name in ipairs({
-		'duration',
-		'mute',
-		'pause',
-		'playlist-count',
-		'playlist-pos-1',
-		'speed',
-		'term-osd-bar-chars',
-		'time-pos',
-		'volume',
-		'working-directory',
-	}) do
-		client:request({ 'observe_property', i, name })
-	end
-end
-
 local function mpv_keyname(key)
 	if key == '^[' then
 		return 'ESC'
@@ -430,13 +358,12 @@ local function enter_program()
 		local key = ffi.string(curs.keyname(c))
 		local key = mpv_keyname(key)
 
-		local handler = local_bindings[key]
-		if handler then
-			handler()
-			return
-		end
-
 		if client then
+			client:request({
+				'set_property',
+				'user-data/mpt/last-activity',
+				os.time(),
+			})
 			client:request({ 'keypress', key })
 		end
 	end)
@@ -448,7 +375,7 @@ local function enter_program()
 	render(true)
 end
 
-local function search_playlist()
+local function select_playlist()
 	enter_shell()
 
 	local stdin = uv.new_pipe()
@@ -617,15 +544,82 @@ local function edit_properties()
 	end)
 end
 
-local_bindings = {
-	['/'] = search_playlist,
-	['Ctrl+w'] = edit_playlist,
-	['Ctrl+p'] = edit_properties,
-}
+local function set_client(client_)
+	client = client_
+	render(false)
+	playlist_timer:stop()
 
-local function connect_to_best_client(clients, on_connect)
+	if not client then
+		return
+	end
+
+	local playlist_changed = false
+
+	local function update_playlist()
+		if playlist_changed then
+			playlist_changed = false
+			client:request({ 'get_property', 'playlist' }, function(reply)
+				set_prop('playlist', reply.data)
+			end)
+		else
+			playlist_timer:stop()
+		end
+	end
+
+	local function dirty_playlist()
+		playlist_changed = true
+		if not playlist_timer:is_active() then
+			playlist_timer:start(0, 100, update_playlist)
+		end
+	end
+
+	client:on('property-change', function(event)
+		local name = event.name
+		local data = event.data
+
+		if name == 'playlist-count' then
+			dirty_playlist()
+		end
+
+		if name == 'time-pos' and data then
+			data = math.floor(data)
+		end
+
+		set_prop(name, data)
+	end)
+
+	client:on('client-message', function(event)
+		local args = event.args
+		if args[1] == 'playlist-changed' then
+			dirty_playlist()
+		elseif args[1] == 'mpt' and args[2] == 'edit-playlist' then
+			edit_playlist()
+		elseif args[1] == 'mpt' and args[2] == 'edit-properties' then
+			edit_properties()
+		elseif args[1] == 'mpt' and args[2] == 'select-playlist' then
+			select_playlist()
+		end
+	end)
+
+	for i, name in ipairs({
+		'duration',
+		'mute',
+		'pause',
+		'playlist-count',
+		'playlist-pos-1',
+		'speed',
+		'term-osd-bar-chars',
+		'time-pos',
+		'volume',
+		'working-directory',
+	}) do
+		client:request({ 'observe_property', i, name })
+	end
+end
+
+local function choose_best_client(clients, callback)
 	if #clients == 0 then
-		return on_connect()
+		return callback()
 	end
 
 	local best
@@ -640,20 +634,19 @@ local function connect_to_best_client(clients, on_connect)
 					client:close()
 				end
 			end
-			return on_connect(best)
+			return callback(best)
 		end
 	end
 
 	for _, client in ipairs(clients) do
-		client:connect(function(self, err)
+		client:connect(function(err)
 			if err then
 				return step()
 			end
-
-			self:request({ 'get_property', 'pause' }, function(reply)
+			client:request({ 'get_property', 'pause' }, function(reply)
 				local pause = reply.data
 				if not best or (best_pause and not pause) then
-					best, best_pause = self, pause
+					best, best_pause = client, pause
 				end
 				return step()
 			end)
@@ -666,7 +659,7 @@ do
 	for _, path in ipairs(arg) do
 		table.insert(clients, Client:new(path))
 	end
-	connect_to_best_client(clients, function(client)
+	choose_best_client(clients, function(client)
 		if client then
 			set_client(client)
 		end
