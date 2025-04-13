@@ -3,7 +3,7 @@ local options = require('mp.options')
 local opts = {
 	speed = 2.71828, -- speeeeeeed
 }
-options.read_options(opts)
+options.read_options(opts, 'push-to-fastforward')
 
 local down = false
 
