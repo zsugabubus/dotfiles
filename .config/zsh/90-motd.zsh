@@ -7,7 +7,7 @@ V_/_
 fi
 
 # Display calendar once a day.
-if [[ -o interactive ]]; then
+if [[ -o interactive && $USER == $DEFAULT_USER && $HOST == $DEFAULT_HOST ]]; then
 	zmodload zsh/datetime
 	zmodload -F zsh/stat b:zstat
 
