@@ -10,13 +10,6 @@ function LBUFFER_space() {
 	[[ $LBUFFER =~ '\S$' ]] && LBUFFER+=' '
 }
 
-function cd_m() {
-	if [[ $PWD = ~ ]]; then
-		cd -- ~m
-		zle .reset-prompt
-	fi
-}
-
 # autoload -Uz bracketed-paste-magic
 local content
 zle .$WIDGET -N content
@@ -24,7 +17,6 @@ zle .split-undo
 
 # Auto-clone Git remote.
 if [[ -z $BUFFER && $content =~ '^\s*(git clone )?(git://\S*|https?://(git\.\S*|\S*\.git|github.com/[^/]*/[^/]*))/?[\n \t]*$' ]]; then
-	cd_m
 	LBUFFER="git clone ${(q-)match[2]} --depth 1"
 	RBUFFER=" && cd -- ${(q-)${match[2]:t}%.git}"
 	return
@@ -32,7 +24,6 @@ fi
 
 # Git clone with custom command.
 if [[ $content =~ '^[\t\n ]*git clone' ]]; then
-	cd_m
 	LBUFFER="$content --depth 1"
 	# Tail of first link (or 3rd word if empty).
 	RBUFFER=" && cd -- ${${${${${(z)content}[(r)*://*]:-${${(z)content}[3]}}:t}}%.git}"
@@ -47,17 +38,14 @@ if [[ $content =~ '^\s*(([a-z-]{3,}):\S*)\s*$' ]]; then
 		LBUFFER="curl -L ${(q-)content} | git apply"
 		return
 	elif [[ -z $BUFFER && $content =~ '^https?://((www.)?youtube.com|youtu.be)/' ]]; then
-		cd_m
 		LBUFFER=' yt-dlp'
 		RBUFFER=' -f22'
 	elif [[ $content =~ '^https://github.com/([^/]+/[^/]+)/blob/(.*)$' ]]; then
 		content="https://raw.githubusercontent.com/${match[1]}/${match[2]}"
 		if [[ -z $BUFFER ]]; then
-			cd_m
 			LBUFFER='curl -LO '
 		fi
 	elif [[ -z $BUFFER ]]; then
-		cd_m
 		LBUFFER='curl -LO'
 	fi
 
