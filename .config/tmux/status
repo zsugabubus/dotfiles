@@ -409,6 +409,44 @@ local blocks = {
 			o.ok = status == 'starting' or status == 'running'
 		end
 	end),
+	alsa = function(update_bar, control)
+		local o = { volume = 0, muted = false }
+
+		local function update()
+			local stdout = uv.new_pipe()
+			local process
+			process = assert(uv.spawn('amixer', {
+				args = { '-M', 'get', control },
+				stdio = { nil, stdout, 2 },
+			}, function()
+				process:close()
+			end))
+			stdout:read_start(function(err, data)
+				stdout:close()
+				local volume, toggle =
+					data:match('Playback[^\n]*%[(%d+)%%%][^\n]*%[o([nf])')
+				o.volume = tonumber(volume)
+				o.muted = toggle == 'f'
+				update_bar()
+			end)
+		end
+		local debounced_update = debounce(update, 50, 1000)
+
+		local needle = control .. ' Playback '
+		local stdout = uv.new_pipe()
+		assert(uv.spawn('stdbuf', {
+			args = { '-oL', 'amixer', 'events' },
+			stdio = { nil, stdout, 2 },
+		}))
+		stdout:read_start(function(err, data)
+			if data:find(needle, 1, true) then
+				debounced_update()
+			end
+		end)
+
+		update()
+		return o
+	end,
 }
 
 local function bar(fn, on_output)
@@ -469,6 +507,7 @@ tmux('@status', function(update_bar)
 	})
 	local system_units = blocks.system_units(update_bar)
 	local user_units = blocks.user_units(update_bar)
+	local alsa = blocks.alsa(update_bar, 'Master')
 
 	return function(buf)
 		do
@@ -538,6 +577,10 @@ tmux('@status', function(update_bar)
 				bat_capacity.capacity,
 				danger(bat_capacity.capacity < 50)
 			)
+		end
+
+		if alsa.muted then
+			buf:put(' [M] ')
 		end
 
 		user_units:interval(300)
