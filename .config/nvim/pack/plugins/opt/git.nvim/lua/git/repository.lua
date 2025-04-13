@@ -57,7 +57,7 @@ local function update_statusline(repo)
 	end
 	if repo.operation then
 		s = s .. '|' .. repo.operation
-		if repo.step then
+		if repo.step and repo.total then
 			s = s .. ' ' .. repo.step .. '/' .. repo.total
 		end
 	end
@@ -91,23 +91,6 @@ local function run(repo, args, callback)
 			assert(not err, err)
 			return callback(table.concat(chunks))
 		end
-	end)
-end
-
-local function read(path, callback)
-	return uv.fs_open(path, 'r', 0, function(_, fd)
-		if not fd then
-			return callback()
-		end
-
-		return uv.fs_read(fd, 64, function(_, s)
-			uv.fs_close(fd, function(err, success)
-				assert(not err, err)
-				assert(success)
-			end)
-
-			return callback(s)
-		end)
 	end)
 end
 
@@ -169,67 +152,76 @@ local function update_ahead_behind(repo)
 	end)
 end
 
+local function readn(path, callback)
+	return uv.fs_open(path, 'r', 0, function(_, fd)
+		if not fd then
+			return callback()
+		end
+		return uv.fs_read(fd, 10, function(_, s)
+			uv.fs_close(fd, function(err, success)
+				assert(not err, err)
+				assert(success)
+			end)
+			return callback(tonumber(s))
+		end)
+	end)
+end
+
 local function update_operation(repo)
 	local i = 6
-
 	local function step(operation, step, total)
-		if operation and step and total then
+		if operation then
 			repo.operation, repo.step, repo.total = operation, step, total
-			return update_statusline(repo)
-		elseif operation then
-			repo.operation, repo.step, repo.total = operation, nil, nil
 			return update_statusline(repo)
 		end
 
 		i = i - 1
-		if i > 0 then
-			return
+		if i == 0 then
+			repo.operation, repo.step, repo.total = nil
+			update_statusline(repo)
 		end
-
-		repo.operation, repo.step, repo.total = nil, nil, nil
-		return update_statusline(repo)
 	end
 
 	uv.fs_access(repo.git_dir .. '/REVERT_HEAD', 'r', function(_, ok)
-		return step(ok and 'REVERT')
+		step(ok and 'REVERT')
 	end)
 
 	uv.fs_access(repo.git_dir .. '/BISECT_LOG', 'r', function(_, ok)
-		return step(ok and 'BISECT')
+		step(ok and 'BISECT')
 	end)
 
 	uv.fs_access(repo.git_dir .. '/CHERRY_PICK_HEAD', 'r', function(_, ok)
-		return step(ok and 'CHERRY-PICK')
+		step(ok and 'CHERRY-PICK')
 	end)
 
 	uv.fs_access(repo.git_dir .. '/MERGE_HEAD', 'r', function(_, ok)
-		return step(ok and 'MERGE')
+		step(ok and 'MERGE')
 	end)
 
-	uv.fs_access(repo.git_dir .. '/rebase-merge', 'r', function(_, ok)
+	local merge_dir = repo.git_dir .. '/rebase-merge'
+	uv.fs_access(merge_dir, 'x', function(_, ok)
 		if not ok then
 			return step()
 		end
 
-		read(repo.git_dir .. '/rebase-merge/msgnum', function(s)
-			local k = tonumber(s)
-			read(repo.git_dir .. '/rebase-merge/end', function(s)
-				local n = tonumber(s)
-				return step('REBASE', k, n)
+		readn(merge_dir .. '/msgnum', function(k)
+			readn(merge_dir .. '/end', function(n)
+				step('REBASE', k, n)
 			end)
 		end)
 	end)
 
-	uv.fs_access(repo.git_dir .. '/rebase-apply', 'r', function(_, ok)
+	local apply_dir = repo.git_dir .. '/rebase-apply'
+	uv.fs_access(apply_dir, 'x', function(_, ok)
 		if not ok then
 			return step()
 		end
 
-		read(repo.git_dir .. '/rebase-apply/next', function(s)
-			local k = tonumber(s)
-			read(repo.git_dir .. '/rebase-apply/last', function(s)
-				local n = tonumber(s)
-				return step('REBASE', k, n)
+		readn(apply_dir .. '/next', function(k)
+			readn(apply_dir .. '/last', function(n)
+				uv.fs_access(apply_dir .. '/applying', 'r', function(_, applying)
+					step(applying and 'AM' or 'REBASE', k, n)
+				end)
 			end)
 		end)
 	end)
