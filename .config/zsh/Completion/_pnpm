@@ -1,0 +1,183 @@
+#compdef pnpm
+
+typeset -ga _pnpm_scripts _pnpm_bins
+typeset -g _pnpm_cache_key
+
+function _pnpm_generate_if_changed {
+	local cache_key
+	local -A stat
+
+	zmodload -F zsh/stat b:zstat
+
+	for f in package.json node_modules/.bin; do
+		if zstat -H stat $f 2>/dev/null; then
+			cache_key+="${stat[device]}|${stat[inode]}|${stat[size]}|${stat[mtime]}"
+		fi
+		cache_key+='||'
+	done
+
+	if [[ $_pnpm_cache_key == $cache_key ]]; then
+		return
+	fi
+	_pnpm_cache_key=$cache_key
+
+	if [[ -f package.json ]]; then
+		_pnpm_scripts=( ${(f)"$(
+			jq <package.json -r '.scripts|to_entries|map((.key|gsub("(?<c>[\\\\:])"; "\\\(.c)"; "g")) + ":" + .value).[]'
+		)"} )
+	else
+		_pnpm_scripts=()
+	fi
+
+	_pnpm_bins=( node_modules/.bin/*(xN:t) )
+}
+
+function _package_scripts {
+	_pnpm_generate_if_changed
+	_describe 'package.json script' _pnpm_scripts -J script
+}
+
+function _node_bins {
+	_pnpm_generate_if_changed
+	_describe 'node_modules command' _pnpm_bins -J binary
+}
+
+function _pnpm_builtin_commands {
+	local commands=(
+		add
+		audit
+		exec
+		install
+		list
+		outdated
+		prune
+		remove
+		run
+		start
+		test
+		update
+	)
+	_describe 'builtin command' commands -J command
+}
+
+function _pnpm_playwright {
+	_arguments -C \
+		': :->command' \
+		'*:: :->arg'
+
+	case $state in
+		command)
+			local commands=(install test show-report show-trace)
+			_describe command commands
+			;;
+
+		arg)
+			case $words[1] in
+				install)
+					_arguments \
+						'--dry-run' \
+						'--force' \
+						'--only-shell' \
+						'--no-shell' \
+						"*::browser:(chromium msedge firefox webkit)"
+					;;
+
+				test)
+					_arguments -A '*' \
+						"*: :_files -g '*.spec.*'" \
+						'--debug' \
+						{-g,--grep}'[Only run tests matching this regular expression]:regexp:' \
+						'--headed[Run tests in headed browser]' \
+						'--ignore-snapshots[Ignore screenshot and snapshot expectations]' \
+						'--last-failed[Only re-run the failures]' \
+						'--list[List tests]' \
+						'--repeat-each[Run each test N times]: :_numbers -u times' \
+						'--reporter[Reporter to use]: :_sequence compadd - list line dot json junit null github html blob' \
+						'--retries[Maximum retry count for flaky tests]: :_numbers -u times' \
+						'--timeout[Test timeout]: :_numbers -u milliseconds' \
+						'--trace[Force tracing mode]: :(on off on-first-retry on-all-retries retain-on-failure retain-on-first-failure)' \
+						{-u,--update-snapshots}'[Update snapshots]:: :(all changed missing none)' \
+						'--ui[Run tests in interactive UI mode]' \
+						'-x[Stop after the first failure]' \
+						{-h,--help}'[Display help for command]'
+					;;
+
+				show-trace)
+					_files
+					;;
+			esac
+			;;
+	esac
+}
+
+function _pnpm_vitest_commands {
+	local commands=(run watch bench list)
+	_describe command commands -J command
+}
+
+function _pnpm_vitest_files {
+	_files -g '*.(test|spec).*'
+}
+
+function _pnpm_vitest {
+	# `'1: :'` doesn't work with `-A`.
+	_arguments -C -A '*' \
+		'*: :{(( CURRENT == 2 )) && _pnpm_vitest_commands; _pnpm_vitest_files}' \
+		{-u,--update}'[Update snapshots]:pattern:' \
+		{-t,--testNamePattern}'[Only run tests matching this regular expression]:pattern:' \
+		'--dir[Base directory to scan for the test files]:path:_files -/' \
+		'--ui[Enable UI]' \
+		'--allowOnly[Allow tests and suites that are marked as only]' \
+		'--printConsoleTrace[Always print console stack traces]' \
+		'--standalone[Start without running tests]'
+}
+
+function _pnpm {
+	local state line curcontext="$curcontext"
+
+	_arguments -C \
+		': :->command' \
+		'*:: :->arg'
+
+	case $state in
+		command)
+			_alternative \
+				': :_package_scripts' \
+				': :_node_bins' \
+				': :_pnpm_builtin_commands'
+			;;
+
+		arg)
+			case $words[1] in
+				add)
+					_arguments -s -S \
+						'*:package:' \
+						'(-D --save-dev)'{-D,--save-dev}'[as development dependency]' \
+					;;
+
+				remove)
+					_arguments '*:package:'
+					;;
+
+				run)
+					_arguments \
+						': :_package_scripts' \
+						'*:: :_files'
+					;;
+
+				playwright)
+					_pnpm_playwright
+					;;
+
+				vitest)
+					_pnpm_vitest
+					;;
+
+				*)
+					_files
+					;;
+			esac
+	esac
+}
+
+_pnpm "$@"
