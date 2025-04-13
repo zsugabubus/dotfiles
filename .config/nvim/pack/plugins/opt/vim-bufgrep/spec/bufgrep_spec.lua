@@ -1,6 +1,6 @@
 local vim = create_vim({ isolate = false })
 
-local function command_tests(Command, add)
+local function test_command(Command, add)
 	local function make_item(bufname, lnum, col, end_lnum, end_col, text)
 		return {
 			bufnr = vim.fn.bufnr(bufname),
@@ -32,29 +32,20 @@ local function command_tests(Command, add)
 	end)
 
 	it('uses global regex', function()
-		vim.cmd.edit('test')
+		vim.cmd.edit('file')
 		vim:set_lines({ 'aa' })
 
 		Command('a')
 
 		assert_quickfix({
-			make_item('test', 1, 1, 1, 2, 'aa'),
-			make_item('test', 1, 2, 1, 3, 'aa'),
+			make_item('file', 1, 1, 1, 2, 'aa'),
+			make_item('file', 1, 2, 1, 3, 'aa'),
 		})
 	end)
 
-	it('searches all buffers', function()
-		vim.cmd.edit('a')
+	it('searches all normal and listed buffers', function()
+		vim.cmd.edit('file1')
 		vim:set_lines({ 'a' })
-
-		vim.cmd.edit('b')
-		-- No match.
-
-		vim.cmd.edit('c')
-		vim:set_lines({ 'c' })
-
-		vim.cmd.edit('d')
-		-- No match.
 
 		vim.cmd.edit('unlisted')
 		vim.bo.buflisted = false
@@ -64,52 +55,92 @@ local function command_tests(Command, add)
 		vim.bo.buftype = 'nofile'
 		vim:set_lines({ 'x' })
 
+		vim.cmd.edit('file2')
+		vim:set_lines({ 'a' })
+
 		Command('.')
 
 		assert_quickfix({
-			make_item('a', 1, 1, 1, 2, 'a'),
-			make_item('c', 1, 1, 1, 2, 'c'),
+			make_item('file1', 1, 1, 1, 2, 'a'),
+			make_item('file2', 1, 1, 1, 2, 'a'),
 		})
 	end)
 
-	local function special_char(char)
-		it('allows search for special character; ' .. vim.inspect(char), function()
-			vim.cmd.edit('test')
-			vim:set_lines({ char })
+	it('swallows "No match:" error', function()
+		-- XXX: For some unknown reasons we get "No match" error for the first
+		-- buffer only.
+		vim.cmd.edit('file1')
+		vim.cmd.edit('file2')
+		vim:set_lines({ 'a' })
 
-			Command(char)
+		Command('a')
 
-			assert_quickfix({
-				make_item('test', 1, 1, 1, 2, char),
-			})
-		end)
-	end
+		assert_quickfix({
+			make_item('file2', 1, 1, 1, 2, 'a'),
+		})
+	end)
 
-	special_char('/')
-	special_char('#')
-	special_char('\\')
-	special_char('%')
+	it('swallows "No match" error', function()
+		vim.o.wildignore = 'file1'
+		vim.cmd.edit('file1')
+		vim.cmd.edit('file2')
+		vim:set_lines({ 'a' })
+
+		Command('a')
+
+		assert_quickfix({
+			make_item('file2', 1, 1, 1, 2, 'a'),
+		})
+	end)
+
+	it("doesn't swallow regex syntax errors", function()
+		vim:set_lines({ '' })
+
+		assert.error_matches(function()
+			Command('\\va**')
+		end, 'multi follow a multi')
+	end)
+
+	describe('allows searching for special character', function()
+		local function check(char)
+			it(vim.inspect(char), function()
+				vim.cmd.edit('file')
+				vim:set_lines({ char })
+
+				Command(char)
+
+				assert_quickfix({
+					make_item('file', 1, 1, 1, 2, char),
+				})
+			end)
+		end
+
+		check('/')
+		check('#')
+		check('\\')
+		check('%')
+	end)
 
 	it('allows backslash escaping in regex', function()
-		vim.cmd.edit('test')
+		vim.cmd.edit('file')
 		vim:set_lines({ 'a.' })
 
 		Command([[\.]])
 
 		assert_quickfix({
-			make_item('test', 1, 2, 1, 3, 'a.'),
+			make_item('file', 1, 2, 1, 3, 'a.'),
 		})
 	end)
 
 	it('uses last pattern when called without arguments', function()
 		vim.fn.setreg('/', 'b')
-		vim.cmd.edit('test')
+		vim.cmd.edit('file')
 		vim:set_lines({ 'abc' })
 
 		Command()
 
 		assert_quickfix({
-			make_item('test', 1, 2, 1, 3, 'abc'),
+			make_item('file', 1, 2, 1, 3, 'abc'),
 		})
 	end)
 
@@ -123,9 +154,9 @@ local function command_tests(Command, add)
 end
 
 describe(':BufGrep', function()
-	command_tests(vim.cmd.BufGrep, false)
+	test_command(vim.cmd.BufGrep, false)
 end)
 
 describe(':BufGrepAdd', function()
-	command_tests(vim.cmd.BufGrepAdd, true)
+	test_command(vim.cmd.BufGrepAdd, true)
 end)

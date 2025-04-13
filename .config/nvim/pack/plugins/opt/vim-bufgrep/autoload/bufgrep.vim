@@ -12,34 +12,40 @@ function! bufgrep#BufGrep(pattern, add) abort
 			let @/ = a:pattern
 		endif
 
-		for buf in getbufinfo({'buflisted': 1})
-			if !empty(getbufvar(buf.bufnr, '&buftype'))
+		for info in getbufinfo({'buflisted': 1})
+			let bufnr = info.bufnr
+
+			if !empty(getbufvar(bufnr, '&buftype'))
 				continue
 			endif
 
-			if buf.changed
+			if info.changed
 				let grepfile = tmpfile
-				call writefile(getbufline(buf.bufnr, 1, '$'), grepfile)
+				call writefile(getbufline(bufnr, 1, '$'), grepfile)
 			else
-				let grepfile = bufname(buf.bufnr)
+				let grepfile = bufname(bufnr)
 				if grepfile ==# ''
 					continue
 				endif
 			endif
+
 			try
 				noautocmd silent execute 'vimgrepadd' '//jg' fnameescape(grepfile)
-			catch 'No match:'
+			catch 'No match'
 				continue
 			endtry
+
+			" If vimgrepadd used a temporary file we have to map bufnrs of the newly
+			" added items to refer to the original file.
 			let grepbuf = bufnr(grepfile)
-			if grepbuf ==# buf.bufnr
+			if grepbuf ==# bufnr
 				continue
 			endif
 
 			let items = getqflist()
 			for item in items
 				if item.bufnr ==# grepbuf
-					let item.bufnr = buf.bufnr
+					let item.bufnr = bufnr
 				endif
 			endfor
 			call setqflist(items, 'r')
