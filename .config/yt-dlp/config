@@ -1,0 +1,4 @@
+--add-metadata
+--write-subs
+--write-auto-subs
+--format 'bestvideo[height<=720]+bestaudio/best[height<=720]'
