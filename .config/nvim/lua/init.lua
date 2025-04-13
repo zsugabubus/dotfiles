@@ -400,6 +400,7 @@ remap('n', 'sp', 'gsip')
 smap('n', 'sq', ':Qf<CR>')
 smap('n', 'sQ', ':tabnew|Qe<CR>')
 smap('n', 'st', ':Tlast<CR>')
+smap('n', 'sD', ':Dup<CR>')
 map('n', 'ss', ':%s//g<Left><Left>')
 remap('n', 's/', 'ss/')
 map('x', 'ss', ':s//g<Left><Left>')
@@ -543,6 +544,12 @@ user_command(
 	[[set buftype=nowrite|silent keeppattern %s/\v("[^"]*"|[^",]*),/\1\t/g|Varign]],
 	{}
 )
+
+user_command('Dup', function()
+	local path = fn.tempname()
+	cmd.mksession(path)
+	fn.system({ 'tmux', 'new-window', 'nvim', '-S', path })
+end, {})
 
 autocmd({ 'FocusGained', 'VimEnter' }, {
 	group = group,
