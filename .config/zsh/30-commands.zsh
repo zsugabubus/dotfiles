@@ -10,6 +10,7 @@ setopt aliases
 #
 
 alias -- -=cd\ -
+integer i
 for i ({0..9}) alias -- -$i=cd\ -$i
 
 alias cp='cp -i'
@@ -207,23 +208,6 @@ function v() {
 # Make.
 #
 
-alias asm='gcc -fno-stack-protector -fno-asynchronous-unwind-tables -S'
-
-function meson() {
-	if (( !$# )); then
-		mkbuild
-		command meson setup build
-	else
-		command meson "$@"
-	fi
-}
-
-function meson_install() {
-	local builddir=${1:-build}
-	meson compile -C $builddir
-	sudo meson install -C $builddir
-}
-
 function gccc() {
 	gcc -O2 -Wall -Wextra -pthread -march=native -std=c11 -g -ldl -lm main.c &&
 	time ./a.out
@@ -354,28 +338,6 @@ alias ssh='noglob ssh'
 alias systemctl='noglob systemctl'
 alias vlock='nice -20 vlock'
 
-# do not PANIC!!!
-function oom pan pani panic() {
-	pkill -9 chromium
-	sleep 5
-	pkill -9 mpv
-}
-
-function sheep_pacman() {
-	# --noconfirm does ask confirmation for conflicting packages.
-	sheep '{ yes | head -n10; cat; } | pacman '$*' && su $USER'
-}
-
-function sheep_black() {
-	sheep \
-		curl -o /tmp/strap.sh https://blackarch.org/strap.sh '&&' \
-		echo 9c15f5d3d6f3f8ad63a6927ba78ed54f1a52176b /tmp/strap.sh '|' sha1sum -c '&&' \
-		chmod +x /tmp/strap.sh '&&' \
-		sudo /tmp/strap.sh '&&' \
-		pacman -S --noconfirm $* '||: ; ' \
-		su $USER
-}
-
 function M() {
 	bwrap \
 		--unsetenv SHLVL \
@@ -421,7 +383,6 @@ alias curltor='curl -x socks5h://127.1:9050'
 alias iftop='sudo -E iftop'
 alias ip='ip -c'
 alias ipt='sudo iptables -xvL --line-numbers | sed '"'"'s/^Chain \(\S\+\)/Chain \x1b[1m\1\x1b[0m/'"'"
-alias upnp='upnpc -u "http://router.lan:5000/rootDesc.xml"'
 
 function speedtest() {
 	emulate -L zsh
@@ -579,14 +540,6 @@ function pdfmerge() {
 function cuckoo() {
 	tmux display-popup -T 'zsh: sched' -b 'double' -h 10 -w 40 -E \
 		sh -c 'printf "%s\n" "$*"; while ffplay -autoexit -nodisp ~/doc/cuckoo-clock.mp3 -loglevel error >/dev/null; do :; done' sh "$@"
-}
-
-function js-beautify() {
-	emulate -L zsh
-	local out=${1:r}.beautified.${1:e}
-	echo | npx -y js-beautify
-	npx js-beautify -t --type $1:e -w 120 - <$1 >$out &&
-	rm -i -- $1
 }
 
 function print_composekeys() {
