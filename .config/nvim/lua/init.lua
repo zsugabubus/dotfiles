@@ -102,6 +102,7 @@ local wo = vim.wo
 local autocmd = api.nvim_create_autocmd
 local buf_keymap = api.nvim_buf_set_keymap
 local keymap = api.nvim_set_keymap
+local del_keymap = api.nvim_del_keymap
 local user_command = api.nvim_create_user_command
 
 local group = api.nvim_create_augroup('init', {})
@@ -109,6 +110,10 @@ local group = api.nvim_create_augroup('init', {})
 local MAP_OPTS = { noremap = true }
 local function map(mode, lhs, rhs)
 	return keymap(mode, lhs, rhs, MAP_OPTS)
+end
+
+local function unmap(mode, lhs)
+	return del_keymap(mode, lhs)
 end
 
 local function nxo_map(lhs, rhs)
@@ -443,6 +448,11 @@ map('x', '<', '<gv')
 -- Linewise {, }.
 map('o', '{', 'V{')
 map('o', '}', 'V}')
+
+unmap('n', 'gri')
+unmap('n', 'grr')
+unmap('n', 'gra')
+unmap('n', 'grn')
 
 map('n', 'gr', ':GREP ')
 map('n', 'gw', ':GREP -swF <C-r>=shellescape(expand("<cword>"))<CR><CR>')
