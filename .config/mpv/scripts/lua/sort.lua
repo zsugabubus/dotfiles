@@ -192,3 +192,34 @@ end)
 
 require('mp.options').read_options(sort_options, 'sort', update_options)
 validate_options()
+
+mp.add_key_binding(nil, 'select-sort', function()
+	local choices = {
+		{ 'a: alpha', 'alpha' },
+		{ 'p: path', 'path' },
+		{ 'f: file', 'file' },
+		{ 'i: number', 'number' },
+		{ 'n: none', 'none' },
+	}
+
+	local items = {}
+	local default_item
+
+	for i, choice in pairs(choices) do
+		table.insert(items, choice[1])
+		if choice[2] == sort_options.by then
+			default_item = i
+		end
+	end
+
+	require('mp.input').get({
+		prompt = 'Sort',
+		items = items,
+		default_item = default_item,
+		default_text = '^',
+		select_one = true,
+		submit = function(i)
+			mp.commandv('script-message', 'sort', choices[i][2])
+		end,
+	})
+end)
