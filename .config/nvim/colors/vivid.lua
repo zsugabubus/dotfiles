@@ -39,7 +39,7 @@ local theme = {
 	LineNr = { fg = light and '#b0abab' or '#8085a0', bg = light and '#ededed' },
 	ModeMsg = { bold = true },
 	MoreMsg = { fg = '#1c891a', bold = true },
-	NonText = { fg = light and '#d1d0d3' or '#484848' },
+	NonText = { fg = light and '#d1d0d3' or '#383848' },
 	Normal = { fg = light and '#2f323f' or '#eeede9' },
 	NormalFloat = 'Pmenu',
 	Number = { fg = light and '#fa3422' or '#fa7452', bold = true, ctermfg = 1 },
