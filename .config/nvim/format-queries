@@ -46,8 +46,11 @@ local function get_grammar()
 				* V('hash_node_type')
 				* Cg(
 					Ct(
-						(Ct(Cg(V('capture_name'), 'capture')) + V('literal') + V('white'))
-							^ 0
+						(
+							Ct(Cg(V('capture_name'), 'capture')) +
+							Ct(Cg(V('string') + V('number') + V('ident'), 'literal')) +
+							V('white')
+						) ^ 0
 					),
 					'arguments'
 				)
@@ -92,11 +95,12 @@ local function get_grammar()
 		string = Cs(quote * ((1 - quote) ^ 0) * quote),
 		number = Cs(digit ^ 1),
 		literal = Ct(
-			Cg((V('string') + V('number')), 'literal') * V('capture_names')
+			Cg(V('string') + V('number'), 'literal') * V('capture_names')
 		),
 		alternate = l_bracket * Cg(V('patterns'), 'children') * r_bracket,
 		node_type = Cg(Cs((alpha + underscore + minus) ^ 1), 'type'),
-		capture_name = at * Cs((alpha + underscore + minus + dot) ^ 1),
+		ident = Cs((alpha + underscore + minus + dot) ^ 1),
+		capture_name = at * V('ident'),
 		capture_names = Cg(
 			Ct((V('capture_name') + V('white')) ^ 0),
 			'capture_names'
@@ -339,6 +343,18 @@ local function write_array_node(
 	write_capture_names(w, capture_names)
 end
 
+local function write_argument_node(w, node)
+	if node.capture then
+		w:put('@')
+		w:put(node.capture)
+	elseif node.literal then
+		w:put(node.literal)
+	else
+		vim.print(node)
+		error('unknown node')
+	end
+end
+
 write_node = function(w, node, indent)
 	if node.type then
 		w:put('(')
@@ -407,12 +423,12 @@ write_node = function(w, node, indent)
 			table.sort(sorted_arguments, get_node_order)
 
 			w:put(' ')
-			write_node(w, node.arguments[1], '')
+			write_argument_node(w, node.arguments[1])
 
 			for _, child in ipairs(sorted_arguments) do
 				w:new_line()
 				w:put(indent .. '  ')
-				write_node(w, child, '')
+				write_argument_node(w, child)
 			end
 
 			w:new_line()
@@ -425,7 +441,7 @@ write_node = function(w, node, indent)
 
 		for _, child in ipairs(node.arguments) do
 			w:put(' ')
-			write_node(w, child, indent)
+			write_argument_node(w, child)
 		end
 
 		w:put(')')
@@ -438,7 +454,7 @@ write_node = function(w, node, indent)
 		for _, child in ipairs(node.arguments) do
 			w:new_line()
 			w:put(indent .. '  ')
-			write_node(w, child, indent .. '  ')
+			write_argument_node(w, child)
 		end
 
 		w:put(')')
@@ -498,10 +514,12 @@ local function format_source(source)
 		return ax < bx
 	end)
 
-	for _, node in ipairs(nodes) do
+	for i, node in ipairs(nodes) do
 		local group = get_node_capture_name(node)
-		if (group ~= last_group and last_group) or group == VARIOUS_CAPTURES then
-			w:new_line()
+		if i > 1 then
+			if (group ~= last_group and last_group) or group == VARIOUS_CAPTURES then
+				w:new_line()
+			end
 		end
 		last_group = group
 
