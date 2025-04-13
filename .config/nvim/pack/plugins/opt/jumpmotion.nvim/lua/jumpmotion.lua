@@ -11,16 +11,13 @@ local function get_win_ns(win)
 	if not ns then
 		ns = table.remove(unused_ns) or api.nvim_create_namespace('')
 		win_ns[win] = ns
-		api.nvim__win_add_ns(win, ns)
+		api.nvim__ns_set(ns, { wins = { win } })
 	end
 	return ns
 end
 
 local function reset_win_ns()
-	for win, ns in pairs(win_ns) do
-		if api.nvim_win_is_valid(win) then
-			api.nvim__win_del_ns(win, ns)
-		end
+	for _, ns in pairs(win_ns) do
 		table.insert(unused_ns, ns)
 	end
 	win_ns = {}
