@@ -131,6 +131,7 @@ describe(':Gshow', function()
 	end)
 
 	it('errors out on bad revision', function()
+		git_init()
 		assert.error_matches(function()
 			vim.cmd.Gshow('bad-revision')
 		end, 'fatal: bad revision.*bad%-revision')
