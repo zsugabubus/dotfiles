@@ -272,7 +272,8 @@ local function serve_http(client)
 
 				local client_etag = req.headers[IF_NONE_MATCH]
 				local etag = format(
-					'"%d|%d|%d|%d"',
+					'"%d|%d|%d|%d|%d"',
+					stat.dev,
 					stat.ino,
 					stat.size,
 					stat.mtime.sec,
