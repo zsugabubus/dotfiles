@@ -8,7 +8,7 @@ local pad = config.pad or 1
 local width = setmetatable({}, {
 	__mode = 'kv',
 	__index = function(t, s)
-		local n = strdisplaywidth(s)
+		local n = strdisplaywidth(s:gsub('%z', '^@'))
 		t[s] = n
 		return n
 	end,
