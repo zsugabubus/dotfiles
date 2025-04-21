@@ -59,7 +59,7 @@ autocmd('BufReadCmd', {
 				shesc(path),
 				shesc(path),
 				shesc(path),
-				recursive and 'find' or 'ls -pa',
+				recursive and 'find' or 'ls -paU',
 				shesc(path),
 				shesc(path)
 			),
@@ -85,6 +85,8 @@ autocmd('BufReadCmd', {
 				table.remove(output, 1)
 				table.remove(output, 1)
 			end
+
+			table.sort(output)
 
 			for i, path in ipairs(output) do
 				output[i] = prefix .. output[i]
