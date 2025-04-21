@@ -86,7 +86,7 @@ local HttpSession = (function()
 	local libcurl = load_curl_library()
 	local body = require('string.buffer').new()
 
-	global_ref_to_make_ffi_gc_work = libcurl
+	_G.global_ref_to_make_ffi_gc_work = libcurl
 
 	local function check(result)
 		if result ~= libcurl.CURLE_OK then
@@ -99,7 +99,7 @@ local HttpSession = (function()
 		body:putcdata(buffer, len)
 		return len
 	end
-	local write_callback = ffi.cast('write_callback *', write_callback)
+	write_callback = ffi.cast('write_callback *', write_callback)
 
 	assert(libcurl.curl_global_init(0xff) == libcurl.CURLE_OK)
 
