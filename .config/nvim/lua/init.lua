@@ -181,6 +181,7 @@ o.cursorlineopt = 'number'
 o.diffopt = 'closeoff,filler,vertical,algorithm:patience'
 o.expandtab = false
 o.fileignorecase = true
+o.fillchars = 'stl:─,stlnc:─'
 o.foldopen = ''
 o.grepformat = '%f:%l:%c:%m'
 o.grepprg = 'noglob rg --vimgrep --smart-case'
@@ -189,6 +190,7 @@ o.ignorecase = true
 o.joinspaces = false -- No double space.
 o.laststatus = 2
 o.lazyredraw = true
+o.list = true
 o.modelines = 1
 o.more = false
 o.mouse = ''
@@ -197,6 +199,7 @@ o.relativenumber = true
 o.scrolloff = 5
 o.shiftwidth = 0
 o.shortmess = o.shortmess .. 'mrFI'
+o.showbreak = '\\'
 o.showmode = false
 o.sidescrolloff = 23
 o.smartcase = true
@@ -220,8 +223,6 @@ else
 	o.shadafile = 'NONE'
 end
 
-o.list = true
-o.showbreak = '\\'
 if vim.env.TERM == 'linux' then
 	o.listchars = 'eol:$,tab:> ,trail:+,extends::,precedes::,nbsp:_'
 else
