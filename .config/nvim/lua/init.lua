@@ -684,28 +684,16 @@ autocmd('StdinReadPost', {
 autocmd('BufReadPost', {
 	group = group,
 	callback = function()
-		local IGNORE_RE = vim.regex([[\vgit|mail]])
-
-		autocmd('FileType', {
+		autocmd('BufEnter', {
 			group = group,
 			buffer = 0,
 			once = true,
 			callback = function()
-				if IGNORE_RE:match_str(bo.filetype) then
+				local ft = bo.filetype
+				if ft:find('^git') or ft == 'mail' then
 					return
 				end
-
-				autocmd('BufEnter', {
-					group = group,
-					buffer = 0,
-					once = true,
-					callback = function()
-						local lnum = fn.line('\'"')
-						if 1 <= lnum and lnum <= fn.line('$') then
-							cmd.normal({ args = { 'g`"zvzz' }, bang = true })
-						end
-					end,
-				})
+				cmd('silent! normal! g`"zvzz')
 			end,
 		})
 	end,
