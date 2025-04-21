@@ -180,7 +180,7 @@ local HttpSession = (function()
 				set_username(self, opts.username)
 			end
 			if opts.password then
-				set_username(self, opts.password)
+				set_password(self, opts.password)
 			end
 		end
 		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_WRITEFUNCTION, write_callback))
