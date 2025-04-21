@@ -16,8 +16,8 @@ function _G.loadfile(path)
 		return nil, err
 	end
 
-	local path_key = path:gsub('/', '%%')
-	local cache_path = ('%s/%s%%M=%s_%s,S=%s'):format(
+	local path_key = ('%d_%d'):format(stat.dev, stat.ino)
+	local cache_path = ('%s/%s,M=%d_%d,S=%d'):format(
 		bytecode_dir,
 		path_key,
 		stat.mtime.sec,
@@ -91,7 +91,7 @@ function _G.loadfile(path)
 
 								-- Clean up old entries.
 								for _, entry in ipairs(entries) do
-									local name = entry.name:match('(.*)%%.*[^~]$')
+									local name = entry.name:match('(.-),.*[^~]$')
 									if name == path_key then
 										uv.fs_unlink(
 											bytecode_dir .. '/' .. entry.name,
