@@ -18,6 +18,19 @@
 	--fgColor-link: #0969da;
 	--fgColor-muted: #59636e;
 	--fgColor-success: #1a7f37;
+	--color-prettylights-syntax-comment: #59636e;
+	--color-prettylights-syntax-constant: #0550ae;
+	--color-prettylights-syntax-entity: #6639ba;
+	--color-prettylights-syntax-entity-tag: #0550ae;
+	--color-prettylights-syntax-keyword: #cf222e;
+	--color-prettylights-syntax-markup-deleted-bg: #ffebe9;
+	--color-prettylights-syntax-markup-deleted-text: #82071e;
+	--color-prettylights-syntax-markup-heading: #0550ae;
+	--color-prettylights-syntax-markup-inserted-bg: #dafbe1;
+	--color-prettylights-syntax-markup-inserted-text: #116329;
+	--color-prettylights-syntax-markup-list: #3b2300;
+	--color-prettylights-syntax-string: #0a3069;
+	--color-prettylights-syntax-variable: #953800;
 }
 [data-background="dark"] {
 	--bgColor-default: #0d1117;
@@ -38,6 +51,19 @@
 	--fgColor-link: #4493f8;
 	--fgColor-muted: #9198a1;
 	--fgColor-success: #3fb950;
+	--color-prettylights-syntax-comment: #9198a1;
+	--color-prettylights-syntax-constant: #79c0ff;
+	--color-prettylights-syntax-entity: #d2a8ff;
+	--color-prettylights-syntax-entity-tag: #7ee787;
+	--color-prettylights-syntax-keyword: #ff7b72;
+	--color-prettylights-syntax-markup-deleted-bg: #67060c;
+	--color-prettylights-syntax-markup-deleted-text: #ffdcd7;
+	--color-prettylights-syntax-markup-heading: #1f6feb;
+	--color-prettylights-syntax-markup-inserted-bg: #033a16;
+	--color-prettylights-syntax-markup-inserted-text: #aff5b4;
+	--color-prettylights-syntax-markup-list: #f2cc60;
+	--color-prettylights-syntax-string: #a5d6ff;
+	--color-prettylights-syntax-variable: #ffa657;
 }
 body {
 	background-color: var(--bgColor-default);
@@ -269,4 +295,69 @@ body {
 .markdown-body .emoji {
 	height: 1em;
 	width: 1em;
+}
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+	color: var(--color-prettylights-syntax-keyword);
+}
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+	color: var(--color-prettylights-syntax-entity);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-built_in {
+	color: var(--color-prettylights-syntax-constant);
+}
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+	color: var(--color-prettylights-syntax-string);
+}
+.hljs-symbol {
+	color: var(--color-prettylights-syntax-variable);
+}
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+	color: var(--color-prettylights-syntax-comment);
+}
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+	color: var(--color-prettylights-syntax-entity-tag);
+}
+.hljs-subst {
+	color: var(--fgColor-default);
+}
+.hljs-section {
+	color: var(--color-prettylights-syntax-markup-heading);
+	font-weight: bold;
+}
+.hljs-bullet {
+	color: var(--color-prettylights-syntax-markup-list);
+}
+.hljs-addition {
+	color: var(--color-prettylights-syntax-markup-inserted-text);
+	background-color: var(--color-prettylights-syntax-markup-inserted-bg);
+}
+.hljs-deletion {
+	color: var(--color-prettylights-syntax-markup-deleted-text);
+	background-color: var(--color-prettylights-syntax-markup-deleted-bg);
 }

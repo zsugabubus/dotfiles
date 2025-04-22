@@ -204,6 +204,40 @@ const mermaidObserver = new IntersectionObserver((entries) => {
 	}
 });
 
+let languageCache = new Map();
+const seenLanguages = new Set();
+
+const highlightCode = async (el) => {
+	const { default: hljs } = await import(
+		"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/es/highlight.min.js"
+	);
+
+	const languageName = el.className.match(/language-([^ ]+)/)?.[1];
+
+	if (languageName && !seenLanguages.has(languageName)) {
+		seenLanguages.add(languageName);
+		const { default: languageDefinition } = await import(
+			`https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/es/languages/${languageName}.min.js`
+		);
+		hljs.registerLanguage(languageName, languageDefinition);
+	}
+
+	const oldHtml = el.outerHTML;
+	hljs.highlightElement(el);
+	const newHtml = el.outerHTML;
+
+	languageCache.set(oldHtml, newHtml);
+};
+
+const languageObserver = new IntersectionObserver((entries) => {
+	for (const entry of entries) {
+		if (entry.intersectionRatio > 0) {
+			languageObserver.unobserve(entry.target);
+			highlightCode(entry.target);
+		}
+	}
+});
+
 let pendingSource = null;
 
 document.addEventListener("visibilitychange", () => {
@@ -266,6 +300,7 @@ const setMarkdown = (source) => {
 
 	lineMap = null;
 	mermaidObserver.disconnect();
+	languageObserver.disconnect();
 	markdownContentEl.innerHTML = html;
 
 	const newMermaidCache = new Map();
@@ -282,6 +317,21 @@ const setMarkdown = (source) => {
 	}
 
 	mermaidCache = newMermaidCache;
+
+	const newLanguageCache = new Map();
+
+	for (const el of document.querySelectorAll("[class^=language-]")) {
+		const elHtml = el.outerHTML;
+		const newHtml = languageCache.get(elHtml);
+		if (newHtml) {
+			el.outerHTML = newHtml;
+			newLanguageCache.set(elHtml, newHtml);
+		} else {
+			languageObserver.observe(el);
+		}
+	}
+
+	languageCache = newLanguageCache;
 
 	if (cursorOff) {
 		scrollToCursor();
