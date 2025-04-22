@@ -44,7 +44,7 @@ local function update_statusline(repo)
 	local s = ''
 
 	s = s .. flag('BARE:', repo.bare)
-	s = s .. flag('detached ', repo.detached)
+	s = s .. flag('detached\u{a0}', repo.detached)
 	s = s .. (repo.head or 'undefined')
 	s = s .. flag('+', repo.staged)
 	s = s .. flag('*', repo.modified)
@@ -58,7 +58,7 @@ local function update_statusline(repo)
 	if repo.operation then
 		s = s .. '|' .. repo.operation
 		if repo.step and repo.total then
-			s = s .. ' ' .. repo.step .. '/' .. repo.total
+			s = s .. '\u{a0}' .. repo.step .. '/' .. repo.total
 		end
 	end
 

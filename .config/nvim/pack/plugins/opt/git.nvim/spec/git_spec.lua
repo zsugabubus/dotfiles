@@ -785,6 +785,7 @@ describe('git_status()', function()
 	end
 
 	local function assert_status(expected)
+		expected = expected:gsub(' ', '\u{a0}')
 		for _ = 1, 10 do
 			if expected == git_status() then
 				return
