@@ -12,4 +12,4 @@ Host *.onion
 	PubkeyAuthentication yes
 	ProxyCommand socat - socks4a:localhost:%h:%p,socksport=9050
 
-# vim: ft=config
+# vim: ft=sshconfig
