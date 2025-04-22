@@ -163,6 +163,7 @@ CHR	1;95m󰝣 \e[1;95
 .in	m󰁨 \e[
 .ini	m \e[
 .js	m \e[
+.mjs	m \e[
 .json	m \e[
 .key	m󰌆 \e[
 .ld	m \e[
