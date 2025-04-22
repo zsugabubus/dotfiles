@@ -97,6 +97,8 @@ local theme = {
 	cStorageClass = 'Keyword',
 	cUserLabel = { fg = '#9d00c5', underline = true },
 
+	csModifier = 'Keyword',
+
 	cssIdentifier = 'Normal',
 	cssIdentifier = 'Normal',
 	cssImportant = { fg = '#f40000' },
