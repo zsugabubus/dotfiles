@@ -49,7 +49,10 @@ setBackground(sessionStorage.getItem("background") ?? defaultBackground);
 const emojis = new Map(
 	Object.entries(
 		await (await fetch("https://api.github.com/emojis")).json(),
-	).map(([name, url]) => [name, `<img class="emoji" src="${url}"/>`]),
+	).map(([name, url]) => [
+		name,
+		`<img class="emoji" src="${url}" loading="lazy">`,
+	]),
 );
 const emojiReplacer = (original, name) => emojis.get(name) ?? original;
 
@@ -69,6 +72,12 @@ marked.use({
 				const summary = `<summary>${cameraVideoIcon}Video</summary>`;
 				const video = `<video src="${link}" controls="controls" preload="none"></video>`;
 				return `<details class="markdown-video" open>${summary}${video}</details>`;
+			},
+		},
+		{
+			name: "image",
+			renderer({ href, title, text }) {
+				return `<img src="${href}" loading="lazy" alt="${escapeHtml(text)}" title="${escapeHtml(title || "")}">`;
 			},
 		},
 	],
