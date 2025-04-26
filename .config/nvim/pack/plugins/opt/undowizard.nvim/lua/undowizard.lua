@@ -312,7 +312,7 @@ local function yank_undo_patch(repo, before_change)
 	end
 
 	if not diff_range then
-		api.nvim_echo({ { 'Nothing to yank', 'Normal' } }, false, {})
+		api.nvim_echo({ { 'Nothing to yank' } }, false, {})
 		return
 	end
 
