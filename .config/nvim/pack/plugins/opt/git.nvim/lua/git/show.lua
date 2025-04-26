@@ -107,7 +107,7 @@ local function handle_read_autocmd(opts)
 	local bo = vim.bo[buf]
 
 	if vim.v.shell_error ~= 0 then
-		vim.api.nvim_err_writeln(table.concat(lines, '\n'))
+		utils.echoerr(table.concat(lines, '\n'))
 		return
 	end
 

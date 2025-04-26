@@ -76,4 +76,8 @@ function M.get_previewwindow()
 	end
 end
 
+function M.echoerr(s)
+	vim.api.nvim_echo({ { s } }, true, { err = true })
+end
+
 return M

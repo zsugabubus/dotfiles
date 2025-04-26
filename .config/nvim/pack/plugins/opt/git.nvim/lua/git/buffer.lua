@@ -159,7 +159,7 @@ local function goto_parent_tree()
 	local git_dir, rev = M.buf_get_rev(0)
 	local parent = revision.parent_tree(rev, vim.v.count1)
 	if not parent then
-		api.nvim_err_writeln('Not a tree-ish revision')
+		utils.echoerr('Not a tree-ish revision')
 		return
 	end
 	M.goto_revision(git_dir, parent)

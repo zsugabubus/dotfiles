@@ -89,7 +89,7 @@ local function handle_read_autocmd(opts)
 			local commit = row2commit[row]
 
 			if not commit then
-				api.nvim_err_writeln('No revision under cursor')
+				utils.echoerr('No revision under cursor')
 				return
 			end
 
@@ -116,7 +116,7 @@ local function handle_read_autocmd(opts)
 	}))
 
 	if vim.v.shell_error ~= 0 then
-		api.nvim_err_writeln(table.concat(lines, '\n'))
+		utils.echoerr(table.concat(lines, '\n'))
 		return
 	end
 
