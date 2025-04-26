@@ -3,14 +3,17 @@ local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
 
+local autocmd = api.nvim_create_autocmd
+local user_command = api.nvim_create_user_command
+
 local group = api.nvim_create_augroup('arglist', {})
 
-api.nvim_create_user_command('Args', function()
+user_command('Args', function()
 	cmd.edit('args://')
 	bo.bufhidden = 'unload'
 end, {})
 
-api.nvim_create_autocmd('BufReadCmd', {
+autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'args://',
 	nested = true,
@@ -31,7 +34,7 @@ api.nvim_create_autocmd('BufReadCmd', {
 	end,
 })
 
-api.nvim_create_autocmd('BufWriteCmd', {
+autocmd('BufWriteCmd', {
 	group = group,
 	pattern = 'args://',
 	nested = true,
