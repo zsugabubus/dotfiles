@@ -617,11 +617,10 @@ autocmd('BufNewFile', {
 
 		once('BufWritePost', function(opts)
 			if fn.getline(1):find('^#!') then
-				local uv = vim.loop
 				local bit = require('bit')
-				local mode = uv.fs_stat(opts.file).mode
+				local mode = vim.uv.fs_stat(opts.file).mode
 				local ugo_x = tonumber('111', 8)
-				uv.fs_chmod(opts.file, bit.bor(mode, ugo_x))
+				vim.uv.fs_chmod(opts.file, bit.bor(mode, ugo_x))
 			end
 		end)
 	end,
