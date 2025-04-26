@@ -2,7 +2,7 @@ local Trace = require('trace')
 local cache_dir = vim.fn.stdpath('cache')
 local bytecode_dir = cache_dir .. '/bytecode'
 local loadfile = loadfile -- Make it local.
-local uv = vim.loop
+local uv = vim.uv
 
 function _G.loadfile(path)
 	local trace = Trace.trace
