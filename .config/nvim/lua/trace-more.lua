@@ -63,7 +63,7 @@ function M.startuptime(verbose)
 		callback = function()
 			Trace.trace(span, 'UIEnter')
 			Trace.trace(root)
-			vim.api.nvim_echo({ { M.report(root), 'Normal' } }, true, {})
+			vim.api.nvim_echo({ { M.report(root) } }, true, {})
 		end,
 	})
 end
