@@ -3,7 +3,13 @@ local bo = vim.bo
 local cmd = vim.cmd
 local fn = vim.fn
 
-local echoerr = api.nvim_err_writeln
+local function echomsg(s)
+	api.nvim_echo({ { s } }, true, {})
+end
+
+local function echoerr(s)
+	api.nvim_echo({ { s } }, true, { err = true })
+end
 
 local function filter_completions(list, s)
 	if s == '' then
@@ -31,10 +37,6 @@ local function complete_panes(prefix)
 	table.insert(t, '{last}')
 	table.insert(t, '!')
 	return filter_completions(t, prefix)
-end
-
-local function echomsg(s)
-	api.nvim_echo({ { s, 'Normal' } }, true, {})
 end
 
 local function read_system(args, silent)
