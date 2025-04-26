@@ -172,7 +172,6 @@ function _G.tabline()
 end
 
 o.autoindent = true
-o.autowrite = true
 o.cinoptions = 't0,:0,l1'
 o.completeopt = 'menu,longest,noselect,preview'
 o.copyindent = true
