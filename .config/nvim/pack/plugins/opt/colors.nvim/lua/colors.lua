@@ -56,7 +56,7 @@ local function create_hl_group(bg_color)
 end
 
 local function highlight_lines(buf, start_row, end_row)
-	local start, count = debug and vim.loop.hrtime(), 0
+	local start, count = debug and vim.uv.hrtime(), 0
 
 	buf_clear_ns(buf, ns, start_row, end_row)
 
@@ -81,7 +81,7 @@ local function highlight_lines(buf, start_row, end_row)
 				start_row,
 				end_row,
 				end_row - start_row,
-				(vim.loop.hrtime() - start) / 1e6
+				(vim.uv.hrtime() - start) / 1e6
 			)
 		)
 	end
