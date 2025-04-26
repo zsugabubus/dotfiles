@@ -152,10 +152,7 @@ function M.align(opts)
 	end
 
 	api.nvim_echo({
-		{
-			('%d lines aligned'):format(end_lnum - start_lnum + 1),
-			'Normal',
-		},
+		{ ('%d lines aligned'):format(end_lnum - start_lnum + 1) },
 	}, false, {})
 end
 
