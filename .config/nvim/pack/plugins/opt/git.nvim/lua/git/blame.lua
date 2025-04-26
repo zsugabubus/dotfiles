@@ -275,6 +275,9 @@ local function handle_read_autocmd(opts)
 			api.nvim_del_augroup_by_id(group)
 		end,
 	})
+
+	local row = api.nvim_win_get_cursor(0)[1]
+	set_current_row(row, false)
 end
 
 return {
