@@ -10,8 +10,9 @@ local match = string.match
 local next = next
 local sub = string.sub
 
-local buf_add_highlight = api.nvim_buf_add_highlight
+local buf_set_extmark = api.nvim_buf_set_extmark
 local buf_set_lines = api.nvim_buf_set_lines
+local get_hl_id_by_name = api.nvim_get_hl_id_by_name
 local set_hl = api.nvim_set_hl
 
 local ns = api.nvim_create_namespace('ansiesc')
@@ -34,7 +35,7 @@ local function reset_pen_underline(pen)
 	pen.underdashed = nil
 end
 
-local function pen_to_hl_group(pen)
+local function pen_to_hl_name(pen)
 	return format(
 		'_ansiesc_%s_%s_%s_%s',
 		pen.fg and sub(pen.fg, 2) or '',
@@ -52,9 +53,9 @@ local function pen_to_hl_group(pen)
 	)
 end
 
-local function hl_group_to_pen(hl_group)
+local function hl_name_to_pen(hl_name)
 	local fg, bg, sp, b, i, u, d, c, o, a, r, s = match(
-		hl_group,
+		hl_name,
 		'^_ansiesc_([^_]*)_([^_]*)_([^_]*)_(b?)(i?)(u?)(d?)(c?)(o?)(a?)(r?)(s?)$'
 	)
 	return {
@@ -73,21 +74,35 @@ local function hl_group_to_pen(hl_group)
 	}
 end
 
-local function add_highlight(buffer, row, start_col, end_col, pen)
-	if start_col == end_col or is_default_pen(pen) then
-		return
+local add_highlight = (function()
+	local opts = { end_row = nil, end_col = nil, hl_group = nil }
+
+	return function(buffer, row, start_col, end_col, pen)
+		if start_col == end_col or is_default_pen(pen) then
+			return
+		end
+
+		local hl_name = pen_to_hl_name(pen)
+		local hl_id = hl_cache[hl_name]
+		if not hl_id then
+			set_hl(0, hl_name, pen)
+			hl_id = get_hl_id_by_name(hl_name)
+			hl_cache[hl_name] = hl_id
+		end
+
+		if end_col ~= -1 then
+			opts.end_row = row
+			opts.end_col = end_col
+		else
+			opts.end_row = row + 1
+			opts.end_col = 0
+		end
+		opts.hl_group = hl_id
+		buf_set_extmark(buffer, ns, row, start_col, opts)
 	end
+end)()
 
-	local hl_group = pen_to_hl_group(pen)
-	if not hl_cache[hl_group] then
-		hl_cache[hl_group] = true
-		set_hl(0, hl_group, pen)
-	end
-
-	buf_add_highlight(buffer, ns, hl_group, row, start_col, end_col)
-end
-
-local function make_ansi_parser()
+local parse_ansi = (function()
 	local start_cols = {}
 	local sgrs = {}
 	local offset
@@ -105,9 +120,9 @@ local function make_ansi_parser()
 		offset = -1
 		return gsub(s, '()\x1b%[([0-9;:]*)m()', f), start_cols, sgrs
 	end
-end
+end)()
 
-local function make_sgr_parser()
+local parse_sgr = (function()
 	local params = {}
 
 	return function(s)
@@ -127,7 +142,7 @@ local function make_sgr_parser()
 		insert(params, i > #s and '0' or sub(s, i))
 		return params
 	end
-end
+end)()
 
 local function color(r, g, b)
 	return format('#%02x%02x%02x', r, g, b)
@@ -292,9 +307,6 @@ local function strip_hyperlinks(s)
 	return gsub(s, '\x1b]8;.-\x1b\\', '')
 end
 
-local parse_ansi = make_ansi_parser()
-local parse_sgr = make_sgr_parser()
-
 local function highlight_buffer(buffer)
 	local pen = {}
 	for row, line in ipairs(api.nvim_buf_get_lines(buffer, 0, -1, false)) do
@@ -321,9 +333,10 @@ api.nvim_create_autocmd('ColorScheme', {
 	group = group,
 	callback = function()
 		palette = nil
-		for hl_group in pairs(hl_cache) do
-			local pen = hl_group_to_pen(hl_group)
-			set_hl(0, hl_group, pen)
+		-- Associated highlight IDs remain valid since highlights cannot be deleted.
+		for hl_name in pairs(hl_cache) do
+			local pen = hl_name_to_pen(hl_name)
+			set_hl(0, hl_name, pen)
 		end
 	end,
 })
