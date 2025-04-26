@@ -183,7 +183,7 @@ local function handle_write_autocmd(opts)
 	bo.modified = false
 
 	if changes == 0 then
-		api.nvim_echo({ { '--No changes--', 'Normal' } }, false, {})
+		api.nvim_echo({ { '--No changes--' } }, false, {})
 	else
 		api.nvim_echo({
 			{
@@ -191,7 +191,6 @@ local function handle_write_autocmd(opts)
 					changes,
 					changes == 1 and 'change' or 'changes'
 				),
-				'Normal',
 			},
 		}, true, {})
 	end
