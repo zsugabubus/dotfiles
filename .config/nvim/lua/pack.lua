@@ -7,7 +7,7 @@ local insert = table.insert
 local ipairs = ipairs
 local pcall = pcall
 local sub = string.sub
-local uv = vim.loop
+local uv = vim.uv
 
 local fs_access = uv.fs_access
 local fs_scandir = uv.fs_scandir
