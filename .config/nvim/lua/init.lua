@@ -226,7 +226,7 @@ do
 
 	local function update_theme()
 		-- Avoid loading colorscheme twice.
-		vim.g.colors_name = nil
+		g.colors_name = nil
 		pcall(cmd.source, theme_file)
 		cmd.colorscheme('vivid')
 	end
@@ -246,7 +246,7 @@ end
 
 do
 	local function set_terminal_color(i, color)
-		vim.g['terminal_color_' .. i] = color
+		g['terminal_color_' .. i] = color
 	end
 
 	local function set_terminal_palette(palette)
@@ -256,7 +256,7 @@ do
 	end
 
 	local function update_terminal_palette()
-		set_terminal_palette(vim.go.background == 'light' and {
+		set_terminal_palette(o.background == 'light' and {
 			'#080808',
 			'#ff0000',
 			'#00af00',
