@@ -581,7 +581,7 @@ autocmd('FocusGained', {
 	callback = function()
 		for _, buf in ipairs(api.nvim_list_bufs()) do
 			if fn.bufname(buf):find('^tmux://panes/') and not bo[buf].modified then
-				api.nvim_buf_call(buf, cmd.edit)
+				pcall(api.nvim_buf_call, buf, cmd.edit)
 			end
 		end
 	end,
