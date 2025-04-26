@@ -3,12 +3,15 @@ local bo = vim.bo
 local fn = vim.fn
 
 local autocmd = api.nvim_create_autocmd
-local echoerr = api.nvim_err_writeln
 
 local group = api.nvim_create_augroup('archive', {})
 
 local function echomsg(s)
-	api.nvim_echo({ { s, 'Normal' } }, true, {})
+	api.nvim_echo({ { s } }, true, {})
+end
+
+local function echoerr(s)
+	api.nvim_echo({ { s } }, true, { err = true })
 end
 
 local function read_system(cmdline)
