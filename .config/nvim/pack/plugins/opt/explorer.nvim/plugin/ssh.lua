@@ -3,13 +3,16 @@ local bo = vim.bo
 local fn = vim.fn
 
 local autocmd = api.nvim_create_autocmd
-local echoerr = api.nvim_err_writeln
 local shesc = fn.shellescape
 
 local group = api.nvim_create_augroup('explorer.ssh', {})
 
-local function echomsg(...)
-	api.nvim_echo({ { string.format(...), 'Normal' } }, true, {})
+local function echomsg(s)
+	api.nvim_echo({ { s } }, true, {})
+end
+
+local function echoerr(s)
+	api.nvim_echo({ { s } }, true, { err = true })
 end
 
 local function parse_opts(opts)
@@ -149,12 +152,13 @@ autocmd('BufWriteCmd', {
 		vim.bo.modified = false
 
 		echomsg(
-			'"%s"%s %dL, %dB written on %s',
-			path,
-			new and ' [New]' or '',
-			api.nvim_buf_line_count(0),
-			fn.wordcount().bytes,
-			destination
+			('"%s"%s %dL, %dB written on %s'):format(
+				path,
+				new and ' [New]' or '',
+				api.nvim_buf_line_count(0),
+				fn.wordcount().bytes,
+				destination
+			)
 		)
 	end,
 })
