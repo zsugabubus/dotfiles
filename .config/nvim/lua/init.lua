@@ -171,6 +171,8 @@ function _G.tabline()
 	return require('init.tabline')()
 end
 
+local linux = vim.env.TERM == 'linux'
+
 o.autoindent = true
 o.cinoptions = 't0,:0,l1'
 o.completeopt = 'menu,longest,noselect,preview'
@@ -180,7 +182,7 @@ o.cursorlineopt = 'number'
 o.diffopt = 'closeoff,filler,vertical,algorithm:patience'
 o.expandtab = false
 o.fileignorecase = true
-o.fillchars = 'stl:─,stlnc:─'
+o.fillchars = linux and 'stlnc:─' or 'stl:─,stlnc:─'
 o.foldopen = ''
 o.grepformat = '%f:%l:%c:%m'
 o.grepprg = 'noglob rg --vimgrep --smart-case'
@@ -190,6 +192,9 @@ o.joinspaces = false -- No double space.
 o.laststatus = 2
 o.lazyredraw = true
 o.list = true
+o.listchars = linux
+		and 'eol:$,tab:> ,trail:+,extends::,precedes::,nbsp:_,space:·'
+	or 'eol:$,tab:› ,trail:•,extends:⟩,precedes:⟨,nbsp:␣,space:·'
 o.modelines = 1
 o.more = false
 o.mouse = ''
@@ -206,6 +211,7 @@ o.splitright = true
 o.swapfile = false
 o.switchbuf = ''
 o.tabline = '%!v:lua.tabline()'
+o.termguicolors = not linux
 o.timeoutlen = 600
 o.title = true
 o.undodir = fn.stdpath('cache') .. '/undo'
@@ -215,14 +221,6 @@ o.wildignorecase = true
 o.wildmenu = true
 o.wildmode = 'list:longest,full'
 o.wrap = false
-
-if vim.env.TERM == 'linux' then
-	o.listchars = 'eol:$,tab:> ,trail:+,extends::,precedes::,nbsp:_'
-else
-	o.termguicolors = true
-	o.listchars =
-		'eol:$,tab:› ,trail:•,extends:⟩,precedes:⟨,nbsp:␣,space:·'
-end
 
 do
 	local theme_file = fn.stdpath('config') .. '/theme.vim'
