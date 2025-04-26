@@ -210,9 +210,19 @@ local function handle_read_autocmd(opts)
 			return
 		end
 
+		local function highlight_line(buf, line)
+			api.nvim_buf_set_extmark(
+				buf,
+				ns,
+				line - 1,
+				0,
+				{ line_hl_group = 'Visual' }
+			)
+		end
+
 		for _, line in ipairs(current_commit.lines) do
-			api.nvim_buf_add_highlight(content_buf, ns, 'Visual', line - 1, 0, -1)
-			api.nvim_buf_add_highlight(buf, ns, 'Visual', line - 1, 0, -1)
+			highlight_line(content_buf, line)
+			highlight_line(buf, line)
 		end
 
 		if auto_preview and utils.get_previewwindow() then
