@@ -1,6 +1,4 @@
-local api = vim.api
-
-local user_command = api.nvim_create_user_command
+local user_command = vim.api.nvim_create_user_command
 
 user_command('MarkdownPreviewStart', function(opts)
 	local port = assert(tonumber(opts.fargs[1] or 0))
