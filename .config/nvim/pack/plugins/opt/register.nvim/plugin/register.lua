@@ -28,7 +28,6 @@ autocmd('BufWriteCmd', {
 		local lines = api.nvim_buf_get_lines(opts.buf, 0, -1, true)
 		vim.fn.setreg(regname, table.concat(lines, '\n'))
 		vim.bo.modified = false
-		local s = ('Register %s written'):format(regname)
-		api.nvim_echo({ { s, 'Normal' } }, false, {})
+		api.nvim_echo({ { ('Register %s written'):format(regname) } }, false, {})
 	end,
 })
