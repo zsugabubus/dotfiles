@@ -1,12 +1,15 @@
 local api = vim.api
 
+local autocmd = api.nvim_create_autocmd
+local user_command = api.nvim_create_user_command
+
 local group = api.nvim_create_augroup('register', {})
 
-api.nvim_create_user_command('Register', function(opts)
+user_command('Register', function(opts)
 	vim.cmd.edit(vim.fn.fnameescape('reg://' .. opts.args))
 end, { nargs = '?' })
 
-api.nvim_create_autocmd('BufReadCmd', {
+autocmd('BufReadCmd', {
 	group = group,
 	pattern = 'reg://*',
 	callback = function(opts)
@@ -17,7 +20,7 @@ api.nvim_create_autocmd('BufReadCmd', {
 	end,
 })
 
-api.nvim_create_autocmd('BufWriteCmd', {
+autocmd('BufWriteCmd', {
 	group = group,
 	pattern = 'reg://*',
 	callback = function(opts)
