@@ -2,7 +2,7 @@ local api = vim.api
 local fn = vim.fn
 
 local enabled = false
-local timer = vim.loop.new_timer()
+local timer = vim.uv.new_timer()
 local cword
 local wins = {}
 
