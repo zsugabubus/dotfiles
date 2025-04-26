@@ -202,7 +202,8 @@ local function proxy_cmd(opts)
 	end
 
 	if not ok then
-		api.nvim_err_writeln(match(msg, '^Vim[^:]*:(.*)') or msg)
+		msg = match(msg, '^Vim[^:]*:(.*)') or msg
+		api.nvim_echo({ { msg } }, true, { err = true })
 		return false
 	end
 
@@ -433,7 +434,7 @@ local function write_qf_autocmd(opts)
 	qf.idx = nil -- Force update.
 
 	bo.modified = false
-	api.nvim_echo({ { 'quickfix written', 'Normal' } }, false, {})
+	api.nvim_echo({ { 'quickfix written' } }, false, {})
 
 	trigger_quickfix_changed()
 end
@@ -612,7 +613,7 @@ local function write_qe_autocmd(opts)
 			num_buffers,
 			num_buffers == 1 and 'buffer' or 'buffers'
 		)
-	api.nvim_echo({ { s, 'Normal' } }, true, {})
+	api.nvim_echo({ { s } }, true, {})
 end
 
 local function cmdpost_autocmd(opts)
@@ -621,7 +622,7 @@ local function cmdpost_autocmd(opts)
 	vim.schedule(function()
 		if qf.size == 0 then
 			cmd.Cclose()
-			api.nvim_echo({ { 'empty error list', 'Normal' } }, false, {})
+			api.nvim_echo({ { 'empty error list' } }, false, {})
 		else
 			cmd('botright Copen')
 			cmd.Cfirst()
