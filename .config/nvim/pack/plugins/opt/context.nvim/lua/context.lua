@@ -167,7 +167,7 @@ local function update_highlights()
 	})
 end
 
-local timer = vim.loop.new_timer()
+local timer = vim.uv.new_timer()
 local should_update
 local function timer_callback()
 	if should_update then
