@@ -209,19 +209,13 @@ o.switchbuf = ''
 o.tabline = '%!v:lua.tabline()'
 o.timeoutlen = 600
 o.title = true
+o.undodir = fn.stdpath('cache') .. '/undo'
+o.undofile = true
 o.wildignore = '.git,*.lock,*~,node_modules'
 o.wildignorecase = true
 o.wildmenu = true
 o.wildmode = 'list:longest,full'
 o.wrap = false
-
-if fn.filewritable(fn.stdpath('config')) == 2 then
-	o.undofile = true
-	o.undodir = fn.stdpath('cache') .. '/undo'
-else
-	o.undofile = false
-	o.shadafile = 'NONE'
-end
 
 if vim.env.TERM == 'linux' then
 	o.listchars = 'eol:$,tab:> ,trail:+,extends::,precedes::,nbsp:_'
