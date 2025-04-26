@@ -141,7 +141,6 @@ local function comment_lines(buf, start_row, end_row, op)
 					#lines == 1 and 'line' or 'lines',
 					op and 'commented' or 'uncommented'
 				) or '--No lines to comment--',
-				'Normal',
 			},
 		}, false, {})
 	end
