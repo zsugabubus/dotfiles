@@ -19,34 +19,24 @@ local function current_line_and_col()
 end
 
 local function balanced(s, i, open, close)
-	local j = 1
-	for p, k in s:gmatch('(.-)%b' .. open .. close .. '()') do
-		if p:find(open, 1, true) then
-			return false
-		end
-		if i <= k then
-			return true
-		end
-		j = k
-	end
-	return not s:find(open, j, true)
+	return not (s:sub(1, i) .. '\0' .. s:sub(i + 1))
+		:gsub('\\.', '')
+		:gsub('%b' .. open .. close, '')
+		:gsub('%z.*', '')
+		:find(open, 1, true)
 end
 
 local function handle_open(open, close)
 	local s, i = current_line_and_col()
 	if open == '[' and vim.bo.filetype == 'lua' then
 		return open
-	elseif s:sub(1, i):find([=[["'`]]=]) then
+	elseif s:sub(i):find([=[[^)%]}%s;,]]=]) then
 		return open
-	elseif s:sub(i + 1):find([=[[^)%]}%s;,]]=]) then
-		return open
-	elseif balanced(s, i, open, close) then
-		if open == '{' and not s:find([=[["']]=]) and vim.bo.filetype == 'rust' then
-			return open .. '<CR>' .. close .. '<C-O>O'
-		end
-		return open .. close .. '<C-G>U<Left>'
 	end
-	return open
+	if open == '{' and not s:find([=[["']]=]) and vim.bo.filetype == 'rust' then
+		return open .. '<CR>' .. close .. '<C-O>O'
+	end
+	return open .. close .. '<C-G>U<Left>'
 end
 
 local function handle_close(open, close)
@@ -73,13 +63,11 @@ local function handle_quote(quote, exclude_pat)
 	local s, i = current_line_and_col()
 	if s:sub(i - 1, i - 1) == '\\' then
 		return quote
-	elseif s:sub(i, i) == quote then
+	elseif s:sub(i, i) == quote and not s:sub(i + 1):find('[^%p%s]') then
 		return '<C-G>U<Right>'
 	elseif s:sub(i - 1, i - 1):find(exclude_pat) then
 		return quote
-	elseif
-		(i == #s + 1 or not s:find([=[["'`]]=])) and balanced(s, i, quote, quote)
-	then
+	elseif not s:sub(i):find('[^%p%s]') and balanced(s, i, quote, quote) then
 		return quote .. quote .. '<C-G>U<Left>'
 	end
 	return quote
@@ -88,7 +76,11 @@ end
 local function handle_bs(key)
 	local s, i = current_line_and_col()
 	local function pair(open, close)
-		if s:sub(i - 1, i) == open .. close and balanced(s, i, open, close) then
+		if
+			s:sub(i - 1, i) == open .. close
+			and s:sub(i - 2, i - 2) ~= '\\'
+			and balanced(s, i, open, close)
+		then
 			return key .. '<Del>'
 		end
 	end
