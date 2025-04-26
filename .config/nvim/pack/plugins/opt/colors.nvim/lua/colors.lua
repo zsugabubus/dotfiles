@@ -9,10 +9,11 @@ local schedule = vim.schedule
 local set_hl = api.nvim_set_hl
 
 local autocmd = api.nvim_create_autocmd
-local buf_add_hl = api.nvim_buf_add_highlight
 local buf_clear_ns = api.nvim_buf_clear_namespace
 local buf_is_valid = api.nvim_buf_is_valid
 local buf_line_count = api.nvim_buf_line_count
+local buf_set_extmark = api.nvim_buf_set_extmark
+local get_hl_id_by_name = api.nvim_get_hl_id_by_name
 
 local HEADER = [[
 struct highlight {
@@ -38,22 +39,20 @@ local auto_attach = config.auto_attach
 local lib
 local attached_bufs = {}
 local hl_cache
+local extmark_opts = { end_col = nil, hl_group = nil, undo_restore = false }
 
-local function rgb2hl(color)
-	local hl_group = '_' .. color
+local function get_contrast_fg(bg_color)
+	local bright_bg = lib.nvim_is_bright_background_color(bg_color) ~= 0
+	return bright_bg and '#000000' or '#ffffff'
+end
 
-	if hl_cache[color] == nil then
-		hl_cache[color] = true
-
-		local bg_bright = lib.nvim_is_bright_background_color(color) ~= 0
-
-		set_hl(0, hl_group, {
-			bg = format('#%06x', color),
-			fg = bg_bright and '#000000' or '#ffffff',
-		})
-	end
-
-	return hl_group
+local function create_hl_group(bg_color)
+	local hl_name = '_colors_' .. bg_color
+	set_hl(0, hl_name, {
+		bg = format('#%06x', bg_color),
+		fg = get_contrast_fg(bg_color),
+	})
+	return get_hl_id_by_name(hl_name)
 end
 
 local function highlight_lines(buf, start_row, end_row)
@@ -66,7 +65,9 @@ local function highlight_lines(buf, start_row, end_row)
 
 		for i = 0, n - 1 do
 			local m = hls[i]
-			buf_add_hl(buf, ns, rgb2hl(m.color), row, m.start_col, m.end_col + 1)
+			extmark_opts.end_col = m.end_col + 1
+			extmark_opts.hl_group = hl_cache[m.color]
+			buf_set_extmark(buf, ns, row, m.start_col, extmark_opts)
 		end
 
 		count = count + n
@@ -170,7 +171,13 @@ local function detach_from_buffer(buf)
 end
 
 local function reload()
-	hl_cache = {}
+	hl_cache = setmetatable({}, {
+		__index = function(hl_cache, color)
+			local hl_group = create_hl_group(color)
+			hl_cache[color] = hl_group
+			return hl_group
+		end,
+	})
 
 	for buf in pairs(attached_bufs) do
 		attached_bufs[buf] = nil
