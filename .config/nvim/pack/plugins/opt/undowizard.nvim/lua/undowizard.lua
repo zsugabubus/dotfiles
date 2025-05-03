@@ -104,7 +104,7 @@ local function buf_undo(buf, undo_number)
 end
 
 local function buf_load_undo(buf, undo_number)
-	if undo_number > wundoed_max_number or wundoed_buf ~= buf then
+	if wundoed_buf ~= buf or undo_number > wundoed_max_number then
 		wundoed_buf = buf
 
 		if not wundo_file then
@@ -346,7 +346,7 @@ local function get_commit_when(commit, now)
 	return time_display(commit.time, now)
 end
 
-local function update(buf)
+local function update_undotree(buf)
 	local now = os.time()
 
 	local target_buf = get_target_buf(buf)
@@ -459,9 +459,10 @@ local function update(buf)
 end
 
 local function read_undo_autocmd(opts)
+	local buf = opts.buf
 	local target_buf, undo_number = parse_undo_bufname(opts.match)
 
-	local bo = vim.bo[opts.buf]
+	local bo = vim.bo[buf]
 	local target_bo = vim.bo[target_buf]
 
 	bo.buftype = 'nofile'
@@ -473,12 +474,15 @@ local function read_undo_autocmd(opts)
 	local lines = buf_get_undo_lines(target_buf, undo_number, 0, -1, false)
 
 	bo.modifiable = true
-	buf_set_lines(opts.buf, 0, -1, false, lines)
+	buf_set_lines(buf, 0, -1, false, lines)
 	bo.modifiable = false
 end
 
 local function read_undotree_autocmd(opts)
-	local bo = vim.bo[opts.buf]
+	local buf = opts.buf
+	local target_buf = get_target_buf(buf)
+
+	local bo = vim.bo[buf]
 	bo.bufhidden = 'wipe'
 	bo.buflisted = false
 	bo.buftype = 'nofile'
@@ -497,9 +501,6 @@ local function read_undotree_autocmd(opts)
 	wo.relativenumber = false
 	wo.winhighlight = 'Folded:Normal'
 
-	local buf = opts.buf
-	local target_buf = get_target_buf(buf)
-
 	local group = api.nvim_create_augroup(format('undotree/%d', buf), {})
 
 	api.nvim_create_autocmd('TextChanged', {
@@ -512,11 +513,11 @@ local function read_undotree_autocmd(opts)
 			if bo.readonly then
 				return
 			end
-			update(buf)
+			update_undotree(buf)
 		end,
 	})
 
-	update(buf)
+	update_undotree(buf)
 end
 
 api.nvim_create_autocmd('BufUnload', {
