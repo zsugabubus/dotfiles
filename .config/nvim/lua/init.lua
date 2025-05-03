@@ -182,7 +182,7 @@ o.cursorlineopt = 'number'
 o.diffopt = 'closeoff,filler,vertical,algorithm:patience'
 o.expandtab = false
 o.fileignorecase = true
-o.fillchars = linux and 'stlnc:─' or 'stl:─,stlnc:─'
+o.fillchars = linux and 'stlnc:─' or ''
 o.foldopen = ''
 o.grepformat = '%f:%l:%c:%m'
 o.grepprg = 'noglob rg --vimgrep --smart-case'
@@ -204,7 +204,6 @@ o.scrolloff = 5
 o.shiftwidth = 0
 o.shortmess = o.shortmess .. 'mrFI'
 o.showbreak = '\\'
-o.showmode = false
 o.sidescrolloff = 23
 o.smartcase = true
 o.splitright = true
@@ -219,7 +218,7 @@ o.undofile = true
 o.wildignore = '.git,*.lock,*~,node_modules'
 o.wildignorecase = true
 o.wildmenu = true
-o.wildmode = 'list:longest,full'
+o.wildmode = 'longest:full,full'
 o.wrap = false
 
 do
