@@ -3,8 +3,6 @@ local cmd = vim.cmd
 local fn = vim.fn
 local go = vim.go
 
-local M = {}
-
 local function is_normal_mode()
 	return api.nvim_get_mode().mode:sub(1, 1) == 'n'
 end
@@ -25,12 +23,9 @@ end
 local function get_visual_text()
 	local value = fn.getreg('', 1, true)
 	local mode = fn.getregtype('')
-
 	cmd.normal({ bang = true, args = { 'y' } })
 	local text = fn.getreg('')
-
 	fn.setreg('', value, mode)
-
 	return text
 end
 
@@ -56,7 +51,7 @@ local function set_search(pattern, offset)
 	fn.winrestview(view)
 end
 
-function M.search(flags)
+local function search(flags)
 	local word = flags:find('w')
 	local forward = not flags:find('b')
 
@@ -97,4 +92,4 @@ function M.search(flags)
 	api.nvim_feedkeys(forward and 'n' or 'N', 'xtin', false)
 end
 
-return M
+return { search = search }
