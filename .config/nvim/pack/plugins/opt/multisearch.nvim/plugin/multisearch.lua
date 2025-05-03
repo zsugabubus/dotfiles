@@ -99,8 +99,6 @@ autocmd('WinClosed', {
 	end,
 })
 
-update()
-
 for _, win in ipairs(api.nvim_list_wins()) do
 	wins[win] = {}
 end
