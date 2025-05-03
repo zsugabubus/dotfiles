@@ -57,9 +57,11 @@ set -g default-command "$SHELL" # Disable login shells.
 set -g default-terminal "$TERM"
 set -g detach-on-destroy no-detached
 set -g display-time 0
+set -g editor nvim
 set -g escape-time 0
 set -g focus-events on
 set -g history-limit 20000
+set -g mode-keys vi
 set -gF prefix "#{?@nested,C-b,C-t}"
 set -g renumber-windows on
 set -g repeat-time 418
@@ -77,9 +79,6 @@ set-hook -g after-split-window[1] { select-layout tiled }
 set-hook -g window-layout-changed[2] { set -wF pane-border-status '#{?#{==:#{window_panes},1},off,bottom}' }
 
 unbind -a
-
-set -g mode-keys vi
-set -g editor nvim
 
 bind : command-prompt
 bind d detach-client
