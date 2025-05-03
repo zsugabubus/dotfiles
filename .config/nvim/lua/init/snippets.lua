@@ -3,19 +3,21 @@ local fn = vim.fn
 
 local function m(lhs, rhs)
 	if type(rhs) == 'function' then
-		api.nvim_set_keymap('i', lhs, '', {
+		api.nvim_buf_set_keymap(0, 'i', lhs, '', {
 			noremap = true,
 			expr = true,
 			replace_keycodes = true,
 			callback = rhs,
 		})
 	else
-		api.nvim_set_keymap('i', lhs, rhs, { noremap = true })
+		api.nvim_buf_set_keymap(0, 'i', lhs, rhs, {
+			noremap = true,
+		})
 	end
 end
 
 local function sm(lhs, snippet, env)
-	api.nvim_set_keymap('i', lhs, '', {
+	api.nvim_buf_set_keymap(0, 'i', lhs, '', {
 		callback = function()
 			local buf = api.nvim_get_current_buf()
 			local row, col = unpack(api.nvim_win_get_cursor(0))
