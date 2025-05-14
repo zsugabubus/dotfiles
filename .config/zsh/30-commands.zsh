@@ -5,10 +5,6 @@ autoload -Uz open
 
 setopt aliases
 
-#
-# Files.
-#
-
 alias -- -=cd\ -
 integer i
 for i ({0..9}) alias -- -$i=cd\ -$i
@@ -204,10 +200,6 @@ function v() {
 	tree -C | e -c 'setlocal nolist' -c AnsiEsc
 }
 
-#
-# Make.
-#
-
 function gccc() {
 	gcc -O2 -Wall -Wextra -pthread -march=native -std=c11 -g -ldl -lm main.c &&
 	time ./a.out
@@ -217,10 +209,6 @@ function gccd() {
 	gcc -O0 -march=native -std=c11 -g -ldl main.c $* &&
 	gdb ./a.out -ex run
 }
-
-#
-# Open.
-#
 
 function term() {
 	$TERMINAL >/dev/null &!
@@ -241,10 +229,6 @@ function im() {
 		--fontpath ${font_file:h} \
 		"$@"
 }
-
-#
-# Processes.
-#
 
 alias j='jobs'
 alias pkill='pkill -x'
@@ -267,10 +251,6 @@ function fkill() {
 
 	print -z "kill $pid"
 }
-
-#
-# Audio.
-#
 
 alias am='alsamixer'
 
@@ -298,10 +278,6 @@ function spek() {
 	done
 }
 
-#
-# Video.
-#
-
 function rs() {
 	local args=()
 	if [[ $1 = day ]]; then
@@ -325,10 +301,6 @@ function light() {
 		echo $wanted_brigtness | sudo tee $dir/brightness
 	done
 }
-
-#
-# System.
-#
 
 alias fm='findmnt --real -o TARGET,SOURCE,FSTYPE,SIZE,USED,AVAIL,USE%,OPTIONS'
 alias fr='free -hwt'
@@ -404,10 +376,6 @@ function usb_rebind() {
 	sudo tee /sys/bus/usb/drivers/usb/bind <<<$1
 }
 
-#
-# Network.
-#
-
 alias curl='noglob curl --compressed'
 alias curltor='curl -x socks5h://127.1:9050'
 alias iftop='sudo -E iftop'
@@ -436,10 +404,6 @@ function iptables_accept_tcp() {
 	sudo iptables -I NEW_TCP -p tcp --dport ${1?Port missing} -j ACCEPT
 }
 
-#
-# Terminal.
-#
-
 function t() {
 	tmux attach-session
 }
@@ -451,10 +415,6 @@ function tnt() {
 		new-session -t "$(tmux display-message -p '#S')" \;\
 		set-option -s destroy-unattached on
 }
-
-#
-# Programs.
-#
 
 alias cal='cal -m'
 alias dc='BUILDKIT_PROGRESS=plain docker compose'
