@@ -82,18 +82,18 @@ typeset -gA __zfiles_bindings_n=(
 	['\<C-\[\>']='return'
 	[/]='__zfiles_filter= && __zfiles_update_files f && __zfiles_set_mode t'
 	[g.]='(( __zfiles_glob_dots^=1 )); __zfiles_update_files g'
-	[g\\*]='__zfiles_glob=* && __zfiles_set_glob'
-	[ge]='__zfiles_set_glob'
-	[ga]="__zfiles_glob=${(q)__ZFILES_DEFAULT_GLOB} && __zfiles_update_files g"
-	[gr]='__zfiles_glob=*** && __zfiles_update_files g'
-	[gd]='__zfiles_glob=*(-/) && __zfiles_update_files g'
-	[gD]='__zfiles_glob=**(-/) && __zfiles_update_files g'
-	[gf]='__zfiles_glob=*(^-/) && __zfiles_update_files g'
-	[gF]='__zfiles_glob=**(^-/) && __zfiles_update_files g'
-	[gm]='__zfiles_glob=*(om) && __zfiles_update_files g'
-	[gM]='__zfiles_glob=**(om) && __zfiles_update_files g'
-	[gs]='__zfiles_glob="*(-/) *(^-/oL)" && __zfiles_update_files g'
-	[gS]='__zfiles_glob="**(-/) **(^-/oL)" && __zfiles_update_files g'
+	[g\\*]='__zfiles_glob=* && __zfiles_set_glob_interactive'
+	[ge]='__zfiles_set_glob_interactive'
+	[ga]="__zfiles_set_glob ${(q)__ZFILES_DEFAULT_GLOB}"
+	[gr]='__zfiles_set_glob "***"'
+	[gd]='__zfiles_set_glob "*(-/)"'
+	[gD]='__zfiles_set_glob "**(-/)"'
+	[gf]='__zfiles_set_glob "*(^-/)"'
+	[gF]='__zfiles_set_glob "**(^-/)"'
+	[gm]='__zfiles_set_glob "*(om)"'
+	[gM]='__zfiles_set_glob "**(om)"'
+	[gs]='__zfiles_set_glob "*(-/) *(^-/oL)"'
+	[gS]='__zfiles_set_glob "**(-/) **(^-/oL)"'
 	[u]='__zfiles_update_files g'
 )
 
@@ -535,12 +535,16 @@ function __zfiles_clear_selection() {
 	__zfiles_dirty_prompt=1
 }
 
-function __zfiles_set_glob() {
+function __zfiles_set_glob_interactive() {
 	if __zfiles_shellout __zfiles_vared -p "${bold_color}glob${reset_color}=" -eca __zfiles_glob; then
 		__zfiles_update_files g
 	fi
 }
-alias __zfiles_set_glob='noglob __zfiles_set_glob'
+
+function __zfiles_set_glob() {
+	__zfiles_glob=$1
+	__zfiles_update_files g
+}
 
 function __zfiles_set_mode() {
 	__zfiles_mode=$1
