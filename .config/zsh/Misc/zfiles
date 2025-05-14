@@ -58,6 +58,7 @@ typeset -gA __zfiles_bindings_n=(
 	[zz]='__zfiles_scroll_select 0 $(( __zfiles_cur - __zfiles_lines / 2 ))'
 	[zb]='__zfiles_scroll_select 0 $(( __zfiles_cur + __zfiles_scrolloff - __zfiles_lines + 1 ))'
 	[t]='__zfiles_toggle ZFile'
+	[T]='__zfiles_clear_selection'
 	[m]='__zfiles_cmd "mkdir "'
 	[e]='__zfiles_cmd "$EDITOR "'
 	['~']='__zfiles_cmd cd "~"'
@@ -527,6 +528,11 @@ function __zfiles_toggle() {
 	fi
 	__zfiles_dirty_prompt=1
 	__zfiles_select_scroll 1 +1
+}
+
+function __zfiles_clear_selection() {
+	__zfiles_selection=()
+	__zfiles_dirty_prompt=1
 }
 
 function __zfiles_set_glob() {
