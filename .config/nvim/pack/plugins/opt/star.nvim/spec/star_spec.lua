@@ -16,7 +16,7 @@ describe('*', function()
 		assert_pattern([[\V\<abc\>]])
 	end)
 
-	it('can find current word', function()
+	it('finds current word', function()
 		vim:set_lines({ '   abc abc' })
 		vim:feed('*r*')
 		vim:assert_lines({ '   *bc abc' })
