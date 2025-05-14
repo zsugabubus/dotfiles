@@ -3250,16 +3250,16 @@ transmission-daemon(1), transmission-remote(1).
 
 					if #initial_items == 0 then
 						buf:put('\n')
-					end
 
-					local first = true
-					for name in list_dir('.') do
-						if match(name, '.%.torrent$') then
-							if first then
-								buf:put('\n')
-								first = false
+						local first = true
+						for name in list_dir('.') do
+							if find(name, '.torrent', -8, true) then
+								if first then
+									buf:put('\n')
+									first = false
+								end
+								buf:putf('%s%s\n', collect_torrent_files and '' or '# ', name)
 							end
-							buf:putf('%s%s\n', collect_torrent_files and '' or '# ', name)
 						end
 					end
 
