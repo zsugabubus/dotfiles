@@ -2608,14 +2608,14 @@ transmission-daemon(1), transmission-remote(1).
 	help('Enable alt session speed limit.')
 	function M:enable_session_alt_speed_limit()
 		self.transmission:call('session-set', { ['alt-speed-enabled'] = true })
-		self:set_messagef('Alternate speed limit')
+		self:set_messagef('Alternate speed limit enabled')
 		update_session_info(self)
 	end
 
 	help('Disable session speed limit.')
 	function M:disable_session_speed_limit()
 		self.transmission:call('session-set', { ['alt-speed-enabled'] = false })
-		self:set_messagef('Speed unlimited')
+		self:set_messagef('Alternate speed limit disabled')
 		update_session_info(self)
 	end
 
