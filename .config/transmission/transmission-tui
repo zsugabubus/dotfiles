@@ -3278,7 +3278,11 @@ transmission-daemon(1), transmission-remote(1).
 				end,
 			}, function(err, data)
 				if err then
-					set_torrent_action_abort_message(self, 'added')
+					if #new_ids == 0 then
+						set_torrent_action_abort_message(self, 'added')
+						return
+					end
+					callback()
 					return
 				end
 
