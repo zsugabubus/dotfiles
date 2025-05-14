@@ -3219,6 +3219,12 @@ transmission-daemon(1), transmission-remote(1).
 		local function callback()
 			set_torrent_action_message(self, #new_ids, 'added')
 
+			if #new_ids == 0 then
+				return
+			end
+
+			update_session_stats(self)
+
 			if #new_ids == 1 then
 				update_torrents(self)
 				for index, torrent in ipairs(self._torrents.list) do
@@ -3229,9 +3235,7 @@ transmission-daemon(1), transmission-remote(1).
 				end
 			end
 
-			if #new_ids > 0 then
-				self:set_torrent_filter_by_ids(new_ids)
-			end
+			self:set_torrent_filter_by_ids(new_ids)
 		end
 
 		local function prompt(initial_items)
