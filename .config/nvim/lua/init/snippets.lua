@@ -49,11 +49,13 @@ return function()
 	end
 
 	if ft:find('javascript') or ft:find('typescript') then
+		m('<M-a>', 'await ')
 		sm('<M-c>', 'const $1')
 		sm('<M-i>', 'if ($1) {\n\t$2\n}')
 		sm('<M-e>', 'else if ($1) {\n\t$2\n}')
 		sm('<M-e><CR>', 'else {\n\t$1\n}')
 		sm('<M-f>', 'for ($1 of $2) {\n\t$3\n}')
+		sm('<M-l>', 'console.log($1);')
 		sm('<M-u>e', 'useEffect(() => {\n\t$1\n}, [$2]);')
 		sm('<M-u>s', 'const [$1, $SETTER] = useState($2);', {
 			SETTER = function(t)
