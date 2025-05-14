@@ -3208,10 +3208,10 @@ transmission-daemon(1), transmission-remote(1).
 		end
 
 		local function b64file(path)
-			local f = io.popen('base64 2>/dev/null -- ' .. shesc(path))
+			local f = io.popen('base64 2>/dev/null -- ' .. shesc(path) .. ' && echo')
 			local s = assert(f:read('*a'))
 			assert(f:close())
-			return s
+			return s ~= '' and s or nil
 		end
 
 		local new_ids = {}
@@ -3284,15 +3284,15 @@ transmission-daemon(1), transmission-remote(1).
 					local output = b64file(s)
 
 					local ok, payload = self.transmission:call_unchecked('torrent-add', {
-						filename = output == '' and s or nil,
-						metainfo = output ~= '' and output or nil,
+						filename = not output and s or nil,
+						metainfo = output,
 						paused = true,
 					})
 
 					if ok then
 						local new_torrent = payload['torrent-added'] or payload['torrent-duplicate']
 						insert(new_ids, assert(new_torrent.hashString))
-						if delete_after_add and output ~= '' then
+						if delete_after_add and output then
 							os.remove(s)
 						end
 					else
