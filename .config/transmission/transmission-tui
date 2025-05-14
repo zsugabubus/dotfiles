@@ -3021,21 +3021,30 @@ transmission-daemon(1), transmission-remote(1).
 
 		for index, torrent in ipairs(torrents) do
 			local location = torrent.downloadDir
-			local s = esc(location)
 
-			torrents_by_location[s] = torrents_by_location[s] or {}
-			insert(torrents_by_location[s], torrent)
+			torrents_by_location[location] = torrents_by_location[location] or {}
+			insert(torrents_by_location[location], torrent)
 
 			torrent.index = index
 		end
 
 		edit(self, {
 			input = function(buf)
-				for s, torrents in pairs(torrents_by_location) do
-					for _, torrent in ipairs(torrents) do
+				local list = {}
+
+				for location, torrents in pairs(torrents_by_location) do
+					insert(list, { location = location, torrents = torrents })
+				end
+
+				sort(list, function(a, b)
+					return a.location < b.location
+				end)
+
+				for _, group in pairs(list) do
+					for _, torrent in ipairs(group.torrents) do
 						buf:putf('%d\t%s\n', torrent.index, esc(torrent.name))
 					end
-					buf:put('\n', s, '\n\n')
+					buf:put('\n', esc(group.location), '\n\n')
 				end
 
 				buf:putf(
