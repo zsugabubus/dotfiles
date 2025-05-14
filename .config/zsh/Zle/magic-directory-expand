@@ -3,10 +3,10 @@
 emulate -L zsh
 
 function __zle-insert-array() {
-	if (( 1 < $# )); then
+	if (( $# > 1 )); then
 		LBUFFER=${LBUFFER%?}
-		LBUFFER+='{'${(qj:,:)@}'}'
-	elif (( 1 == $# )); then
+		LBUFFER+="{${(j:,:)${(qq)@}}}"
+	elif (( $# == 1 )); then
 		LBUFFER=${LBUFFER%?}
 		LBUFFER+=${(q)1}
 	else
