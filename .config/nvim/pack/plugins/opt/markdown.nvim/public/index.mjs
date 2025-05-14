@@ -3,7 +3,7 @@ import { marked } from "https://cdn.jsdelivr.net/npm/marked@15.0.3/+esm";
 
 const defaultBackground = "light";
 
-const alertRe = /^\[!([a-zA-Z]+)\]\n(.*)/;
+const alertRe = /^\[!([a-zA-Z]+)\]\s*\n(.*)/;
 const colorRe = /^(#[a-zA-Z0-9]+|[a-z0-9]+\([a-z0-9.,% ]+\))$/;
 const emojiRe = /:([a-z0-9_+-]+):/g;
 const punctationsRe = /[^a-z0-9 ]/g;
