@@ -1,6 +1,7 @@
 --smart-case
 --max-columns=10000
 --glob=!*.lock
+--glob=!*-lock.*
 --glob=!po
 --glob=!tags
 --glob=!*\.map
