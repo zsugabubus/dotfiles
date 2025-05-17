@@ -1464,9 +1464,9 @@ ncurses transmission client]],
 			check = make_percent_column('Check', 'recheckProgress'),
 			done = make_percent_column('Done', 'percentDone'),
 			down = make_bytes_column('Down', 'rateDownload'),
-			down_limit = make_speed_limit_column('Down Limit', 'downloadLimit', 'downloadLimited'),
-			down_peers = make_speed_with_peers_column('Down (Peers)', 'rateDownload', 'peersSendingToUs'),
-			down_time = make_seconds_column('Down Time', 'secondsDownloading'),
+			down_limit = make_speed_limit_column('Down limit', 'downloadLimit', 'downloadLimited'),
+			down_peers = make_speed_with_peers_column('Down (peers)', 'rateDownload', 'peersSendingToUs'),
+			down_time = make_seconds_column('Down time', 'secondsDownloading'),
 			error = make_column('Error', nil, function(data)
 				if data.error == 0 then
 					return ''
@@ -1480,11 +1480,11 @@ ncurses transmission client]],
 			labels = make_string_array_column('Labels', 'labels'),
 			dir = make_string_column('Dir', nil, 'downloadDir'),
 			name = make_string_column('Name', nil, 'name'),
-			peer_limit = make_number_column('Peer Limit', 'peer-limit'),
+			peer_limit = make_number_column('Peer limit', 'peer-limit'),
 			peers = make_number_column('Peers', 'peersConnected'),
 			queue = make_ordinal_column('Queue', 'queuePosition'),
 			ratio = make_ratio_column('Ratio', 'uploadRatio'),
-			ratio_limit = make_column('Ratio Limit', -5, function(data)
+			ratio_limit = make_column('Ratio limit', -5, function(data)
 				if data.seedRatioMode == 1 then
 					return display_ratio(data.seedRatioLimit)
 				elseif data.seedRatioMode == 2 then
@@ -1493,7 +1493,7 @@ ncurses transmission client]],
 					return ''
 				end
 			end, { 'seedRatioLimit', 'seedRatioMode' }),
-			seed_time = make_seconds_column('Seed Time', 'secondsSeeding'),
+			seed_time = make_seconds_column('Seed time', 'secondsSeeding'),
 			size = make_bytes_column('Size', 'sizeWhenDone'),
 			status = make_column('Status', 11, function(data)
 				if data.isStalled then
@@ -1512,8 +1512,8 @@ ncurses transmission client]],
 				return TORRENT_STATUS_NAME[data.status] or 'Unknown'
 			end, { 'isStalled', 'isFinished', 'status', 'peersGettingFromUs', 'peersSendingToUs' }),
 			up = make_bytes_column('Up', 'rateUpload'),
-			up_limit = make_speed_limit_column('Up Limit', 'uploadLimit', 'uploadLimited'),
-			up_peers = make_speed_with_peers_column('Up (Peers)', 'rateUpload', 'peersGettingFromUs'),
+			up_limit = make_speed_limit_column('Up limit', 'uploadLimit', 'uploadLimited'),
+			up_peers = make_speed_with_peers_column('Up (peers)', 'rateUpload', 'peersGettingFromUs'),
 		}
 	end
 
@@ -1546,20 +1546,20 @@ ncurses transmission client]],
 		return {
 			announce = make_string_column('Announce', nil, 'announce'),
 			announce_status = make_choices_column(
-				'Announce Status',
+				'Announce status',
 				TRACKER_STATUS_NAME,
 				'announceState'
 			),
 			host = make_string_column('Host', nil, 'host'),
-			last_announce = make_timestamp_column('Last Announce', 'lastAnnounceTime'),
-			last_scrape = make_timestamp_column('Last Scrape', 'lastScrapeTime'),
+			last_announce = make_timestamp_column('Last announce', 'lastAnnounceTime'),
+			last_scrape = make_timestamp_column('Last scrape', 'lastScrapeTime'),
 			leechers = make_number_column('Leechers', 'leecherCount'),
-			next_announce = make_timestamp_column('Next Announce', 'nextAnnounceTime'),
-			next_scrape = make_timestamp_column('Next Scrape', 'nextScrapeTime'),
+			next_announce = make_timestamp_column('Next announce', 'nextAnnounceTime'),
+			next_scrape = make_timestamp_column('Next scrape', 'nextScrapeTime'),
 			scrape = make_string_column('Scrape', nil, 'scrape'),
-			scrape_status = make_choices_column('Scrape Status', TRACKER_STATUS_NAME, 'scrapeState'),
-			scrape_result = make_string_column('Scrape Result', nil, 'lastScrapeResult'),
-			announce_result = make_string_column('Announce Result', nil, 'lastAnnounceResult'),
+			scrape_status = make_choices_column('Scrape status', TRACKER_STATUS_NAME, 'scrapeState'),
+			scrape_result = make_string_column('Scrape result', nil, 'lastScrapeResult'),
+			announce_result = make_string_column('Announce result', nil, 'lastAnnounceResult'),
 			seeders = make_number_column('Seeders', 'seederCount'),
 			tier = make_ordinal_column('Tier', 'tier'),
 		}
