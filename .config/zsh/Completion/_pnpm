@@ -1,10 +1,10 @@
 #compdef pnpm
 
-typeset -ga _pnpm_scripts _pnpm_bins
+typeset -ga _pnpm_scripts _pnpm_dependencies _pnpm_bins
 typeset -g _pnpm_cache_key
 
 function _pnpm_generate_if_changed {
-	local cache_key
+	local f cache_key
 	local -A stat
 
 	zmodload -F zsh/stat b:zstat
@@ -25,21 +25,30 @@ function _pnpm_generate_if_changed {
 		_pnpm_scripts=( ${(f)"$(
 			jq <package.json -r '.scripts|to_entries|map((.key|gsub("(?<c>[\\\\:])"; "\\\(.c)"; "g")) + ":" + .value).[]'
 		)"} )
+		_pnpm_dependencies=( ${(f)"$(
+			jq <package.json -r '.dependencies+.devDependencies|keys|.[]'
+		)"} )
 	else
 		_pnpm_scripts=()
+		_pnpm_dependencies=()
 	fi
 
 	_pnpm_bins=( node_modules/.bin/*(xN:t) )
 }
 
-function _package_scripts {
+function _pnpm_scripts {
 	_pnpm_generate_if_changed
 	_describe 'package.json script' _pnpm_scripts -J script
 }
 
-function _node_bins {
+function _pnpm_bins {
 	_pnpm_generate_if_changed
 	_describe 'node_modules command' _pnpm_bins -J binary
+}
+
+function _pnpm_dependencies {
+	_pnpm_generate_if_changed
+	_describe 'package' _pnpm_dependencies -J package
 }
 
 function _pnpm_builtin_commands {
@@ -142,8 +151,8 @@ function _pnpm {
 	case $state in
 		command)
 			_alternative \
-				': :_package_scripts' \
-				': :_node_bins' \
+				': :_pnpm_scripts' \
+				': :_pnpm_bins' \
 				': :_pnpm_builtin_commands'
 			;;
 
@@ -156,12 +165,12 @@ function _pnpm {
 					;;
 
 				remove)
-					_arguments '*:package:'
+					_arguments '*: :_pnpm_dependencies'
 					;;
 
 				run)
 					_arguments \
-						': :_package_scripts' \
+						': :_pnpm_scripts' \
 						'*:: :_files'
 					;;
 
