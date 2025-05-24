@@ -22,25 +22,13 @@
 #   02110-1301, USA.
 '''Mutt OAuth2 token management'''
 
-import sys
+from sys import exit
 import json
 import argparse
 import urllib.parse
 import urllib.request
-import imaplib
-import poplib
-import smtplib
 import base64
-import secrets
-import hashlib
-import time
 from datetime import timedelta, datetime
-import socket
-import http.server
-import subprocess
-import readline
-import tempfile
-import os
 
 registrations = {
     'google': {
@@ -97,6 +85,8 @@ except FileNotFoundError:
     token = {}
 
 def writetokenfile():
+    import tempfile
+    import os
     with tempfile.NamedTemporaryFile(
         mode='w',
         dir=os.path.dirname(args.tokenfile),
@@ -111,7 +101,7 @@ if args.debug:
     print('Obtained from token file:', json.dumps(token))
 if not token:
     if not args.authorize:
-        sys.exit('You must run script with "--authorize" at least once.')
+        exit('You must run script with "--authorize" at least once.')
     print('Available app and endpoint registrations:', *registrations)
     token['registration'] = input('OAuth2 registration: ')
     token['authflow'] = input('Preferred OAuth2 flow ("authcode" or "localhostauthcode" '
@@ -123,7 +113,7 @@ if not token:
     writetokenfile()
 
 if token['registration'] not in registrations:
-    sys.exit(f'ERROR: Unknown registration "{token["registration"]}". Delete token file '
+    exit(f'ERROR: Unknown registration "{token["registration"]}". Delete token file '
              f'and start over.')
 registration = registrations[token['registration']]
 
@@ -160,12 +150,15 @@ if args.authorize:
     p['scope'] = registration['scope']
 
     if authflow in ('authcode', 'localhostauthcode'):
+        import secrets
         verifier = secrets.token_urlsafe(90)
+        import hashlib
         challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())[:-1]
         redirect_uri = registration['redirect_uri']
         listen_port = 0
         if authflow == 'localhostauthcode':
             # Find an available port to listen on
+            import socket
             s = socket.socket()
             s.bind(('127.0.0.1', 0))
             listen_port = s.getsockname()[1]
@@ -189,6 +182,7 @@ if args.authorize:
             print('Visit displayed URL to authorize this application. Waiting...',
                   end='', flush=True)
 
+            import http.server
             class MyHandler(http.server.BaseHTTPRequestHandler):
                 '''Handles the browser query resulting from redirect to redirect_uri.'''
 
@@ -218,7 +212,7 @@ if args.authorize:
                     pass
 
         if not authcode:
-            sys.exit('Did not obtain an authcode.')
+            exit('Did not obtain an authcode.')
 
         for k in 'response_type', 'login_hint', 'code_challenge', 'code_challenge_method':
             del p[k]
@@ -241,7 +235,7 @@ if args.authorize:
             print(response['error'])
             if 'error_description' in response:
                 print(response['error_description'])
-            sys.exit(1)
+            exit(1)
 
     elif authflow == 'devicecode':
         try:
@@ -258,7 +252,7 @@ if args.authorize:
             print(response['error'])
             if 'error_description' in response:
                 print(response['error_description'])
-            sys.exit(1)
+            exit(1)
         print(response['message'])
         del p['scope']
         p.update({'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
@@ -266,6 +260,7 @@ if args.authorize:
                   'device_code': response['device_code']})
         interval = int(response['interval'])
         print('Polling...', end='', flush=True)
+        import time
         while True:
             time.sleep(interval)
             print('.', end='', flush=True)
@@ -283,19 +278,19 @@ if args.authorize:
                 break
             if response['error'] == 'authorization_declined':
                 print(' user declined authorization.')
-                sys.exit(1)
+                exit(1)
             if response['error'] == 'expired_token':
                 print(' too much time has elapsed.')
-                sys.exit(1)
+                exit(1)
             if response['error'] != 'authorization_pending':
                 print(response['error'])
                 if 'error_description' in response:
                     print(response['error_description'])
-                sys.exit(1)
+                exit(1)
         print()
 
     else:
-        sys.exit(f'ERROR: Unknown OAuth2 flow "{token["authflow"]}. Delete token file and '
+        exit(f'ERROR: Unknown OAuth2 flow "{token["authflow"]}. Delete token file and '
                  f'start over.')
 
     update_tokens(response)
@@ -306,7 +301,7 @@ if not access_token_valid():
         print('NOTICE: Invalid or expired access token; using refresh token '
               'to obtain new access token.')
     if not token['refresh_token']:
-        sys.exit('ERROR: No refresh token. Run script with "--authorize".')
+        exit('ERROR: No refresh token. Run script with "--authorize".')
     p = baseparams.copy()
     p.update({'client_secret': registration['client_secret'],
               'refresh_token': token['refresh_token'],
@@ -326,12 +321,12 @@ if not access_token_valid():
         if 'error_description' in response:
             print(response['error_description'])
         print('Perhaps refresh token invalid. Try running once with "--authorize"')
-        sys.exit(1)
+        exit(1)
     update_tokens(response)
 
 
 if not access_token_valid():
-    sys.exit('ERROR: No valid access token. This should not be able to happen.')
+    exit('ERROR: No valid access token. This should not be able to happen.')
 
 
 def build_sasl_string(user, host, port, bearer_token):
@@ -340,7 +335,7 @@ def build_sasl_string(user, host, port, bearer_token):
         return f'n,a={user},\1host={host}\1port={port}\1auth=Bearer {bearer_token}\1\1'
     if registration['sasl_method'] == 'XOAUTH2':
         return f'user={user}\1auth=Bearer {bearer_token}\1\1'
-    sys.exit(f'Unknown SASL method {registration["sasl_method"]}.')
+    exit(f'Unknown SASL method {registration["sasl_method"]}.')
 
 
 
@@ -348,7 +343,7 @@ if args.authdata:
     sasl_string = build_sasl_string(token['email'], registration['imap_endpoint'], 993,
                                     token['access_token'])
     print(base64.b64encode(sasl_string.encode()).decode('utf-8'))
-    sys.exit(0)
+    exit(0)
 
 if args.verbose:
     print('Access Token: ', end='')
@@ -359,6 +354,7 @@ if args.test:
 
     errors = False
 
+    import imaplib
     imap_conn = imaplib.IMAP4_SSL(registration['imap_endpoint'])
     sasl_string = build_sasl_string(token['email'], registration['imap_endpoint'], 993,
                                     token['access_token'])
@@ -377,6 +373,7 @@ if args.test:
         print('IMAP authentication FAILED (does your account allow IMAP?):', e)
         errors = True
 
+    import poplib
     pop_conn = poplib.POP3_SSL(registration['pop_endpoint'])
     sasl_string = build_sasl_string(token['email'], registration['pop_endpoint'], 995,
                                     token['access_token'])
@@ -395,6 +392,7 @@ if args.test:
         errors = True
 
     # SMTP_SSL would be simpler but Microsoft does not answer on port 465.
+    import smtplib
     smtp_conn = smtplib.SMTP(registration['smtp_endpoint'], 587)
     sasl_string = build_sasl_string(token['email'], registration['smtp_endpoint'], 587,
                                     token['access_token'])
@@ -412,4 +410,4 @@ if args.test:
         errors = True
 
     if errors:
-        sys.exit(1)
+        exit(1)
