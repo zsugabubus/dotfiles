@@ -35,21 +35,12 @@ import secrets
 import hashlib
 import time
 from datetime import timedelta, datetime
-from pathlib import Path
 import socket
 import http.server
 import subprocess
 import readline
-
-# The token file must be encrypted because it contains multi-use bearer tokens
-# whose usage does not require additional verification. Specify whichever
-# encryption and decryption pipes you prefer. They should read from standard
-# input and write to standard output. The example values here invoke GPG,
-# although won't work until an appropriate identity appears in the first line.
-ENCRYPTION_PIPE = ['gpg', '--encrypt', '--recipient', 'YOUR_GPG_IDENTITY']
-DECRYPTION_PIPE = ['gpg', '--decrypt']
-ENCRYPTION_PIPE = ['tee']
-DECRYPTION_PIPE = ['cat']
+import tempfile
+import os
 
 registrations = {
     'google': {
@@ -99,31 +90,22 @@ ap.add_argument('-t', '--test', action='store_true', help='test IMAP/POP/SMTP en
 ap.add_argument('--authdata', action='store_true', help='print authdata')
 args = ap.parse_args()
 
-token = {}
-path = Path(args.tokenfile)
-if path.exists():
-    if 0o777 & path.stat().st_mode != 0o600:
-        sys.exit('Token file has unsafe mode. Suggest deleting and starting over.')
-    try:
-        sub = subprocess.run(DECRYPTION_PIPE, check=True, input=path.read_bytes(),
-                             capture_output=True)
-        token = json.loads(sub.stdout)
-    except subprocess.CalledProcessError:
-        sys.exit('Difficulty decrypting token file. Is your decryption agent primed for '
-                 'non-interactive usage, or an appropriate environment variable such as '
-                 'GPG_TTY set to allow interactive agent usage from inside a pipe?')
-
+try:
+    with open(args.tokenfile) as f:
+        token = json.load(f)
+except FileNotFoundError:
+    token = {}
 
 def writetokenfile():
-    '''Writes global token dictionary into token file.'''
-    if not path.exists():
-        path.touch(mode=0o600)
-    if 0o777 & path.stat().st_mode != 0o600:
-        sys.exit('Token file has unsafe mode. Suggest deleting and starting over.')
-    sub2 = subprocess.run(ENCRYPTION_PIPE, check=True, input=json.dumps(token).encode(),
-                          capture_output=True)
-    path.write_bytes(sub2.stdout)
-
+    with tempfile.NamedTemporaryFile(
+        mode='w',
+        dir=os.path.dirname(args.tokenfile),
+        delete=False,
+    ) as tmpf:
+        os.fchmod(tmpf.fileno(), 0o400)
+        json.dump(token, tmpf)
+        tmpf.close()
+        os.rename(tmpf.name, args.tokenfile)
 
 if args.debug:
     print('Obtained from token file:', json.dumps(token))
