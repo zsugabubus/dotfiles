@@ -97,7 +97,7 @@ local function handle_read_autocmd(opts)
 		'--compact-summary',
 		'--stat=999,999,999',
 		'--patch',
-		'--format=format:commit %H%d%nparent %P%ntree %T%nAuthor: %aN <%aE>%nDate:   %aD%nCommit: %cN <%cE>%n%n    %s%n%-b%n',
+		'--format=format:commit %H%d%nparent %P%ntree %T%nAuthor: %aN <%aE>%nDate:   %aD%nCommit: %cN <%cE>%n%n    %s%n%+b',
 		rev,
 		-- XXX: `git show X~` shows "X is a tree, not a commit" error message
 		-- multiple times without '--'.
