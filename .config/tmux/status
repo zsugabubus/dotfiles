@@ -222,7 +222,7 @@ local blocks = {
 	end),
 	transmission = periodic(function(url, user)
 		local function get_session_stats(session_id)
-			local cmd = ([[curl '%s' --silent --user '%s' --header 'X-Transmission-Session-Id: %s' --json '{"method":"session-stats"}']]):format(
+			local cmd = ([[curl '%s' --max-time 1 --silent --user '%s' --header 'X-Transmission-Session-Id: %s' --json '{"method":"session-stats"}']]):format(
 				url or 'http://localhost:9091/transmission/rpc',
 				user or ':',
 				session_id or ''
@@ -240,10 +240,9 @@ local blocks = {
 
 		return function(o)
 			local session_id = get_session_id()
-			local ok = session_id
-			local stats = ok and get_session_stats(session_id)
-			o.active_torrent_count = ok and json_number(stats, '"activeTorrentCount"')
-			o.paused_torrent_count = ok and json_number(stats, '"pausedTorrentCount"')
+			local stats = session_id and get_session_stats(session_id)
+			o.active_torrent_count = stats and json_number(stats, '"activeTorrentCount"')
+			o.paused_torrent_count = stats and json_number(stats, '"pausedTorrentCount"')
 		end
 	end),
 	mail = function(update_bar, opts)
