@@ -17,13 +17,14 @@
 
 (class_body (method_definition name: ((property_identifier) @keyword
   (#eq? @keyword "constructor"))))
+(export_specifier name: (identifier) @keyword (#eq? @keyword "default"))
+(import_specifier name: (identifier) @keyword (#eq? @keyword "default"))
 [
   "as"
   "break"
   "catch"
   "const"
   "continue"
-  "default"
   "export"
   "extends"
   "finally"
