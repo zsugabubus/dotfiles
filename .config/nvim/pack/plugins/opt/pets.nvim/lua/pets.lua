@@ -133,7 +133,7 @@ map_paren('[', ']')
 map_paren('{', '}')
 
 map_quote('"', '"')
-map_quote("'", "[%a']")
+map_quote("'", "[%a'<,&:+]")
 map_quote('`', '`')
 
 map_bs('<BS>')

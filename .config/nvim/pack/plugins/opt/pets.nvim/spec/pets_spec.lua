@@ -112,8 +112,8 @@ local function check_quote(quote)
 
 	check('Afoo"bar\\""baz<Esc>.', ('foo"bar\\""baz'):rep(2))
 
-	check('i"a","b', '"a","b"')
-	check('i"a\\"b","c', '"a\\"b","c"')
+	check('i"a", "b', '"a", "b"')
+	check('i"a\\"b", "c', '"a\\"b", "c"')
 	check('ix<Left>"', '"x')
 	local punct = ':,; ()[]{}'
 	check('i""' .. punct .. '<Esc>I"x', '"x"' .. punct)
@@ -174,6 +174,10 @@ test('quotes', function()
 	check("i='foo", "='foo'")
 	check("iA's", "A's")
 	check("iz's", "z's")
+	check("i<'a,'b", "<'a,'b")
+	check("i&'a", "&'a")
+	check("iT:'a", "T:'a")
+	check("i+'a", "+'a")
 
 	check('ix`', 'x``')
 end)
