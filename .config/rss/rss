@@ -854,7 +854,7 @@ local function update_feeds(feeds, state_path)
 			log_debug(
 				('Feed %s expires in %s at %s'):format(
 					feed._id,
-					format_duration(expiry - now),
+					format_duration(os.difftime(expiry, now)),
 					os.date(RFC_7273, expiry)
 				)
 			)
@@ -863,7 +863,7 @@ local function update_feeds(feeds, state_path)
 			log_debug(
 				('Feed %s expired %s ago at %s'):format(
 					feed._id,
-					format_duration(now - expiry),
+					format_duration(os.difftime(now, expiry)),
 					os.date(RFC_7273, expiry)
 				)
 			)
