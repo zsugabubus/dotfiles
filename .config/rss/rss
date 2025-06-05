@@ -69,7 +69,7 @@ local function format_duration(d)
 	return ('%d seconds'):format(d)
 end
 
-local sha1 = (function()
+local sha1, base64_encode = (function()
 	local ssl = ffi.load('ssl.so')
 
 	ffi.cdef([[
@@ -80,6 +80,7 @@ enum { EVP_MAX_MD_SIZE = 64 };
 const EVP_MD *EVP_sha1(void);
 int EVP_Digest(const void *, size_t, unsigned char *, unsigned int *, const EVP_MD *, void *);
 int OPENSSL_buf2hexstr_ex(char *, size_t, size_t *, const unsigned char *, long, const char);
+int EVP_EncodeBlock(unsigned char *, const unsigned char *, int);
 ]])
 
 	local md, md_size = ffi.new('unsigned char[?]', ssl.EVP_MAX_MD_SIZE), ffi.new('int[1]')
@@ -92,11 +93,20 @@ int OPENSSL_buf2hexstr_ex(char *, size_t, size_t *, const unsigned char *, long,
 		return ffi.string(buf, buf_size[0] - 1 --[[ NUL ]])
 	end
 
-	local evp_type = ssl.EVP_sha1()
+	local sha1_evp = ssl.EVP_sha1()
 
-	return function(data)
-		return generic(data, evp_type)
+	local function sha1(data)
+		return generic(data, sha1_evp)
 	end
+
+	local function base64_encode(s)
+		local n = math.ceil(#s / 3) * 4
+		local out = ffi.new('unsigned char[?]', n + 1 --[[ NUL ]])
+		assert(ssl.EVP_EncodeBlock(out, s, #s) == n)
+		return ffi.string(out, n)
+	end
+
+	return sha1, base64_encode
 end)()
 
 local function load_curl_library()
@@ -665,36 +675,6 @@ local parse_feed = (function()
 
 	return function(s)
 		return parse_root(parse_xml(s))
-	end
-end)()
-
-local base64_encode = (function()
-	local bit = require('bit')
-
-	local rshift = bit.rshift
-	local lshift = bit.lshift
-	local band = bit.band
-	local bor = bit.bor
-
-	-- stylua: ignore start
-	local alphabet = { [0] =
-		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-		'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-		'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-		'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/',
-	}
-	-- stylua: ignore end
-
-	return function(s)
-		local pad = 2 - ((#s - 1) % 3)
-		s = (s .. ('\0'):rep(pad)):gsub('...', function(cs)
-			local a, b, c = string.byte(cs, 1, 3)
-			return alphabet[rshift(a, 2)]
-				.. alphabet[bor(lshift(band(a, 3), 4), rshift(b, 4))]
-				.. alphabet[bor(lshift(band(b, 15), 2), rshift(c, 6))]
-				.. alphabet[band(c, 63)]
-		end)
-		return s:sub(1, #s - pad) .. ('='):rep(pad)
 	end
 end)()
 
