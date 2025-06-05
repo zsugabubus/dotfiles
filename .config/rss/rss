@@ -1,7 +1,6 @@
 #!/usr/bin/luajit
 local ffi = require('ffi')
 local json = require('cjson')
-local lxp = require('lxp')
 local uv = require('luv')
 
 local RFC_7273 = '%a, %d %b %Y %H:%M:%S %z'
@@ -520,7 +519,7 @@ local parse_xml = (function()
 		local root = {}
 		stack = { root }
 
-		local parser = lxp.new(CALLBACKS)
+		local parser = require('lxp').new(CALLBACKS)
 		parser:parse(s)
 		parser:parse()
 		parser:close()
