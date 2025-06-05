@@ -297,6 +297,19 @@ local TransmissionSession = (function()
 	return M
 end)()
 
+local base64_encode = (function()
+	local ssl = ffi.load('ssl.so')
+
+	ffi.cdef('int EVP_EncodeBlock(unsigned char *, const unsigned char *, int);')
+
+	return function(s)
+		local n = ceil(#s / 3) * 4
+		local out = ffi.new('unsigned char[?]', n + 1 --[[ NUL ]])
+		assert(ssl.EVP_EncodeBlock(out, s, #s) == n)
+		return ffi.string(out, n)
+	end
+end)()
+
 local with_buffer = (function()
 	local buf = require('string.buffer'):new()
 
@@ -3203,17 +3216,6 @@ transmission-daemon(1), transmission-remote(1).
 	end
 
 	local function add_torrents(self, collect_torrent_files, delete_after_add)
-		local function shesc(s)
-			return "'" .. gsub(s, "'", [['"'"']]) .. "'"
-		end
-
-		local function b64file(path)
-			local f = io.popen('base64 2>/dev/null -- ' .. shesc(path) .. ' && echo')
-			local s = assert(f:read('*a'))
-			assert(f:close())
-			return s ~= '' and s or nil
-		end
-
 		local new_ids = {}
 
 		local function callback()
@@ -3289,18 +3291,23 @@ transmission-daemon(1), transmission-remote(1).
 				local errored_items = {}
 
 				for s in parse_fields(data, '.+') do
-					local output = b64file(s)
+					local metainfo
+					local f = io.open(s, 'rb')
+					if f then
+						metainfo = base64_encode(assert(f:read('*a')))
+						assert(f:close())
+					end
 
 					local ok, payload = self.transmission:call_unchecked('torrent-add', {
-						filename = not output and s or nil,
-						metainfo = output,
+						filename = not metainfo and s or nil,
+						metainfo = metainfo,
 						paused = true,
 					})
 
 					if ok then
 						local new_torrent = payload['torrent-added'] or payload['torrent-duplicate']
 						insert(new_ids, assert(new_torrent.hashString))
-						if delete_after_add and output then
+						if delete_after_add and metainfo then
 							os.remove(s)
 						end
 					else

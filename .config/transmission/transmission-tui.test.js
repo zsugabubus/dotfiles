@@ -1678,8 +1678,8 @@ for (const [key, filesCommented, filesDeleted] of [
 
 		let invalidCounter = 0;
 		const method = t.setRPCHandler("torrent-add", (args) => {
-			assert.ok(Boolean(args.metainfo) !== Boolean(args.filename));
-			if (args.metainfo === "\n") {
+			assert.ok(Boolean("metainfo" in args) !== Boolean("filename" in args));
+			if (args.metainfo === "") {
 				throw new RPCError(`invalid torrent ${++invalidCounter}`);
 			}
 			if (args.filename === "http://first-torrent-duplicated") {
@@ -1741,26 +1741,19 @@ for (const [key, filesCommented, filesDeleted] of [
 		method.expectRequests(
 			{ filename: "http://first-torrent-duplicated", paused: true },
 			{ filename: "https://torrent.site/my.torrent", paused: true },
-			{
-				metainfo: Buffer.from("torrent file content\n").toString("base64") + "\n\n",
-				paused: true,
-			},
-			{ metainfo: "\n", paused: true },
-			{ metainfo: "\n", paused: true },
+			{ metainfo: Buffer.from("torrent file content\n").toString("base64"), paused: true },
+			{ metainfo: "", paused: true },
+			{ metainfo: "", paused: true },
 		);
 		await t.feed("I", "path/to/addMeToo.torrent", "Enter", "Escape", "ZZ");
-		await t.expect(/Error: invalid torrent 3\n.*invalid1.torrent/);
+		await t.expect([
+			/Error: invalid torrent 3\n.*invalid1.torrent/,
+			/Error: invalid torrent 4\n.*invalid2.torrent/,
+		]);
 		method.expectRequests(
-			{
-				metainfo:
-					Buffer.from("y\n".repeat(1000))
-						.toString("base64")
-						.match(/.{1,76}/g)
-						.join("\n") + "\n\n",
-				paused: true,
-			},
-			{ metainfo: "\n", paused: true },
-			{ metainfo: "\n", paused: true },
+			{ metainfo: Buffer.from("y\n".repeat(1000)).toString("base64"), paused: true },
+			{ metainfo: "", paused: true },
+			{ metainfo: "", paused: true },
 		);
 		await t.feed("cG", "http://dont-add-me", "Escape", ":w", "Enter", ":cq", "Enter");
 		await t.expect({
