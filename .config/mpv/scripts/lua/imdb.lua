@@ -94,6 +94,13 @@ local function imdb_search(title, title_types, year, duration, callback)
 		end
 
 		local response = utils.parse_json(result.stdout)
+
+		if response.errors then
+			mp.msg.error(utils.to_string(response.errors))
+			callback(nil)
+			return
+		end
+
 		local list = {}
 
 		for i, edge in ipairs(response.data.advancedTitleSearch.edges) do
