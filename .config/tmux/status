@@ -284,7 +284,7 @@ local blocks = {
 
 			if should_ring then
 				if not ring_timer:is_active() then
-					ring_timer:start(0, 60 * 1000, ring)
+					ring_timer:start(0, 120 * 1000, ring)
 				end
 			else
 				ring_timer:stop()
