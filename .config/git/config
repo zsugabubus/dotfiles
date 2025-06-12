@@ -29,6 +29,7 @@
 	dc = d --word-diff --word-diff-regex=.
 	ds = d --staged
 	dsc = ds --word-diff --word-diff-regex=.
+	dsw = ds --word-diff
 
 	f = fetch
 	fun = fetch --unshallow
