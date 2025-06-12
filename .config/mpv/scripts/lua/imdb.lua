@@ -56,7 +56,7 @@ local function imdb_search(title, title_types, year, duration, callback)
 
 	local extensions = {
 		persistedQuery = {
-			sha256Hash = '6842af47c3f1c43431ae23d394f3aa05ab840146b146a2666d4aa0dc346dc482',
+			sha256Hash = '81b46290a78cc1e8b3d713e6a43c191c55b4dccf3e1945d6b46668945846d832',
 			version = 1,
 		},
 	}
