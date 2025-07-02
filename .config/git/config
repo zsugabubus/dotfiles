@@ -30,6 +30,8 @@
 	ds = d --staged
 	dsc = ds --word-diff --word-diff-regex=.
 	dsw = ds --word-diff
+	diff-lines = "!f() { git diff -U0 \"$@\" | awk '/^\\+\\+\\+ b/{file=substr($0,7)}/^@@/&&match($0,/\\+[0-9]+/){hunk_start=substr($0,RSTART+1,RLENGTH-1)}hunk_start&&/^[+-]/{print file\":\"hunk_start\":\"$0;hunk_start=0}'; }; f"
+	de = "!f() { git diff-lines \"$@\" | $EDITOR -q -; }; f"
 
 	f = fetch
 	fun = fetch --unshallow
