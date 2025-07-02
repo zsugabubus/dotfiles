@@ -654,6 +654,17 @@ autocmd('StdinReadPost', {
 		bo.bufhidden = 'hide'
 		bo.swapfile = false
 
+		local function contains_ansi()
+			local a = table.concat(api.nvim_buf_get_lines(0, 0, 10, false))
+			local b = table.concat(api.nvim_buf_get_lines(0, -11, -1, false))
+			return (a .. b):find('\x1b', 1, true)
+		end
+
+		if table.concat(vim.v.argv, ' ') == 'nvim --embed' and contains_ansi() then
+			cmd.AnsiEsc()
+			wo[0][0].list = false
+		end
+
 		-- After +AnsiEsc.
 		vim.schedule(function()
 			autocmd('TextChanged', {
