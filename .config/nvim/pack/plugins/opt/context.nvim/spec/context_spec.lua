@@ -173,3 +173,8 @@ test(':ContextDisable', function()
 		'',
 	}, vim:get_screen())
 end)
+
+test("doesn't hang in empty buffer", function()
+	vim:set_lines({})
+	vim.cmd.ContextEnable()
+end)

@@ -38,7 +38,7 @@ local function update()
 			else
 				local from_line = line
 				local indent = fn.indent(line)
-				if indent == 0 then
+				if indent <= 0 then
 					line = 0
 				else
 					line = line - 1
