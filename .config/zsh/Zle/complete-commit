@@ -5,7 +5,7 @@ emulate -L zsh
 setopt err_return pipe_fail extended_glob
 
 local line=$(
-	git log-formatted --all --graph --color=always |
+	git l --all --graph --color=always |
 	fzr --no-sort
 )
 [[ $line =~ '([0-9a-f]{4,})' ]]
