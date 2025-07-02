@@ -16,7 +16,11 @@
 
 (conditional_type [":" "?"] @keyword.conditional.ternary)
 
+(accessibility_modifier) @keyword.modifier
+
 (conditional_type "extends" @keyword.operator)
+
+"abstract" @keyword.type
 
 (intersection_type "&" @operator)
 (non_null_expression "!" @operator)
