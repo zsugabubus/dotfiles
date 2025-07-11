@@ -1,3 +1,4 @@
+local Repository = require('git.repository')
 local revision = require('git.revision')
 local utils = require('git.utils')
 
@@ -30,12 +31,12 @@ local function buf_map(buf, lhs, rhs)
 	end
 end
 
-function M.goto_revision(git_dir, rev, lnum)
+function M.goto_revision(git_dir, rev, line)
 	local use_preview = vim.b.git_use_preview
 	local file = fn.fnameescape(
 		('git://%s%s%s'):format(git_dir or '', git_dir and '//' or '', rev)
 	)
-	local lnum_cmd = lnum and ('+%d '):format(lnum) or ''
+	local lnum_cmd = line and ('+%d '):format(line) or ''
 
 	-- May block file open since it can make rev expand to nothing.
 	local saved_wildignore = vim.go.wildignore
@@ -110,22 +111,27 @@ function M.get_diff_source()
 		row = row - 1
 	end
 
-	if not b_commit then
-		return
-	end
-
-	if a_start then
+	if a_start and b_commit then
 		local a = c == '-'
 		return {
 			commit = a and b_commit .. '~' or b_commit,
 			path = a and a_path or b_path,
-			lnum = a and a_start + a_offset or b_start + b_offset,
+			line = a and a_start + a_offset or b_start + b_offset,
 		}
 	end
 
-	return {
-		commit = b_commit,
-	}
+	if a_start then
+		return {
+			path = b_path,
+			line = b_start + b_offset,
+		}
+	end
+
+	if b_commit then
+		return {
+			commit = b_commit,
+		}
+	end
 end
 
 function M.goto_object()
@@ -137,13 +143,18 @@ function M.goto_object()
 		return
 	end
 
-	local pos = M.get_diff_source()
-	if pos then
+	local loc = M.get_diff_source()
+	if loc and loc.commit then
 		M.goto_revision(
 			git_dir,
-			revision.join(pos.commit, pos.path or cfile),
-			pos.lnum
+			revision.join(loc.commit, loc.path or cfile),
+			loc.line
 		)
+		return
+	elseif loc then
+		local repo = Repository.await(Repository.from_current_buf())
+		local dir = repo.work_tree and (repo.work_tree .. '/') or ''
+		cmd(('edit +%d %s'):format(loc.line, fn.fnameescape(dir .. loc.path)))
 		return
 	end
 

@@ -1198,6 +1198,38 @@ describe('<Plug>(git-goto-file)', function()
 		end)
 	end)
 
+	context('in worktree diff', function()
+		local function check(cursor_line, edit_line)
+			local work_dir = git_init()
+			git_config_user()
+			mkdir('a')
+			mkfile('a/b', _G.vim.split('xxxaaaaabb', ''))
+			git_add()
+			git_commit()
+			mkfile('a/b', _G.vim.split('xxxaaccbb', ''))
+			vim.fn.chdir('a')
+			vim.cmd('0read! git diff')
+			local win = vim.fn.winnr()
+			local file = work_dir .. '/a/b'
+			vim:feed(cursor_line .. 'Gs')
+			assert.same(file, vim.fn.bufname())
+			assert.same(win, vim.fn.winnr())
+			assert.same(edit_line, vim.fn.line('.'))
+		end
+
+		it('on a deleted line, goes to the start of the deletion', function()
+			check(11, 6)
+		end)
+
+		it('goes to an added line', function()
+			check(13, 7)
+		end)
+
+		it('goes to a context line', function()
+			check(14, 8)
+		end)
+	end)
+
 	it('falls back to gf', function()
 		local function test_case(lines, file)
 			vim:set_lines(lines)
