@@ -93,7 +93,7 @@ widthToggle.addEventListener("change", () => {
         mail.style = "";
     } else {
         localStorage.removeItem("wide");
-        mail.style = "margin: 0 auto; max-width: 80ch";
+        mail.style = "margin: 0 auto; max-width: 80ch; word-break: break-word";
     }
 });
 widthToggle.control.checked = Boolean(localStorage.getItem("wide"));
