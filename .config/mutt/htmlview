@@ -6,6 +6,7 @@ from signal import SIGINT, SIGTERM
 import asyncio
 import base64
 import email.policy
+import email.utils
 import http.server
 import json
 import sys
@@ -129,6 +130,37 @@ events.addEventListener("message-change", (e) => {
 
     document.title = `${msg.subject} - htmlview`;
 
+    const createAddresses = (name, addrs) => {
+        if (addrs.length === 0) {
+            return document.createDocumentFragment();
+        }
+        const div = document.createElement("div");
+        const small = document.createElement("small");
+        const b = document.createElement("b");
+        b.textContent = `${name}: `;
+        small.appendChild(b);
+        let first = true;
+        for (const addr of addrs) {
+            if (!first) {
+                small.appendChild(document.createTextNode(", "));
+            }
+            first = false;
+            const a = document.createElement("a");
+            a.style = "text-decoration: unset; color: unset";
+            a.href = `mailto:${addr[1]}`;
+            a.textContent = `${addr[0]} <${addr[1]}>`;
+            small.appendChild(a);
+        }
+        div.appendChild(small);
+        return div;
+    };
+
+    const addresses = [
+        createAddresses("From", msg.from),
+        createAddresses("To", msg.to),
+        createAddresses("Cc", msg.cc),
+    ];
+
     const attachments = (() => {
         const ol = document.createElement("ol");
         for (const attachment of msg.attachments) {
@@ -168,7 +200,7 @@ events.addEventListener("message-change", (e) => {
         return p;
     })();
 
-    mail.replaceChildren(attachments, subject, body);
+    mail.replaceChildren(...addresses, attachments, subject, body);
 });
 """.strip()
 
@@ -195,6 +227,9 @@ def make_event(event, data):
 def make_msg_data(msg):
     body = msg.get_body(("html", "plain"))
     return {
+        "from": email.utils.getaddresses(msg.get_all("From", [])),
+        "to": email.utils.getaddresses(msg.get_all("To", [])),
+        "cc": email.utils.getaddresses(msg.get_all("Cc", [])),
         "subject": msg.get("Subject", ""),
         "body": body.get_content() if body else "",
         "html": body.get_content_type() == "text/html" if body else False,
