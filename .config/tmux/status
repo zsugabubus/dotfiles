@@ -457,6 +457,7 @@ local blocks = {
 				process:close()
 			end))
 			stdout:read_start(function(err, data)
+				assert(not err, err)
 				stdout:close()
 				local volume, toggle =
 					data:match('Playback[^\n]*%[(%d+)%%%][^\n]*%[o([nf])')
@@ -474,6 +475,7 @@ local blocks = {
 			stdio = { nil, stdout, 2 },
 		}))
 		stdout:read_start(function(err, data)
+			assert(not err, err)
 			if data:find(needle, 1, true) then
 				debounced_update()
 			end
