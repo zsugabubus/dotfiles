@@ -241,8 +241,10 @@ local blocks = {
 		return function(o)
 			local session_id = get_session_id()
 			local stats = session_id and get_session_stats(session_id)
-			o.active_torrent_count = stats and json_number(stats, '"activeTorrentCount"')
-			o.paused_torrent_count = stats and json_number(stats, '"pausedTorrentCount"')
+			o.active_torrent_count = stats
+				and json_number(stats, '"activeTorrentCount"')
+			o.paused_torrent_count = stats
+				and json_number(stats, '"pausedTorrentCount"')
 		end
 	end),
 	mail = function(update_bar, opts)
