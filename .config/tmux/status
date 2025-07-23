@@ -408,6 +408,40 @@ local blocks = {
 			o.ok = status == 'starting' or status == 'running'
 		end
 	end),
+	logs = function(update_bar, opts)
+		local o = { found = false }
+
+		local args = {
+			'--since=now',
+			'--follow',
+			'--output=cat',
+			'--output-fields=MESSAGE',
+			'--priority=' .. (opts.priority or 'err'),
+		}
+		local function unit_filters(units)
+			return units == true and { '*' } or units or {}
+		end
+		for _, s in ipairs(unit_filters(opts.system_units)) do
+			table.insert(args, '--unit=' .. s)
+		end
+		for _, s in ipairs(unit_filters(opts.user_units)) do
+			table.insert(args, '--user-unit=' .. s)
+		end
+
+		local stdout = uv.new_pipe()
+		assert(uv.spawn('journalctl', {
+			args = args,
+			stdio = { nil, stdout, 2 },
+		}))
+		stdout:read_start(function(err, data)
+			assert(not err, err)
+			assert(data)
+			o.found = true
+			update_bar()
+		end)
+
+		return o
+	end,
 	alsa = function(update_bar, control)
 		local o = { volume = 0, muted = false }
 
@@ -506,7 +540,17 @@ tmux('@status', function(update_bar)
 	})
 	local system_units = blocks.system_units(update_bar)
 	local user_units = blocks.user_units(update_bar)
+	local user_errors = blocks.logs(update_bar, { user_units = true })
 	local alsa = blocks.alsa(update_bar, 'Master')
+
+	do
+		local signal = uv.new_signal()
+		signal:unref()
+		signal:start('sigusr1', function()
+			user_errors.found = false
+			update_bar()
+		end)
+	end
 
 	return function(buf)
 		do
@@ -585,6 +629,8 @@ tmux('@status', function(update_bar)
 		user_units:interval(300)
 		if not user_units.ok then
 			buf:put(' #[fg=red,bold][u]#[default] ')
+		elseif user_errors.found then
+			buf:put(' #[fg=red,bold][e]#[default] ')
 		end
 
 		system_units:interval(300)
