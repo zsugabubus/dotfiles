@@ -266,7 +266,7 @@ do
 		local self = super(cls).new(cls)
 
 		-- Reset everything.
-		self:put('bwrap')
+		self:put(opts.argv0 or 'bwrap')
 		self:put('--as-pid-1')
 		self:put('--die-with-parent')
 		self:hostname(opts.hostname or 'sandbox')
@@ -316,6 +316,7 @@ do
 
 	function M:program(file, args)
 		finish_args(self)
+		self[1] = file
 		self:put(file)
 		self:put_all(args)
 	end
@@ -364,6 +365,7 @@ do
 
 	M['telegram-desktop'] = function(...)
 		local o = BwrapBuilder:new({
+			argv0 = 'telegram-desktop',
 			allow_net = true,
 			allow_gui = true,
 		})
