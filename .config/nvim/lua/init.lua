@@ -899,6 +899,8 @@ require('pack').add({
 					end
 				end,
 			})
+
+			map('n', 'sP', ':MarkdownPreviewStart<CR>')
 		end,
 	},
 	{
