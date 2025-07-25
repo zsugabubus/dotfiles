@@ -56,7 +56,7 @@ local public_dir = plugin_dir .. 'public'
 local server
 local subscribers = {}
 local assets_dir
-local markdown_buf
+local preview_buf
 local client_file
 local client_text
 local client_line
@@ -83,6 +83,73 @@ end
 
 local function path_extension(path)
 	return match(path, '%.([a-z]+)$')
+end
+
+local function is_directory(path)
+	return fn.isdirectory(path) == 1
+end
+
+local function count_backticks(s)
+	local n = 0
+	for m in s:gmatch('`+') do
+		n = math.max(n, #m)
+	end
+	return n
+end
+
+local function format_inline_code(s)
+	local ZWJ = '\u{200d}'
+	local fence = ZWJ .. ('`'):rep(1 + count_backticks(s)) .. ZWJ
+	return ('%s%s%s'):format(fence, s:gsub('[%z\x01-\x1f]', ' '), fence)
+end
+
+local function format_block_code(s, filetype)
+	local fence = ('`'):rep(3 + count_backticks(s))
+	return ('%s%s\n%s\n%s\n'):format(fence, filetype, s, fence)
+end
+
+local function get_asset_preview(path)
+	local mime_type = ALLOWED_ASSETS[path_extension(path)]
+
+	if mime_type and mime_type:find('^image/') then
+		return ('![Image](%s)'):format(vim.uri_encode(path))
+	end
+
+	if mime_type and mime_type:find('^video/') then
+		return ('<video src="%s" controls></video>'):format(vim.uri_encode(path))
+	end
+end
+
+local function get_buffer_preview(buf)
+	local path = fn.bufname(buf)
+
+	if is_directory(path) then
+		local files = {}
+		for name in vim.fs.dir(path) do
+			table.insert(
+				files,
+				('## %s\n%s\n\n'):format(
+					format_inline_code(name),
+					get_asset_preview(name) or ''
+				)
+			)
+		end
+		return table.concat(files)
+	end
+
+	local asset = get_asset_preview(fn.fnamemodify(path, ':t'))
+	if asset then
+		return asset
+	end
+
+	local content = table.concat(api.nvim_buf_get_lines(buf, 0, -1, true), '\n')
+
+	local filetype = vim.bo[buf].filetype
+	if filetype ~= 'markdown' then
+		return format_block_code(content, filetype)
+	end
+
+	return content
 end
 
 local function dispatch_event(event, data)
@@ -120,11 +187,11 @@ local function update_client_file()
 end
 
 local update_client_text = debounce(function()
-	if not markdown_buf then
+	if not preview_buf then
 		return
 	end
 
-	local new = concat(api.nvim_buf_get_lines(markdown_buf, 0, -1, true), '\n')
+	local new = get_buffer_preview(preview_buf)
 
 	if client_text == new then
 		return
@@ -154,7 +221,7 @@ local function detach_from_buffer()
 end
 
 local function attach_to_buffer()
-	api.nvim_buf_call(markdown_buf, function()
+	api.nvim_buf_call(preview_buf, function()
 		local group = api.nvim_create_augroup('markdown.buffer', {})
 
 		api.nvim_create_autocmd('TextChanged', {
@@ -177,11 +244,15 @@ local function attach_to_buffer()
 			group = group,
 			buffer = 0,
 			callback = function()
-				markdown_buf = nil
+				preview_buf = nil
 			end,
 		})
 
-		assets_dir = fn.expand('%:h')
+		if is_directory(fn.expand('%')) then
+			assets_dir = fn.expand('%') .. '/'
+		else
+			assets_dir = fn.expand('%:h')
+		end
 
 		update_client_file()
 		update_client_text()
@@ -189,16 +260,8 @@ local function attach_to_buffer()
 	end)
 end
 
-local function is_buffer_markdown()
-	return vim.bo.filetype == 'markdown'
-end
-
 local function enter_buffer()
-	if not is_buffer_markdown() then
-		return
-	end
-
-	markdown_buf = api.nvim_get_current_buf()
+	preview_buf = api.nvim_get_current_buf()
 
 	if has_subscribers() then
 		attach_to_buffer()
@@ -339,7 +402,7 @@ local function serve_http(client)
 			client_text = nil
 			client_line = nil
 			dispatch_background_change()
-			if markdown_buf then
+			if preview_buf then
 				attach_to_buffer()
 			end
 		end)
@@ -419,7 +482,7 @@ local function serve_http(client)
 			client:read_stop()
 			handle_request({
 				method = method,
-				path = path,
+				path = vim.uri_decode(path),
 				headers = headers,
 			})
 		end
