@@ -5,6 +5,7 @@ local schedule = vim.schedule
 local uv = vim.uv
 
 local CACHE_CONTROL = 'cache-control'
+local CONTENT_LENGTH = 'content-length'
 local CONTENT_SECURITY_POLICY = 'content-security-policy'
 local CONTENT_TYPE = 'content-type'
 local CRLF = '\r\n'
@@ -341,17 +342,12 @@ local function serve_http(client)
 				end
 
 				headers[ETAG] = etag
+				headers[CONTENT_LENGTH] = stat.size
 
-				uv.fs_read(fd, stat.size, 0, function(err, data)
-					uv.fs_close(fd, noop)
-
-					if err then
-						reply_error(err)
-						return
-					end
-
-					assert(#data == stat.size)
-					reply(200, 'OK', headers, data)
+				client:write(make_head(200, 'OK', headers), function()
+					uv.fs_sendfile(client:fileno(), fd, 0, stat.size, function()
+						close_connection(client)
+					end)
 				end)
 			end)
 		end)
