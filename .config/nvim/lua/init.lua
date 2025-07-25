@@ -809,6 +809,7 @@ require('pack').add({
 		'cat.nvim',
 		after = function()
 			smap('x', 'sn', ':Narrow<CR>')
+			map('n', 'sC', ':CatArgs<CR>')
 		end,
 	},
 	{
