@@ -39,6 +39,7 @@ local ALLOWED_ASSETS = {
 	png = 'image/png',
 	jpg = 'image/jpeg',
 	jpeg = 'image/jpeg',
+	mp4 = 'video/mp4',
 }
 
 local group = api.nvim_create_augroup('markdown', {})
@@ -75,7 +76,7 @@ local function is_path_safe(path)
 end
 
 local function path_extension(path)
-	return path:match('%.([a-z]+)$')
+	return path:match('%.([a-z0-9]+)$')
 end
 
 local function is_directory(path)
