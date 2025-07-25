@@ -1,14 +1,6 @@
 local api = vim.api
-local concat = table.concat
-local find = string.find
 local fn = vim.fn
-local format = string.format
-local gmatch = string.gmatch
-local insert = table.insert
 local json_encode = vim.json.encode
-local lower = string.lower
-local match = string.match
-local remove = table.remove
 local schedule = vim.schedule
 local uv = vim.uv
 
@@ -32,7 +24,7 @@ local TEXT_EVENT_STREAM = 'text/event-stream'
 local TEXT_HTML_UTF8 = 'text/html' .. CHARSET_UTF8
 local TEXT_PLAIN_UTF8 = 'text/plain' .. CHARSET_UTF8
 
-local CSP_DIRECTIVES = concat({
+local CSP_DIRECTIVES = table.concat({
 	"default-src 'none'",
 	"connect-src 'self' https://api.github.com/emojis",
 	'img-src http:',
@@ -50,7 +42,7 @@ local ALLOWED_ASSETS = {
 
 local group = api.nvim_create_augroup('markdown', {})
 local plugin_dir =
-	match(api.nvim_get_runtime_file('lua/markdown.lua', false)[1], '^(.*/).*/.*$')
+	api.nvim_get_runtime_file('lua/markdown.lua', false)[1]:match('^(.*/).*/.*$')
 local public_dir = plugin_dir .. 'public'
 
 local server
@@ -78,11 +70,11 @@ local function debounce(fn, timeout)
 end
 
 local function is_path_safe(path)
-	return find(path, '^/') and not find(path, '%.%.')
+	return path:find('^/') and not path:find('%.%.')
 end
 
 local function path_extension(path)
-	return match(path, '%.([a-z]+)$')
+	return path:match('%.([a-z]+)$')
 end
 
 local function is_directory(path)
@@ -153,7 +145,7 @@ local function get_buffer_preview(buf)
 end
 
 local function dispatch_event(event, data)
-	local s = format('event: %s\ndata: %s\n\n', event, json_encode(data))
+	local s = ('event: %s\ndata: %s\n\n'):format(event, json_encode(data))
 	for _, client in ipairs(subscribers) do
 		client:write(s)
 	end
@@ -301,11 +293,11 @@ local function serve_http(client)
 	local function reply_forbidden_extension()
 		local t = { 'Extension is forbidden. Allowed extensions:\n' }
 		for ext, mime_type in pairs(ALLOWED_ASSETS) do
-			insert(t, format('- %s (%s)\n', ext, mime_type))
+			table.insert(t, ('- %s (%s)\n'):format(ext, mime_type))
 		end
 		reply(403, 'Forbidden Extension', {
 			[CONTENT_TYPE] = TEXT_PLAIN_UTF8,
-		}, concat(t))
+		}, table.concat(t))
 	end
 
 	local function reply_not_found()
@@ -318,7 +310,7 @@ local function serve_http(client)
 
 	local function serve_file(req, filepath, headers)
 		uv.fs_open(filepath, 'r', 0, function(err, fd)
-			if err and find(err, '^ENOENT:') then
+			if err and err:find('^ENOENT:') then
 				reply_not_found()
 				return
 			elseif err then
@@ -334,8 +326,7 @@ local function serve_http(client)
 				end
 
 				local client_etag = req.headers[IF_NONE_MATCH]
-				local etag = format(
-					'"%d|%d|%d|%d|%d"',
+				local etag = ('"%d|%d|%d|%d|%d"'):format(
 					stat.dev,
 					stat.ino,
 					stat.size,
@@ -371,7 +362,7 @@ local function serve_http(client)
 	end
 
 	local function serve_events()
-		insert(subscribers, client)
+		table.insert(subscribers, client)
 
 		client:write(make_head(200, 'OK', {
 			[CONTENT_TYPE] = TEXT_EVENT_STREAM,
@@ -382,7 +373,7 @@ local function serve_http(client)
 			if not chunk then
 				for i = 1, #subscribers do
 					if subscribers[i] == client then
-						remove(subscribers, i)
+						table.remove(subscribers, i)
 						break
 					end
 				end
@@ -469,14 +460,14 @@ local function serve_http(client)
 
 		buf = buf .. chunk
 
-		local head = match(buf, '^(.-\r\n)\r\n')
+		local head = buf:match('^(.-\r\n)\r\n')
 		if head then
 			local method, path, header_string =
-				match(buf, '^([^ ]+) ([^ ]+) HTTP/1%.1\r\n(.*)')
+				buf:match('^([^ ]+) ([^ ]+) HTTP/1%.1\r\n(.*)')
 
 			local headers = {}
-			for name, value in gmatch(header_string, '([^:]*): *([^\r\n]-) *\r\n') do
-				headers[lower(name)] = value
+			for name, value in header_string:gmatch('([^:]*): *([^\r\n]-) *\r\n') do
+				headers[name:lower()] = value
 			end
 
 			client:read_stop()
@@ -492,7 +483,7 @@ end
 local function get_browser_url()
 	if server then
 		local sock = assert(uv.tcp_getsockname(server))
-		return format('http://%s:%d', sock.ip, sock.port)
+		return ('http://%s:%d'):format(sock.ip, sock.port)
 	end
 end
 
@@ -501,7 +492,7 @@ local function trigger(name, data)
 end
 
 local function notify_info(...)
-	vim.notify(format(...), vim.log.levels.INFO)
+	vim.notify(string.format(...), vim.log.levels.INFO)
 end
 
 local function stop_server()
