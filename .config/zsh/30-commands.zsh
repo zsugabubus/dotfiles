@@ -425,6 +425,7 @@ alias oct='od -tu1'
 alias remind='remind -m -b1'
 alias tr='ARGV0=transmission-tui luajit ~c/transmission/transmission-tui'
 alias yt=yt-dlp
+alias yts='yt --write-subs --write-auto-subs'
 
 function ca() {
 	remind -cu -w$COLUMNS,0,1 "$@" ~c/remind |
