@@ -1,0 +1,136 @@
+#!/bin/node
+import assert from "node:assert/strict";
+import child_process from "node:child_process";
+
+const X_TRANSMISSION_SESSION_ID = "X-Transmission-Session-Id";
+
+const toJsonBlob = (json) => new Blob([JSON.stringify(json)], { type: "application/json" });
+const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
+
+class RpcError extends Error {}
+
+class Rpc {
+	url = "http://localhost:9091/transmission/rpc";
+	sessionId;
+
+	async call(method, args) {
+		const response = await fetch(this.url, {
+			method: "POST",
+			headers: {
+				[X_TRANSMISSION_SESSION_ID]: this.sessionId,
+			},
+			body: toJsonBlob({
+				method,
+				arguments: args,
+			}),
+		});
+		if (response.status === 409) {
+			this.sessionId = response.headers.get(X_TRANSMISSION_SESSION_ID);
+			assert(this.sessionId);
+			return await this.call(method, args);
+		}
+		assert(response.ok);
+		const json = await response.json();
+		if (json.result !== "success") {
+			throw new RpcError(json.result);
+		}
+		return json.arguments;
+	}
+}
+
+const startCommand = async () => {
+	const rpc = new Rpc();
+
+	const isPortOpen = async () => {
+		const RETRIES = 3;
+		for (let i = 0; i < RETRIES; i++) {
+			console.log("Check open port");
+			try {
+				if ((await rpc.call("port-test"))["port-is-open"]) {
+					return true;
+				}
+			} catch (e) {
+				if (!(e instanceof RpcError)) {
+					throw e;
+				}
+			}
+			await sleep(1000);
+		}
+		return false;
+	};
+
+	const ensureOpenPort = async () => {
+		const RETRIES = 3;
+		for (let i = 0; i < RETRIES; i++) {
+			if (await isPortOpen()) {
+				return;
+			}
+			await restartService();
+		}
+		throw new Error("Port closed");
+	};
+
+	const restartService = () => {
+		console.log("Restart service");
+		return new Promise((resolve, reject) => {
+			const child = child_process.spawn(
+				"systemctl",
+				["--user", "restart", "transmission.service"],
+				{
+					stdio: ["ignore", "inherit", "inherit"],
+				},
+			);
+			child.on("exit", (code) => {
+				if (code === 0) {
+					resolve();
+				} else {
+					reject(new Error(`systemctl exited with code ${code}`));
+				}
+			});
+		});
+	};
+
+	const getDoneTorrents = async () => {
+		const { torrents } = await rpc.call("torrent-get", {
+			fields: ["hashString", "percentDone"],
+		});
+		return torrents
+			.filter((torrent) => torrent.percentDone === 1)
+			.map((torrent) => torrent.hashString);
+	};
+
+	const startTorrents = async (ids) => {
+		console.log(`Start ${ids.length} torrents`);
+		if (ids.length === 0) {
+			return;
+		}
+		await rpc.call("torrent-start", { ids });
+	};
+
+	await ensureOpenPort();
+	await startTorrents(await getDoneTorrents());
+};
+
+const quitCommand = async () => {
+	const rpc = new Rpc();
+	await rpc.call("torrent-stop", {});
+	await sleep(1000);
+	await rpc.call("session-close", {});
+};
+
+const commands = new Map(
+	Object.entries({
+		s: startCommand,
+		Q: quitCommand,
+	}),
+);
+
+const main = async (commandName) => {
+	const command = commands.get(commandName);
+	if (!command) {
+		throw new Error(`Unknown command: ${commandName}`);
+	}
+	await command();
+};
+
+await main(...process.argv.slice(2));
