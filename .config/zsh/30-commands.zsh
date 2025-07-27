@@ -424,6 +424,7 @@ alias info_all='info --subnodes'
 alias oct='od -tu1'
 alias remind='remind -m -b1'
 alias tr='ARGV0=transmission-tui luajit ~c/transmission/transmission-tui'
+alias tra='ARGV0=transmission-admin node ~c/transmission/transmission-admin'
 alias yt=yt-dlp
 alias yts='yt --write-subs --write-auto-subs'
 
