@@ -1,20 +1,5 @@
-# General build directory.
-/build
-
-# Vim :helptags.
 tags
 .nvimlog
-
-# Vim.
-/Session.vim
-
-# Git merge.
 *.orig
 *.rej
-
-# GDB.
-/.gdb_history
-
-# Miscellaneous.
-/node_modules
-__pycache__
+.gdb_history
