@@ -456,6 +456,14 @@ local parse_date = (function()
 			end
 		end
 
+		do
+			local year, month, day, hour, min, sec, tz_sign, tz_hour, tz_min =
+				s:match('^(%d%d%d%d)-(%d%d)-(%d%d) (%d%d):(%d%d):(%d%d) ([+-])(%d%d)(%d%d)$')
+			if day then
+				return make_time(year, month, day, hour, min, sec, parse_tz(tz_sign, tz_hour, tz_min))
+			end
+		end
+
 		error(('invalid date: %s'):format(s))
 	end
 end)()
@@ -1120,10 +1128,13 @@ local function test()
 	eq('2000-01-02 00:00:00', parse_date_and_format('2000-01-02'))
 	eq('2000-01-02 03:04:00', parse_date_and_format('2000-01-02T03:04Z'))
 	eq('2000-01-02 03:04:05', parse_date_and_format('2000-01-02T03:04:05Z'))
+	eq('2050-12-24 18:36:59', parse_date_and_format('2050-12-24T18:36:59Z'))
 	eq('2000-01-01 23:00:05', parse_date_and_format('Xxx, 02 Jan 2000 03:04:05 +0404'))
 	eq('2000-01-02 06:34:05', parse_date_and_format('2000-01-02T03:04:05-03:30'))
 	eq('2000-01-02 06:34:05', parse_date_and_format('2000-01-02T03:04:05-0330'))
 	eq('2000-01-02 03:04:05', parse_date_and_format('2000-01-02T03:04:05.678Z'))
+	eq('2000-01-02 08:34:05', parse_date_and_format('2000-01-02 03:04:05 -0530'))
+	eq('2000-01-02 01:00:05', parse_date_and_format('2000-01-02 03:04:05 +0204'))
 
 	eq('0 seconds', format_duration(0))
 	eq('1 second', format_duration(1))
