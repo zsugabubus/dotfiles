@@ -1094,6 +1094,7 @@ local function main(args)
 			end
 		end,
 		include = function(patterns)
+			assert(#patterns > 0, 'no patterns')
 			return function(entry)
 				for _, pattern in ipairs(patterns) do
 					if entry.title:find(pattern) then
