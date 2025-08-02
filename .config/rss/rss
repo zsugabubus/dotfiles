@@ -468,6 +468,17 @@ local parse_date = (function()
 	end
 end)()
 
+local function url_hostname(url)
+	return url:match('://([^/]*)'):gsub('.*@', ''):gsub(':.*', '')
+end
+
+local function url_join(a, b)
+	if b:find('^/') then
+		return a:match('.*://[^/]*') .. b
+	end
+	return b
+end
+
 local XmlNode = (function()
 	local M = {}
 	M.__index = M
@@ -656,7 +667,7 @@ local parse_feed = (function()
 
 		for _, entry in root:find_all('entry') do
 			local x = entry:texts()
-			local link = assert(assert(entry:find('link')).attribs.href)
+			local link = url_join(parent.link, assert(assert(entry:find('link')).attribs.href))
 			table.insert(entries, {
 				parent = parent,
 				id = assert(x.id or link),
@@ -924,10 +935,6 @@ local expand_path = (function()
 	end
 end)()
 
-local function extract_url_host(url)
-	return url:match('://([^/]+)')
-end
-
 local gen_mail = (function()
 	local function gen_msg_id(data, host)
 		return ('<%s@%s>'):format(sha1(data):sub(1, 10):lower(), host)
@@ -940,7 +947,7 @@ local gen_mail = (function()
 	local buf = require('string.buffer'):new()
 
 	return function(entry, name_override)
-		local host = assert(extract_url_host(entry.link))
+		local host = assert(url_hostname(entry.link))
 		local msg_id = gen_msg_id(entry.id, host)
 		buf:reset()
 		buf:putf('Received: mrss; %s\n', os.date(RFC_7273))
@@ -997,7 +1004,7 @@ local function main(args)
 			local user_agent = opts and opts.user_agent
 			local insecure = opts and opts.insecure
 			return function(state)
-				local host = assert(extract_url_host(url))
+				local host = assert(url_hostname(url))
 
 				if host_blacklist[host] then
 					log_debug('Skip blacklisted')
@@ -1118,7 +1125,7 @@ end
 
 local function test()
 	local function eq(left, right)
-		assert(left == right, ('Expected %q == %q'):format(left, right))
+		return assert(left == right, ('Expected %q == %q'):format(left, right))
 	end
 
 	local function parse_date_and_format(s)
@@ -1153,6 +1160,13 @@ local function test()
 	eq('1 day and 23 hours', format_duration(48 * 3600 - 1))
 	eq('2 days', format_duration(48 * 3600))
 	eq('100 days', format_duration(100 * 24 * 3600))
+
+	local url = 'http://user:password@www.host:80/p/a/t/h/index.html?query=1#fragment'
+	eq('www.host', url_hostname(url))
+	eq(
+		'http://user:password@www.host:80/new/path.html?search=foo#bar',
+		url_join(url, '/new/path.html?search=foo#bar')
+	)
 end
 -- test()
 
