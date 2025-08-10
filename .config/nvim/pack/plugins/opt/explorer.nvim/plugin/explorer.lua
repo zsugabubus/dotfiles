@@ -26,7 +26,6 @@ local function find(t, base, limit)
 	if limit <= 0 then
 		return
 	end
-
 	for name, kind in list_dir(base == '' and '.' or base) do
 		local path = base .. name
 		if kind == 'directory' then
@@ -71,11 +70,9 @@ autocmd('BufEnter', {
 			callback = function(opts)
 				local root = fn.fnamemodify(opts.match, ':p:.')
 				local recursive = opts.file:match('//$')
-
 				local lines = {}
 				find(lines, root, recursive and math.huge or 1)
 				table.sort(lines)
-
 				api.nvim_buf_set_lines(0, 0, -1, true, lines)
 			end,
 		})

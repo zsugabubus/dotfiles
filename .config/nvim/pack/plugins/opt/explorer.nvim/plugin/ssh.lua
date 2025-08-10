@@ -29,10 +29,8 @@ autocmd('BufReadCmd', {
 	nested = true,
 	callback = function(opts)
 		local destination, path, recursive = parse_opts(opts)
-
 		bo.buftype = 'nofile'
 		bo.swapfile = false
-
 		local cmdline = {
 			'ssh',
 			'--',
@@ -67,48 +65,37 @@ autocmd('BufReadCmd', {
 				shesc(path)
 			),
 		}
-
 		local output = fn.systemlist(cmdline)
 		local kind = table.remove(output, 1)
 		local writable = table.remove(output, 1)
-
 		if vim.v.shell_error ~= 0 then
 			bo.readonly = true
 			echoerr("Can't read file: " .. vim.trim(table.concat(output, '\n')))
 			return
 		end
-
 		if kind == 'dir' then
 			local prefix = 'ssh://'
 				.. destination
 				.. (recursive and '' or (path .. '/'):gsub('//$', '/'))
-
 			-- Eat "." and "..".
 			if not recursive then
 				table.remove(output, 1)
 				table.remove(output, 1)
 			end
-
 			table.sort(output)
-
 			for i, path in ipairs(output) do
 				output[i] = prefix .. output[i]
 			end
 		end
-
 		api.nvim_buf_set_lines(0, 0, -1, true, output)
-
 		bo.readonly = writable == 'readonly'
-
 		if kind == 'file' or kind == 'new' then
 			local filetype, on_detect = vim.filetype.match({
 				buf = 0,
 				filename = path,
 			})
-
 			bo.buftype = 'acwrite'
 			bo.filetype = filetype or ''
-
 			if on_detect then
 				on_detect(0)
 			end
@@ -128,7 +115,6 @@ autocmd('BufWriteCmd', {
 	callback = function(opts)
 		local destination, path = parse_opts(opts)
 		local tmp_path = path .. '~'
-
 		local cmdline = {
 			'ssh',
 			'--',
@@ -140,17 +126,13 @@ autocmd('BufWriteCmd', {
 				shesc(path)
 			),
 		}
-
 		local output = fn.system(cmdline, opts.buf)
 		local new = output == 'new\n'
-
 		if vim.v.shell_error ~= 0 then
 			echoerr("Can't write file: " .. vim.trim(output))
 			return
 		end
-
 		vim.bo.modified = false
-
 		echomsg(
 			('"%s"%s %dL, %dB written on %s'):format(
 				path,
