@@ -15,6 +15,7 @@ PRIORITY = {
     r"reddit.*/comments/": 5,
     r"reddit.*/user/": -6,
     r"reddit.*/r/": -10,
+    r"azure.*pullrequest": 1,
 }
 MAPPING = {
     r"^https://api.github.com/repos/(.*)/pulls/(.*)": r"https://github.com/\1/pull/\2",
@@ -22,7 +23,7 @@ MAPPING = {
 }
 BLACKLIST = [
     r"^http://(schemas\.|www\.w3\.org|schema\.org)",
-    r"//(preview|fonts|ssl|www\.gstatic)\.",
+    r"//(cdn|preview|fonts|ssl|www\.gstatic)\.",
     r"mailman/listinfo$",
     r"/thumbnail/",
     r"thumbs\.",
