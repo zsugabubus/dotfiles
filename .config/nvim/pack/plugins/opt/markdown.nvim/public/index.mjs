@@ -356,7 +356,9 @@ events.addEventListener("open", () => {
 
 events.addEventListener("error", () => {
 	document.title = "NVIM";
-	setMarkdown("💔 Disconnected from `nvim`. 📡 Trying to reconnect.");
+	setMarkdown(
+		`💔 Disconnected from \`nvim\`. 🚀 \`:MarkdownPreviewStart ${window.location.port}\`.`,
+	);
 });
 
 events.addEventListener("file-change", (e) => {
