@@ -1,2 +1,2 @@
 format :
-	npx prettier --use-tabs --write public
+	npx --yes prettier --use-tabs --write public
