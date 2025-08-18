@@ -313,8 +313,8 @@ alias systemctl='noglob systemctl'
 alias vlock='nice -20 vlock'
 
 function M() {
-	local opt_with_net opt_user=(user) opt_host=(bubble) opt_cwd=(${PWD?})
-	zparseopts -D -F -K -- n=opt_with_net u:=opt_user h:=opt_host C:=opt_cwd || return 1
+	local opt_with_net opt_with_docker opt_user=(user) opt_host=(bubble) opt_cwd=(${PWD?})
+	zparseopts -D -F -K -- n=opt_with_net d=opt_with_docker u:=opt_user h:=opt_host C:=opt_cwd || return 1
 	local new_user=$opt_user[-1]
 	local new_host=$opt_host[-1]
 	local new_home=/home/$new_user
@@ -345,6 +345,7 @@ function M() {
 		--ro-bind-data 4 /etc/passwd \
 		4<<<"$new_user:x:$UID:$GID::$new_home:$SHELL" \
 		--tmpfs /tmp \
+		${(z)opt_with_docker:+--ro-bind /var/run/docker.sock /var/run/docker.sock} \
 		--ro-bind ~m $new_home/mem \
 		--ro-bind {~,$new_home}/.config \
 		--ro-bind {~,$new_home}/.zshenv \
