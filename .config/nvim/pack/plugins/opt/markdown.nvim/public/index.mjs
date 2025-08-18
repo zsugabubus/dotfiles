@@ -46,10 +46,9 @@ const countTokenLines = (token) => token.raw.split("\n").length - 1;
 
 setBackground(sessionStorage.getItem("background") ?? defaultBackground);
 
+import emojisData from "https://api.github.com/emojis" with { type: "json" };
 const emojis = new Map(
-	Object.entries(
-		await (await fetch("https://api.github.com/emojis")).json(),
-	).map(([name, url]) => [
+	Object.entries(emojisData).map(([name, url]) => [
 		name,
 		`<img class="emoji" src="${url}" loading="lazy">`,
 	]),
