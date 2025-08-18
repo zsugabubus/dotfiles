@@ -289,47 +289,39 @@ local Maildir = (function()
 		return ('%s.%s_%d.%s'):format(os.time(), pid, counter, hostname)
 	end
 
-	local function make_msg_ids_lookup(self)
-		local t = {}
+	local function make_message_lookup(path)
+		local messages = {}
 		for _, x in ipairs({ 'cur', 'new' }) do
-			local mail_dir = self._path .. '/' .. x
-			for name in list_dir(mail_dir) do
-				local path = mail_dir .. '/' .. name
-				local f = io.open(path, 'r')
+			local dir = path .. '/' .. x
+			for name in list_dir(dir) do
+				local mail_path = dir .. '/' .. name
+				local f = io.open(mail_path)
 				if f then
 					local data = assert(f:read(512))
 					assert(f:close())
 					local msg_id = assert(data:match('Message%-ID: *(<[^\r\n>]*>)'))
-					t[msg_id] = path
+					messages[msg_id] = true
 				end
 			end
 		end
-		return t
-	end
-
-	local function create_dirs(path)
-		for _, x in ipairs({ 'tmp', 'cur', 'new' }) do
-			uv.fs_mkdir(('%s/%s'):format(path, x), tonumber('700', 8))
-		end
+		return messages
 	end
 
 	function M.new(cls, path)
-		create_dirs(path)
-		return setmetatable({ _path = assert(path) }, cls)
-	end
-
-	function M:msg_ids()
-		if not self._msg_ids then
-			self._msg_ids = make_msg_ids_lookup(self)
+		for _, x in ipairs({ 'tmp', 'cur', 'new' }) do
+			uv.fs_mkdir(path .. '/' .. x, tonumber('700', 8))
 		end
-		return self._msg_ids
+		return setmetatable({ _path = path }, cls)
 	end
 
 	function M:has_message(msg_id)
-		return self:msg_ids()[msg_id] ~= nil
+		if not self._messages then
+			self._messages = make_message_lookup(self._path)
+		end
+		return self._messages[msg_id]
 	end
 
-	function M:add_message(msg_id, payload)
+	function M:add_message(msg_id, bytes)
 		if self:has_message(msg_id) then
 			return
 		end
@@ -339,11 +331,11 @@ local Maildir = (function()
 		local path = ('%s/new/%s'):format(self._path, name)
 
 		local f = assert(io.open(tmp_path, 'w'))
-		assert(f:write(payload))
+		assert(f:write(bytes))
 		assert(f:close())
 
 		assert(os.rename(tmp_path, path))
-		self._msg_ids[msg_id] = path
+		self._messages[msg_id] = true
 
 		return path
 	end
