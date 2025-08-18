@@ -522,10 +522,6 @@ function oz() {
 	sed 's/  >\(.*\)<$/  |\1|/'
 }
 
-function pass() {
-	python -m my.pass "$@"
-}
-
 function pdfmerge() {
 	local out=a.pdf
 	command gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -sOutputFile="$out" ${@:-*.pdf}
