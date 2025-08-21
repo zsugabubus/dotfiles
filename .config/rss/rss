@@ -594,7 +594,7 @@ local parse_feed = (function()
 					title = assert(x.title),
 					date = parse_date(assert(x.pubDate)),
 					link = assert(x.link or x.guid),
-					content = guess_html_or_plain_payload(x['content:encoded'] or x.description),
+					content = guess_html_or_plain_payload(x['content:encoded'] or x.description or ''),
 					categories = parse_rss_categories(item),
 				})
 			end
