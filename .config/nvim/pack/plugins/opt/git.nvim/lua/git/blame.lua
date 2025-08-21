@@ -4,8 +4,6 @@ local revision = require('git.revision')
 local utils = require('git.utils')
 
 local api = vim.api
-local fn = vim.fn
-local wo = vim.wo
 
 local buf_set_keymap = api.nvim_buf_set_keymap
 local autocmd = api.nvim_create_autocmd
@@ -24,7 +22,7 @@ end
 local function handle_user_command()
 	local source_buf = api.nvim_get_current_buf()
 	local source_win = api.nvim_get_current_win()
-	local source_file = fn.expand('%:p')
+	local source_file = vim.fn.expand('%:p')
 
 	local git_dir, rev = buffer.buf_get_rev(source_buf)
 	local path
@@ -36,7 +34,7 @@ local function handle_user_command()
 
 	vim.cmd('topleft vsplit')
 
-	local buf = fn.bufnr(
+	local buf = vim.fn.bufnr(
 		('git-blame://%s%s%s:%s'):format(
 			git_dir or '',
 			git_dir and '//' or '',
@@ -57,7 +55,7 @@ local function handle_read_autocmd(opts)
 	local win = api.nvim_get_current_win()
 
 	do
-		local wo = wo[win][0]
+		local wo = vim.wo[win][0]
 		wo.fillchars = 'eob: '
 		wo.list = false
 		wo.number = false
@@ -107,7 +105,7 @@ local function handle_read_autocmd(opts)
 
 	local FAKE_WORKTREE_REV = '--incremental'
 
-	local lines = fn.systemlist(utils.make_args(repo, {
+	local lines = vim.fn.systemlist(utils.make_args(repo, {
 		'blame',
 		'--incremental',
 		rev == '-' and FAKE_WORKTREE_REV or rev,
@@ -169,7 +167,7 @@ local function handle_read_autocmd(opts)
 	local max_width = 0
 
 	for _, s in pairs(commit2str) do
-		local width = fn.strdisplaywidth(s)
+		local width = vim.fn.strdisplaywidth(s)
 		max_width = math.max(max_width, width)
 	end
 
@@ -180,19 +178,19 @@ local function handle_read_autocmd(opts)
 	end
 
 	local content_view = api.nvim_win_call(content_win, function()
-		return fn.winsaveview()
+		return vim.fn.winsaveview()
 	end)
 
 	api.nvim_win_call(win, function()
-		fn.winrestview({
+		vim.fn.winrestview({
 			topfill = content_view.topfill,
 			topline = content_view.topline,
 		})
 	end)
 	win_set_cursor_row(win, content_view.lnum)
 
-	wo[content_win][0].scrollbind = true
-	wo[win][0].scrollbind = true
+	vim.wo[content_win][0].scrollbind = true
+	vim.wo[win][0].scrollbind = true
 
 	local content_buf = api.nvim_win_get_buf(content_win)
 
@@ -263,7 +261,7 @@ local function handle_read_autocmd(opts)
 			api.nvim_del_augroup_by_id(group)
 
 			if api.nvim_win_is_valid(content_win) then
-				wo[content_win][0].scrollbind = false
+				vim.wo[content_win][0].scrollbind = false
 			end
 		end,
 	})

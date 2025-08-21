@@ -1,8 +1,6 @@
 local Repository = require('git.repository')
 local utils = require('git.utils')
 
-local fn = vim.fn
-
 local function handle_user_command(opts)
 	local cmd = opts.name:sub(2)
 
@@ -10,7 +8,7 @@ local function handle_user_command(opts)
 	utils.ensure_work_tree(repo)
 
 	local path = ('%s/%s'):format(repo.work_tree, opts.args)
-	vim.cmd[cmd](fn.fnameescape(path))
+	vim.cmd[cmd](vim.fn.fnameescape(path))
 end
 
 local function handle_complete(prefix)
@@ -20,8 +18,10 @@ local function handle_complete(prefix)
 	local dir = repo.work_tree .. '/'
 	local result = {}
 
-	for _, path in ipairs(fn.glob(utils.gesc(dir .. prefix) .. '*', false, true)) do
-		local indicator = fn.isdirectory(path) ~= 0 and '/' or ''
+	for _, path in
+		ipairs(vim.fn.glob(utils.gesc(dir .. prefix) .. '*', false, true))
+	do
+		local indicator = vim.fn.isdirectory(path) ~= 0 and '/' or ''
 		local filename = path:sub(#dir + 1)
 		table.insert(result, filename .. indicator)
 	end

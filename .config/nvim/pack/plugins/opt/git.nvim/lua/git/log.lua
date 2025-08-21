@@ -3,10 +3,6 @@ local buffer = require('git.buffer')
 local revision = require('git.revision')
 local utils = require('git.utils')
 
-local api = vim.api
-local cmd = vim.cmd
-local fn = vim.fn
-
 local function alias(repo, name)
 	if
 		utils.execute(utils.make_args(repo, {
@@ -30,7 +26,7 @@ local function handle_user_command(opts)
 			local repo = Repository.from_path_or_current_buf(git_dir)
 			repo = Repository.await(repo)
 			utils.ensure_work_tree(repo)
-			rev, path = '@', fn.expand('%:p'):sub(#repo.work_tree + 2)
+			rev, path = '@', vim.fn.expand('%:p'):sub(#repo.work_tree + 2)
 		end
 
 		s = ('%s%s%s:%s:%d-%d'):format(
@@ -45,9 +41,9 @@ local function handle_user_command(opts)
 		s = '@'
 	end
 
-	local buf = fn.bufnr('git-log://' .. s, true)
+	local buf = vim.fn.bufnr('git-log://' .. s, true)
 	vim.b[buf].git_log_limit = opts.bang and -1 or 100
-	cmd.buffer(buf)
+	vim.cmd.buffer(buf)
 end
 
 local function handle_complete(...)
@@ -68,7 +64,7 @@ local function handle_read_autocmd(opts)
 
 	vim.b.git_use_preview = true
 
-	local has_AnsiEsc = fn.exists(':AnsiEsc') == 2
+	local has_AnsiEsc = vim.fn.exists(':AnsiEsc') == 2
 
 	local args = {
 		alias(repo, path ~= '' and 'log-vim-patch' or 'log-vim') or 'log',
@@ -93,8 +89,6 @@ local function handle_read_autocmd(opts)
 		end
 	end
 
-	local bo = vim.bo
-
 	local lines = vim.fn.systemlist(utils.make_args(repo, args))
 
 	-- Avoid useless 'foldexpr' recalculations.
@@ -102,12 +96,12 @@ local function handle_read_autocmd(opts)
 		vim.wo[0][0].foldmethod = 'manual'
 	end
 
-	bo.modifiable = true
-	api.nvim_buf_set_lines(0, 0, -1, true, lines)
+	vim.bo.modifiable = true
+	vim.api.nvim_buf_set_lines(0, 0, -1, true, lines)
 	if has_AnsiEsc then
-		cmd.AnsiEsc()
+		vim.cmd.AnsiEsc()
 	end
-	bo.modifiable = false
+	vim.bo.modifiable = false
 
 	buffer.fold_hunks()
 end

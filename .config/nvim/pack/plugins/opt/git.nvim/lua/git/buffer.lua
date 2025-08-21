@@ -3,8 +3,6 @@ local revision = require('git.revision')
 local utils = require('git.utils')
 
 local api = vim.api
-local cmd = vim.cmd
-local fn = vim.fn
 
 local M = {}
 
@@ -33,7 +31,7 @@ end
 
 function M.goto_revision(git_dir, rev, line)
 	local use_preview = vim.b.git_use_preview
-	local file = fn.fnameescape(
+	local file = vim.fn.fnameescape(
 		('git://%s%s%s'):format(git_dir or '', git_dir and '//' or '', rev)
 	)
 	local lnum_cmd = line and ('+%d '):format(line) or ''
@@ -45,10 +43,10 @@ function M.goto_revision(git_dir, rev, line)
 	if use_preview then
 		local saved_previewheight = vim.go.previewheight
 		vim.go.previewheight = 82
-		cmd(('topleft vertical pedit %s%s'):format(lnum_cmd, file))
+		vim.cmd(('topleft vertical pedit %s%s'):format(lnum_cmd, file))
 		vim.go.previewheight = saved_previewheight
 	else
-		cmd(('edit %s%s'):format(lnum_cmd, file))
+		vim.cmd(('edit %s%s'):format(lnum_cmd, file))
 	end
 
 	vim.go.wildignore = saved_wildignore
@@ -135,7 +133,7 @@ function M.get_diff_source()
 end
 
 function M.goto_object()
-	local cfile = fn.expand('<cfile>')
+	local cfile = vim.fn.expand('<cfile>')
 	local git_dir, rev = M.buf_get_rev(0)
 
 	if cfile:match('^%x%x%x%x+$') then
@@ -154,7 +152,9 @@ function M.goto_object()
 	elseif loc then
 		local repo = Repository.await(Repository.from_current_buf())
 		local dir = repo.work_tree and (repo.work_tree .. '/') or ''
-		cmd(('edit +%d %s'):format(loc.line, fn.fnameescape(dir .. loc.path)))
+		vim.cmd(
+			('edit +%d %s'):format(loc.line, vim.fn.fnameescape(dir .. loc.path))
+		)
 		return
 	end
 
