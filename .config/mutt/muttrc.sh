@@ -16,6 +16,15 @@ echo 'unmailboxes *'
 
 echo "set spoolfile='+$(readlink .spool)'"
 
+folder_hooks() {
+	if test -f "$1/muttrc"; then
+		echo "folder-hook '$1' source '=$1/muttrc'"
+	fi
+	if test -f "$1/signature"; then
+		echo "folder-hook '$1' set signature='=$1/signature'"
+	fi
+}
+
 # Indentation have to be manually crafted since Mutt's method works only
 # if we inserted a dummy x mailbox that is simply a waste of space. This
 # way heading line serves as the inbox.
@@ -27,25 +36,16 @@ for dir in */inbox */cur; do
 	*/cur) echo "mailboxes '=$maildir'" ;;
 	*) echo "mailboxes -label '$maildir' '=$maildir/inbox'" ;;
 	esac
+	folder_hooks "$maildir"
 
 	for subdir in "$maildir/"*/; do
 		subdir=${subdir%/}
 		case $subdir in
-		*/cur|*/new|*/tmp|*/inbox) ;;
-		*) echo "mailboxes -label '  ${subdir#*/}' '=$subdir'" ;;
+		*/cur|*/new|*/tmp|*/inbox) continue ;;
 		esac
+		echo "mailboxes -label '  ${subdir#*/}' '=$subdir'"
+		folder_hooks "$subdir"
 	done
-
-	muttrc=$maildir/muttrc
-	if test -f "$muttrc"; then
-		echo "folder-hook '$maildir' source '=$muttrc'"
-	fi
-done
-
-for signature in */signature; do
-	test "$signature" = "${signature#'*/'}" || continue
-	mgroup=${signature%/*}
-	echo "folder-hook $mgroup set signature='=$signature'"
 done
 
 for maildir in */cur */inbox; do
