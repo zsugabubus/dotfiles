@@ -1,0 +1,152 @@
+#autoload
+
+# https://www.chromium.org/administrators/pre-installed-extensions/
+# sudo touch /usr/lib/chromium/initial_preferences
+local initial_preferences='
+{
+	"x-first_run_tabs": [
+		"https://chrome.google.com/webstore/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm"
+	],
+	"session": {
+		"restore_on_startup": 1
+	},
+	"extensions": {
+		"settings": {
+			"cjpalhdlnbpafiamejdnhcphjbkeiagm": {
+				"location": 1,
+				"manifest": {
+					"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmJNzUNVjS6Q1qe0NRqpmfX/oSJdgauSZNdfeb5RV1Hji21vX0TivpP5gq0fadwmvmVCtUpOaNUopgejiUFm/iKHPs0o3x7hyKk/eX0t2QT3OZGdXkPiYpTEC0f0p86SQaLoA2eHaOG4uCGi7sxLJmAXc6IsxGKVklh7cCoLUgWEMnj8ZNG2Y8UKG3gBdrpES5hk7QyFDMraO79NmSlWRNgoJHX6XRoY66oYThFQad8KL8q3pf3Oe8uBLKywohU0ZrDPViWHIszXoE9HEvPTFAbHZ1umINni4W/YVs+fhqHtzRJcaKJtsTaYy+cholu5mAYeTZqtHf6bcwJ8t9i2afwIDAQAB",
+					"name": "uBlock Origin (Installing…)",
+					"permissions": [
+						"alarms",
+						"contextMenus",
+						"privacy",
+						"storage",
+						"tabs",
+						"unlimitedStorage",
+						"webNavigation",
+						"webRequest",
+						"webRequestBlocking",
+						"<all_urls>"
+					],
+					"update_url": "https://clients2.google.com/service/update2/crx",
+					"version": "0.0",
+					"manifest_version": 2
+				},
+				"path": "cjpalhdlnbpafiamejdnhcphjbkeiagm/0.0",
+				"state": 1,
+				"granted_permissions": {
+					"api": [
+						"alarms",
+						"contextMenus",
+						"privacy",
+						"storage",
+						"tabs",
+						"unlimitedStorage",
+						"webNavigation",
+						"webRequest",
+						"webRequestBlocking"
+					],
+					"explicit_host": [
+						"<all_urls>",
+						"chrome://favicon/*"
+					],
+					"manifest_permissions": [],
+					"scriptable_host": [
+						"http://*/*",
+						"https://*.fanboy.co.nz/*",
+						"https://*.github.io/*",
+						"https://*.reddit.com/r/uBlockOrigin/*",
+						"https://*/*",
+						"https://easylist.to/*",
+						"https://filterlists.com/*",
+						"https://forums.lanik.us/*",
+						"https://github.com/*",
+						"https://github.com/uBlockOrigin/*",
+						"https://ublockorigin.github.io/*"
+					]
+				}
+			}
+		}
+	}
+}
+'
+
+local local_state='
+{
+	"browser": {
+		"enabled_labs_experiments": [
+			"autofill-enable-cvc-storage-and-filling@2",
+			"autofill-enable-save-and-fill@2",
+			"enable-autofill-credit-card-upload@2",
+			"tab-organization@1",
+			"top-chrome-toast-refinements@2",
+			"top-chrome-toasts@8"
+		]
+	}
+}
+'
+
+local opt_unsafe opt_profile=() opt_downloads=() opt_readonly_paths=()
+zparseopts -D -F -K -- \
+	u=opt_unsafe \
+	p:=opt_profile \
+	d:=opt_downloads \
+	r+:=opt_readonly_paths \
+|| return 1
+
+local profile_path=${opt_profile[-1]:-.}
+local local_state_path="$profile_path/Local State"
+
+ulimit -u 2048
+
+if [[ ! -e "$local_state_path" ]]; then
+	cat <<<$local_state >$local_state_path
+fi
+
+local extra_args=()
+local flag f
+for flag f in $opt_readonly_paths; do
+	extra_args+=(--ro-bind "$f" "/home/user/${f:t}")
+done
+
+oom_adj 1000 bwrap \
+	--new-session \
+	--as-pid-1 \
+	--unshare-all \
+	--share-net \
+	--hostname hostname \
+	--clearenv \
+	--setenv XDG_RUNTIME_DIR /priv \
+	--setenv HOME /home/user \
+	--setenv DISPLAY "${DISPLAY?}" \
+	--setenv PATH /usr/bin \
+	--setenv TZ "${TZ?}" \
+	--dev /dev \
+	--dev-bind /dev/snd{,} \
+	--dev-bind /dev/dri{,} \
+	--dev-bind /dev/video0{,} \
+	--dev-bind /dev/video1{,} \
+	--proc /proc \
+	--ro-bind /sys{,} \
+	--ro-bind /usr{,} \
+	--ro-bind /etc/hosts{,} \
+	--ro-bind /etc/fonts{,} \
+	--ro-bind /etc/group{,} \
+	--ro-bind /etc/resolv.conf{,} \
+	--ro-bind /lib{,} \
+	--ro-bind /lib64{,} \
+	--tmpfs /priv \
+	--ro-bind-data 4 /usr/lib/chromium/initial_preferences \
+	4<<<$initial_preferences \
+	--ro-bind {~,/home/user}/.config/fontconfig \
+	--bind /tmp{,} \
+	--bind "${opt_downloads[-1]:-/tmp}" /home/user/Downloads \
+	--bind "$profile_path" /home/user/chromium \
+	--chdir /home/user/Downloads \
+	$extra_args \
+	chromium \
+	--unsafely-disable-devtools-self-xss-warnings \
+	--user-data-dir=/home/user/chromium \
+	${opt_unsafe:+--disable-web-security} \
+	&!
