@@ -16,6 +16,7 @@ PRIORITY = {
     r"reddit.*/user/": -6,
     r"reddit.*/r/": -10,
     r"azure.*pullrequest": 1,
+    r"git\..*issues": 1,
 }
 MAPPING = {
     r"^https://api.github.com/repos/(.*)/pulls/(.*)": r"https://github.com/\1/pull/\2",
