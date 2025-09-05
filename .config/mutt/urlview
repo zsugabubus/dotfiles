@@ -93,7 +93,7 @@ def filter_urls(urls):
         query = {
             key: value
             for key, value in query.items()
-            if not re.search(QPARAM_BLACKLIST_RE, key)
+            if not re.fullmatch(QPARAM_BLACKLIST_RE, key)
         }
 
         # Remove redirection.
