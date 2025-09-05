@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from argparse import ArgumentParser
+from html.parser import HTMLParser
 from itertools import chain
 from subprocess import check_output, run, CalledProcessError
 from urllib.parse import parse_qs, urlparse, urlencode
@@ -45,6 +46,20 @@ BLACKLIST_RE = "|".join(BLACKLIST)
 QPARAM_BLACKLIST_RE = "|".join(QPARAM_BLACKLIST)
 
 
+class HtmlUrlParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.urls = []
+
+    def handle_starttag(self, tag, attrs):
+        for _name, value in attrs:
+            if re.fullmatch(URL_RE, value):
+                self.urls.append(value)
+
+    def handle_data(self, data):
+        self.urls.extend(re.findall(URL_RE, data))
+
+
 def map_url(url):
     for pat, repl in MAPPING.items():
         url = re.sub(pat, repl, url)
@@ -62,7 +77,12 @@ def get_msg():
 def extract_urls(msg):
     for url in msg.get_all("Link", []):
         yield urlparse(url)
-    if body := msg.get_body(("html", "plain")):
+    if body := msg.get_body("html"):
+        parser = HtmlUrlParser()
+        parser.feed(body.get_content())
+        for url in parser.urls:
+            yield urlparse(url)
+    if body := msg.get_body("plain"):
         for url in re.findall(URL_RE, body.get_content()):
             yield urlparse(url)
 
