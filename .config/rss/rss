@@ -1073,15 +1073,36 @@ local function main(args)
 			end
 		end,
 		cmd = function(cmdline)
-			return function()
+			local function write_json(path, data)
+				local f = io.open(path, 'w')
+				assert(f:write(json.encode(data)))
+				assert(f:close())
+			end
+			local function read_json(path)
+				local f = io.open(path)
+				local data = json.decode(assert(f:read('*a')))
+				assert(f:close())
+				if data == json.null then
+					return nil
+				end
+				return data
+			end
+			return function(state)
 				log_debug(('Execute %s'):format(cmdline))
-				local f = assert(io.popen(cmdline))
+				local state_path = os.tmpname()
+				write_json(state_path, state.external)
+				local f = assert(
+					io.popen(('set -eu; export RSS_STATE_FILE=%s; %s'):format(shesc(state_path), cmdline))
+				)
 				local s = assert(f:read('*a'))
 				assert(f:close())
+				local new_external = read_json(state_path)
+				assert(os.remove(state_path))
 				if s == '' then
 					log_error(('Got empty output: %s'):format(cmdline))
 					return
 				end
+				state.external = new_external
 				return parse_feed(s)
 			end
 		end,
