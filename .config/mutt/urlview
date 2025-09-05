@@ -37,7 +37,7 @@ BLACKLIST = [
 QPARAM_BLACKLIST = [
     r"amp",
     r"usp",
-    r"(utm|at)_(source|medium|campaign)",
+    r"(utm|at)_(source|medium|campaign|content)",
     r"tracking_.*",
 ]
 
