@@ -335,25 +335,29 @@ function M() {
 		--setenv TERM "${TERM:-dummy}" \
 		--dev /dev \
 		--proc /proc \
+		--tmpfs /tmp \
 		--ro-bind /bin{,} \
 		--ro-bind /usr{,} \
 		--ro-bind /lib{,} \
 		--ro-bind /lib64{,} \
-		--ro-bind /etc{,} \
 		--ro-bind-data 3 /etc/group \
 		3<<<"$new_user:x:$UID:" \
 		--ro-bind-data 4 /etc/passwd \
 		4<<<"$new_user:x:$UID:$GID::$new_home:$SHELL" \
-		--tmpfs /tmp \
-		${(z)opt_with_docker:+--ro-bind /var/run/docker.sock /var/run/docker.sock} \
+		${=opt_with_net:+--ro-bind /etc/ssl{,}} \
+		${=opt_with_net:+--ro-bind /etc/fonts{,}} \
+		${=opt_with_net:+--ro-bind /etc/hosts{,}} \
+		${=opt_with_net:+--ro-bind /etc/resolv.conf{,}} \
+		${=opt_with_net:+--ro-bind /etc/ca-certificates{,}} \
+		${=opt_with_docker:+--ro-bind /var/run/docker.sock{,}} \
 		--ro-bind ~m $new_home/mem \
-		--ro-bind {~,$new_home}/.config \
+		--ro-bind {~,$new_home}/.config/git \
+		--ro-bind {~,$new_home}/.config/zsh \
 		--ro-bind {~,$new_home}/.zshenv \
 		--ro-bind {~,$new_home}/.dir_colors \
 		--ro-bind {~,$new_home}/.XCompose \
 		--ro-bind {~,$new_home}/.cache/zsh \
 		--ro-bind {~,$new_home}/.cache/zcompdump \
-		--ro-bind {~,$new_home}/.local/share/nvim \
 		--bind "$PWD" "$new_cwd" \
 		--chdir "$new_cwd" \
 		-- ${*:-$SHELL}
