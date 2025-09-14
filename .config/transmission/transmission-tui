@@ -238,11 +238,11 @@ local TransmissionSession = (function()
 		end
 		assert(status == 200)
 
-		local body = json.decode(self._http:body())
-		if body.result == 'success' then
-			return true, body.arguments
+		local response = json.decode(self._http:body())
+		if response.result == 'success' then
+			return true, response.arguments
 		else
-			return false, body.result
+			return false, response.result
 		end
 	end
 
