@@ -170,6 +170,7 @@ typedef enum {
 } CURLcode;
 
 typedef enum {
+	CURLOPT_TIMEOUT = 0 + 13,
 	CURLOPT_SSL_VERIFYPEER = 0 + 64,
 	CURLOPT_URL = 10000 + 2,
 	CURLOPT_HTTPHEADER = 10000 + 23,
@@ -253,6 +254,7 @@ typedef size_t write_callback(char *, size_t, size_t, void *);
 		curl.curl_easy_reset(self.handle)
 		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_URL, url))
 		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_ACCEPT_ENCODING, ''))
+		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_TIMEOUT, long(30)))
 		self._header_list = make_header_list(opts.headers)
 		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_HTTPHEADER, self._header_list))
 		if opts.insecure then
