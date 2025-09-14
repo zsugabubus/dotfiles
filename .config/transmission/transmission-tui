@@ -298,7 +298,7 @@ local TransmissionSession = (function()
 end)()
 
 local base64_encode = (function()
-	local ssl = ffi.load('ssl.so')
+	local ssl = ffi.load('ssl')
 
 	ffi.cdef('int EVP_EncodeBlock(unsigned char *, const unsigned char *, int);')
 
