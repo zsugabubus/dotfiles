@@ -70,7 +70,7 @@ local function format_duration(d)
 end
 
 local sha1, base64_encode = (function()
-	local ssl = ffi.load('ssl.so')
+	local ssl = ffi.load('ssl')
 
 	ffi.cdef([[
 typedef struct EVP_MD EVP_MD;
