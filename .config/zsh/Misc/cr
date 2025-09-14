@@ -146,6 +146,7 @@ oom_adj 1000 bwrap \
 	--chdir /home/user/Downloads \
 	$extra_args \
 	chromium \
+	--disable-features=ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
 	--unsafely-disable-devtools-self-xss-warnings \
 	--user-data-dir=/home/user/chromium \
 	${opt_unsafe:+--disable-web-security} \
