@@ -148,7 +148,9 @@ int gzclose(gzFile);
 	return compress, decompress
 end)()
 
-local function load_curl_library()
+local HttpSession = (function()
+	local curl = ffi.load('curl')
+
 	ffi.cdef([[
 struct curl_slist;
 
@@ -164,7 +166,7 @@ enum {
 };
 
 typedef enum {
-	CURLE_OK,
+	CURLE_OK = 0,
 } CURLcode;
 
 typedef enum {
@@ -180,9 +182,8 @@ typedef enum {
 } CURLINFO;
 
 typedef enum {
-	CURLHE_OK,
-	CURLHE_BADINDEX,
-	CURLHE_MISSING,
+	CURLHE_OK = 0,
+	CURLHE_MISSING = 2,
 } CURLHcode;
 
 CURL *curl_easy_init(void);
@@ -200,46 +201,38 @@ void curl_slist_free_all(void *);
 typedef size_t write_callback(char *, size_t, size_t, void *);
 	]])
 
-	return ffi.load('curl')
-end
-
-local HttpSession = (function()
-	local libcurl = load_curl_library()
-	local body = require('string.buffer').new()
-
-	global_ref_to_make_ffi_gc_work = libcurl
+	assert(curl.curl_global_init(0xff) == curl.CURLE_OK)
 
 	local function check(result)
-		if result ~= libcurl.CURLE_OK then
-			error(ffi.string(libcurl.curl_easy_strerror(result)), 0)
+		if result ~= curl.CURLE_OK then
+			error(ffi.string(curl.curl_easy_strerror(result)), 0)
 		end
 	end
 
+	local long_ref = ffi.new('long[1]')
+	local header_ptr_ref = ffi.new('struct curl_header *[1]')
+
+	local body = require('string.buffer').new()
 	local function write_callback(buffer, size, nmemb)
 		local len = size * nmemb
 		body:putcdata(buffer, len)
 		return len
 	end
-	local write_callback = ffi.cast('write_callback *', write_callback)
-
-	assert(libcurl.curl_global_init(0xff) == libcurl.CURLE_OK)
-
-	local long_ref = ffi.new('long[1]')
-	local header_ptr_ref = ffi.new('struct curl_header *[1]')
+	write_callback = ffi.cast('write_callback *', write_callback)
 
 	local M = {}
 	M.__index = M
 
-	local function make_header_list(t)
+	local function make_header_list(headers)
 		local list = nil
-		for k, v in pairs(t) do
+		for k, v in pairs(headers) do
 			local data = ('%s%s%s'):format(k, v == '' and ';' or ':', v or '')
-			local new_list = libcurl.curl_slist_append(list, data)
+			local new_list = curl.curl_slist_append(list, data)
 			assert(new_list ~= nil)
 			if list ~= nil then
 				ffi.gc(list, nil)
 			end
-			ffi.gc(new_list, libcurl.curl_slist_free_all)
+			ffi.gc(new_list, curl.curl_slist_free_all)
 			list = new_list
 		end
 		return list
@@ -249,47 +242,24 @@ local HttpSession = (function()
 		return ffi.cast('long', x)
 	end
 
-	local function set_url(self, url)
-		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_URL, url))
-	end
-
-	local function set_headers(self, headers)
-		if self._headers ~= headers then
-			self._headers = headers
-			self._header_list = make_header_list(headers)
-		end
-		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_HTTPHEADER, self._header_list))
-	end
-
-	local function set_enable_compression(self)
-		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_ACCEPT_ENCODING, ''))
-	end
-
-	local function set_no_verify_peer(self)
-		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_SSL_VERIFYPEER, long(0)))
-	end
-
 	function M.new(cls)
 		return setmetatable({
-			handle = ffi.gc(libcurl.curl_easy_init(), libcurl.curl_easy_cleanup),
+			handle = ffi.gc(curl.curl_easy_init(), curl.curl_easy_cleanup),
 		}, cls)
 	end
 
 	function M:request(url, opts)
 		body:reset()
-		libcurl.curl_easy_reset(self.handle)
-		set_url(self, url)
-		set_enable_compression(self)
-		if opts then
-			if opts.headers then
-				set_headers(self, opts.headers)
-			end
-			if opts.insecure then
-				set_no_verify_peer(self)
-			end
+		curl.curl_easy_reset(self.handle)
+		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_URL, url))
+		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_ACCEPT_ENCODING, ''))
+		self._header_list = make_header_list(opts.headers)
+		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_HTTPHEADER, self._header_list))
+		if opts.insecure then
+			check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_SSL_VERIFYPEER, long(0)))
 		end
-		check(libcurl.curl_easy_setopt(self.handle, libcurl.CURLOPT_WRITEFUNCTION, write_callback))
-		check(libcurl.curl_easy_perform(self.handle))
+		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_WRITEFUNCTION, write_callback))
+		check(curl.curl_easy_perform(self.handle))
 	end
 
 	function M:body()
@@ -297,17 +267,17 @@ local HttpSession = (function()
 	end
 
 	function M:status()
-		check(libcurl.curl_easy_getinfo(self.handle, libcurl.CURLINFO_RESPONSE_CODE, long_ref))
+		check(curl.curl_easy_getinfo(self.handle, curl.CURLINFO_RESPONSE_CODE, long_ref))
 		return tonumber(long_ref[0])
 	end
 
 	function M:header(name)
 		local result =
-			libcurl.curl_easy_header(self.handle, name, 0, libcurl.CURLH_HEADER, -1, header_ptr_ref)
-		if result == libcurl.CURLHE_MISSING then
+			curl.curl_easy_header(self.handle, name, 0, curl.CURLH_HEADER, -1, header_ptr_ref)
+		if result == curl.CURLHE_MISSING then
 			return nil
 		end
-		assert(result == libcurl.CURLHE_OK)
+		assert(result == curl.CURLHE_OK)
 		local header = header_ptr_ref[0]
 		return ffi.string(header.value)
 	end
