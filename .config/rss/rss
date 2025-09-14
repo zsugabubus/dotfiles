@@ -109,6 +109,45 @@ int EVP_EncodeBlock(unsigned char *, const unsigned char *, int);
 	return sha1, base64_encode
 end)()
 
+local compress, decompress = (function()
+	local zlib = ffi.load('z')
+
+	ffi.cdef([[
+typedef struct gzFile_s *gzFile;
+
+gzFile gzopen(const char *, const char *);
+int gzread(gzFile, void *, unsigned);
+int gzwrite(gzFile, const char *, unsigned);
+int gzclose(gzFile);
+]])
+
+	local function compress(path, data)
+		assert(#data == ffi.cast('unsigned', #data))
+		local f = zlib.gzopen(path, 'w9')
+		assert(f ~= nil)
+		zlib.gzwrite(f, data, #data)
+		assert(zlib.gzclose(f) == 0)
+	end
+
+	local function decompress(path)
+		local f = zlib.gzopen(path, 'r')
+		if f == nil then
+			return
+		end
+		local buf = require('string.buffer'):new()
+		repeat
+			local ptr, len = buf:reserve(8192)
+			local n = zlib.gzread(f, ptr, len)
+			assert(n >= 0)
+			buf:commit(n)
+		until n < len
+		assert(zlib.gzclose(f) == 0)
+		return buf:tostring()
+	end
+
+	return compress, decompress
+end)()
+
 local function load_curl_library()
 	ffi.cdef([[
 struct curl_slist;
@@ -724,17 +763,12 @@ local function shallow_copy(a)
 end
 
 local function read_state(path)
-	local f = assert(io.popen(('gzip -dc -- %s'):format(shesc(path))))
-	local s = assert(f:read('*a'))
-	assert(f:close())
-	return s == '' and {} or json.decode(s)
+	return json.decode(decompress(path) or '{}')
 end
 
 local function write_state(path, state)
-	local tmp_path = path .. '~'
-	local f = assert(io.popen(('gzip -c9 > %s'):format(shesc(tmp_path)), 'w'))
-	assert(f:write(json.encode(state)))
-	assert(f:close())
+	local tmp_path = path .. '.' .. uv.getpid() .. '~'
+	compress(tmp_path, json.encode(state))
 	assert(os.rename(tmp_path, path))
 end
 
