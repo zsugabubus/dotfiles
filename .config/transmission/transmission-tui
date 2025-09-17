@@ -3091,7 +3091,7 @@ transmission-daemon(1), transmission-remote(1).
 		edit(self, {
 			input = function(buf)
 				if delete_local_data then
-					buf:putf('# Local data PERMANENTLY DELETED.\n\n')
+					buf:putf('# Local data will be PERMANENTLY DELETED.\n\n')
 				end
 
 				for index, torrent in ipairs(torrents) do
@@ -3101,14 +3101,14 @@ transmission-daemon(1), transmission-remote(1).
 				buf:put('\n')
 				buf:putf(
 					[[
-# Remove torrents from Transmission. Local data %s.
+# Remove torrents from Transmission. Local data will be %s.
 #
 # To confirm removal uncomment the line.
 #
 # To abort the operation terminate editor with failure.
 #
 ]],
-					delete_local_data and 'PERMANENTLY DELETED' or 'KEPT'
+					delete_local_data and 'PERMANENTLY DELETED' or 'kept'
 				)
 			end,
 		}, function(err, data)

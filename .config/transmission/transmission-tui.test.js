@@ -1537,8 +1537,8 @@ for (const [key, withData] of [
 		await t.expect([
 			"# Remove torrents",
 			withData
-				? /# Local data PERMANENTLY DELETED.*Torrent 1.*PERMANENTLY DELETED/s
-				: /Torrent 1.*Local data KEPT/s,
+				? /# Local data will be PERMANENTLY DELETED.*Torrent 1.*PERMANENTLY DELETED/s
+				: /Torrent 1.*Local data will be kept/s,
 		]);
 		const removeTorrent1 = {
 			ids: [t.getTorrentHash(1)],
