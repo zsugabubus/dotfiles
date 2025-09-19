@@ -1333,7 +1333,10 @@ local TransmissionTui = (function()
 		}, cls)
 
 		self._torrents:set_sort(function(a, b)
-			return a.name < b.name
+			if a.name ~= b.name then
+				return a.name < b.name
+			end
+			return a.hashString < b.hashString
 		end)
 
 		self._peers:set_sort(function(a, b)
