@@ -1032,9 +1032,12 @@ local function main(args)
 					return {}
 				end
 
-				if status == 429 then
+				if status >= 400 and status ~= 404 then
 					log_debug(('Blacklist host: %s'):format(host))
 					host_blacklist[host] = true
+				end
+
+				if status == 429 then
 					return
 				end
 
