@@ -263,7 +263,7 @@ local function enter_buffer()
 end
 
 local function make_head(code, reason, headers)
-	local s = 'HTTP/1.1 ' .. code .. ' ' .. reason .. CRLF
+	local s = 'HTTP/1.0 ' .. code .. ' ' .. reason .. CRLF
 	for name, value in pairs(headers) do
 		s = s .. name .. ': ' .. value .. CRLF
 	end
