@@ -2334,6 +2334,9 @@ transmission-daemon(1), transmission-remote(1).
 			render(self)
 		end)
 
+		curs.endwin()
+		curs.doupdate()
+		render(self)
 		render(self)
 	end
 
