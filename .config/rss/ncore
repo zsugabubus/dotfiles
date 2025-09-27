@@ -1,0 +1,99 @@
+#!/usr/bin/python
+from datetime import datetime, timedelta, UTC
+from xml.etree.ElementTree import Element, SubElement, ElementTree
+from zoneinfo import ZoneInfo
+import html
+import json
+import os
+import re
+import requests
+import subprocess
+import sys
+
+TORRENT_RE = (
+    r"box_torrent"
+    + r'.*?tipus=(?P<category_id>[^"]*)"'
+    + r".*?id=(?P<id>\d+)"
+    + r'.*?title="(?P<title>[^"]*)"'
+    + r'.*?feltoltve2">(?P<uploaded_at>.{22})'
+)
+
+BUDAPEST = ZoneInfo("Europe/Budapest")
+
+state_path = os.environ["RSS_STATE_FILE"]
+
+cursor = datetime.now(UTC)
+
+with open(state_path) as f:
+    if timestamp := json.load(f):
+        cursor = datetime.fromtimestamp(timestamp, UTC)
+
+username, password = subprocess.check_output(["pass", "p", "ncore.pro"]).splitlines()
+
+session = requests.Session()
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+}
+
+response = session.post(
+    "https://ncore.pro/login.php",
+    headers=headers,
+    data={"set_lang": "hu", "submitted": "1", "nev": username, "pass": password},
+)
+response.raise_for_status()
+
+rss = Element("rss", version="2.0")
+channel = SubElement(rss, "channel")
+SubElement(channel, "language").text = "hu"
+SubElement(channel, "title").text = "nCore RSS"
+SubElement(channel, "link").text = "https://ncore.pro/"
+
+new_cursor = None
+
+for page in range(1, 100):
+    response = session.get(
+        "https://ncore.pro/torrents.php", headers=headers, params={"oldal": page}
+    )
+    response.raise_for_status()
+    text = response.text
+
+    key = re.search(r'key=([^"]*)', text).group(1)
+
+    categories = {
+        value: html.unescape(label)
+        for value, label in re.findall(r'value="([^"]*)">([^<]*)<(?=.*</select>)', text)
+    }
+
+    for torrent in re.finditer(TORRENT_RE, text, flags=re.DOTALL):
+        id = torrent["id"]
+        title = html.unescape(torrent["title"])
+        category = categories[torrent["category_id"]]
+        uploaded_at = datetime.strptime(
+            torrent["uploaded_at"], "%Y-%m-%d<br>%H:%M:%S"
+        ).replace(tzinfo=BUDAPEST)
+        torrent_url = (
+            f"https://ncore.pro/torrents.php?action=download&id={id}&key={key}"
+        )
+
+        if not new_cursor:
+            new_cursor = uploaded_at
+
+        item = SubElement(channel, "item")
+        SubElement(item, "title").text = f"{title} [{category}]"
+        SubElement(item, "link").text = torrent_url
+        SubElement(item, "description").text = title
+        SubElement(item, "category").text = category
+        SubElement(item, "pubDate").text = uploaded_at.isoformat()
+
+    if uploaded_at < cursor:
+        break
+
+ElementTree(rss).write(
+    sys.stdout.buffer,
+    encoding="utf-8",
+    xml_declaration=True,
+)
+
+with open(state_path, "w") as f:
+    json.dump(int(new_cursor.timestamp()), f)
