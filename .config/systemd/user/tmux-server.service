@@ -3,9 +3,9 @@ Description=Tmux Server
 RefuseManualStop=true
 
 [Service]
-Type=simple
+Type=forking
 Environment=TERM=alacritty
-ExecStart=/usr/bin/tmux -D
+ExecStart=/usr/bin/tmux start-server; set-option -g exit-empty off
 # Cannot be <100 though.
 OOMScoreAdjust=-1000
 OOMPolicy=continue
