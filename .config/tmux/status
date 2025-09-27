@@ -489,14 +489,12 @@ local blocks = {
 local function bar(fn, on_output)
 	local buf = require('string.buffer').new()
 	local last_output
-	local write
+	local generate
 
 	local function update()
-		buf:reset()
+		generate(buf)
 
-		write(buf)
-
-		local output = buf:tostring()
+		local output = buf:get()
 		if output == last_output then
 			return
 		end
@@ -505,24 +503,87 @@ local function bar(fn, on_output)
 		on_output(output)
 	end
 
-	write = fn(debounce(update, 50, 500))
-
+	generate = fn(update)
 	update()
 end
 
+local function create_tmux_set_option()
+	local PROTOCOL_VERSION = 8
+	local MSG_IDENTIFY_FLAGS = 100
+	local MSG_IDENTIFY_TTYNAME = 102
+	local MSG_IDENTIFY_DONE = 106
+	local MSG_IDENTIFY_CWD = 108
+	local MSG_COMMAND = 200
+	local CLIENT_ATTACHED = 0x80
+	local CLIENT_CONTROL = 0x2000
+	local CLIENT_CONTROLCONTROL = 0x4000
+	local CLIENT_CONTROL_NOOUTPUT = 0x4000000
+
+	local function get_socket_path()
+		local tmux = os.getenv('TMUX')
+		if tmux then
+			return assert(tmux:match('^[^,]*'))
+		end
+		return ('/tmp/tmux-%d/default'):format(uv.getuid())
+	end
+
+	local function assert_ok(err)
+		assert(not err, err)
+	end
+
+	local client = uv.new_pipe(false)
+	client:connect(get_socket_path(), assert_ok)
+
+	local buf = require('string.buffer').new()
+	local u32s = require('ffi').new('uint32_t[4]', 0, 0, PROTOCOL_VERSION, -1)
+
+	local function put_hdr(type, data_len)
+		u32s[0] = type
+		u32s[1] = 16 + data_len
+		buf:putcdata(u32s, 16)
+	end
+
+	local function put_u32(n)
+		u32s[0] = n
+		buf:putcdata(u32s, 4)
+	end
+
+	local function flush()
+		client:write(buf:get(), assert_ok)
+	end
+
+	put_hdr(MSG_IDENTIFY_FLAGS, 4)
+	put_u32(
+		CLIENT_ATTACHED
+			+ CLIENT_CONTROL
+			+ CLIENT_CONTROLCONTROL
+			+ CLIENT_CONTROL_NOOUTPUT
+	)
+	put_hdr(MSG_IDENTIFY_TTYNAME, 1)
+	buf:put('\0')
+	put_hdr(MSG_IDENTIFY_CWD, 2)
+	buf:put('/\0')
+	put_hdr(MSG_IDENTIFY_DONE, 0)
+	flush()
+
+	return function(name, value)
+		put_hdr(MSG_COMMAND, 13 + #name + #value)
+		put_u32(4)
+		buf:put('set\0-g\0', name, '\0', value, '\0')
+		flush()
+	end
+end
+
 local function tmux(option, fn)
+	local set_option = create_tmux_set_option()
 	bar(fn, function(output)
-		local process
-		process = assert(uv.spawn('tmux', {
-			args = { 'set', '-g', option, output },
-		}, function(code)
-			process:close()
-			assert(code == 0)
-		end))
+		set_option(option, output)
 	end)
 end
 
 tmux('@status', function(update_bar)
+	update_bar = debounce(update_bar, 10, 100)
+
 	local function danger(cond)
 		if not cond then
 			return ''
