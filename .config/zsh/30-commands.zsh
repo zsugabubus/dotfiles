@@ -457,6 +457,10 @@ function node() {
 	NODE_REPL_HISTORY=$XDG_RUNTIME_DIR/nodehistory command node "$@"
 }
 
+function python() {
+	PYTHON_HISTORY=$XDG_RUNTIME_DIR/python_history command python "$@"
+}
+
 alias ffmpeg='ffmpeg -hide_banner'
 alias ffplay='ffplay -hide_banner'
 alias ffplayq='ffplay -hide_banner -nodisp -autoexit -loglevel quiet'
