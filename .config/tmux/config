@@ -46,6 +46,8 @@ set -g status-left-length 0
 set -g status-right "#{?#{e|>:#{client_width},75},#{E:@status} %a#, %b %d %R,%R}"
 set -g status-right-length 0
 
+set -g prompt-cursor-color default
+
 set -gF @status-mail-unread-style "#{window-status-bell-style}"
 set -g @status-mail-unread-silent-style fg=color34,bold
 
