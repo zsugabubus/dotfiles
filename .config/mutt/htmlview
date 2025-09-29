@@ -58,15 +58,9 @@ const disconnected = (() => {
 })();
 
 const remoteContentToggle = (() => {
-    if (remoteContentEnabled) {
-        const a = document.createElement("a");
-        a.href = "/";
-        a.textContent = "Disable remote content (C)";
-        return a;
-    }
     const a = document.createElement("a");
-    a.href = "/?enable-remote-content";
-    a.textContent = "Enable remote content (C)";
+    a.href = remoteContentEnabled ? "/" : "/?enable-remote-content";
+    a.textContent = remoteContentEnabled ? "Disable remote content (C)" : "Enable remote content (C)";
     return a;
 })();
 
