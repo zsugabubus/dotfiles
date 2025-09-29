@@ -221,8 +221,9 @@ typedef size_t write_callback(char *, size_t, size_t, void *);
 	end
 	write_callback = ffi.cast('write_callback *', write_callback)
 
-	local M = {}
-	M.__index = M
+	local function curl_slist_free_all(x)
+		return curl.curl_slist_free_all(x)
+	end
 
 	local function make_header_list(headers)
 		local list = nil
@@ -233,7 +234,7 @@ typedef size_t write_callback(char *, size_t, size_t, void *);
 			if list ~= nil then
 				ffi.gc(list, nil)
 			end
-			ffi.gc(new_list, curl.curl_slist_free_all)
+			ffi.gc(new_list, curl_slist_free_all)
 			list = new_list
 		end
 		return list
@@ -243,9 +244,14 @@ typedef size_t write_callback(char *, size_t, size_t, void *);
 		return ffi.cast('long', x)
 	end
 
+	local M = {}
+	M.__index = M
+
 	function M.new(cls)
 		return setmetatable({
-			handle = ffi.gc(curl.curl_easy_init(), curl.curl_easy_cleanup),
+			handle = ffi.gc(curl.curl_easy_init(), function(x)
+				return curl.curl_easy_cleanup(x)
+			end),
 		}, cls)
 	end
 
