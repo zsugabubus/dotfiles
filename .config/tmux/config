@@ -41,7 +41,7 @@ set -g copy-mode-match-style bg=#fdef39,fg=#000000
 set -g copy-mode-current-match-style bg=#fdef39,fg=#000000
 %endif
 
-set -g status-left "[#S#{?destroy-unattached,:T,}#{?#{||:#{==:#{session_group},},#{==:#{session_group},#{session_name}}},, (#{session_group})}]"
+set -g status-left "[#S#{?#{||:#{==:#{session_group},},#{==:#{session_group},#{session_name}}},, (#{session_group})}]"
 set -g status-left-length 0
 set -g status-right "#{?#{e|>:#{client_width},75},#{E:@status} %a#, %b %d %R,%R}"
 set -g status-right-length 0
