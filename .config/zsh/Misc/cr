@@ -68,7 +68,11 @@ local initial_preferences='
 				}
 			}
 		}
-	}
+	},
+	"translate_blocked_languages": [
+		"en",
+		"hu"
+	]
 }
 '
 
