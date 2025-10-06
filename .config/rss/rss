@@ -1010,8 +1010,7 @@ local function main(args)
 			return Feed:new()
 		end,
 		http = function(url, opts)
-			local user_agent = opts and opts.user_agent
-			local insecure = opts and opts.insecure
+			opts = opts or {}
 			return function(state)
 				local host = assert(url_hostname(url))
 
@@ -1020,14 +1019,14 @@ local function main(args)
 					return
 				end
 
+				local headers = shallow_copy(opts.headers or {})
+				headers['If-Modified-Since'] = state.last_modified
+				headers['If-None-Match'] = state.etag
+
 				local ok, err = pcall(function()
 					http:request(url, {
-						headers = {
-							['User-Agent'] = user_agent,
-							['If-Modified-Since'] = state.last_modified,
-							['If-None-Match'] = state.etag,
-						},
-						insecure = insecure,
+						headers = headers,
+						insecure = opts.insecure,
 					})
 				end)
 				if not ok then
