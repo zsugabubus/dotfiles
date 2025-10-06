@@ -21,6 +21,7 @@ local log_error = logger_factory(3)
 local log_warn = logger_factory(4)
 local log_info = logger_factory(6)
 local log_debug = logger_factory(7)
+local verbose_curl = os.getenv('RSS_CURL_LOG')
 
 local function noop()
 	-- Do nothing.
@@ -171,6 +172,7 @@ typedef enum {
 
 typedef enum {
 	CURLOPT_TIMEOUT = 0 + 13,
+	CURLOPT_VERBOSE = 0 + 41,
 	CURLOPT_SSL_VERIFYPEER = 0 + 64,
 	CURLOPT_URL = 10000 + 2,
 	CURLOPT_HTTPHEADER = 10000 + 23,
@@ -261,6 +263,9 @@ typedef size_t write_callback(char *, size_t, size_t, void *);
 		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_URL, url))
 		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_ACCEPT_ENCODING, ''))
 		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_TIMEOUT, long(30)))
+		if verbose_curl then
+			check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_VERBOSE, long(1)))
+		end
 		self._header_list = make_header_list(opts.headers)
 		check(curl.curl_easy_setopt(self.handle, curl.CURLOPT_HTTPHEADER, self._header_list))
 		if opts.insecure then
