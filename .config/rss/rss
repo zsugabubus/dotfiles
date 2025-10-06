@@ -1067,11 +1067,11 @@ local function main(args)
 			end
 		end,
 		maildir = function(path, opts)
-			local maildir = maildirs[expand_path(path)]
-			local name = opts and opts.name
-			local reply_to = opts and opts.reply_to
+			opts = opts or {}
+			local maildir
 			local function deliver(entry)
-				local mail_path = maildir:add_message(gen_mail(entry, name))
+				maildir = maildir or maildirs[expand_path(path)]
+				local mail_path = maildir:add_message(gen_mail(entry, opts.name))
 				if mail_path then
 					log_debug(
 						('New message %s: [%s] %s'):format(
@@ -1086,7 +1086,7 @@ local function main(args)
 			end
 			return function(entry)
 				deliver(entry)
-				if reply_to then
+				if opts.reply_to then
 					deliver(assert(entry.parent))
 				end
 			end
