@@ -1,4 +1,5 @@
 local ffi = require('ffi')
+local table_clear = require('table.clear')
 
 local api = vim.api
 local config = vim.g.colors or {}
@@ -53,6 +54,16 @@ local function create_hl_group(bg_color)
 		fg = get_contrast_fg(bg_color),
 	})
 	return get_hl_id_by_name(hl_name)
+end
+
+local function create_hl_cache()
+	return setmetatable({}, {
+		__index = function(hl_cache, color)
+			local hl_group = create_hl_group(color)
+			hl_cache[color] = hl_group
+			return hl_group
+		end,
+	})
 end
 
 local function highlight_lines(buf, start_row, end_row)
@@ -171,17 +182,9 @@ local function detach_from_buffer(buf)
 end
 
 local function reload()
-	hl_cache = setmetatable({}, {
-		__index = function(hl_cache, color)
-			local hl_group = create_hl_group(color)
-			hl_cache[color] = hl_group
-			return hl_group
-		end,
-	})
+	hl_cache = create_hl_cache()
 
-	for buf in pairs(attached_bufs) do
-		attached_bufs[buf] = nil
-	end
+	table_clear(attached_bufs)
 	attached_bufs = {}
 
 	for _, win in ipairs(api.nvim_list_wins()) do
