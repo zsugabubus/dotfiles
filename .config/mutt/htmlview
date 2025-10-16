@@ -106,6 +106,14 @@ document.addEventListener("keydown", (event) => {
 
 const events = new EventSource("/events");
 
+// Chromium keeps `EventSource` connections alive for a while after page is
+// closed, that causes per-domain connection limit to be exhausted very
+// quickly on HTTP/1.1, that blocks further requests.
+// See: https://issues.chromium.org/issues/358538891
+window.addEventListener("beforeunload", () => {
+    events.close();
+});
+
 events.addEventListener("open", () => {
     disconnected.style.display = "none";
 });
