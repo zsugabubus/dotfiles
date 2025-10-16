@@ -297,7 +297,7 @@ def make_data_url(s, content_type):
     return f"data:{content_type};base64,{base64.b64encode(s).decode()}"
 
 
-async def handle_request(writer, req):
+async def handle_request(reader, writer, req):
     method, uri = req
     uri = urllib.parse.urlparse(uri)
 
@@ -310,14 +310,26 @@ async def handle_request(writer, req):
     match [method, uri.path.split("/")]:
         case ["GET", ["", "events"]]:
             writer.write(make_head(HTTPStatus.OK, EVENT_STREAM_HEADERS))
-            while True:
-                await writer.drain()
-                changed = current_msg_changed
-                data = make_msg_data(current_msg) if current_msg else None
-                writer.write(
-                    make_event("message-change", json.dumps(data, ensure_ascii=False))
-                )
-                await changed.wait()
+
+            async def write_events():
+                while True:
+                    await writer.drain()
+                    changed = current_msg_changed
+                    data = make_msg_data(current_msg) if current_msg else None
+                    writer.write(
+                        make_event(
+                            "message-change", json.dumps(data, ensure_ascii=False)
+                        )
+                    )
+                    await changed.wait()
+
+            await asyncio.wait(
+                [
+                    asyncio.create_task(reader.read()),
+                    asyncio.create_task(write_events()),
+                ],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
         case ["GET", ["", ""]]:
             nonce = uuid.uuid4()
             remote_content_enabled = uri.query == "enable-remote-content"
@@ -348,7 +360,7 @@ async def handle_request(writer, req):
 async def serve_http(reader, writer):
     try:
         while req := await read_request(reader):
-            await handle_request(writer, req)
+            await handle_request(reader, writer, req)
         writer.close()
         await writer.wait_closed()
     except ConnectionError:
