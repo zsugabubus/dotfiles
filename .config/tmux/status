@@ -251,14 +251,10 @@ local blocks = {
 		local folders = {}
 		local folders_by_display = {}
 		local ring_timer = uv.new_timer()
-		local ring_process
 
 		local function ring()
-			if ring_process then
-				return
-			end
-
-			ring_process = uv.spawn('ffplay', {
+			local process
+			process = uv.spawn('ffplay', {
 				args = {
 					'-autoexit',
 					'-nodisp',
@@ -268,23 +264,21 @@ local blocks = {
 					opts.bell_file,
 				},
 			}, function(code)
-				ring_process:close()
-				ring_process = nil
+				process:close()
 				assert(code == 0)
 			end)
 		end
 
-		local function update_ring()
-			local should_ring = false
-
+		local function should_ring()
 			for _, folder in ipairs(folders) do
 				if not folder.silent and folder.unread then
-					should_ring = true
-					break
+					return true
 				end
 			end
+		end
 
-			if should_ring then
+		local function update_ring()
+			if should_ring() then
 				if not ring_timer:is_active() then
 					ring_timer:start(0, 120 * 1000, ring)
 				end
