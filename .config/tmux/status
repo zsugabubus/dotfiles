@@ -280,7 +280,7 @@ local blocks = {
 		local function update_ring()
 			if should_ring() then
 				if not ring_timer:is_active() then
-					ring_timer:start(0, 120 * 1000, ring)
+					ring_timer:start(10 * 1000, 2 * 60 * 1000, ring)
 				end
 			else
 				ring_timer:stop()
