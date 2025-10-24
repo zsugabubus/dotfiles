@@ -31,6 +31,19 @@ local function encode_uri_component(s)
 	end)
 end
 
+local function get_extensions()
+	local path = os.getenv('HOME')
+		.. '/.local/share/mpv/imdb-search-extensions.json'
+	local f, err = io.open(path)
+	if not f then
+		mp.msg.error(('Cannot read IMDB search extensions: %s'):format(err))
+		return ''
+	end
+	local s = assert(f:read('*a'))
+	assert(f:close())
+	return s
+end
+
 -- https://www.imdb.com/search/title/
 local function imdb_search(title, title_types, year, duration, callback)
 	local start_time = mp.get_time()
@@ -54,16 +67,9 @@ local function imdb_search(title, title_types, year, duration, callback)
 		titleTypeConstraint = { anyTitleTypeIds = title_types },
 	}
 
-	local extensions = {
-		persistedQuery = {
-			sha256Hash = '81b46290a78cc1e8b3d713e6a43c191c55b4dccf3e1945d6b46668945846d832',
-			version = 1,
-		},
-	}
-
 	local url = ('https://caching.graphql.imdb.com/?operationName=AdvancedTitleSearch&variables=%s&extensions=%s'):format(
 		encode_uri_component(utils.format_json(variables)),
-		encode_uri_component(utils.format_json(extensions))
+		encode_uri_component(get_extensions())
 	)
 
 	mp.command_native_async({
