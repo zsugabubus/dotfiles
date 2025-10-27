@@ -1,6 +1,4 @@
 local json_decode = require('mp.utils').parse_json
-local mode = require('mode').new()
-local osd = require('osd').new()
 local utils = require('utils')
 
 local function system(args)
@@ -151,220 +149,89 @@ local get_mediaklikk_streams = (function()
 	end
 end)()
 
-local modal
-local update
-local old_visible = false
-local cursor = 0
-local props = {}
-local streams
-
-local function set_cursor(action)
-	if action == 'up' then
-		cursor = cursor - 1
-		if cursor < 1 then
-			return set_cursor('last')
-		end
-	elseif action == 'down' then
-		cursor = cursor + 1
-		if cursor > #streams then
-			return set_cursor('first')
-		end
-	elseif action == 'first' then
-		cursor = 1
-	elseif action == 'last' then
-		cursor = #streams
-	elseif type(action) == 'number' then
-		if action < 1 or action > #streams then
-			return false
-		end
-		cursor = action
-	end
-
-	update()
-
-	return true
-end
-
-local function reload()
-	streams = get_mediaklikk_streams()
-
-	if not set_cursor(cursor) then
-		set_cursor('first')
-	end
-end
-
-local function open()
-	if not streams then
-		return
-	end
-
-	local stream = streams[cursor]
-	if not stream then
-		return
-	end
-
-	mp.osd_message('Opening…')
+local function open(stream)
+	mp.osd_message(('Opening %s…'):format(stream.name))
 
 	local url = stream:get_url()
 	if not url then
-		mp.osd_message('Cannot open: No URL')
+		mp.osd_message(('Cannot open %s'):format(stream.name))
 		return
 	end
 
-	url = ('%s#%s'):format(url, stream.name)
-	mp.commandv('loadfile', url, 'replace')
+	mp.commandv('loadfile', ('%s#%s'):format(url, stream.name), 'replace')
 
 	mp.osd_message('')
 end
 
-local function update_property(name, value)
-	props[name] = value
+local function format_show_time(show)
+	return os.date('%H:%M', show.start_time)
+		.. '-'
+		.. os.date('%H:%M', show.end_time)
 end
 
-local update_timer
-update_timer = mp.add_periodic_timer(30, function()
-	if not modal:is_visible() then
-		streams = nil
-		update_timer:stop()
-		return
+local PROGRESS_BLOCKS =
+	{ ' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█' }
+
+local function format_progress(percent)
+	local width = 5
+	local s = ''
+	for i = 1, width do
+		local block_percent = math.max(math.min(percent * width - (i - 1), 1), 0)
+		s = s .. PROGRESS_BLOCKS[math.ceil(block_percent * 8) + 1]
 	end
-
-	reload()
-	update()
-end, true)
-
-local function osd_put_times(show)
-	osd:put(
-		os.date('%H:%M', show.start_time),
-		'\u{2013}',
-		os.date('%H:%M', show.end_time)
-	)
+	return s
 end
 
-local function osd_put_progress(show, now)
-	local bar_height = 8
-	local bar_width = 100
-
-	local progress = (now - show.start_time) / (show.end_time - show.start_time)
-	progress = math.max(0, progress)
-	progress = math.min(1, progress)
-
-	osd:draw_begin()
-	local fill_width = progress * bar_width
-	if fill_width > 1 then
-		osd:draw_rect(1, 1, fill_width, bar_height - 1)
-	end
-	osd:draw_rect_border(0, 0, bar_width, bar_height, 1)
-	osd:draw_end()
+local function get_show_progress(show, now)
+	return (now - show.start_time) / (show.end_time - show.start_time)
 end
 
-function update()
-	local visible = modal:is_visible()
-
-	if old_visible ~= visible then
-		old_visible = visible
-
-		mp.unobserve_property(update_property)
-
-		if visible then
-			osd.observe_fsc_properties(update_property)
-			mode:add_key_bindings()
-		else
-			mode:remove_key_bindings()
-			osd:remove()
-		end
-
-		if visible then
-			if not streams then
-				reload()
-			end
-
-			update_timer:resume()
-		end
-	end
-
-	if not visible then
-		return
-	end
-
+local function get_items(streams)
 	local now = os.time()
-	local fmt = ('%%%dd: '):format(#tostring(#streams))
-	local fsc = osd:compute_fsc(props, #streams * 2, 0.8)
-
-	osd:clear()
-	osd:skip_message_line()
-	osd:wrap(false)
-
+	local items = {}
 	for i, stream in ipairs(streams) do
-		local current = i == cursor
-
-		osd:r()
-		osd:fsc(fsc)
-		osd:put_cursor(current)
-		osd:c1(stream.current and 0xffffff or 0xbbbbbb)
-		osd:putf(fmt, i)
-		osd:bold(true)
-		osd:str(stream.name)
-		osd:bold(false)
-		if stream.current or stream.upcoming then
-			osd:put(' \u{2013} ')
-			osd:str((stream.current or stream.upcoming).title)
+		local letter = string.char(('a'):byte() - 1 + i)
+		local progress = 0
+		local current = ''
+		local upcoming = ''
+		if stream.current then
+			progress = get_show_progress(stream.current, now)
+			current = (' • (%s) %s'):format(
+				format_show_time(stream.current),
+				stream.current.title
+			)
 		end
-		osd:N()
-
-		if stream.current or stream.upcoming then
-			osd:fscy0()
-			osd:put_cursor(false)
-			osd:putf(fmt, i)
-			osd:bord(2)
-			osd:alpha(0x20)
-			osd:fsc(100)
-			osd:fs(16)
-			if stream.current then
-				osd_put_times(stream.current)
-				osd:put(' ')
-				osd_put_progress(stream.current, now)
-				if stream.upcoming then
-					osd:put(' ')
-					osd_put_times(stream.upcoming)
-					osd:put(' ', stream.upcoming.title)
-				end
-			else
-				osd_put_times(stream.upcoming)
-			end
-			osd:N()
+		if stream.upcoming then
+			upcoming = (' → (%s) %s'):format(
+				format_show_time(stream.upcoming),
+				stream.upcoming.title
+			)
 		end
+		table.insert(
+			items,
+			('%s: %s %s%s%s'):format(
+				letter,
+				format_progress(progress),
+				stream.name,
+				current,
+				upcoming
+			)
+		)
 	end
-
-	osd:update()
+	return items
 end
-update = osd.update_wrap(update)
-
-modal = require('modal').new(update)
-
-mode:map({
-	UP = function()
-		set_cursor('up')
-	end,
-	DOWN = function()
-		set_cursor('down')
-	end,
-	HOME = function()
-		set_cursor('first')
-	end,
-	END = function()
-		set_cursor('last')
-	end,
-	ENTER = open,
-	ESC = function()
-		modal:hide()
-	end,
-	['0..9'] = function(i)
-		set_cursor(i)
-	end,
-})
 
 utils.register_script_messages('tv', {
-	visibility = modal.set_visibility,
-	reload = reload,
+	select = function()
+		local streams = get_mediaklikk_streams()
+		require('mp.input').get({
+			prompt = 'TV',
+			items = get_items(streams),
+			default_text = '^',
+			select_one = true,
+			submit = function(i)
+				open(streams[i])
+			end,
+		})
+	end,
 })
