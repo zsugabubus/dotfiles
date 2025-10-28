@@ -9,18 +9,28 @@ local ignore = true
 local function get_currently_playing()
 	local f = io.open(mpv_hup)
 	if f then
-		local s = assert(f:read('*all'))
+		local path = assert(f:read('*all'))
 		assert(f:close())
-		return s
+		return path
 	end
 end
 
-local function set_currently_playing(s)
+local function set_currently_playing(path)
 	local f = io.open(mpv_hup, 'w')
 	if f then
-		assert(f:write(s))
+		assert(f:write(path))
 		assert(f:close())
 	end
+end
+
+local function send_hup(path)
+	local uv = require('luv')
+	local client = uv.new_pipe(false)
+	client:connect(path)
+	client:write('script-message hup\n', function()
+		client:close()
+	end)
+	uv.run()
 end
 
 mp.observe_property('input-ipc-server', 'native', function(_, value)
@@ -59,8 +69,8 @@ local function handle_file_loaded()
 			return
 		end
 
-		local s = get_currently_playing()
-		if s == input_ipc_server then
+		local path = get_currently_playing()
+		if path == input_ipc_server then
 			return
 		end
 
@@ -72,23 +82,8 @@ local function handle_file_loaded()
 			)
 		end
 
-		if s then
-			mp.command_native({
-				name = 'subprocess',
-				playback_only = false,
-				detach = true,
-				args = {
-					'env',
-					'--unset=PWD',
-					'--unset=OLDPWD',
-					'--chdir=/',
-					'sh',
-					'-c',
-					'echo script-message hup | socat - "UNIX-CONNECT:$1"',
-					'sh',
-					s,
-				},
-			})
+		if path then
+			send_hup(path)
 		end
 
 		set_currently_playing(input_ipc_server)
