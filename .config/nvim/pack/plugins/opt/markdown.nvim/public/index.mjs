@@ -10,8 +10,8 @@ const punctationsRe = /[^a-z0-9 ]/g;
 const spacesRe = / +/g;
 const videoRe = /\.mp4$/;
 
-const getIcon = (iconName) =>
-	`<svg width="16" height="16"><use href="/.index.svg#${iconName}"/></svg>`;
+const getIcon = (id) =>
+	`<svg width="16" height="16"><use href="/.index.svg#${id}"/></svg>`;
 
 const linkIcon = getIcon("link");
 const cameraVideoIcon = getIcon("camera-video");

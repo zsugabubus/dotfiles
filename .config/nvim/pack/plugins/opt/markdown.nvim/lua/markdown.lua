@@ -488,10 +488,6 @@ local function trigger(name, data)
 	api.nvim_exec_autocmds('User', { pattern = name, data = data })
 end
 
-local function notify_info(...)
-	vim.notify(string.format(...), vim.log.levels.INFO)
-end
-
 local function stop_server()
 	if not server then
 		return
@@ -504,7 +500,7 @@ local function stop_server()
 		close_connection(client)
 	end
 
-	notify_info('Stopped markdown preview')
+	vim.notify('Stopped markdown preview', vim.log.levels.INFO)
 	trigger('MarkdownPreviewStop')
 end
 
@@ -529,7 +525,10 @@ local function start_server(host, port)
 		error(err)
 	end
 
-	notify_info('Visit markdown preview on %s', get_browser_url())
+	vim.notify(
+		('Visit markdown preview on %s'):format(get_browser_url()),
+		vim.log.levels.INFO
+	)
 	trigger('MarkdownPreviewStart', { browser_url = get_browser_url() })
 end
 
