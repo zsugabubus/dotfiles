@@ -131,19 +131,22 @@ local function get_buffer_preview(buf)
 		return table.concat(files)
 	end
 
-	local asset = get_asset_preview(fn.fnamemodify(path, ':t'))
-	if asset then
-		return asset
+	local filetype = vim.bo[buf].filetype
+
+	if filetype == '' then
+		local asset = get_asset_preview(fn.fnamemodify(path, ':t'))
+		if asset then
+			return asset
+		end
 	end
 
 	local content = table.concat(api.nvim_buf_get_lines(buf, 0, -1, true), '\n')
 
-	local filetype = vim.bo[buf].filetype
-	if filetype ~= 'markdown' then
-		return format_block_code(content, filetype)
+	if filetype == 'markdown' or filetype == 'svg' then
+		return content
 	end
 
-	return content
+	return format_block_code(content, filetype)
 end
 
 local function dispatch_event(event, data)
