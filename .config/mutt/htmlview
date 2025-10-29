@@ -43,7 +43,7 @@ HTML = """
 </html>
 """.strip()
 
-JAVASCRIPT = """
+JAVASCRIPT = r"""
 const bodyCSS = `
 img, video {
     max-width: 100%;
@@ -95,7 +95,9 @@ widthToggle.control.checked = Boolean(localStorage.getItem("wide"));
 widthToggle.dispatchEvent(new Event("change"));
 
 document.addEventListener("keydown", (event) => {
-    if (event.repeat) return;
+    if (event.repeat) {
+        return;
+    }
     if (event.key === "C") {
         remoteContentToggle.click();
     } else if (event.key === "w") {
@@ -180,11 +182,31 @@ events.addEventListener("message-change", (e) => {
     const subject = (() => {
         const h = document.createElement("h1");
         const a = document.createElement("a");
-        if (msg.link) a.href = msg.link;
+        if (msg.link) {
+            a.href = msg.link;
+        }
         a.textContent = msg.subject;
         h.appendChild(a);
         return h;
     })();
+
+    const linkify = (str) => {
+        const email = /[\w.+\-=]+@[-\w.]+/.source;
+        const url = /\bhttps?:\/\/[!#$&'()*+,\/:;=?@[\]\w\-~.]+/.source;
+        const noTrailingPunct = /(?<![.:;!?()'])/.source;
+        const link = new RegExp(`(${email}|${url})${noTrailingPunct}`);
+        const fragment = document.createDocumentFragment();
+        fragment.replaceChildren(...str.split(link).map((chunk, i) => {
+            if (i % 2 === 0) {
+                return document.createTextNode(chunk);
+            }
+            const a = document.createElement("a");
+            a.href = chunk.includes("://") ? chunk : `mailto:${chunk}`;
+            a.textContent = chunk;
+            return a;
+        }));
+        return fragment;
+    };
 
     const body = (() => {
         if (msg.html) {
@@ -197,10 +219,10 @@ events.addEventListener("message-change", (e) => {
             }
             return div;
         }
-        const p = document.createElement("p");
-        p.style.whiteSpace = "pre-line";
-        p.textContent = msg.body;
-        return p;
+        const div = document.createElement("div");
+        div.style.whiteSpace = "pre-line";
+        div.appendChild(linkify(msg.body));
+        return div;
     })();
 
     mail.replaceChildren(...addresses, attachments, subject, body);
