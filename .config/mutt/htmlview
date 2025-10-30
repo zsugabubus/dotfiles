@@ -220,7 +220,7 @@ events.addEventListener("message-change", (e) => {
             return div;
         }
         const div = document.createElement("div");
-        div.style.whiteSpace = "pre-line";
+        div.style.whiteSpace = "pre-wrap";
         div.appendChild(linkify(msg.body));
         return div;
     })();
