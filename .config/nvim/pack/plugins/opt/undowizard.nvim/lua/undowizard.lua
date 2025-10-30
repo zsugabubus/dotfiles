@@ -99,7 +99,7 @@ end
 
 local function buf_undo(buf, undo_number)
 	buf_call(buf, function()
-		cmd(format('undo %d', undo_number))
+		cmd('undo ' .. undo_number)
 	end)
 end
 
@@ -124,12 +124,12 @@ local function buf_load_undo(buf, undo_number)
 		buf_set_lines(rundo_buf, 0, -1, true, contents)
 
 		buf_call(rundo_buf, function()
-			cmd(format('silent rundo %s', wundo_file))
+			cmd('silent rundo ' .. wundo_file)
 			wundoed_max_number = fn.undotree().seq_last
 		end)
 	end
 	buf_call(rundo_buf, function()
-		cmd(format('silent undo %d', undo_number))
+		cmd('silent undo ' .. undo_number)
 	end)
 	return rundo_buf
 end
@@ -501,7 +501,7 @@ local function read_undotree_autocmd(opts)
 	wo.relativenumber = false
 	wo.winhighlight = 'Folded:Normal'
 
-	local group = api.nvim_create_augroup(format('undotree/%d', buf), {})
+	local group = api.nvim_create_augroup('undotree/' .. buf, {})
 
 	api.nvim_create_autocmd('TextChanged', {
 		group = group,
