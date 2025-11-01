@@ -343,7 +343,10 @@ async def handle_request(reader, writer, req):
 
             async def write_events():
                 while True:
-                    await writer.drain()
+                    try:
+                        await writer.drain()
+                    except ConnectionError:
+                        break
                     changed = current_msg_changed
                     data = make_msg_data(current_msg) if current_msg else None
                     writer.write(
