@@ -40,6 +40,7 @@ response = session.post(
     "https://ncore.pro/login.php",
     headers=headers,
     data={"set_lang": "hu", "submitted": "1", "nev": username, "pass": password},
+    timeout=10,
 )
 response.raise_for_status()
 
@@ -53,7 +54,10 @@ new_cursor = None
 
 for page in range(1, 100):
     response = session.get(
-        "https://ncore.pro/torrents.php", headers=headers, params={"oldal": page}
+        "https://ncore.pro/torrents.php",
+        headers=headers,
+        params={"oldal": page},
+        timeout=10,
     )
     response.raise_for_status()
     text = response.text
