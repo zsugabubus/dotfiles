@@ -49,7 +49,7 @@ local function imdb_search(title, title_types, year, duration, callback)
 	local start_time = mp.get_time()
 
 	mp.msg.info(
-		('Search IMDB: title=%q year=%q duration=%q'):format(title, year, duration)
+		('Fetch IMDB: title=%q year=%q duration=%q'):format(title, year, duration)
 	)
 
 	local variables = {
@@ -94,7 +94,7 @@ local function imdb_search(title, title_types, year, duration, callback)
 		assert(success, err)
 
 		if result.status ~= 0 then
-			mp.msg.error(('IMDB lookup failed: %s'):format(result.stdout))
+			mp.msg.error(('Fetch IMDB failed: %s'):format(result.stdout))
 			callback(nil)
 			return
 		end
@@ -155,11 +155,7 @@ end
 
 local function search_movie(query, duration, callback)
 	local title, year = query:match('^(.-)(%d%d%d%d)')
-	if not title then
-		callback(nil)
-		return
-	end
-	title = clean_title(title)
+	title = title or query:match('^(.-)%d%d') or query
 	-- "'s" handled correctly for some reason.
 	local title_alt = title:lower():gsub('&', ''):gsub('([^ ]+)', {
 		['and'] = '',
@@ -183,12 +179,11 @@ local function search_movie(query, duration, callback)
 end
 
 local function search_series(query, callback)
-	local title = query:match('^(.-)S%d+E%d+')
+	local title = query:match('^(.-)[sS]%d+[eE]%d+')
 	if not title then
 		callback(nil)
 		return
 	end
-	title = clean_title(title)
 	sequential_truthy({
 		function(callback)
 			imdb_search(title, SERIES, nil, nil, callback)
@@ -197,7 +192,8 @@ local function search_series(query, callback)
 end
 
 local function search_title(query, duration, callback)
-	mp.msg.info(('Search IMDB: %s'):format(query))
+	mp.msg.info(('Search IMDB: %q'):format(query))
+	query = clean_title(query)
 	sequential_truthy({
 		function(callback)
 			search_series(query, callback)
@@ -214,7 +210,6 @@ if os.getenv('MPV_SCRIPT_IMDB_TEST') then
 
 	local function test(input, duration, expected_title, expected_year)
 		table.insert(tests, function(callback)
-			print(('Test %q...'):format(input))
 			search_title(input, duration, function(result)
 				assert(result ~= nil, 'No matches found')
 				assert(
@@ -235,23 +230,30 @@ if os.getenv('MPV_SCRIPT_IMDB_TEST') then
 	test('Oddity.2024', 5920, 'Oddity', 2024)
 	test('The.River.2018', 5710, 'The River', 2018)
 	test('Youre.Cordially.Invited.2025', 6683, "You're Cordially Invited", 2025)
-	test('Es.mi.van.Tomival.2024', 5778, 'És mi van Tomival?', 2024)
+	test('Es.mi.van.Tomival.2024', 5778, 'But What About Tomi?', 2024)
 	test('Luccas.World.2024', 5794, "Lucca's World", 2025)
 	test('The.Childrens.Train.2024', 6384, "The Children's Train", 2024)
 	test('Swing.Into.Romance.2023', 5108, 'Swing Into Romance', 2023)
 	test('Gladiator.II.2024', 9102, 'Gladiator II', 2024)
 	test('Troppa.grazia.2018', 6572, "Lucia's Grace", 2018)
 	test('Juror.2.2024', 6829, 'Juror #2', 2024)
+	test('Juror.2.720.720', 6829, 'Juror #2', 2024)
 	test('Burning.Lies.2021', 5355, 'Burning Little Lies', 2021)
 	test('Budapesti.zsaruk.S01E01.1080i', 0, 'Budapesti Zsaruk', 2025)
 	test('Unmoored.2024', 5378, 'Unmoored', 2023)
 	test('Most.Likely.to.Murder.2019', 5396, 'Most Likely to Murder', 2019)
-	test('aX059-crazy.stupid.love.1080', 7087, 'Crazy, Stupid, Love.', 2011)
+	test('aX059-crazy.stupid.love.720', 7087, 'Crazy, Stupid, Love.', 2011)
 	test(
 		'Wallace.and.Gromit.Vengeance.Most.Fowl.2025',
 		4946,
 		'Wallace & Gromit: Vengeance Most Fowl',
 		2024
+	)
+	test(
+		'squid.game.the.challenge.s02e0.xxx',
+		0,
+		'Squid Game: The Challenge',
+		2023
 	)
 
 	sequential_truthy(tests, function()
