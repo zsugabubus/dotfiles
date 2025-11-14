@@ -53,6 +53,8 @@ class HtmlUrlParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         for _name, value in attrs:
+            if not value:
+                continue
             if re.fullmatch(URL_RE, value):
                 self.urls.append(value)
 
