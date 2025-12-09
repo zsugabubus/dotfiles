@@ -29,7 +29,7 @@ RestrictSUIDSGID=yes
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallFilter=~@privileged @resources @ipc @keyring
-SystemCallFilter=pipe pipe2
+SystemCallFilter=pipe pipe2 quotactl
 Type=notify
 
 [Install]
