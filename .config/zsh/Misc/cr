@@ -9,60 +9,29 @@ local initial_preferences='
 	},
 	"extensions": {
 		"settings": {
-			"cjpalhdlnbpafiamejdnhcphjbkeiagm": {
+			"ddkjiahejlhfcafbddmgiahcphecmpfh": {
 				"location": 1,
 				"manifest": {
-					"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmJNzUNVjS6Q1qe0NRqpmfX/oSJdgauSZNdfeb5RV1Hji21vX0TivpP5gq0fadwmvmVCtUpOaNUopgejiUFm/iKHPs0o3x7hyKk/eX0t2QT3OZGdXkPiYpTEC0f0p86SQaLoA2eHaOG4uCGi7sxLJmAXc6IsxGKVklh7cCoLUgWEMnj8ZNG2Y8UKG3gBdrpES5hk7QyFDMraO79NmSlWRNgoJHX6XRoY66oYThFQad8KL8q3pf3Oe8uBLKywohU0ZrDPViWHIszXoE9HEvPTFAbHZ1umINni4W/YVs+fhqHtzRJcaKJtsTaYy+cholu5mAYeTZqtHf6bcwJ8t9i2afwIDAQAB",
-					"name": "uBlock Origin (Installing…)",
-					"permissions": [
-						"alarms",
-						"contextMenus",
-						"privacy",
-						"storage",
-						"tabs",
-						"unlimitedStorage",
-						"webNavigation",
-						"webRequest",
-						"webRequestBlocking",
-						"<all_urls>"
-					],
+					"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqJE6DLdtfHXfeaGDSKdUuCvvb3pYEpH7jsuYMdExgIqmKRux2dknlJAnYkamBMcirGBfwCFjqE++TAkCs8AcrYLOGRRMt8oa7DXuFWzgtQpkwigI1+dnIuYLzERLQx/O02/p//fHdDQfxWKvySnN+VHdINOHsUD6OcoC5I7CXIBSrateRpRGpFxxR6F4nWvK3aq2j3L6A/qRg+pr0QVqL8p1TOJG+vSh234YHnsO9Dsys+VNbT0k0n8enCm/VsOCMjihgHpmftd1bSfSr8s1IwBuFdaLVQKghyDn1PvhFNBkuAXu+J/z0/o5Nio+/bIz406ECI9Qtkr9kqVboFDtzwIDAQAB",
+					"manifest_version": 3,
+					"name": "uBlock Origin Lite (Installing…)",
 					"update_url": "https://clients2.google.com/service/update2/crx",
-					"version": "0.0",
-					"manifest_version": 2
+					"version": "0.0"
 				},
-				"path": "cjpalhdlnbpafiamejdnhcphjbkeiagm/0.0",
-				"state": 1,
 				"granted_permissions": {
 					"api": [
-						"alarms",
-						"contextMenus",
-						"privacy",
+						"activeTab",
 						"storage",
-						"tabs",
-						"unlimitedStorage",
-						"webNavigation",
-						"webRequest",
-						"webRequestBlocking"
+						"declarativeNetRequest",
+						"scripting"
 					],
 					"explicit_host": [
-						"<all_urls>",
-						"chrome://favicon/*"
-					],
-					"manifest_permissions": [],
-					"scriptable_host": [
-						"http://*/*",
-						"https://*.fanboy.co.nz/*",
-						"https://*.github.io/*",
-						"https://*.reddit.com/r/uBlockOrigin/*",
-						"https://*/*",
-						"https://easylist.to/*",
-						"https://filterlists.com/*",
-						"https://forums.lanik.us/*",
-						"https://github.com/*",
-						"https://github.com/uBlockOrigin/*",
-						"https://ublockorigin.github.io/*"
+						"<all_urls>"
 					]
-				}
+				},
+				"path": "ddkjiahejlhfcafbddmgiahcphecmpfh/0.0",
+				"state": 1,
+				"incognito": true
 			}
 		}
 	},
@@ -147,7 +116,6 @@ oom_adj 1000 bwrap \
 	--chdir /home/user/Downloads \
 	$extra_args \
 	chromium \
-	--disable-features=ExtensionManifestV2Unsupported,ExtensionManifestV2Disabled \
 	--unsafely-disable-devtools-self-xss-warnings \
 	--user-data-dir=/home/user/chromium \
 	${opt_unsafe:+--disable-web-security} \
