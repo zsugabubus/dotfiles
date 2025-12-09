@@ -7,6 +7,7 @@
   "implements"
   "infer"
   "interface"
+  "is"
   "keyof"
   "module"
   "readonly"
