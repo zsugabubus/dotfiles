@@ -4,9 +4,6 @@
 # sudo touch /usr/lib/chromium/initial_preferences
 local initial_preferences='
 {
-	"x-first_run_tabs": [
-		"https://chrome.google.com/webstore/detail/ublock-origin/cjpalhdlnbpafiamejdnhcphjbkeiagm"
-	],
 	"session": {
 		"restore_on_startup": 1
 	},
