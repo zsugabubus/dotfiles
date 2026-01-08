@@ -117,6 +117,7 @@ oom_adj 1000 bwrap \
 	--chdir /home/user/Downloads \
 	$extra_args \
 	chromium \
+	--remote-debugging-port=9222 \
 	--unsafely-disable-devtools-self-xss-warnings \
 	--user-data-dir=/home/user/chromium \
 	${opt_unsafe:+--disable-web-security} \
