@@ -5,8 +5,9 @@ local props = {}
 local function osd_put_icon(align, text)
 	osd:n()
 	osd:an(align)
+	osd:bord(2)
 	osd:a1(40)
-	osd:fsc(200)
+	osd:fsc(150)
 	osd:fn_symbols()
 	osd:put(text)
 end
