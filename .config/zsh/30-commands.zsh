@@ -313,8 +313,8 @@ alias systemctl='noglob systemctl'
 alias vlock='nice -20 vlock'
 
 function M() {
-	local opt_with_net opt_with_docker opt_user=(user) opt_host=(bubble) opt_cwd=(${PWD?})
-	zparseopts -D -F -K -- n=opt_with_net d=opt_with_docker u:=opt_user h:=opt_host C:=opt_cwd || return 1
+	local opt_with_net opt_with_gpu opt_with_docker opt_user=(user) opt_host=(bubble) opt_cwd=(${PWD?})
+	zparseopts -D -F -K -- n=opt_with_net g=opt_with_gpu d=opt_with_docker u:=opt_user h:=opt_host C:=opt_cwd || return 1
 	local new_user=$opt_user[-1]
 	local new_host=$opt_host[-1]
 	local new_home=/home/$new_user
@@ -344,6 +344,8 @@ function M() {
 		3<<<"$new_user:x:$UID:" \
 		--ro-bind-data 4 /etc/passwd \
 		4<<<"$new_user:x:$UID:$GID::$new_home:$SHELL" \
+		${=opt_with_gpu:+--ro-bind /sys{,}} \
+		${=opt_with_gpu:+--ro-bind /dev/dri{,}} \
 		${=opt_with_net:+--ro-bind /etc/ssl{,}} \
 		${=opt_with_net:+--ro-bind /etc/fonts{,}} \
 		${=opt_with_net:+--ro-bind /etc/hosts{,}} \
