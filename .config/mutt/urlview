@@ -149,7 +149,7 @@ def chromium(url):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
             client.connect(socket_path)
             client.send(
-                "\0".join(["START", os.getcwd(), "chromium", *args]).encode("utf-8")
+                "\0".join(["START", "/", "chromium", *args]).encode("utf-8")
             )
 
     for socket_path in [
