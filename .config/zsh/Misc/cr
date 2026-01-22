@@ -69,8 +69,6 @@ zparseopts -D -F -K -- \
 local profile_path=${opt_profile[-1]:-.}
 local local_state_path="$profile_path/Local State"
 
-ulimit -u 2048
-
 if [[ ! -e "$local_state_path" ]]; then
 	cat <<<$local_state >$local_state_path
 fi

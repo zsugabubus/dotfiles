@@ -1,1 +1,1 @@
-ulimit -u 1024
+ulimit -u 4096
