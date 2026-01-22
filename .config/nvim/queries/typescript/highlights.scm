@@ -10,6 +10,7 @@
   "is"
   "keyof"
   "module"
+  "namespace"
   "readonly"
   "satisfies"
   "type"
