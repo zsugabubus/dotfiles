@@ -272,6 +272,7 @@ def make_msg_data(msg):
                 "url": f"/attachments/{i}/{urllib.parse.quote(part.get_filename())}",
             }
             for i, part in enumerate(msg.iter_attachments())
+            if part.get_filename()
         ],
     }
 
