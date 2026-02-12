@@ -52,7 +52,6 @@
 
 	mt = mergetool
 
-	push-origin = push -u origin HEAD
 	pushN = push --no-verify
 
 	ra = !git diff --name-only --diff-filter=U -z | xargs -0r grep -LZ '<<<<<<<' | xargs -0r git add -v
@@ -130,6 +129,9 @@
 
 [pull]
 	rebase = yes
+
+[push]
+	autoSetupRemote = yes
 
 [rebase]
 	missingCommitsCheck = error
