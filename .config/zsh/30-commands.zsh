@@ -494,6 +494,7 @@ function mpd() {
 	ARGV0=mpd mpv 2>/dev/null --no-terminal --no-video ${@:-.}
 }
 alias mpom='mp --sort=no *(om)'
+alias mpom.='mp --sort=no *(om.)'
 alias mpw='mp --force-window --idle'
 
 function mpt() {
